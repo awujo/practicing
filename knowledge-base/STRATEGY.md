@@ -8,7 +8,7 @@ precise backtestable code.
 (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own
 terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 14 of 18+ videos processed (Video 1: orientation, Video 2: admin +
+Status: 15 of 18+ videos processed (Video 1: orientation, Video 2: admin +
 pair-scanning philosophy, Video 3: full basics-to-advanced structure
 foundation + consolidation/manipulation framework, Video 4: core
 structure/liquidity framework, Video 5: liquidity types/forms + sequential
@@ -23,9 +23,12 @@ algorithm framing + IRL-necessity nuance for origin vs continuation
 trades, Video 13: exhaustive confirmation-entry decision tree + mechanized
 stop-loss placement rules, Video 14: same decision tree restated as 3
 pattern-recognition entry types + explicit 70-80% win-rate quote + trade
-stacking concept). Course turned out to be 18 videos (not 17), and a
-supplementary set of study videos + a chart-examples PDF from a fellow
-student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+stacking concept, Video 15: single live Gold trade demonstrating all 3
+Video 14 patterns recurring fractally across 4H/1H/15min + "pick one
+entry system and stay with it" discipline principle). Course turned out
+to be 18 videos (not 17), and a supplementary set of study videos + a
+chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X)
+is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -367,6 +370,27 @@ build/test both in the backtester)
 - Presented as legitimate personal-style choice, not one superior to the
   other — should be implemented and tested as two separate variants.
 
+### "Pick one entry system and stay with it" (Video 15, discipline
+principle, not a mechanical rule)
+Explicit advice: rather than situationally choosing between the 3
+confirmation-entry patterns (Section 5 above) trade-by-trade, commit to
+ONE preferred pattern as a personal default and apply it consistently.
+Does not change which patterns are valid — surfaced here as a
+configurable "entry style" parameter/preset for the bot (e.g. "always
+prefer Pattern 1" vs. "always prefer Pattern 2") rather than a dynamic
+per-trade choice, useful for backtesting each preset in isolation to
+compare performance.
+
+### 4H timeframe specifically emphasized (Video 15)
+Beyond the general "higher timeframe for bias" guidance (Section 7),
+4H is called out repeatedly and specifically as the preferred timeframe
+for identifying the key-level reject-and-close (R&C) that anchors the
+full cascade down through 1H/30min -> 15min -> 5min execution. A live
+example showed the identical entry pattern (open-close -> IRL -> engulf
+-> retest) recurring self-similarly at 4H, 1H/30min, and 15min in the
+same trade — supports treating the pattern-detection logic as scale-
+invariant/fractal across timeframes rather than timeframe-specific.
+
 ## 6. Trade Management
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-
   butter target. Occasionally extends further (1:6 seen once).
@@ -468,6 +492,6 @@ question, watch for clarification in later videos.
   for it if more material surfaces
 - Trade stacking rules (Video 14): does stacking apply to origin trades,
   or continuation setups only? Not addressed yet.
-- Remaining videos to process: 15-18 (course materials) plus the
+- Remaining videos to process: 16-18 (course materials) plus the
   Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages
   of the chart-examples PDF
