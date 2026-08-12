@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 11 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes, Video 11: precise key-level definitions — RESOLVED the V-shape/A-shape/open-close question). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 12 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes, Video 11: precise key-level definitions — RESOLVED the V-shape/A-shape/open-close question, Video 12: mechanized IF-THEN algorithm framing + IRL-necessity nuance for origin vs continuation trades). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -133,6 +133,22 @@ Used when the origin move is missed:
 3. That level (overlapping an imbalance) + nearby inducement = entry trigger
 Requires patience; do not force it before inducement forms.
 
+**IRL necessity nuance (Video 12)**: IRL formation is effectively *necessary* to validate an ORIGIN trade, but *optional* for a CONTINUATION trade. If a continuation setup's engulfing/key-level tap occurs without a subsequent IRL forming, enter directly anyway with a **tighter stop** (just past the engulfed candle's extreme + 1 pip, instead of the usual 10-11 pips). Two variants to implement separately.
+
+### The mechanized IF-THEN framing (Video 12 — closest thing to pseudocode given directly)
+"If A,B,C happens, we do X,Y,Z":
+- **ABC**: price taps a key level -> rejects -> closes beyond it (a "R&C", reject-and-close) in a direction.
+- **XYZ**: scale one timeframe down -> look for EITHER a liquidity sweep + break of structure, OR an engulfing candle, confirming the same direction -> expect the next candle to serve as IRL -> gets swept -> key level (ideally overlapping an imbalance) taps -> continue.
+
+### "No POI" philosophy
+Does NOT pre-mark anticipated reaction zones in advance (no forward-looking order-block boxes). Key levels are identified **reactively**, based on realized candle closes as they happen. Backtester implication: level detection must be based on confirmed historical closes, not speculative zones drawn ahead of price reaching them.
+
+### Bias doesn't always require the full top-down cascade
+Video 9's full Monthly->Weekly->Daily->4H cascade is the thorough method, but reading "what the current structure is saying" on a **single relevant timeframe** (e.g. just 4H) is a valid, faster alternative when that timeframe's structure is already clear on its own.
+
+### Disrespected-level priority refinement
+When a level is disrespected, prefer the **same, more recently disrespected level** as the likely next reaction point over a more distant "extreme" level, when both are candidates (refines Video 11's two-target strategy with a recency/proximity tiebreaker).
+
 ### Key-level shapes (RESOLVED — precise definitions from Video 11)
 Key levels are marked on **closing prices**, not wicks/highs-lows.
 1. **A-shape**: a peak/apex-shaped reversal (price rises into it then reverses down, resembling the letter "A"). Default use: **selling**.
@@ -178,7 +194,7 @@ Key levels are marked on **closing prices**, not wicks/highs-lows.
 ## 9. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory (hinted at end of Video 3 but not actually covered before the call ended — do not assume a later video covers it just because of numbering)
 - The "10 trade rule" (confirmed to be prop-firm-challenge specific, still no precise definition)
-- "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
+- "QMR key level" — term used across Videos 7, 8, and 12 without ever being defined; usage pattern suggests he uses it interchangeably with generic "key level" in examples where the specific type doesn't matter — treat as equivalent to "key level" unless a clearer definition surfaces
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
 - A likely "Key Levels 2" video may exist (Video 11 ends mid-topic promising continuation same day) — not currently in our set of 18, watch for it if more material surfaces
-- Remaining videos to process: 12-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
+- Remaining videos to process: 13-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
