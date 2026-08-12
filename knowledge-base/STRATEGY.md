@@ -4,9 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 3 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup).
-
-**Supplementary source**: additional trade examples/commentary being added from a fellow student's public analysis (Web3Bish0p on X) — logged in `knowledge-base/supplementary/` as they come in.
+Status: 4 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle — the most precisely codeable video so far).
 
 ---
 
@@ -42,7 +40,35 @@ Before trusting a directional/structural bias, price should take out **two struc
 
 **Exact session definition** (confirmed from his indicator settings): Custom TradingView indicator "AsiaSessionHighLowMidLines", session window **17:00-00:15**, chart timezone **UTC-4 (New York)**. Must confirm DST handling when building the backtester rather than hardcoding a UTC offset.
 
-## 3. Entry Setups (two variants, both derived from the same two conditions)
+## 3. Defined Ranges & Range Cycle
+
+A range/swing point is only valid once BOTH conditions are met:
+1. **Sweep of liquidity** (a wick through a prior high/low)
+2. **Break of structure** (price then breaks/closes through a structural point in that direction)
+
+### Strong Low / Strong High / Weak High / Weak Low
+- **Strong low** (bullish range): the sweep+break origin point of the range.
+- **Weak high**: the range's primary target = External Range Liquidity (ERL).
+- Strong high/low updates forward every time a new valid sweep+break occurs — not a fixed point. To find the current reference point, "look to the left" to the most recent valid sweep+break.
+
+### ABC naming convention
+A leg = strong low (sweep+break origin). B leg = inducement/internal range liquidity. C leg = weak high = external range liquidity (target).
+
+### Range Cycle
+A range starts with sweep+break and ends the same way (sweep+break), which simultaneously starts the next cycle. Within a range, price works through successive internal range liquidity points, stopping at the "last resort liquidity" (the IRL point closest to the strong high/low) before continuing toward the external range liquidity.
+
+**Core rule**: after every external range liquidity is taken -> expect **reversal**. After every internal range liquidity is taken -> expect **continuation**. Most applicable on lower timeframes (15m/30m).
+
+### CRITICAL rule: wick-sweep vs body-close-break
+The single most precise, directly-codeable rule extracted so far:
+- Price **wicks through** a level but candle **does not close beyond it** -> structural shift NOT confirmed. ~90% probability price returns to use that level as further internal range liquidity before continuing in the original direction. Treat as invalid/low-probability for redefining strong high/low.
+- Price **closes beyond it** (body close through) -> validly confirmed.
+- Must compare **close price**, not high/low wick, against the reference level when implementing structure-break detection in code.
+
+### Alternate pattern: "engineered internal range liquidity"
+Sometimes after a strong low forms, price fails to cleanly break either side (contracts instead), then comes back to sweep (not necessarily close through) the strong-low area before continuing in the original direction. Same wick-vs-close distinction applies to whether the external range liquidity is still "pending" in this pattern.
+
+## 4. Entry Setups (two variants, both derived from the same two conditions)
 
 ### A. "Origin of the move" (highest quality, hardest to catch)
 Liquidity sweep + immediate break of structure (BOS) confirms order flow. Entry at a "key level" overlapping inside a fair value gap, right where the order flow was confirmed.
@@ -58,17 +84,17 @@ Requires patience; do not force it before inducement forms.
 - "V shape killer" — V-shaped reaction at the level
 - "A shape killer" — inverse reaction shape (needs more examples from later videos to nail down exact criteria)
 
-## 4. Trade Management
+## 5. Trade Management
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-butter target. Occasionally extends further (1:6 seen once).
 - Explicit lesson: take the 1:3 when it's there — don't hold out for more and risk giving it back.
 - Stop-loss: structure-derived (placed relative to the imbalance/key level), not a fixed pip value — one example used ~10 pips, not a universal rule.
 
-## 5. Timeframes
+## 6. Timeframes
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed on the 5-minute chart.
 - Uses both candlestick AND line charts — line chart specifically preferred for spotting clean liquidity sweeps / BOS (candlestick wicks can obscure it).
 
-## 6. Session & Pair Rules (concrete, backtestable)
+## 7. Session & Pair Rules (concrete, backtestable)
 - Day trader — does not swing trades overnight as a rule.
 - Avoid GBPUSD / EURUSD during Asian session (low "liquidity injection").
 - Asian-session-appropriate pairs: AUDUSD, NZD pairs, USDCHF, GBPJPY, EURJPY.
@@ -77,10 +103,11 @@ Requires patience; do not force it before inducement forms.
 - Avoid holding into very late hours — spread widens sharply around session rollover (~10pm reference).
 - Data feed / broker reference: Oanda. Charting: TradingView (uses Replay mode for backtesting review).
 
-## 7. Open Questions / Expected in Later Videos
+## 8. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory
 - The "10 trade rule"
 - Full storyline-building / bias methodology (Video 9 likely covers this — title is "Bias/Storyline")
 - Precise definition of "V shape" vs "A shape" killer
 - Full confirmation-entry drill-down process (4H -> 15m -> 5m mentioned but not fully demonstrated yet)
-- Range theory details (Videos 7 "Defined Ranges/Range Cycle" and 8 "Range" likely cover this in depth)
+- "QMR key level" — term used in Video 7 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
+- Video 8 ("Part 2 - Range") likely extends range theory further beyond what Video 7 covered
