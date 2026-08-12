@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 9 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 10 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -153,6 +153,7 @@ Requires patience; do not force it before inducement forms.
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed on the 5-minute chart.
 - Uses both candlestick AND line charts — line chart specifically preferred for spotting clean liquidity sweeps / BOS (candlestick wicks can obscure it).
+- **Holding-period nuance**: the overall directional BIAS can persist for weeks or months (set by weekly/monthly candle closes), but execution stays short-term — individual trades are still entered/exited on lower timeframes repeatedly in that direction, not held as one continuous multi-month position. Reconciles "I'm a day trader, I don't swing" with real examples of a bias holding for 2-3 months.
 
 ## 8. Session & Pair Rules (concrete, backtestable)
 - Day trader — does not swing trades overnight as a rule.
@@ -163,6 +164,8 @@ Requires patience; do not force it before inducement forms.
 - Avoid holding into very late hours — spread widens sharply around session rollover (~10pm reference).
 - Data feed / broker reference: Oanda. Charting: TradingView (uses Replay mode for backtesting review).
 - **News-event caveat** (from a real loss reviewed in Video 8): structural rules can get overridden short-term by major news releases (NFP specifically called out). Always confirm higher-timeframe trend context before entering, and treat news-day price action as elevated risk — the backtester should model/flag major news events rather than assume the rules hold unconditionally through them.
+- **Soft heuristic on news direction** (Video 10, attributed to a past mentor, explicitly unverified by him personally): news-driven moves tend to go in the direction of the prevailing higher-timeframe bias, not against it. Treat as a secondary prior at most, not a core rule — doesn't contradict the news-event caveat above.
+- **Cross-asset applicability claim** (Video 10, not independently verified): states the same framework applies to synthetic indices and crypto, not just forex/gold. Worth testing empirically per asset class rather than assuming it holds — market microstructure differs.
 
 ## 9. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory (hinted at end of Video 3 but not actually covered before the call ended — do not assume a later video covers it just because of numbering)
@@ -170,4 +173,4 @@ Requires patience; do not force it before inducement forms.
 - Precise definition of "V shape" vs "A shape" killer
 - "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
-- Remaining videos to process: 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 44 pages of the chart-examples PDF
+- Remaining videos to process: 11-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
