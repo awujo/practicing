@@ -8,7 +8,7 @@ precise backtestable code.
 (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own
 terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 16 of 18+ videos processed (Video 1: orientation, Video 2: admin +
+Status: 17 of 18+ videos processed (Video 1: orientation, Video 2: admin +
 pair-scanning philosophy, Video 3: full basics-to-advanced structure
 foundation + consolidation/manipulation framework, Video 4: core
 structure/liquidity framework, Video 5: liquidity types/forms + sequential
@@ -28,10 +28,13 @@ Video 14 patterns recurring fractally across 4H/1H/15min + "pick one
 entry system and stay with it" discipline principle, Video 16: breakout
 vs. sweep+break-of-structure distinction + "storyline starts/ends on same
 timeframe's key level" exit rule + bias-flip confirmation state machine —
-significant new codeable mechanics). Course turned out to be 18 videos
-(not 17), and a supplementary set of study videos + a chart-examples PDF
-from a fellow student (Web3Bish0p / Defi Bishop on X) is also being
-incorporated.
+significant new codeable mechanics, Video 17: completes the bias-flip
+state machine — open-close breaks/engulfing can NEVER validate a
+storyline change, only breakout/sweep+break can — plus a strong new lead
+resolving the "QMR key level" definition as a multiply-tested-then-
+disrespected level). Course turned out to be 18 videos (not 17), and a
+supplementary set of study videos + a chart-examples PDF from a fellow
+student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -131,6 +134,29 @@ lower timeframe still confirms continuation in the OLD direction, the
 bias is NOT yet flipped — keep trading the original direction until the
 lower timeframe stops confirming it. Resolves a real ambiguity: a single
 higher-timeframe reaction does not by itself flip the bias.
+
+**Critical completion (Video 17): open-close breaks and engulfing NEVER
+validate a bias flip.** Condition 3 above specifically requires a
+**breakout** or **sweep+break of structure** on the lower timeframe — an
+**open-close break** (two candles form an open-close, then price
+disrespects it with an impulsive close) or a plain **engulfing** on that
+same lower timeframe does NOT satisfy condition 3, no matter how it looks.
+The identical chart event means two different things depending on the
+question asked: as an ENTRY trigger it's valid (a retracement/counter-
+trend scalp within the still-active larger bias, per Section 5's
+confirmation patterns); as a BIAS-CHANGE signal it is explicitly
+insufficient. Only breakout or sweep+break flips the bias — everything
+else observed in between is retracement, tradeable but not trend-
+changing. Confirmed via a full worked weekly->daily->4H round-trip
+example in Video 17, and the timing of the confirmation candle (same day
+vs. a later day as the higher-timeframe rejection) does not matter —
+only whether it has actually occurred.
+
+**Weekly bias-holding nuance**: a weekly bearish bias does not require
+every day of that week to sell — e.g. Monday/Tuesday can retrace while
+Thursday/Friday resumes and continues the move; the week still counts as
+bearish overall as long as no actual bias-flip (per the state machine
+above) has triggered.
 
 ### Cross-confirmed pipeline (from Web3Bish0p / Defi Bishop, independent
 source, same underlying mentor)
@@ -402,6 +428,28 @@ fallback.
   4H and Daily timeframes specifically — a genuinely testable number for
   backtesting validation, not vague confidence.
 
+### "QM" / "QMR key level" — strong working definition (Video 17, resolves
+long-standing open question)
+When multiple candidate key levels exist after a confirmed breakout/
+sweep+break (e.g. a more-tested level and a more-distant "extreme"
+level), rank them by **prior test history**, not just proximity/shape:
+- A key level **tested/respected MULTIPLE TIMES (2+) before finally being
+  disrespected** is the preferred return target over a level disrespected
+  on its first test, or a further extreme level never tested at all.
+- **Quantified**: ~80% chance price returns to play the multiply-tested-
+  then-disrespected level rather than continuing to a more distant
+  extreme.
+- "QM"/"QMR" appears to flag this specific class of level — history of
+  successful tests before finally breaking — rather than a particular
+  shape (A/V/open-close independent). Some residual ambiguity on the
+  exact required test count; treat 2+ prior tests as the working
+  threshold.
+- **Backtester implication**: when ranking multiple valid key-level
+  candidates, add prior-test-count as a third ranking factor alongside
+  imbalance-overlap (quality signal above) and recency/proximity
+  (disrespected-level priority refinement above) — higher test count
+  before disrespect = higher priority target.
+
 ### Entry style spectrum: Aggressive vs. Conservative (both sanctioned —
 build/test both in the backtester)
 - **Aggressive**: enter directly once the key-level+imbalance setup is
@@ -553,10 +601,13 @@ question, watch for clarification in later videos.
   covers it just because of numbering)
 - The "10 trade rule" (confirmed to be prop-firm-challenge specific, still
   no precise definition)
-- "QMR key level" — term used across Videos 7, 8, 12, and 13 without ever
-  being defined; consistently used interchangeably with generic "key
-  level" regardless of shape — treat as equivalent to "key level" unless a
-  clearer definition surfaces
+- "QMR key level" — RESOLVED WITH STRONG LEAD (Video 17): a key level
+  tested/respected 2+ times before finally being disrespected, preferred
+  ~80% of the time as the return target over untested "extreme" levels —
+  see Section 5. Superseded by Videos 12/13's earlier "treat as generic
+  key level" placeholder conclusion, which undersold the term. Minor
+  residual ambiguity on exact required test count and whether the term is
+  strictly shape-independent.
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or
   a Who/What/When/Where/Why checklist
 - A likely "Key Levels 2" video may exist (Video 11 ends mid-topic
@@ -564,6 +615,6 @@ question, watch for clarification in later videos.
   for it if more material surfaces
 - Trade stacking rules (Video 14): does stacking apply to origin trades,
   or continuation setups only? Not addressed yet.
-- Remaining videos to process: 17-18 (course materials) plus the
+- Remaining videos to process: 18 (course materials) plus the
   Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages
   of the chart-examples PDF
