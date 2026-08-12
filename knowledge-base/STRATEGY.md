@@ -189,6 +189,20 @@ Entry)**. Bishop's material gives the most concrete C.E definition seen so
 far: once Daily+H4 bias align, drop to a 2-hour chart and wait for an
 **engulfing candle** as the actual entry trigger.
 
+**Real-trade cross-validation (Bishop's own trade breakdowns)**: a
+separate Bishop video walking through 4 real trades (GBPAUD, Japan225,
+US30, EURGBP) confirms the exact mentor cascade end-to-end (daily reject
+-> 4H breakout -> single candle liquidity forms -> price sweeps it and
+reacts from the nearest key level -> 1H confirmation via breakout,
+engulfing, OR sweep+break -> target = nearest ERL). Also surfaces two
+minor notes: (1) Bishop personally doesn't always wait for full
+candle-close confirmation before acting — an aggressive-style personal
+variation, not a framework rule change (see Section 5's entry-style
+spectrum); (2) explicit risk-management honesty — one trade got stopped
+out despite a correct bias, and one target zone didn't produce the
+expected reversal, with the lesson "don't set exaggerated targets just
+because the pattern worked on other recent trades."
+
 ## 3. Liquidity Framework
 
 - **Internal Range Liquidity (IRL)**: minor liquidity resting inside a range
@@ -296,6 +310,13 @@ function as a complete micro-range**, supplying both its own IRL and ERL
 reference points depending on direction. Directly codeable: for any
 candle in the direction-confirmed bias, tag `low`/`high` as IRL/ERL (or
 vice versa) based on the prevailing bullish/bearish classification.
+
+**Independently cross-validated (Bishop supplementary material)**: Defi
+Bishop uses the identical concept under the term "single candle
+liquidity" when breaking down his own real trades, arrived at
+independently as a different student of the same mentor — strong
+evidence this is a stable, real part of the shared framework rather than
+an idiosyncratic one-off explanation in Video 18.
 
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading
@@ -676,8 +697,8 @@ question, watch for clarification in later videos.
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
 - **All 18 core mentor-course videos are now processed.** Remaining
-  source material: the 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (audio already extracted, transcription/notes pending) and the
-  remaining 54 of 60 pages of Bishop's chart-examples PDF. After that,
-  the knowledge base moves to the backtesting and bot-implementation
-  phase.
+  source material: 5 of 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (1 of 6 processed — "Bias & Entries" — strongly cross-validated
+  the core framework, no contradictions found) and the remaining 54 of
+  60 pages of Bishop's chart-examples PDF. After that, the knowledge base
+  moves to the backtesting and bot-implementation phase.
