@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 8 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 9 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -54,10 +54,19 @@ A public diagram from a fellow student formalizes this exact process with clean 
 - Expected cycle: sweep IRL -> expand to sweep ERL -> reversal -> new range origin. Repeats. Applies across ALL timeframes, not just intraday — same cycle shows up in daily/weekly swing highs and lows.
 
 ### Forms of liquidity (concrete taxonomy)
-- Previous daily high / low, previous weekly high / low
+- Previous daily high / low, previous weekly high / low, previous monthly high / low
 - **Asian session high / low** (see dedicated Asian-session setup below)
-- **Trendline liquidity**: a series of consecutive higher-lows or lower-highs after a structure break; use the *last point* on that sequence as the liquidity reference — no need to draw the actual trendline.
+- **Trendline liquidity**: a series of consecutive higher-lows or lower-highs after a structure break, acting as a **magnet** drawing price back before the main trend resumes. Use the *last point* on that sequence (the "last resort") as the liquidity reference — no need to draw the actual trendline. Clearing this magnet zone is why momentum often "kicks in suddenly" right after an inducement-based entry.
 - Multiple old highs/lows can stack as sequential pools, swept one after another in the direction of the move.
+- Explicitly NOT used: double top/double bottom patterns, "central bank dealer's range" — deliberately excluded in favor of the minimal structure+liquidity+key-level system.
+
+### Sequential liquidity rule (per-timeframe alternating target)
+Once one side of a timeframe category's liquidity is taken, the next target flips to the OPPOSITE side of that SAME category:
+- Previous daily high taken -> next target = previous daily low (and vice versa)
+- Previous weekly high taken -> next target = previous weekly low (and vice versa)
+- Previous monthly high taken -> next target = previous monthly low (and vice versa)
+- Asian low taken -> next target = Asian high (and vice versa)
+A simple, directly-codeable alternating state machine per timeframe category. These forms can also double as exit reference points, not just entry framing (same dual-purpose principle as key levels).
 
 ### "Structural point(s)" confirmation rule (refined)
 Before trusting a directional/structural bias, price should take out ONE OR TWO structural points (each also an internal range liquidity point) in the same direction — **not always exactly two**; sometimes a single break is sufficient. Treat two as the common/typical threshold, not an absolute rule.
@@ -161,4 +170,4 @@ Requires patience; do not force it before inducement forms.
 - Precise definition of "V shape" vs "A shape" killer
 - "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
-- Remaining videos to process: 5, 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
+- Remaining videos to process: 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 44 pages of the chart-examples PDF
