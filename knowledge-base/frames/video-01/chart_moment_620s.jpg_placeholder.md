@@ -1,0 +1,1 @@
+Frame at 10:20 (620s): EURNZD 60min TradingView chart, watermark "Structure x Liquidity x Key Levels", shows liquidity sweep + reversal at ~1.76874. Binary image kept in local processing environment; will be embedded properly once we finalize how images are stored in this repo (raw binary push vs base64 vs release asset).
