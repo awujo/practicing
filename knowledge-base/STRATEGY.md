@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 12 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes, Video 11: precise key-level definitions — RESOLVED the V-shape/A-shape/open-close question, Video 12: mechanized IF-THEN algorithm framing + IRL-necessity nuance for origin vs continuation trades). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 13 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes, Video 11: precise key-level definitions — RESOLVED the V-shape/A-shape/open-close question, Video 12: mechanized IF-THEN algorithm framing + IRL-necessity nuance for origin vs continuation trades, Video 13: exhaustive confirmation-entry decision tree + mechanized stop-loss placement rules). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -147,7 +147,14 @@ Does NOT pre-mark anticipated reaction zones in advance (no forward-looking orde
 Video 9's full Monthly->Weekly->Daily->4H cascade is the thorough method, but reading "what the current structure is saying" on a **single relevant timeframe** (e.g. just 4H) is a valid, faster alternative when that timeframe's structure is already clear on its own.
 
 ### Disrespected-level priority refinement
-When a level is disrespected, prefer the **same, more recently disrespected level** as the likely next reaction point over a more distant "extreme" level, when both are candidates (refines Video 11's two-target strategy with a recency/proximity tiebreaker).
+When a level is disrespected, prefer the **same, more recently disrespected level** as the likely next reaction point over a more distant "extreme" level, when both are candidates (refines Video 11's two-target strategy with a recency/proximity tiebreaker). **Quantified** (Video 13): ~70% chance price does NOT return to the original "extreme" key level and instead returns to a newer, closer disrespected open-close level first.
+
+### The confirmation-entry decision tree (Video 13 — exhaustive, directly codeable)
+After price takes IRL and rejects from a key level, scale one timeframe down. What happens next falls into one of these branches:
+1. **Clean confirmation**: the lower-timeframe candle closes back through the key level (often through the IRL too) -> direct continuation.
+2. **Slow grind, fresh IRL required**: two candles form a new open-close, a third taps the original IRL, an even-lower-timeframe engulfing creates a new A/V-shape level, and the NEXT candle after that serves as a fresh IRL that must be swept before continuing.
+3. **Engulfing without fresh IRL**: same engulfing as above, but price taps the new key level directly and continues, no separate IRL forms first (the "optional IRL" continuation variant from Video 12).
+4. **Nested disrespected-open-close**: instead of respecting the new key level, two more candles form ANOTHER open-close that then gets disrespected — triggering the ~70% "return to the closer level" rule above.
 
 ### Key-level shapes (RESOLVED — precise definitions from Video 11)
 Key levels are marked on **closing prices**, not wicks/highs-lows.
@@ -173,6 +180,13 @@ Key levels are marked on **closing prices**, not wicks/highs-lows.
 - Explicit lesson: take the 1:3 when it's there — don't hold out for more and risk giving it back.
 - Stop-loss: structure-derived (placed relative to the imbalance/key level), not a fixed pip value — one example used ~10 pips, not a universal rule.
 
+### Mechanized stop-loss placement (Video 13, direct student Q&A)
+- **Origin trades**: stop just beyond the strong high/low (the sweep+break origin point) plus extra room to breathe — the safer, structure-true placement.
+- **Continuation trades**: personal preference for a fixed **~10 pips** (more aggressive) rather than the full structural distance, trading faster 1:3 realization against higher risk of getting stopped by a liquidity-hunt sweep before the real move.
+- **Padding rule**: stop placed at the reference high/low + **1 pip (or 0.5 pip)** buffer — a small fixed addition, not percentage/ATR-based.
+- **Judgment nuance**: when multiple nearby levels exist, a stop above a more distant MAJOR structural high can be safer than one above a closer MINOR level, since minor levels get liquidity-hunted more easily — not a fixed rule, requires case-by-case judgment about which level is more likely to be swept as inducement first.
+- Explicit real-trade admission: tight stops (~5 pips) have genuinely almost gotten stopped out before the correct move played out — a real, acknowledged risk of the aggressive-stop approach, not hypothetical.
+
 ## 7. Timeframes
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed on the 5-minute chart.
@@ -194,7 +208,7 @@ Key levels are marked on **closing prices**, not wicks/highs-lows.
 ## 9. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory (hinted at end of Video 3 but not actually covered before the call ended — do not assume a later video covers it just because of numbering)
 - The "10 trade rule" (confirmed to be prop-firm-challenge specific, still no precise definition)
-- "QMR key level" — term used across Videos 7, 8, and 12 without ever being defined; usage pattern suggests he uses it interchangeably with generic "key level" in examples where the specific type doesn't matter — treat as equivalent to "key level" unless a clearer definition surfaces
+- "QMR key level" — term used across Videos 7, 8, 12, and 13 without ever being defined; consistently used interchangeably with generic "key level" regardless of shape — treat as equivalent to "key level" unless a clearer definition surfaces
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
 - A likely "Key Levels 2" video may exist (Video 11 ends mid-topic promising continuation same day) — not currently in our set of 18, watch for it if more material surfaces
-- Remaining videos to process: 13-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
+- Remaining videos to process: 14-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
