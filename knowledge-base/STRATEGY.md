@@ -8,7 +8,7 @@ precise backtestable code.
 (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own
 terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 15 of 18+ videos processed (Video 1: orientation, Video 2: admin +
+Status: 16 of 18+ videos processed (Video 1: orientation, Video 2: admin +
 pair-scanning philosophy, Video 3: full basics-to-advanced structure
 foundation + consolidation/manipulation framework, Video 4: core
 structure/liquidity framework, Video 5: liquidity types/forms + sequential
@@ -25,10 +25,13 @@ stop-loss placement rules, Video 14: same decision tree restated as 3
 pattern-recognition entry types + explicit 70-80% win-rate quote + trade
 stacking concept, Video 15: single live Gold trade demonstrating all 3
 Video 14 patterns recurring fractally across 4H/1H/15min + "pick one
-entry system and stay with it" discipline principle). Course turned out
-to be 18 videos (not 17), and a supplementary set of study videos + a
-chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X)
-is also being incorporated.
+entry system and stay with it" discipline principle, Video 16: breakout
+vs. sweep+break-of-structure distinction + "storyline starts/ends on same
+timeframe's key level" exit rule + bias-flip confirmation state machine —
+significant new codeable mechanics). Course turned out to be 18 videos
+(not 17), and a supplementary set of study videos + a chart-examples PDF
+from a fellow student (Web3Bish0p / Defi Bishop on X) is also being
+incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -87,6 +90,47 @@ together. Three nested checks, each confirmed by scaling one timeframe down:
   brokers/feeds near key levels — our backtester needs one consistent
   historical OHLC source and shouldn't assume exact tick-for-tick match
   with his TradingView/Oanda feed at the margins.
+
+### "Breakout" vs. "Sweep + Break of Structure" — precise distinction
+(Video 16)
+Two visually distinct sub-patterns BOTH confirm timeframe-sync/directional
+order flow when scaling down from a higher-timeframe key-level reaction:
+- **Sweep + Break of Structure (BOS)**: the "textbook" pattern — price
+  sweeps a prior swing point (wick through), reverses, then breaks/closes
+  through a structural point, producing a visible lower-high-then-lower-low
+  (or mirror) sequence. Stated to be the LESS common of the two on higher
+  timeframes.
+- **Breakout**: the MORE common pattern actually seen — a more direct,
+  continuous push through the external range liquidity / prior extreme,
+  WITHOUT a prior sweep-and-reverse. The default expectation, not the
+  exception.
+Both are equally valid confirmation signals; a confirmation-detection
+function should accept EITHER shape, not require the stricter sweep+break
+pattern exclusively.
+
+**Cascade mapping rule**: when a higher timeframe shows a plain
+"breakout" (not sweep+break), the NEXT timeframe down typically resolves
+into a proper liquidity-sweep-and-break-of-structure. i.e. "breakout" one
+level up commonly maps to "sweep+break" one level down — useful as an
+expected-pattern lookup when scaling down for confirmation.
+
+### Bias-flip confirmation state machine (Video 16 — precise, codeable)
+A higher-timeframe bias should be considered FLIPPED (e.g. bearish ->
+bullish) only when ALL of the following hold, not on a single reaction
+alone:
+1. Price trades into the NEXT key level on the storyline's ORIGIN
+   timeframe (e.g. next weekly key level if the storyline was built from
+   weekly).
+2. Price rejects from it AND closes in the new (opposite) direction
+   (candle closure / R&C).
+3. **AND** the next lower timeframe (e.g. daily) ALSO fails to give any
+   further continuation confirmation (no breakout, no sweep+break) in the
+   ORIGINAL bias direction.
+If the higher timeframe closes the "wrong way" at condition 2 but the
+lower timeframe still confirms continuation in the OLD direction, the
+bias is NOT yet flipped — keep trading the original direction until the
+lower timeframe stops confirming it. Resolves a real ambiguity: a single
+higher-timeframe reaction does not by itself flip the bias.
 
 ### Cross-confirmed pipeline (from Web3Bish0p / Defi Bishop, independent
 source, same underlying mentor)
@@ -392,6 +436,34 @@ same trade — supports treating the pattern-detection logic as scale-
 invariant/fractal across timeframes rather than timeframe-specific.
 
 ## 6. Trade Management
+
+### "Storyline starts and ends on the SAME timeframe's key level" (Video
+16 — major exit-targeting rule)
+If a directional bias (storyline) originates from a reaction at a key
+level on a given timeframe, the storyline is expected to conclude
+(reverse) at ANOTHER key level on that SAME timeframe — not at the
+lower-timeframe key level the actual entry trigger came from. Example:
+bias built from a **daily** key level -> 4H breakout -> 1H sweep+break ->
+entry taken on 1H. The IDEAL exit target is the NEXT **daily** key level,
+not the 1H or 4H level. Applies recursively at every scale (a 4H-built
+storyline targets the next 4H key level; a weekly-built one targets the
+next weekly key level, etc.) — exit-target selection must key off the
+timeframe the ACTIVE bias originated from, not the entry-trigger
+timeframe.
+- **Explicit cautionary pattern**: taking profit/breakeven at a lower-
+  timeframe key level because price "looks like it's reacting there"
+  often means missing the real move that continues on to the actual
+  higher-timeframe target — "your entry was right but your exit was
+  wrong," stated as a common, specific mistake.
+- **Tiered take-profit refinement**: the standard IRL->ERL progression
+  (Section 3) still applies first at the ENTRY timeframe — e.g. if entry
+  came from a 4H setup, the first natural take-profit is that 4H
+  timeframe's own external range liquidity (price may retrace there
+  before continuing toward the ultimate higher-timeframe target). Exit
+  planning therefore has at least two tiers: a nearer partial target at
+  the entry-timeframe's ERL, and the ultimate target at the next key
+  level on the bias's origin timeframe.
+
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-
   butter target. Occasionally extends further (1:6 seen once).
 - Explicit lesson: take the 1:3 when it's there — don't hold out for more and
@@ -492,6 +564,6 @@ question, watch for clarification in later videos.
   for it if more material surfaces
 - Trade stacking rules (Video 14): does stacking apply to origin trades,
   or continuation setups only? Not addressed yet.
-- Remaining videos to process: 16-18 (course materials) plus the
+- Remaining videos to process: 17-18 (course materials) plus the
   Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages
   of the chart-examples PDF
