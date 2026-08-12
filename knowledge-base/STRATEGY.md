@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 6 of 18+ videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, likely the single most important video). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 8 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -44,6 +44,9 @@ This is how a trade thesis actually gets built — ties every other section toge
 - **Induced-move trap**: a genuine-looking counter-trend bounce can exist specifically to induce the wrong side into a bad position before price resumes the higher-timeframe direction — treat counter-trend reactions against a confirmed bias with suspicion.
 - **Data feed caveat**: candle closes can differ slightly between brokers/feeds near key levels — our backtester needs one consistent historical OHLC source and shouldn't assume exact tick-for-tick match with his TradingView/Oanda feed at the margins.
 
+### Cross-confirmed pipeline (from Web3Bish0p / Defi Bishop, independent source, same underlying mentor)
+A public diagram from a fellow student formalizes this exact process with clean labels worth reusing directly: **BIAS** (built from **M/W/D/4** = Monthly->Weekly->Daily->4H, then **"Immediate LTF"**) -> **CONFIRMATION**, labeled **"C.E" (Confirmation Entry)**. Bishop's material gives the most concrete C.E definition seen so far: once Daily+H4 bias align, drop to a 2-hour chart and wait for an **engulfing candle** as the actual entry trigger.
+
 ## 3. Liquidity Framework
 
 - **Internal Range Liquidity (IRL)**: minor liquidity resting inside a range (inducement points, small swing highs/lows).
@@ -56,8 +59,18 @@ This is how a trade thesis actually gets built — ties every other section toge
 - **Trendline liquidity**: a series of consecutive higher-lows or lower-highs after a structure break; use the *last point* on that sequence as the liquidity reference — no need to draw the actual trendline.
 - Multiple old highs/lows can stack as sequential pools, swept one after another in the direction of the move.
 
-### "Two structural points" confirmation rule
-Before trusting a directional/structural bias, price should take out **two structural points** (each also an internal range liquidity point) in the same direction. Countable, codeable confirmation threshold — not just one break.
+### "Structural point(s)" confirmation rule (refined)
+Before trusting a directional/structural bias, price should take out ONE OR TWO structural points (each also an internal range liquidity point) in the same direction — **not always exactly two**; sometimes a single break is sufficient. Treat two as the common/typical threshold, not an absolute rule.
+
+### Consolidation & Manipulation Framework (non-trending markets)
+When price is ranging rather than trending, its purpose is **engineering liquidity**: building buy-side liquidity above the range and sell-side liquidity below it. Two possible resolutions:
+
+**A. Manipulation + Displacement**: price sweeps ONE side of the range's liquidity, then gives an immediate, strong **displacement** move in the opposite direction, confirming the new trend. Asian session is the most common source of this consolidation (ties to the Asian-session setup below).
+
+**B. Break and Retest** (no manipulation): price breaks out directly with displacement (no prior sweep), then retraces to retest the SAME key level that has been respected multiple times before. **Quantified estimate**: ~80% probability of continuation in the breakout direction if that level has inducement liquidity nearby and overlaps an imbalance — a testable number for backtesting validation.
+
+### Order-block inducement mechanics ("your stop loss is my entry")
+Retail traders buying from an order block typically place stop-loss just below it — creating a predictable cluster of resting stops. Liquidity-aware entries target that exact cluster location since price is statistically drawn to sweep it. Practical implication: **inducement liquidity commonly forms just beyond order blocks/key levels**, precisely where retail stops cluster — a useful heuristic for identifying inducement zones in code.
 
 ### The Asian-Session Setup ("London setup using key levels")
 1. Mark the Asian session high/low for the day.
@@ -117,6 +130,11 @@ Requires patience; do not force it before inducement forms.
 - Key levels can also be a plain **"open close" level** (a candle's open or close price used as the reference) — interchangeable with V/A-shape killers; use whichever valid type is present, no fixed preference.
 - **Quality signal**: a key level with an imbalance overlapping it performs better than one without — confirmed directly, not just incidental.
 
+### Entry style spectrum: Aggressive vs. Conservative (both sanctioned — build/test both in the backtester)
+- **Aggressive**: enter directly once the key-level+imbalance setup is fully formed, without waiting for inducement/confirmation, using a wider stop (~10-11 pips) for breathing room. Accepts more drawdown/whipsaw risk to avoid missing moves that never give a clean confirmation.
+- **Conservative**: wait for a full confirmation entry (lower-timeframe trigger — e.g. Bishop's H2 engulfing candle) before entering. Fewer false starts, but risks missing moves that run without ever confirming.
+- Presented as legitimate personal-style choice, not one superior to the other — should be implemented and tested as two separate variants.
+
 ## 6. Trade Management
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-butter target. Occasionally extends further (1:6 seen once).
 - Explicit lesson: take the 1:3 when it's there — don't hold out for more and risk giving it back.
@@ -138,9 +156,9 @@ Requires patience; do not force it before inducement forms.
 - **News-event caveat** (from a real loss reviewed in Video 8): structural rules can get overridden short-term by major news releases (NFP specifically called out). Always confirm higher-timeframe trend context before entering, and treat news-day price action as elevated risk — the backtester should model/flag major news events rather than assume the rules hold unconditionally through them.
 
 ## 9. Open Questions / Expected in Later Videos
-- Premium & discount pricing theory
-- The "10 trade rule"
+- Premium & discount pricing theory (hinted at end of Video 3 but not actually covered before the call ended — do not assume a later video covers it just because of numbering)
+- The "10 trade rule" (confirmed to be prop-firm-challenge specific, still no precise definition)
 - Precise definition of "V shape" vs "A shape" killer
-- Full confirmation-entry drill-down process (4H -> 15m -> 5m mentioned but not fully demonstrated yet)
 - "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
-- Remaining videos to process: 2, 3, 5, 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and chart-examples PDF
+- "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
+- Remaining videos to process: 5, 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
