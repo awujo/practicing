@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 4 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle — the most precisely codeable video so far).
+Status: 5 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat).
 
 ---
 
@@ -38,7 +38,10 @@ Before trusting a directional/structural bias, price should take out **two struc
 4. Target: the opposite Asian extreme.
 5. Frequency: ~1-3x/week, called out specifically for GBPUSD.
 
-**Exact session definition** (confirmed from his indicator settings): Custom TradingView indicator "AsiaSessionHighLowMidLines", session window **17:00-00:15**, chart timezone **UTC-4 (New York)**. Must confirm DST handling when building the backtester rather than hardcoding a UTC offset.
+**Exact session definition** (confirmed from his indicator settings): Custom TradingView indicator "AsiaSessionHighLowMidLines", session window **17:00-00:15**, chart timezone **UTC-4 (New York)**. Must confirm DST handling when building the backtester rather than hardcoding a UTC offset. Cross-confirmed via a second, independent definition: **Asian session = 2 four-hour candles** — consistent with the clock-time window (~7h15m ≈ two 4H candles). The 4H candle that completes the Asian session can itself serve as inducement if price approaches but doesn't tap it before London continues the move.
+
+### Daily/weekly "engulf but don't tap" inducement pattern
+When a daily/weekly candle engulfs the prior candle's range while trading close to a previous key level but does NOT touch/tap that key level, the untouched-but-approached candle itself becomes inducement/internal range liquidity. Expected sequence: take out that candle's high/low -> tap the original key level -> continue toward the next liquidity target.
 
 ## 3. Defined Ranges & Range Cycle
 
@@ -83,6 +86,8 @@ Requires patience; do not force it before inducement forms.
 ### Key-level shapes (terminology, not yet fully defined)
 - "V shape killer" — V-shaped reaction at the level
 - "A shape killer" — inverse reaction shape (needs more examples from later videos to nail down exact criteria)
+- Key levels can also be a plain **"open close" level** (a candle's open or close price used as the reference) — interchangeable with V/A-shape killers; use whichever valid type is present, no fixed preference.
+- **Quality signal**: a key level with an imbalance overlapping it performs better than one without — confirmed directly, not just incidental.
 
 ## 5. Trade Management
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-butter target. Occasionally extends further (1:6 seen once).
@@ -102,6 +107,7 @@ Requires patience; do not force it before inducement forms.
 - Cancels pending limit orders that would only trigger outside London/NY for majors pairs.
 - Avoid holding into very late hours — spread widens sharply around session rollover (~10pm reference).
 - Data feed / broker reference: Oanda. Charting: TradingView (uses Replay mode for backtesting review).
+- **News-event caveat** (from a real loss reviewed in Video 8): structural rules can get overridden short-term by major news releases (NFP specifically called out). Always confirm higher-timeframe trend context before entering, and treat news-day price action as elevated risk — the backtester should model/flag major news events rather than assume the rules hold unconditionally through them.
 
 ## 8. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory
@@ -109,5 +115,4 @@ Requires patience; do not force it before inducement forms.
 - Full storyline-building / bias methodology (Video 9 likely covers this — title is "Bias/Storyline")
 - Precise definition of "V shape" vs "A shape" killer
 - Full confirmation-entry drill-down process (4H -> 15m -> 5m mentioned but not fully demonstrated yet)
-- "QMR key level" — term used in Video 7 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
-- Video 8 ("Part 2 - Range") likely extends range theory further beyond what Video 7 covered
+- "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
