@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 2 of 12 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework).
+Status: 3 of 12 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup).
 
 ---
 
@@ -20,7 +20,25 @@ Every setup = identifying WHERE price needs to attack liquidity, WHERE the imbal
 
 - **Internal Range Liquidity (IRL)**: minor liquidity resting inside a range (inducement points, small swing highs/lows).
 - **External Range Liquidity (ERL)**: liquidity at the range extremes (major swing high/low).
-- Expected cycle: sweep IRL -> expand to sweep ERL -> reversal -> new range origin. Repeats.
+- Expected cycle: sweep IRL -> expand to sweep ERL -> reversal -> new range origin. Repeats. Applies across ALL timeframes, not just intraday — same cycle shows up in daily/weekly swing highs and lows.
+
+### Forms of liquidity (concrete taxonomy)
+- Previous daily high / low, previous weekly high / low
+- **Asian session high / low** (see dedicated Asian-session setup below)
+- **Trendline liquidity**: a series of consecutive higher-lows or lower-highs after a structure break; use the *last point* on that sequence as the liquidity reference — no need to draw the actual trendline.
+- Multiple old highs/lows can stack as sequential pools, swept one after another in the direction of the move.
+
+### "Two structural points" confirmation rule
+Before trusting a directional/structural bias, price should take out **two structural points** (each also an internal range liquidity point) in the same direction. Countable, codeable confirmation threshold — not just one break.
+
+### The Asian-Session Setup ("London setup using key levels")
+1. Mark the Asian session high/low for the day.
+2. Price sweeps the Asian low (or high) -> acts as internal range liquidity.
+3. Price reacts at a key level overlapping an imbalance near that sweep.
+4. Target: the opposite Asian extreme.
+5. Frequency: ~1-3x/week, called out specifically for GBPUSD.
+
+**Exact session definition** (confirmed from his indicator settings): Custom TradingView indicator "AsiaSessionHighLowMidLines", session window **17:00-00:15**, chart timezone **UTC-4 (New York)**. Must confirm DST handling when building the backtester rather than hardcoding a UTC offset.
 
 ## 3. Entry Setups (two variants, both derived from the same two conditions)
 
