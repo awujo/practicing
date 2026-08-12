@@ -4,7 +4,7 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 10 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+Status: 11 of 18+ videos processed (Video 1: orientation, Video 2: admin + pair-scanning philosophy, Video 3: full basics-to-advanced structure foundation + consolidation/manipulation framework, Video 4: core structure/liquidity framework, Video 5: liquidity types/forms + sequential liquidity rule, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, Video 10: extensive live application of the storyline process across weekly/monthly timeframes, Video 11: precise key-level definitions — RESOLVED the V-shape/A-shape/open-close question). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
@@ -133,11 +133,19 @@ Used when the origin move is missed:
 3. That level (overlapping an imbalance) + nearby inducement = entry trigger
 Requires patience; do not force it before inducement forms.
 
-### Key-level shapes (terminology, not yet fully defined)
-- "V shape killer" — V-shaped reaction at the level
-- "A shape killer" — inverse reaction shape (needs more examples from later videos to nail down exact criteria)
-- Key levels can also be a plain **"open close" level** (a candle's open or close price used as the reference) — interchangeable with V/A-shape killers; use whichever valid type is present, no fixed preference.
+### Key-level shapes (RESOLVED — precise definitions from Video 11)
+Key levels are marked on **closing prices**, not wicks/highs-lows.
+1. **A-shape**: a peak/apex-shaped reversal (price rises into it then reverses down, resembling the letter "A"). Default use: **selling**.
+2. **V-shape**: a trough-shaped reversal (price falls into it then reverses up, resembling "V"). Default use: **buying**.
+3. **Open-close**: two consecutive same-direction candles whose open/close prices overlap. Two down candles -> sell continuation; two up candles -> buy continuation. An engulfing candle consuming one/both of these is functionally equivalent to a body-close break of a V/A-shape level.
+
+**Universal flip rule**: ANY key-level type flips its default bias if price **disrespects** it — a body close, with an impulsive move, beyond the level in the opposite direction. Once flipped, expect the opposite reaction at that same level going forward.
+
+**Two-target strategy after disrespect**: (1) SAME level, if inducement forms near it first before price taps back and continues — high probability; or (2) "the extreme" — a further level (e.g. the original shape's far point) if no inducement forms first — lower probability fallback.
+
+- Key levels can also be a plain "open close" level, interchangeable with V/A-shape killers; use whichever valid type is present, no fixed preference.
 - **Quality signal**: a key level with an imbalance overlapping it performs better than one without — confirmed directly, not just incidental.
+- **Quantified reliability** (Video 11): the pattern "sweep previous-period high/low -> engulf -> next candle serves as inducement close to the resulting key level -> tap -> continue" holds **70-80% of the time** on 4H and Daily timeframes specifically — a genuinely testable number for backtesting validation, not vague confidence.
 
 ### Entry style spectrum: Aggressive vs. Conservative (both sanctioned — build/test both in the backtester)
 - **Aggressive**: enter directly once the key-level+imbalance setup is fully formed, without waiting for inducement/confirmation, using a wider stop (~10-11 pips) for breathing room. Accepts more drawdown/whipsaw risk to avoid missing moves that never give a clean confirmation.
@@ -170,7 +178,7 @@ Requires patience; do not force it before inducement forms.
 ## 9. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory (hinted at end of Video 3 but not actually covered before the call ended — do not assume a later video covers it just because of numbering)
 - The "10 trade rule" (confirmed to be prop-firm-challenge specific, still no precise definition)
-- Precise definition of "V shape" vs "A shape" killer
 - "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
 - "W Questions" (Bishop material) — unclear if Weekly-specific questions or a Who/What/When/Where/Why checklist
-- Remaining videos to process: 11-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
+- A likely "Key Levels 2" video may exist (Video 11 ends mid-topic promising continuation same day) — not currently in our set of 18, watch for it if more material surfaces
+- Remaining videos to process: 12-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages of the chart-examples PDF
