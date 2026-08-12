@@ -4,7 +4,9 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 3 of 12 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup).
+Status: 3 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup).
+
+**Supplementary source**: additional trade examples/commentary being added from a fellow student's public analysis (Web3Bish0p on X) — logged in `knowledge-base/supplementary/` as they come in.
 
 ---
 
