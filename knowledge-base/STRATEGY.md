@@ -8,7 +8,7 @@ precise backtestable code.
 (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own
 terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 17 of 18+ videos processed (Video 1: orientation, Video 2: admin +
+Status: CORE 18-VIDEO COURSE COMPLETE (Video 1: orientation, Video 2: admin +
 pair-scanning philosophy, Video 3: full basics-to-advanced structure
 foundation + consolidation/manipulation framework, Video 4: core
 structure/liquidity framework, Video 5: liquidity types/forms + sequential
@@ -32,9 +32,12 @@ significant new codeable mechanics, Video 17: completes the bias-flip
 state machine — open-close breaks/engulfing can NEVER validate a
 storyline change, only breakout/sweep+break can — plus a strong new lead
 resolving the "QMR key level" definition as a multiply-tested-then-
-disrespected level). Course turned out to be 18 videos (not 17), and a
+disrespected level, Video 18 [FINAL]: live Gold study introducing the
+"single candle formation" dual-IRL/ERL-role concept + refined break-of-
+structure-vs-breakout semantics (initiation vs. continuation) + course-
+closing summary). All 18 core mentor videos are now processed. A
 supplementary set of study videos + a chart-examples PDF from a fellow
-student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+student (Web3Bish0p / Defi Bishop on X) is being incorporated next.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -158,6 +161,24 @@ Thursday/Friday resumes and continues the move; the week still counts as
 bearish overall as long as no actual bias-flip (per the state machine
 above) has triggered.
 
+### Break of Structure vs. Breakout — refined semantic distinction
+(Video 18)
+Sharpens Video 16's treatment (which presented both as alternative visual
+CONFIRMATION shapes for the same conclusion) with a precise meaning for
+each term:
+- **Break of structure**: price SHIFTING its order-flow direction (e.g.
+  bearish -> bullish) — the INITIATION/reversal signal, marking the
+  ORIGIN of a new storyline.
+- **Breakout** ("most recent breakout"): price CONTINUING in a direction
+  that has ALREADY been established — a CONTINUATION signal, not a new
+  reversal.
+Not contradictory with Video 16 — a storyline typically begins with a
+break of structure (directional shift), and subsequent confirmations in
+that same, now-established direction are properly "breakouts"
+(continuation). Implementation implication: tag confirmation events as
+`BOS` (reversal/origin, Section 5A) vs. `BREAKOUT` (continuation, Section
+5B) rather than treating them as fully interchangeable.
+
 ### Cross-confirmed pipeline (from Web3Bish0p / Defi Bishop, independent
 source, same underlying mentor)
 A public diagram from a fellow student formalizes this exact process with
@@ -258,6 +279,23 @@ four-hour candles** — consistent with the clock-time window (~7h15m ≈ two
 4H candles). The 4H candle that completes the Asian session can itself
 serve as inducement if price approaches but doesn't tap it before London
 continues the move.
+
+### "Single Candle Formation" (SCF) — one candle, dual liquidity role
+(Video 18, new general-purpose concept)
+A single candle's high and low can EACH serve a distinct liquidity role
+simultaneously, depending on the prevailing structural formation:
+- In a **bullish** structural formation: that candle's LOW = internal
+  range liquidity (IRL), its HIGH = external range liquidity (ERL).
+- In a **bearish** structural formation: reversed — HIGH = IRL, LOW = ERL.
+Applies at EVERY timeframe (monthly through 1H) — the identical
+single-candle dual-role concept, just applied to that timeframe's own
+candles. Formalizes what was only loosely implied in earlier videos
+(e.g. Video 8's "engulf but don't tap" inducement candle) into a general,
+reusable, timeframe-agnostic building block: **any single candle can
+function as a complete micro-range**, supplying both its own IRL and ERL
+reference points depending on direction. Directly codeable: for any
+candle in the direction-confirmed bias, tag `low`/`high` as IRL/ERL (or
+vice versa) based on the prevailing bullish/bearish classification.
 
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading
@@ -450,6 +488,21 @@ level), rank them by **prior test history**, not just proximity/shape:
   (disrespected-level priority refinement above) — higher test count
   before disrespect = higher priority target.
 
+### Real-time uncertainty fallback: "default to the extreme" (Video 18,
+minor tension with the above — flagged, not a contradiction)
+When multiple valid disrespected key levels compete (a closer one and a
+more distant "extreme" one) and it's genuinely unclear which price will
+return to, the practical live-trading fallback given is: **default to
+the more distant extreme level if in doubt** — offered as real-time
+guidance for genuine uncertainty, not a statistical override of the
+~70-80% closer/tested-level preferences above (Videos 13/17). Treat as a
+secondary heuristic for when the primary ranking factors don't resolve
+the ambiguity, not a competing primary rule. Underlying principle
+reaffirmed: the real target-selection logic is "wherever price is likely
+to form fresh IRL close to a VALID key level," not literally "always
+return to the exact breakout candle" — a student's assumption to that
+effect was directly corrected.
+
 ### Entry style spectrum: Aggressive vs. Conservative (both sanctioned —
 build/test both in the backtester)
 - **Aggressive**: enter directly once the key-level+imbalance setup is
@@ -578,7 +631,10 @@ question, watch for clarification in later videos.
 - Avoid holding into very late hours — spread widens sharply around session
   rollover (~10pm reference).
 - Data feed / broker reference: Oanda. Charting: TradingView (uses Replay
-  mode for backtesting review).
+  mode for backtesting review). **Gold-specific note (Video 18)**: Saxo
+  called out specifically as having accurate Gold (XAUUSD) charts —
+  second broker/feed reference scoped to Gold, worth considering for the
+  backtester's data source when testing gold-specific setups.
 - **News-event caveat** (from a real loss reviewed in Video 8): structural
   rules can get overridden short-term by major news releases (NFP
   specifically called out). Always confirm higher-timeframe trend context
@@ -615,6 +671,13 @@ question, watch for clarification in later videos.
   for it if more material surfaces
 - Trade stacking rules (Video 14): does stacking apply to origin trades,
   or continuation setups only? Not addressed yet.
-- Remaining videos to process: 18 (course materials) plus the
-  Web3Bish0p/Defi Bishop supplementary study videos and remaining 54 pages
-  of the chart-examples PDF
+- Minor residual tension: Video 18's "default to the extreme when
+  uncertain" real-time fallback vs. Videos 13/17's statistical preference
+  for closer/tested levels — treat the former as a fallback branch, not
+  a competing primary rule (see Section 5).
+- **All 18 core mentor-course videos are now processed.** Remaining
+  source material: the 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (audio already extracted, transcription/notes pending) and the
+  remaining 54 of 60 pages of Bishop's chart-examples PDF. After that,
+  the knowledge base moves to the backtesting and bot-implementation
+  phase.
