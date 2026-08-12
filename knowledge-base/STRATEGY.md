@@ -4,7 +4,9 @@ Built incrementally from the mentor's video course. Updated after each video is 
 
 **Methodology family**: Smart Money Concepts / ICT-style price action (market structure, liquidity, imbalance/FVG, sessions) with the mentor's own terminology layered on top ("key level", "killer" shapes, "storyline").
 
-Status: 5 of 17 videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat).
+Status: 6 of 18+ videos processed (Video 1: orientation only, Video 4: core structure/liquidity framework, Video 6: liquidity forms + Asian session setup, Video 7: defined ranges + range cycle, Video 8: range examples + Asian session 4H-candle definition + news-event caveat, Video 9: the top-down storyline/bias process — ties everything together, likely the single most important video). Course turned out to be 18 videos (not 17), and a supplementary set of study videos + a chart-examples PDF from a fellow student (Web3Bish0p / Defi Bishop on X) is also being incorporated.
+
+**The framework's own name**: he calls it **"SLK" = Structure, Liquidity, Key level**.
 
 ---
 
@@ -16,7 +18,33 @@ Price is always doing exactly two things:
 
 Every setup = identifying WHERE price needs to attack liquidity, WHERE the imbalance needing rebalance is, and at WHAT specific price level (inside that imbalance) price is expected to react.
 
-## 2. Liquidity Framework
+## 2. The Top-Down Storyline Process (THE master bias-building algorithm)
+
+This is how a trade thesis actually gets built — ties every other section together. Three nested checks, each confirmed by scaling one timeframe down:
+
+### Monthly (once/month)
+1. Check how the previous monthly candle closed relative to a monthly key level -> sets bias for the new month.
+2. Confirm by scaling down to Weekly: look for a weekly sweep+break OR a weekly engulfing candle in the bias direction.
+3. Scale down again to Daily to find actual trades.
+4. Keep trading that direction until the monthly-implied move is exhausted.
+
+### Weekly (every week, e.g. Sunday)
+1. Check how the previous weekly candle closed relative to a weekly key level -> sets a directional lean, but NOT sufficient alone.
+2. Confirm on the Daily: sweep+break, OR an engulfing candle, OR price returning to tap a previously-disrespected key level.
+3. Until daily confirms, treat the weekly-implied move as possible retracement only. Journal what each timeframe shows and why.
+
+### Daily routine (every day, Daily vs 4H)
+1. Compare Daily vs 4H.
+2. **Priority rule: Daily beats 4H.** If daily shows one direction but 4H reacts from a key level suggesting the opposite, the 4H move is retracement, not reversal.
+3. Scale down further (1H -> 30min) for entries, always in the higher timeframe's direction.
+
+### Refinements this process adds to earlier rules
+- Candle-close discipline (wick vs. close, Section 4) matters **even more** on higher timeframes (weekly/monthly) than lower ones.
+- Key levels are dual-purpose: usable as entries AND as the nearest stop-loss/invalidation reference point, not just entry triggers.
+- **Induced-move trap**: a genuine-looking counter-trend bounce can exist specifically to induce the wrong side into a bad position before price resumes the higher-timeframe direction — treat counter-trend reactions against a confirmed bias with suspicion.
+- **Data feed caveat**: candle closes can differ slightly between brokers/feeds near key levels — our backtester needs one consistent historical OHLC source and shouldn't assume exact tick-for-tick match with his TradingView/Oanda feed at the margins.
+
+## 3. Liquidity Framework
 
 - **Internal Range Liquidity (IRL)**: minor liquidity resting inside a range (inducement points, small swing highs/lows).
 - **External Range Liquidity (ERL)**: liquidity at the range extremes (major swing high/low).
@@ -43,7 +71,7 @@ Before trusting a directional/structural bias, price should take out **two struc
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading close to a previous key level but does NOT touch/tap that key level, the untouched-but-approached candle itself becomes inducement/internal range liquidity. Expected sequence: take out that candle's high/low -> tap the original key level -> continue toward the next liquidity target.
 
-## 3. Defined Ranges & Range Cycle
+## 4. Defined Ranges & Range Cycle
 
 A range/swing point is only valid once BOTH conditions are met:
 1. **Sweep of liquidity** (a wick through a prior high/low)
@@ -71,7 +99,7 @@ The single most precise, directly-codeable rule extracted so far:
 ### Alternate pattern: "engineered internal range liquidity"
 Sometimes after a strong low forms, price fails to cleanly break either side (contracts instead), then comes back to sweep (not necessarily close through) the strong-low area before continuing in the original direction. Same wick-vs-close distinction applies to whether the external range liquidity is still "pending" in this pattern.
 
-## 4. Entry Setups (two variants, both derived from the same two conditions)
+## 5. Entry Setups (two variants, both derived from the same two conditions)
 
 ### A. "Origin of the move" (highest quality, hardest to catch)
 Liquidity sweep + immediate break of structure (BOS) confirms order flow. Entry at a "key level" overlapping inside a fair value gap, right where the order flow was confirmed.
@@ -89,17 +117,17 @@ Requires patience; do not force it before inducement forms.
 - Key levels can also be a plain **"open close" level** (a candle's open or close price used as the reference) — interchangeable with V/A-shape killers; use whichever valid type is present, no fixed preference.
 - **Quality signal**: a key level with an imbalance overlapping it performs better than one without — confirmed directly, not just incidental.
 
-## 5. Trade Management
+## 6. Trade Management
 - Primary target: **1:3 risk-reward** — stated as the repeatable bread-and-butter target. Occasionally extends further (1:6 seen once).
 - Explicit lesson: take the 1:3 when it's there — don't hold out for more and risk giving it back.
 - Stop-loss: structure-derived (placed relative to the imbalance/key level), not a fixed pip value — one example used ~10 pips, not a universal rule.
 
-## 6. Timeframes
+## 7. Timeframes
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed on the 5-minute chart.
 - Uses both candlestick AND line charts — line chart specifically preferred for spotting clean liquidity sweeps / BOS (candlestick wicks can obscure it).
 
-## 7. Session & Pair Rules (concrete, backtestable)
+## 8. Session & Pair Rules (concrete, backtestable)
 - Day trader — does not swing trades overnight as a rule.
 - Avoid GBPUSD / EURUSD during Asian session (low "liquidity injection").
 - Asian-session-appropriate pairs: AUDUSD, NZD pairs, USDCHF, GBPJPY, EURJPY.
@@ -109,10 +137,10 @@ Requires patience; do not force it before inducement forms.
 - Data feed / broker reference: Oanda. Charting: TradingView (uses Replay mode for backtesting review).
 - **News-event caveat** (from a real loss reviewed in Video 8): structural rules can get overridden short-term by major news releases (NFP specifically called out). Always confirm higher-timeframe trend context before entering, and treat news-day price action as elevated risk — the backtester should model/flag major news events rather than assume the rules hold unconditionally through them.
 
-## 8. Open Questions / Expected in Later Videos
+## 9. Open Questions / Expected in Later Videos
 - Premium & discount pricing theory
 - The "10 trade rule"
-- Full storyline-building / bias methodology (Video 9 likely covers this — title is "Bias/Storyline")
 - Precise definition of "V shape" vs "A shape" killer
 - Full confirmation-entry drill-down process (4H -> 15m -> 5m mentioned but not fully demonstrated yet)
 - "QMR key level" — term used in Videos 7 and 8 without definition, unclear if it's a specific pattern name (possibly related to "Quasimodo" reversal pattern from broader ICT/SMC vocabulary, but not confirmed — do not assume)
+- Remaining videos to process: 2, 3, 5, 10-18 (course materials) plus the Web3Bish0p/Defi Bishop supplementary study videos and chart-examples PDF
