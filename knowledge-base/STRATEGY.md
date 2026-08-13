@@ -316,7 +316,10 @@ Bishop uses the identical concept under the term "single candle
 liquidity" when breaking down his own real trades, arrived at
 independently as a different student of the same mentor — strong
 evidence this is a stable, real part of the shared framework rather than
-an idiosyncratic one-off explanation in Video 18.
+an idiosyncratic one-off explanation in Video 18. Reconfirmed a 3rd time
+(daily-routine breakdown video) — used constantly, and paired with
+Bishop's own "H4 reject H4" shorthand for a 4H candle rejecting from a
+4H key level (mirroring the mentor's "daily reject daily" terminology).
 
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading
@@ -611,6 +614,11 @@ timeframe.
 - Explicit real-trade admission: tight stops (~5 pips) have genuinely
   almost gotten stopped out before the correct move played out — a real,
   acknowledged risk of the aggressive-stop approach, not hypothetical.
+- **Cross-validated (Bishop supplementary)**: a real USDJPY near-miss
+  showed the same lesson directly — a stop placed too tight/close to the
+  literal entry point would have been "sniped" before the real move;
+  placing it slightly further out (behind the true invalidation point)
+  would have survived.
 
 ### Trade stacking (Video 14, new concept)
 Once a continuation trade is open, additional qualifying setups on a LOWER
@@ -649,6 +657,13 @@ should use conservative, nearby targets, not full-structure ones.
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed
   on the 5-minute chart.
+- **Confirmation-entry timeframe is genuinely flexible (Bishop
+  supplementary)**: real trades used confirmation entries variously off a
+  30-minute engulfing, a 1-hour breakout, a 2-hour breakout, or a 3-hour
+  breakout — whichever lower timeframe presented a clean signal first,
+  not one fixed confirmation TF. Backtester implication: scan a small set
+  of candidate lower timeframes (e.g. 30min/1H/2H/3H) for the
+  confirmation trigger rather than assuming a single canonical one.
 - Uses both candlestick AND line charts — line chart specifically preferred
   for spotting clean liquidity sweeps / BOS (candlestick wicks can obscure
   it).
@@ -660,6 +675,24 @@ should use conservative, nearby targets, not full-structure ones.
   real examples of a bias holding for 2-3 months.
 
 ## 8. Session & Pair Rules (concrete, backtestable)
+
+### Multi-pair scanning workflow (Bishop supplementary, operational)
+Explicit trade-off disclosure for tracking many pairs simultaneously:
+more setups/opportunities, but (1) higher AGGREGATE risk exposure across
+concurrently-monitored/open positions than trading fewer pairs, (2) real
+risk of missing/forgetting flagged setups due to volume, (3) genuinely
+mentally taxing to analyze many pairs consistently. Workflow used: a
+personal **checklist** (explicit per-pair criteria) plus a **flagging
+system** — each pair moves through informal states (unflagged ->
+"flagged" when partial criteria are met, e.g. daily confirms bias but 4H
+hasn't yet -> confirmed setup -> entry taken, or flagged-but-never-
+triggered). Cadence: full scan of all tracked pairs each morning
+(~15-30 min), periodic re-checks of flagged pairs through the day.
+**Backtester/bot implication**: maps onto a per-pair state-machine
+watchlist architecture — track each pair's current cascade state (bias
+direction, which timeframes have confirmed) rather than a purely
+reactive per-candle scan.
+
 - Day trader — does not swing trades overnight as a rule.
 - Avoid GBPUSD / EURUSD during Asian session (low "liquidity injection").
 - Asian-session-appropriate pairs: AUDUSD, NZD pairs, USDCHF, GBPJPY, EURJPY.
@@ -715,10 +748,12 @@ should use conservative, nearby targets, not full-structure ones.
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
 - **All 18 core mentor-course videos are now processed.** Remaining
-  source material: 4 of 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (2 of 6 processed — "Bias & Entries" and "Building Bias Part 2 -
-  Case Study" — both strongly cross-validated the core framework, no
-  contradictions found, one valuable risk-management refinement added to
-  Section 6) and the remaining 54 of 60 pages of Bishop's chart-examples
+  source material: 3 of 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (3 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
+  Case Study," and "Daily Routine & Trade Breakdown" — all strongly
+  cross-validated the core framework, no contradictions found, added a
+  risk-management refinement to Section 6, a multi-pair scanning
+  workflow to Section 8, and a flexible-confirmation-timeframe note to
+  Section 7) and the remaining 54 of 60 pages of Bishop's chart-examples
   PDF. After that, the knowledge base moves to the backtesting and
   bot-implementation phase.
