@@ -1,9 +1,12 @@
-# Backtest data pipeline
+# Backtest
 
-This is the data layer only -- it fetches and locally caches historical
-OHLCV candles so the actual strategy/backtest engine (not built yet) has
-something to run against. See `../knowledge-base/STRATEGY.md` for the
-ruleset this will eventually test.
+Two parts: a data pipeline (fetches and caches historical OHLCV candles)
+and an engine (implements STRATEGY.md's ruleset against that data). See
+`../knowledge-base/STRATEGY.md` for the ruleset itself.
+
+Live execution is out of scope here -- it'll eventually run separately
+against MT5 (the actual trading platform), once the ruleset extracted
+here has been validated on historical data.
 
 ## Why Oanda
 
@@ -63,9 +66,32 @@ community. There's no fetch-side fix for this -- it'll need to be
 resampled from the cached M15 data during backtest data prep. Not handled
 here yet.
 
-## Not built yet
+## Engine
 
-The actual backtest engine: candle-close structure-break detection,
-key-level/liquidity-pool identification, the bias cascade and bias-flip
-state machine, entry/exit logic, position sizing/stacking. This pipeline
-only gets the raw price data in place first.
+`backtest/engine/` implements STRATEGY.md's rules against cached candles,
+built in phases so each is testable before the next depends on it:
+
+- [x] **Phase 1 -- structure & liquidity primitives** (`structure.py`,
+      `liquidity.py`, `candles.py`): the CRITICAL wick-sweep-vs-body-close-
+      break rule (Section 4), the sweep+break state machine that produces
+      strong high/low, SCF single-candle IRL/ERL tagging generalized to
+      multi-candle structural liquidity (Section 3), and the sequential
+      per-category liquidity target flip (daily/weekly/monthly/Asian).
+      Covered by `engine/tests/` (synthetic candle sequences, run with
+      `python -m pytest backtest/engine/tests/`).
+- [ ] Phase 2 -- key-level detection (A/V-shape, open-close, QMR) + the
+      4-factor ranking system (Section 5)
+- [ ] Phase 3 -- bias cascade + bias-flip state machine (Section 2)
+- [ ] Phase 4 -- entry triggers + trade management/stacking (Sections 5-6)
+- [ ] Phase 5 -- full backtest runner + performance metrics
+
+One deliberate design choice worth flagging: STRATEGY.md never gives a
+precise algorithm for identifying "a prior swing point" ("look to the
+left" is qualitative). Phase 1 uses a standard n-bar fractal (local
+extreme over n bars each side) with `n` exposed as a parameter, so swing
+sensitivity is a backtest-tunable input rather than something silently
+hardcoded as if it were part of the taught rule.
+
+Candle processing is a plain forward loop over a `list[Candle]`, not
+vectorized pandas -- so the same detection code can later replay live,
+just-closed MT5 bars one at a time instead of only working in batch mode.
