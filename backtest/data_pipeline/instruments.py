@@ -20,10 +20,9 @@ Granularity mapping (STRATEGY.md timeframe -> dukascopy_python INTERVAL_*):
     1H -> INTERVAL_HOUR_1           30min -> INTERVAL_MIN_30
     15min -> INTERVAL_MIN_15        5min -> INTERVAL_MIN_5
 
-NOTE: Dukascopy has no native 2H/3H granularity (only 1H and 4H), on top
-of the already-flagged M45 gap (from the Bishop PDF review). Same
-resolution as M45: resample from the cached H1 data during backtest data
-prep. Not handled here yet -- flagging so it isn't forgotten.
+NOTE: Dukascopy has no native 2H/3H/45min granularity. Resolved via local
+resampling, not fetched directly -- see resample.py and
+derive_granularities.py, run after H1/M15 are cached.
 """
 
 # Granularities pulled for every instrument by default -- everything

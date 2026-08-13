@@ -92,13 +92,34 @@ candle only (the still-forming current candle is never cached). Not
 committed to git -- it's regenerable from the fetchers, and would balloon
 the repo size across dozens of instrument/granularity pairs.
 
-## Known gaps
+## Deriving H2 / H3 / M45
 
-Dukascopy has no native 45-minute or 2H/3H granularity -- only 1H and 4H
-between M30 and Daily. The Bishop PDF review found both M45 and H2/H3
-used as confirmation timeframes by traders in the community. There's no
-fetch-side fix for this -- they'll need to be resampled from the cached
-M15/H1 data during backtest data prep. Not handled here yet.
+Dukascopy has no native 2H, 3H, or 45-minute granularity -- only 1H and
+4H between M30 and Daily. The Bishop PDF review found all three used as
+confirmation timeframes by traders in the community, so `resample.py`
+derives them locally from the cached H1 (-> H2, H3) and M15 (-> M45)
+data via pandas resampling. No network call -- run it after
+`fetch_dukascopy.py` has populated H1/M15 for the instrument(s) you need:
+
+```bash
+python -m backtest.data_pipeline.derive_granularities --all
+python -m backtest.data_pipeline.derive_granularities --instrument EURUSD --granularity H2
+```
+
+Writes into the same cache format (`backtest/data/dukascopy/{symbol}/H2.csv`
+etc.), so `backtest/engine/` doesn't need to know or care whether a
+granularity was fetched directly or derived.
+
+One assumption worth knowing about: bins are anchored to UTC midnight
+(H2 = 00:00-02:00, 02:00-04:00, ...; M45 tiles exactly since 1440/45=32).
+STRATEGY.md doesn't specify what anchor MT5/TradingView actually use for
+these non-standard intervals, so if backtest results on H2/H3/M45 ever
+look off from what you see live in MT5, a differently-anchored broker
+candle is the first thing to check -- consistent with the "candle closes
+can differ slightly between feeds" caveat already in STRATEGY.md
+Section 2. Covered by `backtest/data_pipeline/tests/test_resample.py`
+(OHLCV aggregation correctness, exact M45 tiling, and that gaps produce
+no candle rather than a synthetic flat one).
 
 ## Engine
 
