@@ -7,7 +7,7 @@ candles) -- this module just adapts its output into our cache schema
 (time, open, high, low, close, volume) and instrument/granularity naming.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import dukascopy_python
 from dukascopy_python import instruments as dukascopy_instruments
@@ -23,6 +23,17 @@ DEFAULT_OFFER_SIDE = dukascopy_python.OFFER_SIDE_BID
 # majors go back to the early 2000s; CFDs/crypto much less). No harm in
 # asking for more than exists -- the package just returns what's there.
 FULL_HISTORY_START = datetime(2003, 1, 1, tzinfo=timezone.utc)
+
+# M30/M15/M5 default to a shorter lookback than the higher timeframes.
+# STRATEGY.md's bias cascade (Monthly/Weekly/Daily/4H/1H) genuinely wants
+# decades of history, but confirmation-entry timeframes don't need 20+
+# years to build a meaningful backtest sample, and pulling that much
+# minute-level data for 26 instruments on a first run would be slow and
+# produce huge cache files for no real benefit. Only applies when there's
+# no cache yet (first run) -- incremental runs after that just pick up
+# from the last cached candle regardless of granularity.
+SHORT_LOOKBACK_GRANULARITIES = {"M30", "M15", "M5"}
+SHORT_LOOKBACK = timedelta(days=3 * 365)
 
 
 def fetch_candles(internal_symbol: str, granularity: str, since: str | None = None,
@@ -45,10 +56,13 @@ def fetch_candles(internal_symbol: str, granularity: str, since: str | None = No
     instrument = getattr(dukascopy_instruments, DUKASCOPY_INSTRUMENTS[internal_symbol])
     interval = getattr(dukascopy_python, DUKASCOPY_GRANULARITY_TO_INTERVAL[granularity])
 
-    start = (
-        datetime.fromisoformat(since.replace("Z", "+00:00")) if since else FULL_HISTORY_START
-    )
     end = until or datetime.now(timezone.utc)
+    if since:
+        start = datetime.fromisoformat(since.replace("Z", "+00:00"))
+    elif granularity in SHORT_LOOKBACK_GRANULARITIES:
+        start = end - SHORT_LOOKBACK
+    else:
+        start = FULL_HISTORY_START
 
     df = dukascopy_python.fetch(
         instrument=instrument,

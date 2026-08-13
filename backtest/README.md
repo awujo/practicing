@@ -46,6 +46,11 @@ No credentials needed -- Dukascopy requires none.
 
 ## Fetching data
 
+Run these from the **repo root** (the folder containing `backtest/`,
+`bot/`, `knowledge-base/`), not from inside `backtest/data_pipeline` --
+`python -m` needs the `backtest` package to be importable from your
+current directory:
+
 ```bash
 # everything: all instruments, all granularities
 python -m backtest.data_pipeline.fetch_dukascopy --all
@@ -62,12 +67,22 @@ already cached, so a daily cron-style re-run is cheap. See
 `instruments.py` for the full supported instrument list and how to add
 more.
 
-**This pipeline has not been run against live Dukascopy data yet** -- it
-was built and validated (instrument/granularity name resolution, unit
-tests) from this cloud session, but the actual network fetch has never
-executed anywhere, since this session can't reach Dukascopy either. Your
-first local run is the real end-to-end test; if something's off in the
-`dukascopy_client.py` response parsing, that's where it'll show up.
+**Validated**: `EURUSD --granularity D` has been run for real and returned
+7,474 daily candles (Dukascopy's full EURUSD history, ~30 years) --
+confirms the fetch, decoding, and cache-write path all work end to end.
+The other 25 instruments and remaining granularities haven't been
+individually exercised yet, so `--all` is still a first real test for
+each of them (in particular the less-common CFD codes for oil/indices --
+`E_Light`, `E_D&J-Ind`, `E_NQ-100`, `E_N225Jap` -- worth spot-checking
+those first if `--all` errors partway through).
+
+**On first run, M30/M15/M5 default to 3 years of history instead of full
+history** (the higher timeframes default to Dukascopy's full available
+history, back to 2003). Minute-level data for 26 instruments across
+decades would be slow to pull and produce unnecessarily huge cache files
+-- 3 years is already plenty of confirmation-entry setups for a
+meaningful backtest sample. Delete a cached CSV and re-run if you want
+more history for a specific symbol/granularity later.
 
 ## Storage format
 
