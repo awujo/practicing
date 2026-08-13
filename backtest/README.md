@@ -132,18 +132,36 @@ built in phases so each is testable before the next depends on it:
       per-category liquidity target flip (daily/weekly/monthly/Asian).
       Covered by `engine/tests/` (synthetic candle sequences, run with
       `python -m pytest backtest/engine/tests/`).
-- [ ] Phase 2 -- key-level detection (A/V-shape, open-close, QMR) + the
-      4-factor ranking system (Section 5)
+- [x] **Phase 2 -- key-level detection & ranking** (`key_levels.py`,
+      `imbalance.py`, `ranking.py`): A-shape/V-shape (close-price peaks/
+      troughs, per Section 5's "marked on closes, not wicks" resolution)
+      and open-close continuation levels; the universal disrespect/flip
+      rule (reuses Phase 1's body-close CRITICAL rule); QMR test-counting
+      (2+ prior tests before disrespect, Video 17); and a 4-factor scored
+      ranking system (imbalance overlap, recency, QMR test count,
+      imbalance-fill size) with CALLER-SUPPLIED weights rather than a
+      hardcoded combination formula -- see the module docstring in
+      `ranking.py` for why. Also resolves the one real definitional gap
+      in STRATEGY.md: "imbalance"/FVG is never precisely defined anywhere
+      in the source material, so `imbalance.py` uses the standard ICT
+      3-candle gap definition as a stated assumption.
 - [ ] Phase 3 -- bias cascade + bias-flip state machine (Section 2)
 - [ ] Phase 4 -- entry triggers + trade management/stacking (Sections 5-6)
 - [ ] Phase 5 -- full backtest runner + performance metrics
 
-One deliberate design choice worth flagging: STRATEGY.md never gives a
-precise algorithm for identifying "a prior swing point" ("look to the
-left" is qualitative). Phase 1 uses a standard n-bar fractal (local
-extreme over n bars each side) with `n` exposed as a parameter, so swing
-sensitivity is a backtest-tunable input rather than something silently
-hardcoded as if it were part of the taught rule.
+Two deliberate design choices worth flagging:
+- STRATEGY.md never gives a precise algorithm for identifying "a prior
+  swing point" ("look to the left" is qualitative). Phase 1 uses a
+  standard n-bar fractal (local extreme over n bars each side) with `n`
+  exposed as a parameter, so swing sensitivity is a backtest-tunable
+  input rather than something silently hardcoded as if it were part of
+  the taught rule.
+- STRATEGY.md's Section 9 explicitly flags unresolved tension between its
+  four key-level ranking factors, with no combination rule given. Phase 2
+  doesn't guess one -- `ranking.py`'s `DEFAULT_WEIGHTS` (equal weighting)
+  is a placeholder to have something runnable, and every factor is left
+  independently inspectable on `RankedCandidate` so different weightings
+  can be swept during backtesting instead of assumed.
 
 Candle processing is a plain forward loop over a `list[Candle]`, not
 vectorized pandas -- so the same detection code can later replay live,
