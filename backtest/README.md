@@ -67,14 +67,12 @@ already cached, so a daily cron-style re-run is cheap. See
 `instruments.py` for the full supported instrument list and how to add
 more.
 
-**Validated**: `EURUSD --granularity D` has been run for real and returned
-7,474 daily candles (Dukascopy's full EURUSD history, ~30 years) --
-confirms the fetch, decoding, and cache-write path all work end to end.
-The other 25 instruments and remaining granularities haven't been
-individually exercised yet, so `--all` is still a first real test for
-each of them (in particular the less-common CFD codes for oil/indices --
-`E_Light`, `E_D&J-Ind`, `E_NQ-100`, `E_N225Jap` -- worth spot-checking
-those first if `--all` errors partway through).
+**Validated**: a full `--all` run (all 26 instruments, all 8 native
+granularities) has completed successfully end to end, including the
+less-common CFD codes (`E_Light` for oil, `E_D&J-Ind`/`E_NQ-100`/
+`E_N225Jap` for indices) and crypto (ETHUSD -- 313,743 M5 candles alone).
+`derive_granularities --all` (H2/H3/M45) has also run successfully
+against the resulting cache. The full pipeline is confirmed working.
 
 **On first run, M30/M15/M5 default to 3 years of history instead of full
 history** (the higher timeframes default to Dukascopy's full available
