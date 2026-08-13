@@ -1,0 +1,8 @@
+# Cached OHLCV data is regenerable from the fetchers -- don't commit it,
+# it'll grow to hundreds of MB across instruments/granularities.
+data/**/*.csv
+!data/.gitkeep
+
+.env
+__pycache__/
+*.pyc
