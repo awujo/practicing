@@ -627,6 +627,24 @@ question, watch for clarification in later videos.
   1:7 seen in Video 14 — both explicitly called out as beyond the normal
   1:3 expectation, not something to calibrate default exits around.
 
+### Conservative targets for counter-structural sweeps (Bishop
+supplementary, risk-management refinement)
+After a breakout, the breakout candle's own extreme (e.g. its high, in a
+bullish breakout) can later get swept by price — superficially looking
+like a bearish signal that might tempt targeting the full opposite-side
+structural extreme. But since the OVERALL higher-timeframe structure is
+still bullish, price has "every right" to sweep that high and then
+CONTINUE upward without ever reaching the far low (consistent with
+Video 16/17's bias-flip state machine: a single sweep/reaction never
+overrides structural bias on its own). **Practical rule**: if a
+short-term countertrend/retracement trade is taken off such a sweep,
+cap its exit target at the NEAREST liquidity point, not the full
+opposite-structure extreme — price may react from a nearby key level and
+resume the dominant bias before ever reaching a more distant target.
+Refines the exit-tiering logic above with a directional guard: trades
+taken counter to (or as a minor retracement within) the dominant bias
+should use conservative, nearby targets, not full-structure ones.
+
 ## 7. Timeframes
 - Bias/setup identification: higher timeframes (1H, 4H, sometimes 3H).
 - Entry execution: drops to lower timeframes — 15-minute entries confirmed
@@ -697,8 +715,10 @@ question, watch for clarification in later videos.
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
 - **All 18 core mentor-course videos are now processed.** Remaining
-  source material: 5 of 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (1 of 6 processed — "Bias & Entries" — strongly cross-validated
-  the core framework, no contradictions found) and the remaining 54 of
-  60 pages of Bishop's chart-examples PDF. After that, the knowledge base
-  moves to the backtesting and bot-implementation phase.
+  source material: 4 of 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (2 of 6 processed — "Bias & Entries" and "Building Bias Part 2 -
+  Case Study" — both strongly cross-validated the core framework, no
+  contradictions found, one valuable risk-management refinement added to
+  Section 6) and the remaining 54 of 60 pages of Bishop's chart-examples
+  PDF. After that, the knowledge base moves to the backtesting and
+  bot-implementation phase.
