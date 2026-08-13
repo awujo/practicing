@@ -8,47 +8,66 @@ Live execution is out of scope here -- it'll eventually run separately
 against MT5 (the actual trading platform), once the ruleset extracted
 here has been validated on historical data.
 
-## Why Oanda
+## Data source: Dukascopy, and why it changed from Oanda
 
-Oanda is the broker referenced throughout the source material (mentor
-videos, Bishop's trade breakdowns), and its free v20 API covers forex
-majors/crosses, metals (Gold/Silver), oil, and index CFDs (US30/NAS100/
-JP225) from one feed across every granularity the strategy's cascade
-needs (Monthly down to 5-minute). Using the same broker's data the
-strategy was taught on avoids the "candle closes can differ slightly
-between feeds" caveat already flagged in STRATEGY.md Section 2 becoming a
-real discrepancy.
+Oanda was the original plan (it's the broker referenced throughout the
+source material), but it rejects new clients -- including demo accounts
+-- from Nigeria. Separately, and more fundamentally: **this pipeline
+cannot run inside a Claude Code cloud session at all**, regardless of
+vendor. Tested directly -- Oanda, Dukascopy, Twelve Data, and Binance
+were all identically rejected by this session's own network egress
+policy (403 policy denial at the proxy level, confirmed via
+`$HTTPS_PROXY/__agentproxy/status`). That's an infrastructure restriction
+on this specific execution environment, unrelated to which data vendor
+gets picked. **Run this pipeline on your own machine**, where normal
+outbound internet access applies.
 
-Crypto (ETH) isn't on Oanda, so it's pulled separately from Binance via
-`ccxt` into the same cache format.
+Given that constraint, Dukascopy is the right choice anyway: **no
+account, no KYC, no API key at all** -- so there's no signup step to hit
+a geo-block on, from Nigeria or anywhere else. It also covers forex,
+metals, oil, indices, AND crypto (ETH/USD) from one source, via the
+`dukascopy-python` package, which handles the tick-data download and
+decoding internally.
+
+The Oanda code (`oanda_client.py`, `fetch_oanda.py`) is left in place,
+unused, in case a future entity (a prop firm's own jurisdiction, for
+instance) makes it usable later. The ccxt/Binance crypto fetcher
+(`fetch_crypto.py`) is similarly kept as a fallback if Dukascopy's crypto
+history turns out too short for a given backtest window.
 
 ## Setup
 
 ```bash
 cd backtest/data_pipeline
 pip install -r requirements.txt
-cp .env.example .env   # fill in OANDA_API_KEY (a free practice account works)
-set -a; source .env; set +a
 ```
+
+No credentials needed -- Dukascopy requires none.
 
 ## Fetching data
 
 ```bash
 # everything: all instruments, all granularities
-python -m backtest.data_pipeline.fetch_oanda --all
-python -m backtest.data_pipeline.fetch_crypto --all
+python -m backtest.data_pipeline.fetch_dukascopy --all
 
 # one instrument, all granularities
-python -m backtest.data_pipeline.fetch_oanda --instrument EURUSD
+python -m backtest.data_pipeline.fetch_dukascopy --instrument EURUSD
 
 # one instrument, one granularity
-python -m backtest.data_pipeline.fetch_oanda --instrument XAUUSD --granularity H4
+python -m backtest.data_pipeline.fetch_dukascopy --instrument XAUUSD --granularity H4
 ```
 
-Both fetchers are incremental -- re-running them only pulls candles newer
-than what's already cached, so a daily cron-style re-run is cheap. See
+Incremental by default -- re-running only pulls candles newer than what's
+already cached, so a daily cron-style re-run is cheap. See
 `instruments.py` for the full supported instrument list and how to add
 more.
+
+**This pipeline has not been run against live Dukascopy data yet** -- it
+was built and validated (instrument/granularity name resolution, unit
+tests) from this cloud session, but the actual network fetch has never
+executed anywhere, since this session can't reach Dukascopy either. Your
+first local run is the real end-to-end test; if something's off in the
+`dukascopy_client.py` response parsing, that's where it'll show up.
 
 ## Storage format
 
@@ -58,13 +77,13 @@ candle only (the still-forming current candle is never cached). Not
 committed to git -- it's regenerable from the fetchers, and would balloon
 the repo size across dozens of instrument/granularity pairs.
 
-## Known gap
+## Known gaps
 
-Oanda has no native 45-minute granularity, but the Bishop PDF review
-found M45 used as a confirmation timeframe by some traders in the
-community. There's no fetch-side fix for this -- it'll need to be
-resampled from the cached M15 data during backtest data prep. Not handled
-here yet.
+Dukascopy has no native 45-minute or 2H/3H granularity -- only 1H and 4H
+between M30 and Daily. The Bishop PDF review found both M45 and H2/H3
+used as confirmation timeframes by traders in the community. There's no
+fetch-side fix for this -- they'll need to be resampled from the cached
+M15/H1 data during backtest data prep. Not handled here yet.
 
 ## Engine
 

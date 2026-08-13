@@ -1,74 +1,99 @@
 """
 Canonical instrument list for the SLK backtester's data pipeline.
 
-Maps our internal symbol to the source-specific instrument code, asset
-class, and where to fetch it from. Oanda covers forex, metals, energy, and
-index CFDs in one feed (and is the broker referenced throughout
-STRATEGY.md, so its candle data matches what the strategy was taught on).
-Crypto isn't available on Oanda, so it's routed through ccxt/Binance
-instead.
+Data source: Dukascopy, via the `dukascopy-python` package. No account, no
+KYC, no API key -- Oanda (the broker referenced throughout STRATEGY.md)
+rejects new clients from Nigeria, and separately this session's own
+network egress policy blocks outbound calls to Oanda, Dukascopy,
+Twelve Data, and Binance alike (confirmed by testing all four -- see
+backtest/README.md). Dukascopy is the one option here that needs no
+account at all, so once the pipeline runs somewhere with normal internet
+access (your own machine, not this cloud session), there's no signup step
+in the way. It also covers forex, metals, oil, indices, AND crypto from a
+single source, so the separate ccxt/Binance fetcher is no longer needed
+as the primary path (kept around as `fetch_crypto.py` only as a fallback
+for deeper crypto history than Dukascopy has).
 
-Granularity mapping (STRATEGY.md timeframe -> Oanda granularity code):
-    Monthly -> M      Weekly -> W       Daily -> D
-    4H -> H4          3H -> H3          2H -> H2         1H -> H1
-    30min -> M30      15min -> M15      5min -> M5
+Granularity mapping (STRATEGY.md timeframe -> dukascopy_python INTERVAL_*):
+    Monthly -> INTERVAL_MONTH_1     Weekly -> INTERVAL_WEEK_1
+    Daily -> INTERVAL_DAY_1         4H -> INTERVAL_HOUR_4
+    1H -> INTERVAL_HOUR_1           30min -> INTERVAL_MIN_30
+    15min -> INTERVAL_MIN_15        5min -> INTERVAL_MIN_5
 
-NOTE: Oanda has no native 45-minute granularity (M45 shows up in the
-Bishop PDF review as a confirmation timeframe some traders use). There's
-no way around this except resampling M15 bars into 45-minute bars
-ourselves during backtest prep -- flagging here so it isn't forgotten
-when the resampling step gets built.
+NOTE: Dukascopy has no native 2H/3H granularity (only 1H and 4H), on top
+of the already-flagged M45 gap (from the Bishop PDF review). Same
+resolution as M45: resample from the cached H1 data during backtest data
+prep. Not handled here yet -- flagging so it isn't forgotten.
 """
 
-# Granularities pulled for every instrument by default. Trimmed to what
-# STRATEGY.md's cascade actually uses (Section 2's Monthly/Weekly/Daily/4H
-# bias chain, Section 5/7's flexible lower-timeframe confirmation set).
-DEFAULT_GRANULARITIES = ["M", "W", "D", "H4", "H3", "H2", "H1", "M30", "M15", "M5"]
+# Granularities pulled for every instrument by default -- everything
+# Dukascopy natively supports from STRATEGY.md's cascade. H2/H3/M45 are
+# deliberately absent; see the module docstring.
+DEFAULT_GRANULARITIES = ["M", "W", "D", "H4", "H1", "M30", "M15", "M5"]
 
-OANDA_INSTRUMENTS = {
-    # Forex majors
-    "EURUSD": "EUR_USD",
-    "GBPUSD": "GBP_USD",
-    "USDJPY": "USD_JPY",
-    "USDCHF": "USD_CHF",
-    "USDCAD": "USD_CAD",
-    "AUDUSD": "AUD_USD",
-    "NZDUSD": "NZD_USD",
-    # Forex crosses seen in mentor/Bishop material
-    "EURGBP": "EUR_GBP",
-    "EURJPY": "EUR_JPY",
-    "EURCHF": "EUR_CHF",
-    "EURCAD": "EUR_CAD",
-    "EURNZD": "EUR_NZD",
-    "GBPJPY": "GBP_JPY",
-    "GBPCHF": "GBP_CHF",
-    "GBPCAD": "GBP_CAD",
-    "GBPNZD": "GBP_NZD",
-    "GBPAUD": "GBP_AUD",
-    "AUDCAD": "AUD_CAD",
-    "AUDJPY": "AUD_JPY",
-    "CHFJPY": "CHF_JPY",
-    # Metals
-    "XAUUSD": "XAU_USD",  # Gold
-    "XAGUSD": "XAG_USD",  # Silver
-    # Energy
-    "USOIL": "WTICO_USD",  # WTI crude, matches "USOIL" naming in Bishop's PDF
-    # Indices (CFDs)
-    "US30": "US30_USD",
-    "NAS100": "NAS100_USD",
-    "JP225": "JP225_USD",
+# Our granularity code -> dukascopy_python attribute name (fetch_dukascopy.py
+# does getattr(dukascopy_python, name), so a stale name fails loudly at
+# call time rather than silently mis-mapping).
+DUKASCOPY_GRANULARITY_TO_INTERVAL = {
+    "M": "INTERVAL_MONTH_1",
+    "W": "INTERVAL_WEEK_1",
+    "D": "INTERVAL_DAY_1",
+    "H4": "INTERVAL_HOUR_4",
+    "H1": "INTERVAL_HOUR_1",
+    "M30": "INTERVAL_MIN_30",
+    "M15": "INTERVAL_MIN_15",
+    "M5": "INTERVAL_MIN_5",
 }
 
-# Crypto isn't on Oanda -- pulled from Binance via ccxt instead. Symbol is
-# the ccxt/exchange pair format.
+# Internal symbol -> dukascopy_python.instruments constant NAME (not the
+# value directly, so fetch_dukascopy.py can do getattr(instruments, name)
+# and fail loudly if a name ever goes stale against a future package version).
+DUKASCOPY_INSTRUMENTS = {
+    # Forex majors
+    "EURUSD": "INSTRUMENT_FX_MAJORS_EUR_USD",
+    "GBPUSD": "INSTRUMENT_FX_MAJORS_GBP_USD",
+    "USDJPY": "INSTRUMENT_FX_MAJORS_USD_JPY",
+    "USDCHF": "INSTRUMENT_FX_MAJORS_USD_CHF",
+    "USDCAD": "INSTRUMENT_FX_MAJORS_USD_CAD",
+    "AUDUSD": "INSTRUMENT_FX_MAJORS_AUD_USD",
+    "NZDUSD": "INSTRUMENT_FX_MAJORS_NZD_USD",
+    # Forex crosses seen in mentor/Bishop material
+    "EURGBP": "INSTRUMENT_FX_CROSSES_EUR_GBP",
+    "EURJPY": "INSTRUMENT_FX_CROSSES_EUR_JPY",
+    "EURCHF": "INSTRUMENT_FX_CROSSES_EUR_CHF",
+    "EURCAD": "INSTRUMENT_FX_CROSSES_EUR_CAD",
+    "EURNZD": "INSTRUMENT_FX_CROSSES_EUR_NZD",
+    "GBPJPY": "INSTRUMENT_FX_CROSSES_GBP_JPY",
+    "GBPCHF": "INSTRUMENT_FX_CROSSES_GBP_CHF",
+    "GBPCAD": "INSTRUMENT_FX_CROSSES_GBP_CAD",
+    "GBPNZD": "INSTRUMENT_FX_CROSSES_GBP_NZD",
+    "GBPAUD": "INSTRUMENT_FX_CROSSES_GBP_AUD",
+    "AUDCAD": "INSTRUMENT_FX_CROSSES_AUD_CAD",
+    "AUDJPY": "INSTRUMENT_FX_CROSSES_AUD_JPY",
+    "CHFJPY": "INSTRUMENT_FX_CROSSES_CHF_JPY",
+    # Metals
+    "XAUUSD": "INSTRUMENT_FX_METALS_XAU_USD",  # Gold
+    "XAGUSD": "INSTRUMENT_FX_METALS_XAG_USD",  # Silver
+    # Energy -- "USOIL" in the mentor/Bishop material is WTI ("Light"), not Brent
+    "USOIL": "INSTRUMENT_CMD_ENERGY_E_LIGHT",
+    # Indices (CFDs)
+    "US30": "INSTRUMENT_IDX_AMERICA_E_D_J_IND",   # Dow Jones Industrial
+    "NAS100": "INSTRUMENT_IDX_AMERICA_E_NQ_100",  # Nasdaq 100
+    "JP225": "INSTRUMENT_IDX_ASIA_E_N225JAP",     # Nikkei 225
+    # Crypto -- Dukascopy covers this directly, no separate source needed
+    "ETHUSD": "INSTRUMENT_VCCY_ETH_USD",
+}
+
+
+# Fallback only (fetch_crypto.py) -- Dukascopy's ETH/USD above is the
+# primary crypto path now. Kept in case Dukascopy's crypto history turns
+# out too short for a given backtest window and deeper Binance history is
+# needed instead.
 CCXT_INSTRUMENTS = {
     "ETHUSDT": {"exchange": "binance", "symbol": "ETH/USDT"},
 }
 
 
 def all_instruments():
-    """Yield (internal_symbol, source, source_symbol) for every configured instrument."""
-    for internal, oanda_symbol in OANDA_INSTRUMENTS.items():
-        yield internal, "oanda", oanda_symbol
-    for internal, cfg in CCXT_INSTRUMENTS.items():
-        yield internal, "ccxt", cfg
+    """Yield (internal_symbol, dukascopy_instrument_constant_name) for every configured instrument."""
+    yield from DUKASCOPY_INSTRUMENTS.items()

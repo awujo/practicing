@@ -1,4 +1,9 @@
-requests>=2.31
+dukascopy-python>=4.0.1
 pandas>=2.0
-ccxt>=4.0
 pytest>=8.0
+
+# Kept for the Oanda path (currently unusable: Oanda rejects new clients
+# from Nigeria) and the ccxt/Binance crypto fallback (Dukascopy's ETH/USD
+# is the primary crypto path now -- see instruments.py).
+requests>=2.31
+ccxt>=4.0
