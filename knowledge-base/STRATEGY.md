@@ -35,9 +35,19 @@ resolving the "QMR key level" definition as a multiply-tested-then-
 disrespected level, Video 18 [FINAL]: live Gold study introducing the
 "single candle formation" dual-IRL/ERL-role concept + refined break-of-
 structure-vs-breakout semantics (initiation vs. continuation) + course-
-closing summary). All 18 core mentor videos are now processed. A
-supplementary set of study videos + a chart-examples PDF from a fellow
-student (Web3Bish0p / Defi Bishop on X) is being incorporated next.
+closing summary). ALL VIDEO MATERIAL IS NOW FULLY PROCESSED: all 18 core
+mentor videos plus all 6 Web3Bish0p/Defi Bishop supplementary videos
+("Bias & Entries," "Building Bias Part 2 - Case Study," "Daily Routine &
+Trade Breakdown," "Repeating System," "Trades Breakdown," and "What
+Next"). Bishop's material strongly cross-validated the entire core
+framework from an independent source (no contradictions found) and added
+several refinements: multi-candle liquidity generalization, an
+imbalance-fill ranking factor, a multi-pair scanning workflow, flexible
+confirmation timeframes, a risk-management target-sizing rule, and a
+"don't marry a bias" discipline note. Only remaining source material:
+54 of 60 pages of Bishop's chart-examples PDF (6 pages already
+reviewed). After that, the knowledge base moves to the backtesting and
+bot-implementation phase.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -539,6 +549,9 @@ level), rank them by **prior test history**, not just proximity/shape:
   imbalance-overlap (quality signal above) and recency/proximity
   (disrespected-level priority refinement above) — higher test count
   before disrespect = higher priority target.
+- **Reconfirmed (Bishop, "What Next" video)**: Bishop independently uses
+  "QMR key level" himself, confirming the term is shared community
+  terminology rather than isolated to the core course.
 
 ### Imbalance-fill priority can override nearest-liquidity preference
 (Bishop supplementary, "Repeating System" video — fourth ranking factor)
@@ -581,6 +594,19 @@ build/test both in the backtester)
   false starts, but risks missing moves that run without ever confirming.
 - Presented as legitimate personal-style choice, not one superior to the
   other — should be implemented and tested as two separate variants.
+
+### Reversal trades against the weekly bias — named exception, not
+recommended default (Bishop, "What Next" video)
+Trading counter to an established weekly bias, based on daily-only
+confirmation, is explicitly used by Bishop but explicitly NOT generally
+advised: "I don't advise taking reversal trades." A real GBPCAD example
+is labeled directly as this deliberate exception category. Worth keeping
+as an explicit caveat: reversal/counter-weekly-bias trades are a known,
+consciously-chosen exception, not a hidden inconsistency with the
+higher-timeframe-alignment discipline emphasized everywhere else
+(Section 2, Section 8's multi-pair discipline) — should be flagged/
+tagged separately in the backtester if implemented at all, not blended
+into the primary aligned-bias trade population.
 
 ### "Pick one entry system and stay with it" (Video 15, discipline
 principle, not a mechanical rule)
@@ -790,16 +816,18 @@ reactive per-candle scan.
   uncertain" real-time fallback vs. Videos 13/17's statistical preference
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
-- **All 18 core mentor-course videos are now processed.** Remaining
-  source material: 1 of 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (5 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
-  Case Study," "Daily Routine & Trade Breakdown," "Repeating System," and
-  "Trades Breakdown" — all strongly cross-validated the core framework,
-  no contradictions found, added a risk-management refinement to Section
-  6, a multi-pair scanning workflow to Section 8, a flexible-confirmation
-  -timeframe note to Section 7, a multi-candle liquidity generalization +
-  "elbow structure" caution + imbalance-fill ranking factor to Sections
-  3/5, and a "don't marry a bias" discipline note to Section 2) and the
-  remaining 54 of 60 pages of Bishop's chart-examples PDF. After that,
-  the knowledge base moves to the backtesting and bot-implementation
-  phase.
+- **ALL VIDEO MATERIAL IS NOW FULLY PROCESSED**: all 18 core mentor
+  videos plus all 6 Web3Bish0p/Defi Bishop supplementary videos
+  ("Bias & Entries," "Building Bias Part 2 - Case Study," "Daily Routine
+  & Trade Breakdown," "Repeating System," "Trades Breakdown," and "What
+  Next"). Bishop's material strongly cross-validated the core framework
+  end-to-end from an independent source, with zero contradictions found
+  — only refinements and generalizations (risk-management target-sizing
+  rule added to Section 6, multi-pair scanning workflow added to Section
+  8, flexible-confirmation-timeframe note added to Section 7,
+  multi-candle liquidity generalization + "elbow structure" caution +
+  imbalance-fill ranking factor added to Sections 3/5, "don't marry a
+  bias" discipline note + reversal-trade caveat added to Section 2/5).
+  **Only remaining source material**: 54 of 60 pages of Bishop's
+  chart-examples PDF (6 pages already reviewed). After that, the
+  knowledge base moves to the backtesting and bot-implementation phase.
