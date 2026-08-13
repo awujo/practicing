@@ -161,6 +161,14 @@ Thursday/Friday resumes and continues the move; the week still counts as
 bearish overall as long as no actual bias-flip (per the state machine
 above) has triggered.
 
+**"Don't marry a bias" (Bishop supplementary, discipline complement to
+the mechanical state machine)**: "You don't have to marry a bias. A bias
+can flip at any point in time." The psychological counterpart to the
+bias-flip state machine above — once its conditions ARE actually met, act
+on the new bias immediately and fully rather than staying anchored to the
+prior direction out of inertia. Not a new mechanical rule, just an
+explicit discipline note worth keeping alongside the state machine.
+
 ### Break of Structure vs. Breakout — refined semantic distinction
 (Video 18)
 Sharpens Video 16's treatment (which presented both as alternative visual
@@ -320,6 +328,17 @@ an idiosyncratic one-off explanation in Video 18. Reconfirmed a 3rd time
 (daily-routine breakdown video) — used constantly, and paired with
 Bishop's own "H4 reject H4" shorthand for a 4H candle rejecting from a
 4H key level (mirroring the mentor's "daily reject daily" terminology).
+
+**Generalization (Bishop, "Repeating System" video)**: single-candle
+liquidity is the SIMPLEST/most common case, not the only valid one.
+Liquidity can also rest across a **multi-candle "structural liquidity"**
+swing point (an extended structural high/low spanning more than one
+candle) — the same functional role (a liquidity pool swept before the
+nearby key level plays out), just not reducible to one candle's
+high/low. Backtester implication: liquidity-pool detection should
+generalize to "the nearest prior local extreme(s) forming a structural
+swing point," with a single candle as one special case rather than the
+only detectable shape.
 
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading
@@ -511,6 +530,21 @@ level), rank them by **prior test history**, not just proximity/shape:
   imbalance-overlap (quality signal above) and recency/proximity
   (disrespected-level priority refinement above) — higher test count
   before disrespect = higher priority target.
+
+### Imbalance-fill priority can override nearest-liquidity preference
+(Bishop supplementary, "Repeating System" video — fourth ranking factor)
+Price sometimes SKIPS the nearest single-candle/structural liquidity and
+continues to a MORE DISTANT level instead, because a larger fair-value-gap
+imbalance needs to be filled there first — observed repeatedly across
+real trades (AUDUSD, AUDJPY, EURAUD), not a one-off: "price tends to pull
+into a higher level to feel that imbalance." Adds a FOURTH ranking factor
+alongside imbalance-overlap (quality signal), recency/proximity
+(disrespected-level priority), and prior-test-count (QMR): the presence
+of a larger unfilled imbalance at a more distant level can pull price
+PAST the nearer candidate entirely. Practical guidance: when both a near
+and a far candidate level exist and the far one has a larger/more obvious
+imbalance to fill, don't assume the near one will be used — wait to see
+which one price actually taps before committing to an entry.
 
 ### Real-time uncertainty fallback: "default to the extreme" (Video 18,
 minor tension with the above — flagged, not a contradiction)
@@ -748,12 +782,14 @@ reactive per-candle scan.
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
 - **All 18 core mentor-course videos are now processed.** Remaining
-  source material: 3 of 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (3 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
-  Case Study," and "Daily Routine & Trade Breakdown" — all strongly
-  cross-validated the core framework, no contradictions found, added a
-  risk-management refinement to Section 6, a multi-pair scanning
-  workflow to Section 8, and a flexible-confirmation-timeframe note to
-  Section 7) and the remaining 54 of 60 pages of Bishop's chart-examples
-  PDF. After that, the knowledge base moves to the backtesting and
-  bot-implementation phase.
+  source material: 2 of 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (4 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
+  Case Study," "Daily Routine & Trade Breakdown," and "Repeating System"
+  — all strongly cross-validated the core framework, no contradictions
+  found, added a risk-management refinement to Section 6, a multi-pair
+  scanning workflow to Section 8, a flexible-confirmation-timeframe note
+  to Section 7, a multi-candle liquidity generalization + imbalance-fill
+  ranking factor to Sections 3/5, and a "don't marry a bias" discipline
+  note to Section 2) and the remaining 54 of 60 pages of Bishop's
+  chart-examples PDF. After that, the knowledge base moves to the
+  backtesting and bot-implementation phase.
