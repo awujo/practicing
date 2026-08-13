@@ -340,6 +340,15 @@ generalize to "the nearest prior local extreme(s) forming a structural
 swing point," with a single candle as one special case rather than the
 only detectable shape.
 
+**Minor caution — "elbow structure" (Bishop, "Trades Breakdown" video)**:
+when a higher-timeframe single-candle-liquidity level decomposes on the
+confirmation timeframe into a bent, multi-candle "elbow" shape rather
+than one clean swing point, wait for that WHOLE shape to be swept before
+trading, rather than acting on the first touch. A minor visual-pattern
+exception layered on the generalization above, not crisply quantifiable
+from the source material — treat as a caution flag when a higher-
+timeframe liquidity point resolves into a non-trivial multi-candle shape.
+
 ### Daily/weekly "engulf but don't tap" inducement pattern
 When a daily/weekly candle engulfs the prior candle's range while trading
 close to a previous key level but does NOT touch/tap that key level, the
@@ -782,14 +791,15 @@ reactive per-candle scan.
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
 - **All 18 core mentor-course videos are now processed.** Remaining
-  source material: 2 of 6 Web3Bish0p/Defi Bishop supplementary study
-  videos (4 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
-  Case Study," "Daily Routine & Trade Breakdown," and "Repeating System"
-  — all strongly cross-validated the core framework, no contradictions
-  found, added a risk-management refinement to Section 6, a multi-pair
-  scanning workflow to Section 8, a flexible-confirmation-timeframe note
-  to Section 7, a multi-candle liquidity generalization + imbalance-fill
-  ranking factor to Sections 3/5, and a "don't marry a bias" discipline
-  note to Section 2) and the remaining 54 of 60 pages of Bishop's
-  chart-examples PDF. After that, the knowledge base moves to the
-  backtesting and bot-implementation phase.
+  source material: 1 of 6 Web3Bish0p/Defi Bishop supplementary study
+  videos (5 of 6 processed — "Bias & Entries," "Building Bias Part 2 -
+  Case Study," "Daily Routine & Trade Breakdown," "Repeating System," and
+  "Trades Breakdown" — all strongly cross-validated the core framework,
+  no contradictions found, added a risk-management refinement to Section
+  6, a multi-pair scanning workflow to Section 8, a flexible-confirmation
+  -timeframe note to Section 7, a multi-candle liquidity generalization +
+  "elbow structure" caution + imbalance-fill ranking factor to Sections
+  3/5, and a "don't marry a bias" discipline note to Section 2) and the
+  remaining 54 of 60 pages of Bishop's chart-examples PDF. After that,
+  the knowledge base moves to the backtesting and bot-implementation
+  phase.
