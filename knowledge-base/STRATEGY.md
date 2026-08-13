@@ -35,19 +35,21 @@ resolving the "QMR key level" definition as a multiply-tested-then-
 disrespected level, Video 18 [FINAL]: live Gold study introducing the
 "single candle formation" dual-IRL/ERL-role concept + refined break-of-
 structure-vs-breakout semantics (initiation vs. continuation) + course-
-closing summary). ALL VIDEO MATERIAL IS NOW FULLY PROCESSED: all 18 core
-mentor videos plus all 6 Web3Bish0p/Defi Bishop supplementary videos
-("Bias & Entries," "Building Bias Part 2 - Case Study," "Daily Routine &
-Trade Breakdown," "Repeating System," "Trades Breakdown," and "What
-Next"). Bishop's material strongly cross-validated the entire core
-framework from an independent source (no contradictions found) and added
-several refinements: multi-candle liquidity generalization, an
-imbalance-fill ranking factor, a multi-pair scanning workflow, flexible
-confirmation timeframes, a risk-management target-sizing rule, and a
-"don't marry a bias" discipline note. Only remaining source material:
-54 of 60 pages of Bishop's chart-examples PDF (6 pages already
-reviewed). After that, the knowledge base moves to the backtesting and
-bot-implementation phase.
+closing summary). ALL SOURCE MATERIAL IS NOW FULLY PROCESSED: all 18 core
+mentor videos, all 6 Web3Bish0p/Defi Bishop supplementary videos ("Bias &
+Entries," "Building Bias Part 2 - Case Study," "Daily Routine & Trade
+Breakdown," "Repeating System," "Trades Breakdown," and "What Next"), AND
+all 60 pages of Bishop's chart-examples PDF (~35-40 real trade examples
+spanning forex, metals, oil, crypto, and indices). Bishop's material
+strongly cross-validated the entire core framework from an independent
+source (no contradictions found across videos or PDF) and added several
+refinements: multi-candle liquidity generalization, an imbalance-fill
+ranking factor, a multi-pair scanning workflow, flexible confirmation
+timeframes, a risk-management target-sizing rule, a "don't marry a bias"
+discipline note, and explicit confirmation that the Daily-beats-4H
+priority rule extends uniformly to Weekly-beats-Daily. **THE KNOWLEDGE
+BASE IS NOW COMPLETE.** Next phase: backtesting the extracted ruleset,
+then building the automated trading system.
 
 **The framework's own name**: he calls it **"SLK" = Structure, Liquidity,
 Key level**.
@@ -92,6 +94,19 @@ together. Three nested checks, each confirmed by scaling one timeframe down:
    retracement, not reversal.
 3. Scale down further (1H -> 30min) for entries, always in the higher
    timeframe's direction.
+
+**Strict hierarchy confirmed at every level (Bishop chart-examples PDF,
+real trader reasoning)**: a real AUDUSD example includes explicit written
+trader notes — "Weekly recent breakout bearish, ERL's standing" /
+"Daily recent breakout was bullish, looking for shorts to the liquidity,
+more confidence since weekly is bearish." This directly confirms
+**Weekly beats Daily** the same way Daily beats 4H — the daily move
+against the weekly bias is treated as a liquidity draw/inducement to
+fade (the "induced-move trap" above), not a genuine reversal.
+Backtester implication: implement the priority cascade as a strict,
+uniform hierarchy — Weekly > Daily > 4H > lower timeframes — at every
+level, not just the Daily-vs-4H relationship most explicitly spoken in
+the core course.
 
 ### Refinements this process adds to earlier rules
 - Candle-close discipline (wick vs. close, Section 4) matters **even more**
@@ -816,18 +831,20 @@ reactive per-candle scan.
   uncertain" real-time fallback vs. Videos 13/17's statistical preference
   for closer/tested levels — treat the former as a fallback branch, not
   a competing primary rule (see Section 5).
-- **ALL VIDEO MATERIAL IS NOW FULLY PROCESSED**: all 18 core mentor
-  videos plus all 6 Web3Bish0p/Defi Bishop supplementary videos
-  ("Bias & Entries," "Building Bias Part 2 - Case Study," "Daily Routine
-  & Trade Breakdown," "Repeating System," "Trades Breakdown," and "What
-  Next"). Bishop's material strongly cross-validated the core framework
-  end-to-end from an independent source, with zero contradictions found
-  — only refinements and generalizations (risk-management target-sizing
-  rule added to Section 6, multi-pair scanning workflow added to Section
-  8, flexible-confirmation-timeframe note added to Section 7,
+- **ALL SOURCE MATERIAL IS NOW FULLY PROCESSED — THE KNOWLEDGE BASE IS
+  COMPLETE.** All 18 core mentor videos, all 6 Web3Bish0p/Defi Bishop
+  supplementary videos, and all 60 pages of Bishop's chart-examples PDF
+  have been reviewed. Bishop's material (videos + PDF) cross-validated
+  the core framework end-to-end from an independent source across a wide
+  range of instruments (forex, metals, oil, crypto, indices), with ZERO
+  contradictions found — only refinements and generalizations:
+  risk-management target-sizing rule (Section 6), multi-pair scanning
+  workflow (Section 8), flexible-confirmation-timeframe note (Section 7),
   multi-candle liquidity generalization + "elbow structure" caution +
-  imbalance-fill ranking factor added to Sections 3/5, "don't marry a
-  bias" discipline note + reversal-trade caveat added to Section 2/5).
-  **Only remaining source material**: 54 of 60 pages of Bishop's
-  chart-examples PDF (6 pages already reviewed). After that, the
-  knowledge base moves to the backtesting and bot-implementation phase.
+  imbalance-fill ranking factor (Sections 3/5), "don't marry a bias"
+  discipline note + reversal-trade caveat (Section 2/5), and confirmation
+  that the Daily-beats-4H priority hierarchy extends uniformly to
+  Weekly-beats-Daily (Section 2). **Next phase**: backtesting the
+  extracted ruleset, then building the automated trading system
+  (`backtest/` and `bot/` directories in the repo, currently empty
+  placeholders).
