@@ -19,8 +19,10 @@ were all identically rejected by this session's own network egress
 policy (403 policy denial at the proxy level, confirmed via
 `$HTTPS_PROXY/__agentproxy/status`). That's an infrastructure restriction
 on this specific execution environment, unrelated to which data vendor
-gets picked. **Run this pipeline on your own machine**, where normal
-outbound internet access applies.
+gets picked. **Run this pipeline somewhere with normal outbound internet
+access** -- your own machine works, but see "Running via GitHub Actions"
+below for the recommended way to do this without depending on any local
+machine (or its power supply) staying on.
 
 Given that constraint, Dukascopy is the right choice anyway: **no
 account, no KYC, no API key at all** -- so there's no signup step to hit
@@ -35,7 +37,30 @@ instance) makes it usable later. The ccxt/Binance crypto fetcher
 (`fetch_crypto.py`) is similarly kept as a fallback if Dukascopy's crypto
 history turns out too short for a given backtest window.
 
-## Setup
+## Running via GitHub Actions (recommended -- no local machine needed)
+
+`.github/workflows/fetch-data.yml` runs the entire data pipeline on
+GitHub's own servers -- unaffected by local power/internet reliability.
+On a daily schedule (and any time via the "Run workflow" button on the
+repo's Actions tab), it:
+
+1. Downloads the previous data cache from the `data-latest` GitHub
+   Release (if one exists) so the fetch is genuinely incremental instead
+   of re-pulling full history every run -- Actions runners have no
+   persistent disk between runs otherwise.
+2. Runs `fetch_dukascopy.py --all` and `derive_granularities.py --all`.
+3. Re-packages `backtest/data/` and publishes it back to the
+   `data-latest` release, replacing the previous asset.
+
+To get the data locally (e.g. to inspect it, or to feed a backtest
+running somewhere else): download `backtest-data.tar.gz` from the
+repo's `data-latest` release and extract it into `backtest/`.
+
+GitHub can silently pause scheduled workflows on low-activity repos --
+if a daily run seems to have been skipped, trigger it manually from the
+Actions tab; that always works regardless of the cron schedule's state.
+
+## Setup (running the pipeline manually instead)
 
 ```bash
 cd backtest/data_pipeline
@@ -182,7 +207,17 @@ built in phases so each is testable before the next depends on it:
       timeframe, not the lower-timeframe entry-trigger level); and
       Bishop's conservative-target cap for countertrend trades taken off
       a swept breakout-candle extreme.
-- [ ] Phase 5 -- full backtest runner + performance metrics
+- [~] **Phase 5 -- full backtest runner + performance metrics** (in
+      progress). `trade_log.py` is done: a `TradeRecord` schema logging
+      far more than win/loss per trade -- full multi-timeframe bias
+      context at entry, all 4 of Phase 2's ranking factors, which entry
+      pattern and stop-loss rule fired, and MAE/MFE (max adverse/
+      favorable excursion in R-multiples, not just the final result) --
+      built specifically so the resulting dataset is usable as ML
+      training data later, not just a backtest report. Still missing:
+      `runner.py`, the piece that actually walks cached candles forward
+      through Phases 1-4 and populates real `TradeRecord`s instead of
+      hand-built test fixtures.
 
 Four deliberate design choices worth flagging:
 - STRATEGY.md never gives a precise algorithm for identifying "a prior

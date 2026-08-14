@@ -1,0 +1,68 @@
+name: Fetch backtest data
+
+# Runs the Dukascopy data pipeline entirely on GitHub's infrastructure --
+# no dependency on any local machine or its power supply. Restores the
+# previously-cached data from the "data-latest" release first, so
+# fetch_dukascopy.py's incremental logic actually has something to be
+# incremental against (a fresh Actions runner has no disk state from
+# prior runs otherwise), then re-publishes the updated cache as that
+# same release's asset.
+#
+# NOTE: GitHub can silently pause scheduled (cron) workflows on
+# low-activity repos. `workflow_dispatch` below always works regardless
+# -- use the "Run workflow" button on the Actions tab if a scheduled run
+# seems to have been skipped.
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # daily at 03:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # needed to create/update the data-latest release
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install data pipeline dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Restore previous data cache (if any)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p backtest/data
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp --clobber \
+            || echo "No previous data-latest release found -- starting from scratch."
+          if [ -f /tmp/backtest-data.tar.gz ]; then
+            tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+            echo "Restored previous cache: $(find backtest/data -name '*.csv' | wc -l) files."
+          fi
+
+      - name: Fetch latest candles (incremental)
+        run: python -m backtest.data_pipeline.fetch_dukascopy --all
+
+      - name: Derive H2 / H3 / M45
+        run: python -m backtest.data_pipeline.derive_granularities --all
+
+      - name: Package data cache
+        run: tar -czf backtest-data.tar.gz -C backtest data
+
+      - name: Publish updated data-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view data-latest >/dev/null 2>&1; then
+            gh release upload data-latest backtest-data.tar.gz --clobber
+          else
+            gh release create data-latest backtest-data.tar.gz \
+              --title "Backtest data cache" \
+              --notes "Automated Dukascopy OHLCV cache. Updated by the fetch-data workflow on every run."
+          fi
