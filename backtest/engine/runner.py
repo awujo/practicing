@@ -60,6 +60,20 @@ ORIGIN_WINDOW = pd.Timedelta(days=3)
 QMR_LOOKAHEAD = 30
 FOLLOWING_LOOKAHEAD = 3
 
+# How many H1 candles forward to search for a stop/target hit before
+# giving up and marking a trade "still_open". Two independent reasons
+# this is capped rather than scanning to the end of the data: (1)
+# performance -- without a cap, a trade opened early in a multi-year H1
+# series scans every remaining candle (up to 100,000+) if its target is
+# never hit again, and with many trades opening over that history the
+# total cost multiplies badly; (2) it's also the more faithful model --
+# Section 8 states the strategy is a day-trading approach ("does not
+# swing trades overnight as a rule"), so a trade genuinely unresolved
+# after ~3 weeks of H1 bars isn't realistic to hold open in the first
+# place. 500 H1 candles is a practical stand-in for that discipline, not
+# a number STRATEGY.md itself specifies.
+MAX_TRADE_DURATION_CANDLES = 500
+
 # Best-effort per-instrument pip size -- most forex pairs are 0.0001, but
 # JPY crosses, metals, oil, indices, and crypto all use different scales.
 # Not exhaustive (see data_pipeline/instruments.py for the full list);
@@ -78,11 +92,27 @@ def default_pip_size(instrument: str) -> float:
     return DEFAULT_PIP_SIZES.get(instrument, 0.0001)
 
 
-def _last_direction_as_of(confirmations, t):
-    candidates = [c for c in confirmations if c.time < t]
-    if not candidates:
+def _direction_lookup(confirmations):
+    """Pre-sorted (times, directions) arrays for O(log n) 'last direction
+    before time t' queries, built once. The naive version of this --
+    filtering the whole confirmation list on every call -- turns an O(n)
+    per-candle backtest loop into O(n*m) against a confirmation list that
+    can itself run into the thousands for a multi-year H1/H4 series
+    (EURUSD's full Dukascopy H1 history is well over 100,000 candles).
+    That combination is what makes an un-optimized run of this loop
+    genuinely slow rather than fast, so this exists specifically to keep
+    a full-history backtest run in the seconds-to-low-minutes range
+    instead of many minutes."""
+    sorted_confs = sorted(confirmations, key=lambda c: c.time)
+    return [c.time for c in sorted_confs], [c.direction for c in sorted_confs]
+
+
+def _last_direction_at(lookup, t):
+    times, directions = lookup
+    idx = bisect.bisect_left(times, t) - 1
+    if idx < 0:
         return None
-    return max(candidates, key=lambda c: c.time).direction
+    return directions[idx]
 
 
 def _strong_extreme_snapshots(daily_candles: list[Candle], daily_events):
@@ -189,6 +219,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily")
     strong_snapshots = _strong_extreme_snapshots(daily, daily_structure_events)
+    h4_lookup = _direction_lookup(h4_confirmations)
+    h1_lookup = _direction_lookup(h1_confirmations)
 
     mgr = PositionManager()
     records: list[TradeRecord] = []
@@ -198,8 +230,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         prev, curr = h1[i - 1], h1[i]
 
         daily_bias = bias_at(daily_breakpoints, curr.time)
-        h4_bias = _last_direction_as_of(h4_confirmations, curr.time)
-        h1_bias = _last_direction_as_of(h1_confirmations, curr.time)
+        h4_bias = _last_direction_at(h4_lookup, curr.time)
+        h1_bias = _last_direction_at(h1_lookup, curr.time)
         effective, effective_tf = resolve_effective_bias({"Daily": daily_bias, "H4": h4_bias})
         if effective is None:
             continue
@@ -250,7 +282,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         pos = mgr.open_position(effective, entry_price, stop_loss, curr.time, "H1", target)
 
         exit_reason, exit_price, exit_time, mae_r, mfe_r = _resolve_trade_outcome(
-            entry_price, stop_loss, target, effective, h1[i + 1:]
+            entry_price, stop_loss, target, effective, h1[i + 1: i + 1 + MAX_TRADE_DURATION_CANDLES]
         )
         if exit_reason == "still_open":
             status = "open"

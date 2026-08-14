@@ -244,6 +244,27 @@ built in phases so each is testable before the next depends on it:
       (see "Data source" above) -- **the first real run against actual
       Dukascopy history is still the true first test of this chain**,
       same caveat as the data pipeline had at first.
+
+      **Performance**: a full-history H1 run (EURUSD's uncapped H1 cache
+      is well over 100,000 candles) can legitimately take up to a couple
+      minutes -- that's expected, not a hang. Two things keep it there
+      rather than effectively hanging: `_last_direction_at()` uses a
+      pre-sorted bisect lookup instead of rescanning the whole
+      confirmation list per candle, and `MAX_TRADE_DURATION_CANDLES`
+      (500 H1 bars, ~3 weeks) caps how far `_resolve_trade_outcome()`
+      searches forward before giving up on an unresolved trade --
+      without that cap, a trade opened early in a multi-year series
+      could scan every remaining candle to the end of history if its
+      target was never hit again, and with many trades opening over that
+      history the cost multiplies badly. The cap is a performance fix
+      but also a more faithful one: Section 8 states this is a
+      day-trading approach that "does not swing trades overnight as a
+      rule," so a trade genuinely unresolved after ~3 weeks of H1 bars
+      isn't realistic to model as still open anyway. Stress-tested
+      against a synthetic 180,000-candle H1 series (deliberately
+      pathological -- random-walk data fires far more engulfing signals
+      than real price action does) at ~13,700 trades in 86 seconds; real
+      data should run faster than that worst case.
 - [ ] **Not yet built**: the full Monthly->Weekly->Daily->4H->lower
       cascade (this MVP only does Daily->H4->H1); performance metrics
       beyond win rate/total R (drawdown, profit factor); multi-instrument
