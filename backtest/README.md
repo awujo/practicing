@@ -284,8 +284,17 @@ built in phases so each is testable before the next depends on it:
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether
-      or not the viewer's browser can reach a CDN. Covered by
-      `engine/tests/test_report.py`.
+      or not the viewer's browser can reach a CDN. Beyond the summary
+      stats and equity curve, it also renders a **trade-by-trade
+      reasoning table** directly on the page (not just a CSV download) --
+      each row reconstructs the trade's story from `TradeRecord`'s
+      fields: the bias reading on every timeframe and which one won the
+      priority hierarchy, which entry pattern fired, the key level and
+      its QMR/imbalance quality signals, and which stop-loss rule
+      applied -- so the dashboard answers "why did it take this trade",
+      not just "did it win". Capped at the most recent 1,000 trades per
+      run to keep the page a sane size; the CSV download link still has
+      the full history. Covered by `engine/tests/test_report.py`.
 - [ ] **Not yet built**: the full Monthly->Weekly->Daily->4H->lower
       cascade (this MVP only does Daily->H4->H1); performance metrics
       beyond win rate/total R (drawdown, profit factor); multi-instrument
