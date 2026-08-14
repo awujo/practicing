@@ -145,11 +145,28 @@ built in phases so each is testable before the next depends on it:
       in STRATEGY.md: "imbalance"/FVG is never precisely defined anywhere
       in the source material, so `imbalance.py` uses the standard ICT
       3-candle gap definition as a stated assumption.
-- [ ] Phase 3 -- bias cascade + bias-flip state machine (Section 2)
+- [x] **Phase 3 -- bias cascade & bias-flip state machine** (`bias.py`):
+      the 3-condition flip test (Video 16, completed by Video 17) -- a
+      higher-timeframe bias only flips when price trades into the next
+      key level on its origin timeframe, rejects and closes the new
+      direction, AND the next lower timeframe also stops confirming the
+      old direction; if the lower timeframe still confirms the old
+      direction, the bias stays put (Video 16's resolved ambiguity).
+      Enforces Video 17's completion directly in the type system: only
+      `Confirmation` objects (breakout or sweep+break, from
+      `detect_confirmations()`) can satisfy condition (c) -- open-close
+      breaks and engulfing (Phase 2's disrespect logic) are a different
+      type and structurally can't be passed in as flip evidence, so the
+      "never validates a bias flip" rule can't be accidentally violated
+      by a future caller. Also implements the confirmed strict priority
+      hierarchy (Weekly > Daily > 4H > lower timeframes) and Video 16's
+      breakout-vs-sweep+break acceptance (both count as valid
+      confirmation; `detect_confirmations()` merges them without
+      double-tagging a single event as both).
 - [ ] Phase 4 -- entry triggers + trade management/stacking (Sections 5-6)
 - [ ] Phase 5 -- full backtest runner + performance metrics
 
-Two deliberate design choices worth flagging:
+Three deliberate design choices worth flagging:
 - STRATEGY.md never gives a precise algorithm for identifying "a prior
   swing point" ("look to the left" is qualitative). Phase 1 uses a
   standard n-bar fractal (local extreme over n bars each side) with `n`
@@ -162,6 +179,16 @@ Two deliberate design choices worth flagging:
   is a placeholder to have something runnable, and every factor is left
   independently inspectable on `RankedCandidate` so different weightings
   can be swept during backtesting instead of assumed.
+- Video 18 draws a semantic distinction between "break of structure"
+  (initiation/origin) and "breakout" (continuation) that's separate from
+  Video 16's visual sweep-vs-no-sweep distinction, and Section 2 itself
+  reconciles them as related but not identical. Phase 3 doesn't implement
+  a third independent classifier for this -- a confirmation event is
+  BOS/origin exactly when it's the event that flips `BiasCascade.direction`,
+  and a continuation/breakout otherwise, which is a direct reading of
+  Section 2's own reconciliation ("a storyline typically begins with a
+  break of structure... subsequent confirmations in that established
+  direction are properly breakouts").
 
 Candle processing is a plain forward loop over a `list[Candle]`, not
 vectorized pandas -- so the same detection code can later replay live,
