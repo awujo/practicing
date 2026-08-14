@@ -1,10 +1,12 @@
 name: Run backtest
 
 # On-demand backtest run, entirely on GitHub's infrastructure. Downloads
-# the latest cached candle data published by fetch-data.yml, runs the
-# Phase 5 engine for one instrument/entry-style, and uploads the
-# resulting trade log (backtest/results/*.csv) as a workflow artifact --
-# no local machine involved.
+# the latest cached candle data published by fetch-data.yml, restores any
+# previously published results (so the dashboard accumulates across runs
+# instead of only ever showing the latest one), runs the Phase 5 engine
+# for one instrument/entry-style, regenerates the results dashboard, and
+# publishes it to GitHub Pages -- no local machine involved, and nothing
+# to download to see the results.
 
 on:
   workflow_dispatch:
@@ -21,6 +23,9 @@ on:
         options:
           - aggressive
           - conservative
+
+permissions:
+  contents: write # needed to publish to the gh-pages branch
 
 jobs:
   backtest:
@@ -44,14 +49,38 @@ jobs:
           tar -xzf /tmp/backtest-data.tar.gz -C backtest/
           echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."
 
+      - name: Restore previously published results (if any)
+        run: |
+          mkdir -p backtest/results
+          git fetch origin gh-pages 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git worktree add /tmp/ghpages origin/gh-pages
+            if [ -d /tmp/ghpages/results ]; then
+              cp /tmp/ghpages/results/*.csv backtest/results/ 2>/dev/null || true
+              echo "Restored $(ls backtest/results | wc -l) previously published result file(s)."
+            fi
+            git worktree remove /tmp/ghpages --force
+          else
+            echo "No gh-pages branch yet -- this will be the first published run."
+          fi
+
       - name: Run backtest
         run: |
           python -m backtest.engine.runner \
             --instrument "${{ inputs.instrument }}" \
             --style "${{ inputs.style }}"
 
-      - name: Upload trade log
+      - name: Generate results dashboard
+        run: python -m backtest.engine.report
+
+      - name: Upload trade log (workflow artifact, for direct download too)
         uses: actions/upload-artifact@v4
         with:
           name: backtest-results-${{ inputs.instrument }}-${{ inputs.style }}
           path: backtest/results/*.csv
+
+      - name: Publish dashboard to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: backtest/site

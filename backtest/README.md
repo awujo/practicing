@@ -63,10 +63,25 @@ Actions tab; that always works regardless of the cron schedule's state.
 `.github/workflows/run-backtest.yml` runs the Phase 5 engine the same
 way -- on demand, entirely on GitHub's servers. Trigger it from the
 Actions tab with an `instrument` and `style` (aggressive/conservative)
-input; it downloads the latest `data-latest` cache, runs
-`backtest.engine.runner`, and uploads the resulting trade log as a
-downloadable workflow artifact. Requires `fetch-data.yml` to have
-published data at least once first.
+input; it downloads the latest `data-latest` cache, restores any
+previously published results, runs `backtest.engine.runner`, regenerates
+the results dashboard (`backtest/engine/report.py`), and publishes it to
+GitHub Pages -- so there's a standing webpage with win rate, average R,
+and a cumulative-R equity curve per instrument/style run, updated
+automatically after every run. Requires `fetch-data.yml` to have
+published data at least once first. Each run also still uploads the raw
+trade-log CSV as a workflow artifact, for anyone who wants the underlying
+data rather than just the summary.
+
+**One-time manual step required**: GitHub Pages has to be enabled once
+per repo -- go to **Settings -> Pages -> Source**, select **"Deploy from
+a branch"**, branch **`gh-pages`** (folder `/ (root)`), and save. The
+`gh-pages` branch itself doesn't exist yet -- it gets created
+automatically the first time `run-backtest.yml` runs, so run the
+workflow once first, then come back and set the Pages source to
+`gh-pages` once it exists. After that, the dashboard is live at
+`https://<owner>.github.io/<repo>/` and updates itself on every
+subsequent run -- no further manual steps.
 
 ## Setup (running the pipeline manually instead)
 
@@ -265,6 +280,12 @@ built in phases so each is testable before the next depends on it:
       pathological -- random-walk data fires far more engulfing signals
       than real price action does) at ~13,700 trades in 86 seconds; real
       data should run faster than that worst case.
+
+      `report.py` turns the CSV trade logs into the GitHub Pages
+      dashboard described above -- dependency-free (no Chart.js/CDN, just
+      inline SVG generated in Python), so it renders identically whether
+      or not the viewer's browser can reach a CDN. Covered by
+      `engine/tests/test_report.py`.
 - [ ] **Not yet built**: the full Monthly->Weekly->Daily->4H->lower
       cascade (this MVP only does Daily->H4->H1); performance metrics
       beyond win rate/total R (drawdown, profit factor); multi-instrument
