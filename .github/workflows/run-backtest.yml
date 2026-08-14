@@ -1,0 +1,57 @@
+name: Run backtest
+
+# On-demand backtest run, entirely on GitHub's infrastructure. Downloads
+# the latest cached candle data published by fetch-data.yml, runs the
+# Phase 5 engine for one instrument/entry-style, and uploads the
+# resulting trade log (backtest/results/*.csv) as a workflow artifact --
+# no local machine involved.
+
+on:
+  workflow_dispatch:
+    inputs:
+      instrument:
+        description: "Internal symbol, e.g. EURUSD (see backtest/data_pipeline/instruments.py)"
+        required: true
+        default: "EURUSD"
+      style:
+        description: "Entry style"
+        required: true
+        default: "conservative"
+        type: choice
+        options:
+          - aggressive
+          - conservative
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+          echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."
+
+      - name: Run backtest
+        run: |
+          python -m backtest.engine.runner \
+            --instrument "${{ inputs.instrument }}" \
+            --style "${{ inputs.style }}"
+
+      - name: Upload trade log
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results-${{ inputs.instrument }}-${{ inputs.style }}
+          path: backtest/results/*.csv

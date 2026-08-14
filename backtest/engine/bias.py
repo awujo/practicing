@@ -169,3 +169,56 @@ def resolve_effective_bias(biases: dict[str, Direction | None]) -> tuple[Directi
         if biases.get(tf) is not None:
             return biases[tf], tf
     return None, None
+
+
+def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: list[Confirmation],
+                 initial_direction: Direction, timeframe_label: str,
+                 confirmation_window: int = 5) -> list[tuple[object, Direction]]:
+    """
+    Backtest driver for BiasCascade: walks `candles` forward, applying
+    check_flip() whenever price trades into the next same-direction key
+    level that hasn't already been tested for a flip. Returns a list of
+    (time, direction) breakpoints -- the bias is `direction` from that
+    point until the next breakpoint (or end of data). Use `bias_at()`
+    below to query it for a specific time.
+
+    `confirmation_window` bounds how many of the next lower-timeframe
+    confirmations after a rejection candle get checked for condition (c)
+    ("no further continuation confirmation"). STRATEGY.md doesn't give
+    that check a time limit -- in principle it's unbounded -- so this is
+    a practical modeling choice for a finite backtest, not a rule from
+    the source material.
+    """
+    if not candles:
+        return []
+
+    cascade = BiasCascade(timeframe_label)
+    cascade.set_initial_bias(initial_direction, candles[0].time)
+    breakpoints = [(candles[0].time, initial_direction)]
+
+    levels_sorted = sorted(levels, key=lambda lvl: lvl.time)
+    tested_level_times = set()
+
+    for c in candles:
+        for level in levels_sorted:
+            if level.time >= c.time or level.time in tested_level_times:
+                continue
+            if level.default_bias != cascade.direction:
+                continue
+            if not (c.low <= level.price <= c.high):
+                continue
+            tested_level_times.add(level.time)
+            window = [conf for conf in confirmations if conf.time > c.time][:confirmation_window]
+            if cascade.check_flip(level, c, window):
+                breakpoints.append((c.time, cascade.direction))
+            break  # one level tested per candle is enough for this replay
+
+    return breakpoints
+
+
+def bias_at(breakpoints: list[tuple[object, Direction]], t) -> Direction | None:
+    """Query a replay_bias() breakpoint list for the bias in effect at time `t`."""
+    applicable = [bp for bp in breakpoints if bp[0] <= t]
+    if not applicable:
+        return None
+    return max(applicable, key=lambda bp: bp[0])[1]

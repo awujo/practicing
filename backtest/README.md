@@ -60,6 +60,14 @@ GitHub can silently pause scheduled workflows on low-activity repos --
 if a daily run seems to have been skipped, trigger it manually from the
 Actions tab; that always works regardless of the cron schedule's state.
 
+`.github/workflows/run-backtest.yml` runs the Phase 5 engine the same
+way -- on demand, entirely on GitHub's servers. Trigger it from the
+Actions tab with an `instrument` and `style` (aggressive/conservative)
+input; it downloads the latest `data-latest` cache, runs
+`backtest.engine.runner`, and uploads the resulting trade log as a
+downloadable workflow artifact. Requires `fetch-data.yml` to have
+published data at least once first.
+
 ## Setup (running the pipeline manually instead)
 
 ```bash
@@ -207,17 +215,40 @@ built in phases so each is testable before the next depends on it:
       timeframe, not the lower-timeframe entry-trigger level); and
       Bishop's conservative-target cap for countertrend trades taken off
       a swept breakout-candle extreme.
-- [~] **Phase 5 -- full backtest runner + performance metrics** (in
-      progress). `trade_log.py` is done: a `TradeRecord` schema logging
-      far more than win/loss per trade -- full multi-timeframe bias
-      context at entry, all 4 of Phase 2's ranking factors, which entry
-      pattern and stop-loss rule fired, and MAE/MFE (max adverse/
-      favorable excursion in R-multiples, not just the final result) --
-      built specifically so the resulting dataset is usable as ML
-      training data later, not just a backtest report. Still missing:
-      `runner.py`, the piece that actually walks cached candles forward
-      through Phases 1-4 and populates real `TradeRecord`s instead of
-      hand-built test fixtures.
+- [x] **Phase 5 -- full backtest runner** (`runner.py`, `trade_log.py`):
+      wires Phases 1-4 together into one real MVP chain -- Daily (bias
+      origin) -> H4 (lower-timeframe flip evidence) -> H1 (entry trigger
+      and trade management), the concrete instantiation of Section 2's
+      "Daily beats 4H... scale down further for entries" routine. Bias is
+      bootstrapped from the first confirmed Daily structure, replayed
+      forward through `bias.replay_bias()` (new in this phase -- a
+      backtest driver built on top of the already-tested `BiasCascade`,
+      not a reimplementation of it); entries fire on H1 engulfing candles
+      aligned with the effective (priority-resolved) bias, classified via
+      Phase 4's 3-pattern logic, with stop/target rules selected by
+      trade kind and IRL presence exactly as Phase 4 defines them.
+      MAE/MFE and R-multiples are computed by walking forward candle by
+      candle to whichever of stop/target is touched first. Run via
+      `python -m backtest.engine.runner --instrument EURUSD --style
+      conservative` (from the repo root) or the `run-backtest.yml`
+      GitHub Actions workflow -- both write a `TradeRecord` CSV plus a
+      console summary (win rate, total/average R).
+      `trade_log.py`'s `TradeRecord` schema logs far more than win/loss
+      per trade -- full multi-timeframe bias context, all 4 of Phase 2's
+      ranking factors, which entry pattern and stop-loss rule fired, and
+      MAE/MFE in R-multiples -- specifically so the resulting dataset
+      doubles as ML training data later, not just a backtest report.
+      Validated end-to-end against a synthetic multi-timeframe scenario
+      (`engine/tests/test_runner.py`) covering both entry styles, since
+      this session has no way to run it against real cached data itself
+      (see "Data source" above) -- **the first real run against actual
+      Dukascopy history is still the true first test of this chain**,
+      same caveat as the data pipeline had at first.
+- [ ] **Not yet built**: the full Monthly->Weekly->Daily->4H->lower
+      cascade (this MVP only does Daily->H4->H1); performance metrics
+      beyond win rate/total R (drawdown, profit factor); multi-instrument
+      batch runs; weight-sweeping across Phase 2's `ranking.py` factors
+      or Phase 4's entry-style/stop-rule variants against real results.
 
 Four deliberate design choices worth flagging:
 - STRATEGY.md never gives a precise algorithm for identifying "a prior
@@ -251,6 +282,12 @@ Four deliberate design choices worth flagging:
   which is a deliberate simplification -- worth revisiting against real
   backtest output if FRESH_IRL_REQUIRED or NESTED_DISRESPECT classifications
   look wrong on actual charts.
+- `runner.py`'s module docstring lists its own MVP simplifications in
+  full (Daily->H4->H1 only, bootstrapped initial bias, simplified H4/H1
+  bias readings, engulf-open as the consumed key level, a proximity-based
+  origin/continuation heuristic, bounded look-ahead windows for QMR/
+  confirmation checks, and the same-candle stop-vs-target tie-break) --
+  not repeated here to avoid the two copies drifting out of sync.
 
 Candle processing is a plain forward loop over a `list[Candle]`, not
 vectorized pandas -- so the same detection code can later replay live,
