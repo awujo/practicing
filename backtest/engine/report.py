@@ -92,7 +92,7 @@ def _escape(value) -> str:
 
 def _trade_row_html(row: dict) -> str:
     bias_story = " &middot; ".join(
-        f"{tf}={row.get(f'bias_{tf.lower()}') or '—'}" for tf in ("Daily", "H4", "H1")
+        f"{tf}={row.get(f'bias_{tf.lower()}') or '—'}" for tf in ("Weekly", "Daily", "H4", "H1")
     )
     effective = row.get("effective_bias_timeframe") or "—"
     fvg = "FVG overlap" if row.get("imbalance_overlap") == "True" else "no FVG"

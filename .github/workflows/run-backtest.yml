@@ -44,7 +44,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp || {
+            echo "::error::No 'data-latest' release found -- the data pipeline hasn't run yet. Go to Actions > Fetch backtest data > Run workflow, wait for it to finish, then re-run this workflow."
+            exit 1
+          }
           mkdir -p backtest/data
           tar -xzf /tmp/backtest-data.tar.gz -C backtest/
           echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."

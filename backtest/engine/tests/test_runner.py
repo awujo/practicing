@@ -18,6 +18,10 @@ def H4(i, o, h, l, c):
     return Candle(pd.Timestamp("2024-01-01") + pd.Timedelta(hours=4 * i), o, h, l, c, 1000)
 
 
+def W(i, o, h, l, c):
+    return Candle(pd.Timestamp("2023-01-01") + pd.Timedelta(weeks=i), o, h, l, c, 1000)
+
+
 H1_BASE = pd.Timestamp("2024-01-01") + pd.Timedelta(days=20)  # well past ORIGIN_WINDOW (3 days) and
 # past the daily series' own last internal bias flip (day 9), so this scenario exercises the
 # "continuation" trade_kind branch rather than "origin" -- see the daily candles below.
@@ -111,3 +115,45 @@ def test_run_backtest_rejects_invalid_entry_style(synthetic_cache):
 def test_run_backtest_returns_empty_for_missing_data(tmp_path, monkeypatch):
     monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
     assert run_backtest("NOPE", "conservative", source=SOURCE) == []
+
+
+@pytest.fixture
+def synthetic_cache_with_weekly(synthetic_cache):
+    # Same bullish sweep+break shape as the `daily` fixture above (validated
+    # in test_structure.py), just scaled/timestamped as weekly candles well
+    # before H1_BASE -- so Weekly's bootstrapped bias is BULLISH and active
+    # by the time the H1 entry fires.
+    weekly = [
+        W(0, 1.080, 1.085, 1.078, 1.082),
+        W(1, 1.082, 1.088, 1.080, 1.086),
+        W(2, 1.086, 1.092, 1.084, 1.087),
+        W(3, 1.087, 1.089, 1.082, 1.084),
+        W(4, 1.084, 1.086, 1.075, 1.076),
+        W(5, 1.076, 1.079, 1.077, 1.078),
+        W(6, 1.078, 1.081, 1.077, 1.079),
+        W(7, 1.079, 1.080, 1.070, 1.077),
+        W(8, 1.077, 1.100, 1.076, 1.095),
+    ]
+    _write("W", weekly)
+    return synthetic_cache
+
+
+def test_run_backtest_weekly_bias_takes_priority_when_available(synthetic_cache_with_weekly):
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+
+    assert len(records) == 1
+    trade = records[0]
+    assert trade.bias_weekly == Direction.BULLISH
+    assert trade.effective_bias_timeframe == "Weekly"  # Weekly outranks Daily/H4 per TIMEFRAME_PRIORITY
+
+
+def test_run_backtest_falls_back_to_daily_when_weekly_data_missing(synthetic_cache):
+    # No "W" cache written -- regression check that the pre-Weekly behavior
+    # (Daily->H4->H1 chain) still works unchanged when Weekly data isn't
+    # available yet for an instrument.
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+
+    assert len(records) == 1
+    trade = records[0]
+    assert trade.bias_weekly is None
+    assert trade.effective_bias_timeframe == "Daily"

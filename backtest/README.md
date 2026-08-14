@@ -68,8 +68,11 @@ previously published results, runs `backtest.engine.runner`, regenerates
 the results dashboard (`backtest/engine/report.py`), and publishes it to
 GitHub Pages -- so there's a standing webpage with win rate, average R,
 and a cumulative-R equity curve per instrument/style run, updated
-automatically after every run. Requires `fetch-data.yml` to have
-published data at least once first. Each run also still uploads the raw
+automatically after every run. **Requires `fetch-data.yml` to have
+published data at least once first** -- if you run `run-backtest.yml`
+before that, it now fails fast with a clear `::error::` message telling
+you to run "Fetch backtest data" first, instead of the opaque "release
+not found" error it used to show. Each run also still uploads the raw
 trade-log CSV as a workflow artifact, for anyone who wants the underlying
 data rather than just the summary.
 
@@ -231,14 +234,22 @@ built in phases so each is testable before the next depends on it:
       Bishop's conservative-target cap for countertrend trades taken off
       a swept breakout-candle extreme.
 - [x] **Phase 5 -- full backtest runner** (`runner.py`, `trade_log.py`):
-      wires Phases 1-4 together into one real MVP chain -- Daily (bias
-      origin) -> H4 (lower-timeframe flip evidence) -> H1 (entry trigger
-      and trade management), the concrete instantiation of Section 2's
-      "Daily beats 4H... scale down further for entries" routine. Bias is
-      bootstrapped from the first confirmed Daily structure, replayed
-      forward through `bias.replay_bias()` (new in this phase -- a
-      backtest driver built on top of the already-tested `BiasCascade`,
-      not a reimplementation of it); entries fire on H1 engulfing candles
+      wires Phases 1-4 together into one real MVP chain -- Weekly
+      (optional bias origin, outranks everything below it) -> Daily (bias
+      origin when Weekly data isn't cached yet) -> H4 (lower-timeframe
+      flip evidence) -> H1 (entry trigger and trade management), the
+      concrete instantiation of Section 2's "Daily beats 4H... scale down
+      further for entries" routine, now extended one level up. Weekly
+      runs its own full `BiasCascade`, gated by Daily confirmations for
+      the flip test exactly the way H4 confirmations gate Daily's --
+      falls back cleanly to the plain Daily->H4->H1 chain if the "W"
+      granularity hasn't been fetched for an instrument yet, so it's
+      backward compatible with data caches from before this was added.
+      Bias is bootstrapped from the first confirmed structure on each
+      timeframe, replayed forward through `bias.replay_bias()` (new in
+      this phase -- a backtest driver built on top of the already-tested
+      `BiasCascade`, not a reimplementation of it); entries fire on H1
+      engulfing candles
       aligned with the effective (priority-resolved) bias, classified via
       Phase 4's 3-pattern logic, with stop/target rules selected by
       trade kind and IRL presence exactly as Phase 4 defines them.
@@ -295,11 +306,12 @@ built in phases so each is testable before the next depends on it:
       not just "did it win". Capped at the most recent 1,000 trades per
       run to keep the page a sane size; the CSV download link still has
       the full history. Covered by `engine/tests/test_report.py`.
-- [ ] **Not yet built**: the full Monthly->Weekly->Daily->4H->lower
-      cascade (this MVP only does Daily->H4->H1); performance metrics
-      beyond win rate/total R (drawdown, profit factor); multi-instrument
-      batch runs; weight-sweeping across Phase 2's `ranking.py` factors
-      or Phase 4's entry-style/stop-rule variants against real results.
+- [ ] **Not yet built**: Monthly (the one remaining level of the full
+      Monthly->Weekly->Daily->4H->lower cascade -- Weekly is now wired,
+      see Phase 5 above); performance metrics beyond win rate/total R
+      (drawdown, profit factor); multi-instrument batch runs;
+      weight-sweeping across Phase 2's `ranking.py` factors or Phase 4's
+      entry-style/stop-rule variants against real results.
 
 Four deliberate design choices worth flagging:
 - STRATEGY.md never gives a precise algorithm for identifying "a prior
@@ -334,8 +346,9 @@ Four deliberate design choices worth flagging:
   backtest output if FRESH_IRL_REQUIRED or NESTED_DISRESPECT classifications
   look wrong on actual charts.
 - `runner.py`'s module docstring lists its own MVP simplifications in
-  full (Daily->H4->H1 only, bootstrapped initial bias, simplified H4/H1
-  bias readings, engulf-open as the consumed key level, a proximity-based
+  full (Weekly->Daily->H4->H1 with Weekly optional/Monthly still out of
+  scope, bootstrapped initial bias, simplified H4/H1 bias readings,
+  engulf-open as the consumed key level, a proximity-based
   origin/continuation heuristic, bounded look-ahead windows for QMR/
   confirmation checks, and the same-candle stop-vs-target tie-break) --
   not repeated here to avoid the two copies drifting out of sync.

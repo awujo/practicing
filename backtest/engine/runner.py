@@ -3,26 +3,33 @@ The Phase 5 backtest runner -- wires Phases 1-4 together against cached
 candles and produces real TradeRecords instead of hand-built fixtures.
 
 SCOPE (deliberately an MVP, not the full 5-level cascade): one instrument,
-one chain -- Daily (bias origin timeframe) -> H4 (lower-timeframe evidence
-for the flip test) -> H1 (entry-trigger and trade-management timeframe).
-Section 2's "Daily routine" is explicitly framed as Daily-vs-4H ("Daily
-beats 4H... scale down further for entries"), so this is a faithful, real
-instantiation of the cascade -- just not yet the full
-Monthly->Weekly->Daily->4H->lower generalization. Monthly/Weekly are out
-of scope here (`bias_monthly`/`bias_weekly` are always logged as None)
-and would be the natural next extension once this chain is validated
-against real Dukascopy data.
+one chain -- Weekly (optional, see below) -> Daily -> H4 (lower-timeframe
+evidence for the flip test) -> H1 (entry-trigger and trade-management
+timeframe). Monthly is still out of scope (`bias_monthly` is always
+logged as None) and would be the natural next extension.
+
+Weekly is wired in the same way Daily is: its own full BiasCascade, gated
+by Daily confirmations for the flip test's condition (c) -- the same
+relationship H4 confirmations have to Daily's cascade. Per
+TIMEFRAME_PRIORITY (bias.py), Weekly outranks Daily/H4/H1 whenever it has
+an active bias, so once Weekly data is available `effective_bias_timeframe`
+will read "Weekly" rather than "Daily" for most entries. Weekly is
+OPTIONAL, not required: if the "W" granularity hasn't been cached yet for
+an instrument, `run_backtest` falls back to the Daily->H4->H1 chain
+exactly as before (bias_weekly logs as None, effective bias resolution
+skips straight to Daily) -- so this is backward compatible with data
+caches fetched before this change.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
-- The initial Daily bias is bootstrapped from the first confirmed
-  structural direction in the data (StructureTracker's first
-  valid_sweep_break), not a Monthly/Weekly-derived starting bias.
+- The initial Weekly/Daily bias is bootstrapped from the first confirmed
+  structural direction in each timeframe's own data (StructureTracker's
+  first valid_sweep_break), not a hand-set starting bias.
 - H4 and H1 "bias" for logging/hierarchy purposes uses a simpler reading
   (direction of the most recent confirmation as of that time) rather than
-  each running its own full BiasCascade flip-state-machine -- only the
-  Daily bias gets the full 3-condition treatment, since that's the one
-  that actually gates whether a trade is taken.
+  each running its own full BiasCascade flip-state-machine -- only Weekly
+  and Daily get the full 3-condition treatment, since those are the ones
+  that actually gate whether a trade is taken.
 - An engulfing candle's own OPEN is used as the price of the key level it
   "consumed" (Section 5: "an engulfing candle... is functionally
   equivalent to a body-close break of a V/A-shape level").
@@ -205,6 +212,11 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     if not daily or not h4 or not h1:
         return []
 
+    try:
+        weekly = load_candles(source, instrument, "W")
+    except FileNotFoundError:
+        weekly = []  # Weekly is optional -- see module docstring
+
     daily_tracker = StructureTracker(n)
     daily_structure_events = daily_tracker.run(daily)
     first_origin = next((e for e in daily_structure_events if e.kind == "valid_sweep_break"), None)
@@ -212,12 +224,26 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         return []  # no confirmed structure to bootstrap a bias from
 
     daily_levels = detect_key_levels(daily, n)
+    daily_confirmations = detect_confirmations(daily, n)
     h4_confirmations = detect_confirmations(h4, n)
     h1_confirmations = detect_confirmations(h1, n)
     h1_imbalances = detect_imbalances(h1)
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily")
+
+    weekly_breakpoints = []
+    if weekly:
+        weekly_tracker = StructureTracker(n)
+        weekly_structure_events = weekly_tracker.run(weekly)
+        weekly_first_origin = next(
+            (e for e in weekly_structure_events if e.kind == "valid_sweep_break"), None
+        )
+        if weekly_first_origin is not None:
+            weekly_levels = detect_key_levels(weekly, n)
+            weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
+                                              weekly_first_origin.direction, "Weekly")
+
     strong_snapshots = _strong_extreme_snapshots(daily, daily_structure_events)
     h4_lookup = _direction_lookup(h4_confirmations)
     h1_lookup = _direction_lookup(h1_confirmations)
@@ -229,10 +255,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     for i in range(1, len(h1)):
         prev, curr = h1[i - 1], h1[i]
 
+        weekly_bias = bias_at(weekly_breakpoints, curr.time) if weekly_breakpoints else None
         daily_bias = bias_at(daily_breakpoints, curr.time)
         h4_bias = _last_direction_at(h4_lookup, curr.time)
         h1_bias = _last_direction_at(h1_lookup, curr.time)
-        effective, effective_tf = resolve_effective_bias({"Daily": daily_bias, "H4": h4_bias})
+        effective, effective_tf = resolve_effective_bias(
+            {"Weekly": weekly_bias, "Daily": daily_bias, "H4": h4_bias}
+        )
         if effective is None:
             continue
 
@@ -306,6 +335,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             entry_pattern=classification.pattern.value,
             entry_style=entry_style,
             trade_kind=trade_kind,
+            bias_weekly=weekly_bias,
             bias_daily=daily_bias,
             bias_h4=h4_bias,
             bias_h1=h1_bias,
