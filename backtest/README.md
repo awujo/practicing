@@ -163,10 +163,28 @@ built in phases so each is testable before the next depends on it:
       breakout-vs-sweep+break acceptance (both count as valid
       confirmation; `detect_confirmations()` merges them without
       double-tagging a single event as both).
-- [ ] Phase 4 -- entry triggers + trade management/stacking (Sections 5-6)
+- [x] **Phase 4 -- entry triggers & trade management** (`entries.py`,
+      `trade_management.py`): engulfing-candle detection; Video 14's 3
+      execution-facing entry patterns (direct mitigation, fresh-IRL-
+      required, nested disrespect -- a restatement of Video 13's
+      4-branch decision tree); Video 12's IRL-necessity rule (required
+      for origin trades, optional for continuation); Video 13's three
+      distinct mechanized stop-loss rules (origin: beyond the structural
+      extreme + padding; continuation: fixed ~10 pips; no-IRL
+      continuation: a tighter stop just past the engulfed candle's own
+      extreme); the Aggressive/Conservative entry-style split (Section 5,
+      "both sanctioned -- build/test both"); trade stacking via
+      `PositionManager` (Video 14 -- multiple concurrent same-direction
+      positions, deliberately not restricted to origin-only or
+      continuation-only since that's an open question per Section 9);
+      the 1:3 primary risk-reward target; Video 16's tiered exit-target
+      rule (a storyline concludes at another key level on its OWN origin
+      timeframe, not the lower-timeframe entry-trigger level); and
+      Bishop's conservative-target cap for countertrend trades taken off
+      a swept breakout-candle extreme.
 - [ ] Phase 5 -- full backtest runner + performance metrics
 
-Three deliberate design choices worth flagging:
+Four deliberate design choices worth flagging:
 - STRATEGY.md never gives a precise algorithm for identifying "a prior
   swing point" ("look to the left" is qualitative). Phase 1 uses a
   standard n-bar fractal (local extreme over n bars each side) with `n`
@@ -189,6 +207,15 @@ Three deliberate design choices worth flagging:
   Section 2's own reconciliation ("a storyline typically begins with a
   break of structure... subsequent confirmations in that established
   direction are properly breakouts").
+- Video 13's original 4-branch decision tree describes branches 2 and 4
+  with more candle-by-candle detail than Video 14's 3-pattern restatement
+  captures (e.g. branch 2 mentions an intermediate "third candle taps the
+  original IRL" step Video 14 doesn't repeat). `entries.py`'s
+  `classify_entry_pattern()` implements Video 14's simpler 3-pattern
+  version directly off the candles immediately following the engulf,
+  which is a deliberate simplification -- worth revisiting against real
+  backtest output if FRESH_IRL_REQUIRED or NESTED_DISRESPECT classifications
+  look wrong on actual charts.
 
 Candle processing is a plain forward loop over a `list[Candle]`, not
 vectorized pandas -- so the same detection code can later replay live,
