@@ -2,7 +2,8 @@
 
 ## Content type
 Second installment of Bishop's "building bias" series (Part 1 covered key
-levels, referenced but not itself in our video set). This one covers
+levels — now also processed and visually verified, see
+`b_building_bias_1_notes.md`). This one covers
 "building bias with liquidity" — largely a restatement of the core
 mentor cascade (sweep -> candle closure -> breakout/sweep+break on the
 next lower timeframe, repeated recursively weekly->daily->4H) already
