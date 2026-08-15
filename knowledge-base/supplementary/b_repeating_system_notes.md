@@ -90,6 +90,32 @@ looks beforehand).
   "it doesn't mean your bias was wrong," consistent with prior
   risk-management honesty notes.
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-repeating-system`,
+source: the `defi-bishop` GitHub release) and verified with dense
+(8s-interval) frame extraction across all 8 trade windows, read directly.
+Confirms real, concretely-marked levels behind every trade, not just
+narration: US30 weekly bullish, daily ray ~50,500, 4H single-candle
+liquidity/ray ~50,688-50,700, 45min breakout confirmation above the same
+zone; USDCHF daily bearish with ray ~0.78860, 4H rays ~0.78550-0.78600
+(single-candle liquidity) and ~0.78075 (engulfed open-close target);
+AUDCAD daily bullish with weekly-high ray ~0.99600 and ray ~0.98642, 1H
+multiple stacked rays ~0.98550-0.99100; USDCAD weekly rays ~1.39300/
+~1.37000, 4H breakout down through a ray near ~1.38400 to a ~1.37800
+target ray; USOIL 4H bearish with ray ~9,070 (single-candle liquidity)
+and 1H ray ~8,720 (entry/target zone); AUDUSD daily ray ~0.71920, 4H with
+FOUR stacked rays (~0.71200/~0.71400/~0.71500/~0.71650) visibly marked at
+once — a real, on-screen instance of the imbalance-fill-priority dynamic
+described above (multiple candidate levels tracked simultaneously, not
+committing to the nearest one); AUDJPY 4H rays ~113.400-113.522 and
+~114.000; EURAUD 4H rays ~1.62700/~1.62750/~1.62850 and 1H ray ~1.62728
+with an engulfed open-close zone ~1.62500-1.62750. The EURAUD pair is
+unambiguously confirmed by the on-screen ticker/watchlist label (the
+audio transcript garbles "EURAUD" as "your lady") — same pair-naming
+caveat already documented in the plug-and-play notes, now independently
+reconfirmed here. No corrections needed to any of the mechanical claims
+above.
+
 ## Open items
 - No new terminology. 2 of 6 Bishop videos remain to be processed
   (trades_breakdown, what_next).
