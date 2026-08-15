@@ -1,8 +1,9 @@
 # Bishop Supplementary: "Daily Routine & Trade Breakdown"
 
 ## Content type
-A full weekly operational walkthrough across ~10 pairs (USDCHF, AUDUSD,
-USDCAD, USDJPY, XAUUSD, AUDCAD, CADJPY, EURNZD, GBPUSD, UK100), showing
+A full weekly operational walkthrough across 9 pairs (USDCHF, AUDUSD,
+USDCAD, USDJPY, XAUUSD, AUDCAD, CADCHF, EURNZD, UK100 — corrected/
+confirmed by the visual pass below), showing
 Bishop's actual daily scanning routine plus real trade outcomes —
 several wins, several honest misses, one stop-out. Mostly operational/
 process content layered on top of the already-documented mechanics
@@ -94,6 +95,36 @@ timeframe flexible" framing.
   no new resolution mechanism given here beyond what's already
   documented.
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-daily-routine`,
+source: the `defi-bishop` GitHub release) and verified with 10s-interval
+frame extraction across both scanning passes (initial flag pass +
+follow-up entry pass) for every pair, read directly, cross-referenced
+against the TradingView symbol sidebar visible throughout (a stable
+9-pair watchlist: XAUUSD, EURNZD, USDCHF, AUDUSD, USDCAD, USDJPY, UK100,
+AUDCAD, CADCHF). **Corrections to the Content type list above**:
+"CADJPY" is unambiguously **CADCHF** on-screen (audio garbles it as "car
+theater"); the passing "check g you" audio reference is casual shorthand
+for GBPUSD but it is NOT part of the actual tracked watchlist for this
+session (never appears in the sidebar and gets no real breakdown) — it
+has been dropped from the pair count, correcting "~10 pairs" to the
+actual 9. Confirms real, concretely-marked levels/trade zones behind
+every pair: USDCHF daily ray ~0.80300; AUDUSD daily ray ~0.69600; USDJPY
+daily rays ~163,000/~161,000 and a 2H entry ray ~162.400 (the near-stop-
+out example); XAUUSD 4H rays ~4,200/~4,080; UK100 daily rays
+~10,760/~10,440 and, in the follow-up pass, a literal drawn green/red
+risk-reward box on the 3H chart around the ~10,530-10,585 entry (a real
+marked trade zone, not just narration); AUDCAD 4H rays ~0.98450/~0.98400
+with a drawn triangular "V shape key level with a body" annotation
+matching the transcript's own description; CADCHF weekly/4H rays
+~0.57700/~0.57050/~0.57000; EURNZD 4H rays ~2.00500/~1.98500/~1.94000,
+with an on-screen chart title reading "ROUTINE x BREAKDOWN" confirming
+the video's own content framing. No corrections needed to the mechanical/
+workflow/risk-management claims — only the two pair-identification
+issues above.
+
 ## Open items
-- No new terminology. 3 of 6 Bishop videos remain to be processed
-  (repeating_system, trades_breakdown, what_next).
+- No new terminology beyond the multi-pair scanning workflow and
+  flexible-confirmation-timeframe notes already documented above. All
+  Bishop supplementary videos originally planned, plus the newer
+  multi-video release batch, have now been visually verified.
