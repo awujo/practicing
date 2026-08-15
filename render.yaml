@@ -2,9 +2,13 @@ services:
   - type: web
     name: slk-backtest-viewer
     env: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r backtest/webapp/requirements.txt
-    startCommand: gunicorn backtest.webapp.app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+    # 1 worker (not 2): free tier's ~512MB RAM is tight once pandas is
+    # loaded, and each gunicorn worker is a full separate process. Threads
+    # are enough here since the app is I/O-bound (waiting on GitHub, not
+    # doing heavy CPU work) -- see backtest/README.md's free-tier notes.
+    startCommand: gunicorn backtest.webapp.app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 4
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

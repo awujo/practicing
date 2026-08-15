@@ -140,9 +140,37 @@ showing the strategy's actual entries/stops/targets.
 
 No further steps after that: every future `run-backtest.yml` run
 publishes new results to `gh-pages`, and the viewer picks them up on its
-own (results are re-fetched at most once a minute; the candle cache at
-most once an hour -- see `DATA_REFRESH_SECONDS`/`RESULTS_REFRESH_SECONDS`
-in `backtest/webapp/data_access.py` if you want to tune that).
+own (results are re-fetched at most once a minute; each instrument's
+candle cache at most once an hour -- see
+`DATA_REFRESH_SECONDS`/`RESULTS_REFRESH_SECONDS` in
+`backtest/webapp/data_access.py` if you want to tune that).
+
+**Using Render's free plan:** `render.yaml` is set to `plan: free`, and
+the candle-fetch path was deliberately built around this -- the full
+`backtest-data.tar.gz` (all instruments, all granularities, decades of
+history) is 260MB+ compressed, which would blow well past the free
+tier's ~512MB RAM on every cold start and likely time out before it even
+finished downloading. `fetch-data.yml` instead publishes a small
+per-instrument archive (`EURUSD.tar.gz`, etc.) alongside the full one,
+and `backtest/webapp/data_access.py` only ever downloads the ONE
+instrument's archive for whatever trade you're actually viewing, cached
+per instrument thereafter. That keeps a cold-start chart load down to a
+few MB, not 260MB.
+
+Two free-tier tradeoffs worth knowing about even with that fix:
+- Free web services spin down after 15 minutes idle, and the container
+  (and its `/tmp` disk) is gone when they do -- so the first click after
+  any idle period re-downloads that one instrument's small archive.
+  Expect a few extra seconds on the first chart after a while away, not
+  a redeploy or any action from you.
+- If you click through several *different* instruments in one session,
+  each one's archive gets downloaded once (and cached for
+  `DATA_REFRESH_SECONDS`) -- still small per instrument, just not free
+  the very first time you look at a new one.
+
+If it turns out too slow or flaky on free, the only change needed to
+move to a paid plan is `plan: starter` (or higher) in `render.yaml` --
+nothing else about the app changes.
 
 Run it locally instead with:
 ```

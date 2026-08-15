@@ -55,14 +55,30 @@ jobs:
       - name: Package data cache
         run: tar -czf backtest-data.tar.gz -C backtest data
 
+      - name: Package per-instrument data caches (for the on-demand chart viewer)
+        # The full bundle above is ~260MB+ across all instruments/granularities
+        # -- fine for a GitHub Actions runner, much too slow/memory-heavy for
+        # backtest/webapp/'s on-demand viewer to pull on every cold start
+        # (see backtest/README.md's "Trade chart viewer" section). It only
+        # ever needs ONE instrument's Daily/H4/H1 at a time, so it downloads
+        # one of these small per-instrument archives instead of the full one.
+        run: |
+          mkdir -p /tmp/instrument-archives
+          for dir in backtest/data/dukascopy/*/; do
+            instrument=$(basename "$dir")
+            tar -czf "/tmp/instrument-archives/${instrument}.tar.gz" -C backtest "data/dukascopy/${instrument}"
+          done
+          echo "Packaged $(ls /tmp/instrument-archives | wc -l) per-instrument archives."
+
       - name: Publish updated data-latest release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view data-latest >/dev/null 2>&1; then
             gh release upload data-latest backtest-data.tar.gz --clobber
+            gh release upload data-latest /tmp/instrument-archives/*.tar.gz --clobber
           else
-            gh release create data-latest backtest-data.tar.gz \
+            gh release create data-latest backtest-data.tar.gz /tmp/instrument-archives/*.tar.gz \
               --title "Backtest data cache" \
-              --notes "Automated Dukascopy OHLCV cache. Updated by the fetch-data workflow on every run."
+              --notes "Automated Dukascopy OHLCV cache. Updated by the fetch-data workflow on every run. backtest-data.tar.gz is the full all-instruments bundle; the per-instrument *.tar.gz assets (EURUSD.tar.gz etc.) are lightweight slices for backtest/webapp/'s on-demand chart viewer."
           fi

@@ -44,7 +44,7 @@ DATA_REFRESH_SECONDS = int(os.environ.get("DATA_REFRESH_SECONDS", 3600))
 RESULTS_REFRESH_SECONDS = int(os.environ.get("RESULTS_REFRESH_SECONDS", 60))
 
 _data_lock = threading.Lock()
-_data_fetched_at = 0.0
+_instrument_fetched_at: dict[str, float] = {}
 
 _results_cache: dict[str, tuple[float, list[dict]]] = {}
 _results_cache_lock = threading.Lock()
@@ -62,36 +62,50 @@ def _headers(accept: str = "application/vnd.github+json") -> dict:
     return {"Authorization": f"token {TOKEN}", "Accept": accept}
 
 
-def ensure_candle_cache() -> str:
-    """Downloads/extracts the data-latest release's candle cache into
-    DATA_CACHE_DIR at most once per DATA_REFRESH_SECONDS, and points
-    data_pipeline.cache.DATA_ROOT at the extracted directory."""
-    global _data_fetched_at
+def ensure_instrument_cache(instrument: str, source: str = "dukascopy") -> str:
+    """Downloads/extracts just `instrument`'s own small per-instrument
+    tar.gz asset from the data-latest release -- NOT the full ~260MB+
+    all-instruments bundle (backtest-data.tar.gz), which is far too much
+    to pull on every cold start on a small hosting tier (Render
+    free/starter): that bundle alone is over the free tier's ~512MB RAM
+    budget once downloaded, decompressed, and held alongside a Python/
+    pandas/Flask process, and would very likely blow past Render's
+    request timeout too. fetch-data.yml publishes one `{instrument}.tar.gz`
+    asset per instrument alongside the full bundle specifically so this
+    can stay small (see its "Package per-instrument data caches" step).
+
+    Cached per instrument, at most once per DATA_REFRESH_SECONDS -- so
+    viewing several different instruments in the same session downloads
+    each one once, not the whole catalogue up front."""
     extracted_data_dir = os.path.join(DATA_CACHE_DIR, "data")
+    instrument_dir = os.path.join(extracted_data_dir, source, instrument)
 
     with _data_lock:
-        if os.path.isdir(extracted_data_dir) and (time.time() - _data_fetched_at) < DATA_REFRESH_SECONDS:
+        fetched_at = _instrument_fetched_at.get(instrument, 0.0)
+        if os.path.isdir(instrument_dir) and (time.time() - fetched_at) < DATA_REFRESH_SECONDS:
             cache_module.DATA_ROOT = extracted_data_dir
             return extracted_data_dir
 
         resp = requests.get(f"{GITHUB_API}/repos/{REPO}/releases/tags/data-latest",
                              headers=_headers(), timeout=30)
         resp.raise_for_status()
-        asset = next((a for a in resp.json()["assets"] if a["name"] == "backtest-data.tar.gz"), None)
+        asset_name = f"{instrument}.tar.gz"
+        asset = next((a for a in resp.json()["assets"] if a["name"] == asset_name), None)
         if asset is None:
             raise RuntimeError(
-                "data-latest release has no backtest-data.tar.gz asset -- "
-                "run the fetch-data.yml workflow first."
+                f"data-latest release has no {asset_name} asset -- run the "
+                "fetch-data.yml workflow first (it publishes one small "
+                "per-instrument archive per instrument alongside the full cache)."
             )
 
-        asset_resp = requests.get(asset["url"], headers=_headers(accept="application/octet-stream"), timeout=180)
+        asset_resp = requests.get(asset["url"], headers=_headers(accept="application/octet-stream"), timeout=60)
         asset_resp.raise_for_status()
 
         os.makedirs(DATA_CACHE_DIR, exist_ok=True)
         with tarfile.open(fileobj=io.BytesIO(asset_resp.content)) as tar:
-            tar.extractall(DATA_CACHE_DIR)  # yields DATA_CACHE_DIR/data/... (packaged as `-C backtest data`)
+            tar.extractall(DATA_CACHE_DIR)  # yields DATA_CACHE_DIR/data/{source}/{instrument}/...
 
-        _data_fetched_at = time.time()
+        _instrument_fetched_at[instrument] = time.time()
         cache_module.DATA_ROOT = extracted_data_dir
         return extracted_data_dir
 
@@ -102,7 +116,7 @@ def load_candle_window(instrument: str, granularity: str, center_time, before: i
     instrument/granularity, lazily loading and caching the full series in
     memory per (source, instrument, granularity) so repeated trade views
     against the same series don't re-read the CSV from disk every time."""
-    ensure_candle_cache()
+    ensure_instrument_cache(instrument, source)
     key = (source, instrument, granularity)
 
     with _candles_cache_lock:
