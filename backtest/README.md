@@ -248,11 +248,11 @@ built in phases so each is testable before the next depends on it:
       Bias is bootstrapped from the first confirmed structure on each
       timeframe, replayed forward through `bias.replay_bias()` (new in
       this phase -- a backtest driver built on top of the already-tested
-      `BiasCascade`, not a reimplementation of it); entries fire on H1
-      engulfing candles
-      aligned with the effective (priority-resolved) bias, classified via
-      Phase 4's 3-pattern logic, with stop/target rules selected by
-      trade kind and IRL presence exactly as Phase 4 defines them.
+      `BiasCascade`, not a reimplementation of it). Entries only fire
+      through the **Bishop liquidity-cascade gate** (see below) -- once a
+      candle clears that gate, it's classified via Phase 4's 3-pattern
+      logic, with stop/target rules selected by trade kind and IRL
+      presence exactly as Phase 4 defines them.
       MAE/MFE and R-multiples are computed by walking forward candle by
       candle to whichever of stop/target is touched first. Run via
       `python -m backtest.engine.runner --instrument EURUSD --style
@@ -316,6 +316,59 @@ built in phases so each is testable before the next depends on it:
       total R back in mathematical agreement. Covered by
       `test_stop_on_correct_side_rejects_inverted_bullish_stop` in
       `engine/tests/test_runner.py`.
+
+      **Rebuild: the Bishop liquidity-cascade entry gate.** The stop-fix
+      above was a real bug, but a 1.6% win rate on a live EURUSD run
+      pointed at something bigger: the ORIGINAL entry logic fired on ANY
+      H1 engulfing candle aligned with the effective bias, with zero
+      check that a real setup had actually formed first -- none of the
+      selectivity the Bishop supplementary material
+      (`knowledge-base/supplementary/b_*.md`, all 6 videos plus the PDF
+      chart examples, cross-validated independently of the main mentor
+      course) describes. That material documents a specific mechanical
+      sequence: 4H breakout (in the bias direction) -> a single-candle
+      liquidity point forms on the retracement side -> price sweeps it ->
+      price reacts off the NEAREST same-direction H4 key level -> THAT
+      reaction (an engulf, in this build) is the entry trigger. The
+      runner now enforces this as a precomputed gate that runs before the
+      per-trade loop, in two steps:
+      - `_find_liquidity_setups()`: for every confirmed H4 breakout, finds
+        the first single-candle liquidity point (`liquidity.py`'s
+        `structural_liquidity_points()`, n=1 -- Bishop's primary/simplest
+        case) that forms afterward on the retracement side, and the
+        nearest same-direction H4 key level for price to react from.
+      - `_find_entry_candidates()`: for each setup, a bounded forward scan
+        (`LIQUIDITY_SWEEP_LOOKAHEAD` H1 candles) for the sweep, then a
+        further bounded scan (`REACTION_LOOKAHEAD`) for an engulfing
+        candle that also touches the reaction level -- the confirmed
+        entry trigger.
+      Everything downstream (Video 14's 3 patterns, the 3 stop-loss
+      rules, the 1:3 target, MAE/MFE) is unchanged -- only WHICH candles
+      get evaluated, and WHICH key level they're evaluated against (the
+      Bishop-validated H4 level, not an ad-hoc H1-engulf-derived one),
+      changed. Effect on the 180,000-candle synthetic stress benchmark:
+      268 trades in 40.7s, down from ~13,700 trades in 86s under the old
+      ungated logic -- both faster (far fewer candidates to resolve
+      outcomes for) and, more importantly, actually selective the way the
+      real strategy is meant to be. Covered by
+      `test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level`,
+      `test_find_liquidity_setups_yields_nothing_without_a_breakout`, and
+      the direct regression test
+      `test_run_backtest_rejects_a_bias_aligned_engulf_with_no_underlying_cascade`
+      (the exact old fixture that used to produce a trade under the
+      ungated logic now correctly produces zero).
+
+      **Explicitly NOT yet built in this gate** (see `runner.py`'s module
+      docstring for the full list): a 2H fallback for the liquidity point
+      (Bishop notes it sometimes forms there instead of 4H); breakout and
+      sweep+break as alternative confirmation-entry triggers (only
+      engulfing is wired in -- Bishop's material describes 3 valid
+      types); "plug and play" (a looser continuation fallback used when
+      the primary reaction setup is missed -- not yet documented in the
+      knowledge base, so not encoded as a guess); Bishop's
+      imbalance-fill-priority override and "elbow structure" caution
+      (both documented in the knowledge base, neither wired into
+      `_find_liquidity_setups()` yet).
 
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just

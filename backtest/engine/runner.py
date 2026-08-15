@@ -2,23 +2,69 @@
 The Phase 5 backtest runner -- wires Phases 1-4 together against cached
 candles and produces real TradeRecords instead of hand-built fixtures.
 
-SCOPE (deliberately an MVP, not the full 5-level cascade): one instrument,
-one chain -- Weekly (optional, see below) -> Daily -> H4 (lower-timeframe
-evidence for the flip test) -> H1 (entry-trigger and trade-management
+BIAS CHAIN (deliberately an MVP, not the full 5-level cascade): one
+instrument, one chain -- Weekly (optional, see below) -> Daily -> H4
+(lower-timeframe evidence for the flip test) -> H1 (trade-management
 timeframe). Monthly is still out of scope (`bias_monthly` is always
-logged as None) and would be the natural next extension.
+logged as None).
 
 Weekly is wired in the same way Daily is: its own full BiasCascade, gated
 by Daily confirmations for the flip test's condition (c) -- the same
 relationship H4 confirmations have to Daily's cascade. Per
 TIMEFRAME_PRIORITY (bias.py), Weekly outranks Daily/H4/H1 whenever it has
-an active bias, so once Weekly data is available `effective_bias_timeframe`
-will read "Weekly" rather than "Daily" for most entries. Weekly is
-OPTIONAL, not required: if the "W" granularity hasn't been cached yet for
-an instrument, `run_backtest` falls back to the Daily->H4->H1 chain
-exactly as before (bias_weekly logs as None, effective bias resolution
-skips straight to Daily) -- so this is backward compatible with data
-caches fetched before this change.
+an active bias. Weekly is OPTIONAL, not required: if the "W" granularity
+hasn't been cached yet for an instrument, `run_backtest` falls back to
+the Daily->H4->H1 chain (bias_weekly logs as None).
+
+ENTRY GATE -- Bishop's liquidity cascade, not "any engulf aligned with
+bias": an earlier version of this runner fired on ANY H1 engulfing candle
+that happened to align with the effective bias, with no check that a real
+setup had actually formed first. That was flagged (via a live EURUSD run
+that came back with a 1.6% win rate) as the dominant reason results were
+bad -- the filter had none of the selectivity STRATEGY.md's Bishop
+supplementary material (knowledge-base/supplementary/b_*.md) describes.
+The real mechanical sequence, cross-validated across all 6 Bishop videos
+plus the PDF chart examples:
+    4H breakout (in the bias direction)
+    -> a single-candle liquidity point forms afterward, on the
+       retracement side (a swing low after a bullish breakout, a swing
+       high after a bearish one)
+    -> price (H1) sweeps that liquidity point
+    -> price then reacts off the NEAREST same-direction H4 key level
+       (an engulfing candle touching/near that level, in the bias
+       direction)
+    -> that reaction candle IS the entry trigger.
+This is now implemented as a precomputed gate (`_find_liquidity_setups()`
++ `_find_entry_candidates()`) that runs BEFORE the main per-trade loop:
+only H1 candles that are the confirmed reaction of an actual
+breakout->liquidity-sweep->KL-reaction sequence are even considered as
+entries. Everything downstream of that gate (Video 14's 3 execution
+patterns, the 3 mechanized stop-loss rules, the 1:3 target, MAE/MFE
+tracking) is unchanged from before -- only the SELECTIVITY of which
+candles get evaluated, and which key level they're evaluated against
+(the Bishop-validated H4 reaction level, not an ad-hoc H1-engulf-derived
+one), changed.
+
+NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
+- The liquidity point is H4-only. Bishop explicitly notes it sometimes
+  forms on 2H instead ("some time its the 2H that will give us a single
+  candle liquidity after the 4H breakout") -- a 2H fallback isn't wired
+  in yet.
+- Only ENGULFING is accepted as the confirmation-entry trigger. Bishop's
+  material describes 3 valid confirmation-entry types (breakout,
+  engulfing, sweep+break) -- the other two aren't wired into this gate
+  yet (though `detect_confirmations()` already produces breakout/
+  sweep_break events for H1, so this is a bounded extension, not new
+  detection logic).
+- "Plug and play" (a looser continuation fallback used when the primary
+  4H/2H reaction setup is missed) is out of scope until it's documented
+  in the knowledge base -- not encoded as a guess.
+- Bishop's imbalance-fill-priority refinement (a farther key level with a
+  larger unfilled FVG can override the nearest-liquidity preference) and
+  the "elbow structure" caution (a non-single-candle liquidity shape
+  should be waited out in full, not traded on first touch) are both
+  documented in the knowledge base but not yet factored into
+  `_find_liquidity_setups()`.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
@@ -30,12 +76,19 @@ silently assumed:
   each running its own full BiasCascade flip-state-machine -- only Weekly
   and Daily get the full 3-condition treatment, since those are the ones
   that actually gate whether a trade is taken.
-- An engulfing candle's own OPEN is used as the price of the key level it
-  "consumed" (Section 5: "an engulfing candle... is functionally
-  equivalent to a body-close break of a V/A-shape level").
-- trade_kind ("origin" vs "continuation") is approximated by proximity to
-  the most recent Daily bias-flip breakpoint (ORIGIN_WINDOW) --
-  STRATEGY.md doesn't give a precise cutoff either.
+- Once an H4 breakout's liquidity point and reaction level are found, the
+  actual H1 reaction is still classified via Video 14's 3-pattern logic
+  (`classify_entry_pattern()`), reusing the Bishop-validated H4 level as
+  the reference level in place of the engulf's own open -- a reasonable
+  adaptation (the "what happens right after price meets this level"
+  question is the same regardless of which process identified the
+  level), but a judgment call worth flagging.
+- trade_kind ("origin" vs "continuation") is still approximated by
+  proximity to the most recent Daily bias-flip breakpoint (ORIGIN_WINDOW)
+  -- STRATEGY.md doesn't give a precise cutoff, and this is orthogonal to
+  the new liquidity-cascade gate (it only affects which of the 3
+  mechanized stop-loss rules applies to a setup the gate already
+  approved).
 - QMR test-counting and imbalance-overlap for the entry's key level both
   use H1 candles/imbalances (the level's own timeframe), bounded to the
   next QMR_LOOKAHEAD candles rather than an unbounded forward scan.
@@ -47,12 +100,14 @@ silently assumed:
 
 import bisect
 import os
+from dataclasses import dataclass
 
 import pandas as pd
 
 from .candles import Candle, load_candles
 from .structure import Direction, StructureTracker
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
+from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
 from .entries import (
@@ -66,6 +121,21 @@ from .trade_log import TradeRecord, write_trade_log, summarize
 ORIGIN_WINDOW = pd.Timedelta(days=3)
 QMR_LOOKAHEAD = 30
 FOLLOWING_LOOKAHEAD = 3
+
+# How many H1 candles forward to search, after an H4 single-candle
+# liquidity point forms, for price to actually sweep it. Bounded for the
+# same "don't force it, and don't scan forever" reasons as
+# MAX_TRADE_DURATION_CANDLES below -- STRATEGY.md doesn't give this a
+# precise cutoff (Section 5B: "requires patience... don't force it before
+# inducement forms" is qualitative), so ~5 days of H1 bars is a practical
+# stand-in, not a rule from the source material.
+LIQUIDITY_SWEEP_LOOKAHEAD = 120
+
+# How many H1 candles forward, after the liquidity sweep, to search for a
+# reaction off the nearby H4 key level (an engulfing candle touching it,
+# in the setup's direction). Shorter than LIQUIDITY_SWEEP_LOOKAHEAD since
+# a genuine reaction should follow the sweep fairly quickly.
+REACTION_LOOKAHEAD = 40
 
 # How many H1 candles forward to search for a stop/target hit before
 # giving up and marking a trade "still_open". Two independent reasons
@@ -157,6 +227,112 @@ def _strong_at(snapshots, t):
     return lows[idx], highs[idx]
 
 
+@dataclass(frozen=True)
+class LiquiditySetup:
+    """One candidate Bishop-cascade setup: an H4 breakout that produced a
+    single-candle liquidity point on the retracement side, plus the
+    nearest same-direction H4 key level for price to react from once
+    that liquidity is swept. Not yet a trade -- `_find_entry_candidates()`
+    still has to confirm the sweep actually happens and price actually
+    reacts, within bounded lookahead windows."""
+    direction: Direction
+    breakout_time: object
+    liquidity_price: float
+    liquidity_time: object
+    reaction_level: KeyLevel
+
+
+@dataclass(frozen=True)
+class EntryCandidate:
+    """A confirmed Bishop-cascade reaction: the H1 index of the engulfing
+    candle that reacted off `reaction_level` after `direction`'s
+    liquidity was swept. This IS the entry trigger."""
+    index: int
+    direction: Direction
+    reaction_level: KeyLevel
+
+
+def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
+                            n: int = 2) -> list[LiquiditySetup]:
+    """For each confirmed H4 breakout, find the first single-candle
+    liquidity point (structural_liquidity_points with n=1 -- Bishop's
+    primary/simplest case, see the module docstring for the not-yet-built
+    structural/multi-candle generalization) that forms afterward on the
+    retracement side, and the nearest same-direction H4 key level for
+    price to react from once that liquidity is swept. A breakout that
+    never produces both simply yields no setup -- consistent with
+    Section 5B's "requires patience, don't force it" guidance."""
+    liquidity_points = structural_liquidity_points(h4, n=1)
+    breakouts = sorted(h4_confirmations, key=lambda c: c.time)
+    setups = []
+
+    for i, brk in enumerate(breakouts):
+        next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
+        retracement_side = "low" if brk.direction == Direction.BULLISH else "high"
+
+        candidate_points = [
+            p for p in liquidity_points
+            if p.time > brk.time and p.kind == retracement_side
+            and (next_breakout_time is None or p.time < next_breakout_time)
+        ]
+        if not candidate_points:
+            continue
+        liquidity_point = candidate_points[0]
+
+        candidate_levels = [
+            lvl for lvl in h4_key_levels
+            if lvl.default_bias == brk.direction and lvl.time <= liquidity_point.time
+        ]
+        if not candidate_levels:
+            continue
+        reaction_level = min(candidate_levels, key=lambda lvl: abs(lvl.price - liquidity_point.price))
+
+        setups.append(LiquiditySetup(
+            direction=brk.direction, breakout_time=brk.time,
+            liquidity_price=liquidity_point.price, liquidity_time=liquidity_point.time,
+            reaction_level=reaction_level,
+        ))
+
+    return setups
+
+
+def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> list[EntryCandidate]:
+    """For each setup: bounded forward-scan H1 for the sweep of
+    `liquidity_price`, then a further bounded forward-scan for an
+    engulfing candle (in the setup's direction) that also touches
+    `reaction_level.price` -- the confirmed reaction. At most one
+    candidate per setup (the first qualifying reaction), deduped by H1
+    index in case two setups converge on the same candle."""
+    times = [c.time for c in h1]
+    candidates: list[EntryCandidate] = []
+    seen_indices: set[int] = set()
+
+    for setup in setups:
+        start_idx = bisect.bisect_left(times, setup.liquidity_time)
+
+        sweep_idx = None
+        for idx in range(start_idx, min(start_idx + LIQUIDITY_SWEEP_LOOKAHEAD, len(h1))):
+            c = h1[idx]
+            swept = (c.low <= setup.liquidity_price if setup.direction == Direction.BULLISH
+                     else c.high >= setup.liquidity_price)
+            if swept:
+                sweep_idx = idx
+                break
+        if sweep_idx is None:
+            continue
+
+        level_price = setup.reaction_level.price
+        for idx in range(sweep_idx + 1, min(sweep_idx + 1 + REACTION_LOOKAHEAD, len(h1))):
+            prev, curr = h1[idx - 1], h1[idx]
+            touched = (prev.low <= level_price <= prev.high) or (curr.low <= level_price <= curr.high)
+            if touched and is_engulfing(prev, curr, setup.direction) and idx not in seen_indices:
+                candidates.append(EntryCandidate(idx, setup.direction, setup.reaction_level))
+                seen_indices.add(idx)
+                break
+
+    return sorted(candidates, key=lambda ec: ec.index)
+
+
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -237,6 +413,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     daily_levels = detect_key_levels(daily, n)
     daily_confirmations = detect_confirmations(daily, n)
     h4_confirmations = detect_confirmations(h4, n)
+    h4_levels = detect_key_levels(h4, n)
     h1_confirmations = detect_confirmations(h1, n)
     h1_imbalances = detect_imbalances(h1)
 
@@ -259,11 +436,15 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h4_lookup = _direction_lookup(h4_confirmations)
     h1_lookup = _direction_lookup(h1_confirmations)
 
+    liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n)
+    entry_candidates = _find_entry_candidates(h1, liquidity_setups)
+
     mgr = PositionManager()
     records: list[TradeRecord] = []
     trade_id = 0
 
-    for i in range(1, len(h1)):
+    for candidate in entry_candidates:
+        i = candidate.index
         prev, curr = h1[i - 1], h1[i]
 
         weekly_bias = bias_at(weekly_breakpoints, curr.time) if weekly_breakpoints else None
@@ -273,13 +454,14 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         effective, effective_tf = resolve_effective_bias(
             {"Weekly": weekly_bias, "Daily": daily_bias, "H4": h4_bias}
         )
-        if effective is None:
+        # The higher-timeframe bias must still align with the cascade's
+        # breakout direction at actual entry time -- bias can flip in the
+        # (bounded) time between the H4 breakout and the eventual H1
+        # reaction, and a stale-direction setup should not be traded.
+        if effective is None or effective != candidate.direction:
             continue
 
-        if not is_engulfing(prev, curr, effective):
-            continue
-
-        new_key_level = KeyLevel(curr.time, prev.open, "engulfing", effective)
+        new_key_level = candidate.reaction_level
         following = h1[i + 1: i + 1 + FOLLOWING_LOOKAHEAD]
         classification = classify_entry_pattern(new_key_level, following)
         if classification is None:
