@@ -1,11 +1,13 @@
 name: Transcribe video release
 
 # On-demand transcription for a knowledge-base source video, entirely on
-# GitHub's infrastructure. Given a release tag that holds an .mp4 asset
-# (the pattern already used for video1, remaining-videes, defi-bishop,
-# plug-and-play, etc.), downloads it, extracts audio, transcribes with
-# faster-whisper, and commits the raw transcript back to the repo under
-# knowledge-base/videos/<release_tag>/transcript.txt.
+# GitHub's infrastructure. Given a release tag and an asset filename
+# pattern (releases like defi-bishop hold MULTIPLE videos, so release_tag
+# alone isn't enough to pick one), downloads the matching .mp4, extracts
+# audio, transcribes with faster-whisper, and commits the raw transcript
+# to knowledge-base/videos/<video_slug>/transcript.txt -- video_slug is
+# separate from release_tag specifically so multiple videos sharing one
+# release don't collide on the same output path.
 #
 # Runs here specifically because this Claude Code session's own network
 # egress policy blocks huggingface.co (where faster-whisper's model
@@ -18,7 +20,14 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag holding the video asset (e.g. plug-and-play)"
+        description: "Release tag holding the video asset (e.g. defi-bishop)"
+        required: true
+      asset_pattern:
+        description: "Glob matching exactly one asset in the release (e.g. '*Part.1.Bias.Entries*')"
+        required: false
+        default: "*.mp4"
+      video_slug:
+        description: "Output folder name under knowledge-base/videos/ (e.g. bishop-bias-entries)"
         required: true
       model:
         description: "faster-whisper model size (tiny/base/small/medium/large-v3)"
@@ -33,6 +42,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
+      ASSET_PATTERN: ${{ inputs.asset_pattern }}
+      VIDEO_SLUG: ${{ inputs.video_slug }}
       WHISPER_MODEL: ${{ inputs.model }}
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +62,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p /tmp/video
-          gh release download "$RELEASE_TAG" --pattern '*.mp4' --dir /tmp/video
+          gh release download "$RELEASE_TAG" --pattern "$ASSET_PATTERN" --dir /tmp/video
+          count=$(ls /tmp/video/*.mp4 | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::asset_pattern matched $count files, expected exactly 1 -- narrow the pattern"
+            ls /tmp/video/*.mp4
+            exit 1
+          fi
 
       - name: Extract audio
         run: |
@@ -63,10 +80,10 @@ jobs:
 
       - name: Commit transcript
         run: |
-          mkdir -p "knowledge-base/videos/$RELEASE_TAG"
-          cp /tmp/video/transcript.txt "knowledge-base/videos/$RELEASE_TAG/transcript.txt"
+          mkdir -p "knowledge-base/videos/$VIDEO_SLUG"
+          cp /tmp/video/transcript.txt "knowledge-base/videos/$VIDEO_SLUG/transcript.txt"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "knowledge-base/videos/$RELEASE_TAG/transcript.txt"
-          git diff --cached --quiet && echo "Nothing to commit" || git commit -m "Add transcript for $RELEASE_TAG"
-          git push
+          git add "knowledge-base/videos/$VIDEO_SLUG/transcript.txt"
+          git diff --cached --quiet && echo "Nothing to commit" || git commit -m "Add transcript for $VIDEO_SLUG"
+          git pull --rebase && git push
