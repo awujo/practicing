@@ -158,6 +158,79 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
     assert trade.stop_loss == pytest.approx(1.1007)
 
 
+def test_run_backtest_anchors_origin_stop_to_the_setup_own_liquidity_point(tmp_path, monkeypatch):
+    # Same Bishop cascade as `synthetic_cache`, but with H1 candles placed
+    # within ORIGIN_WINDOW (3 days) of the Daily bias flip (bootstrapped at
+    # 2024-01-01 for this fixture -- see the daily series below) instead of
+    # `synthetic_cache`'s deliberate 20-day-later placement, so this trade
+    # is classified "origin". Before the fix, the origin stop was anchored
+    # to a Daily-timeframe strong-low snapshot that hadn't been set yet
+    # this early (StructureTracker's valid_sweep_break doesn't fire until
+    # day 9) -- `_strong_at()` returned None and the trade was silently
+    # dropped. Now it's anchored to `EntryCandidate.liquidity_price`, the
+    # SAME local H4 liquidity point (1.1015, from the single-candle swing
+    # low at H4 idx7) that triggered this exact entry, so the trade is
+    # both produced AND stopped tightly -- matching Video 13's "stop just
+    # beyond the particular high/low that was actually created" and Video
+    # 4's ~9 pip worked example, not a distant Daily structural extreme.
+    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
+
+    daily = [
+        D(0, 1.100, 1.105, 1.098, 1.102),
+        D(1, 1.102, 1.108, 1.100, 1.106),
+        D(2, 1.106, 1.112, 1.104, 1.107),
+        D(3, 1.107, 1.109, 1.102, 1.104),
+        D(4, 1.104, 1.106, 1.095, 1.096),
+        D(5, 1.096, 1.099, 1.097, 1.098),
+        D(6, 1.098, 1.101, 1.097, 1.099),
+        D(7, 1.099, 1.100, 1.090, 1.097),
+        D(8, 1.097, 1.120, 1.096, 1.115),
+    ]
+    h4 = [
+        H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
+        H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
+        H4(2, 1.1010, 1.1030, 1.1005, 1.1020),
+        H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
+        H4(4, 1.1015, 1.1022, 1.1008, 1.1012),
+        H4(5, 1.1012, 1.1038, 1.1010, 1.1035),
+        H4(6, 1.1035, 1.1042, 1.1025, 1.1030),
+        H4(7, 1.1030, 1.1032, 1.1015, 1.1020),  # single-candle liquidity point, low 1.1015
+        H4(8, 1.1020, 1.1028, 1.1018, 1.1025),
+    ]
+    origin_h1_base = pd.Timestamp("2024-01-01") + pd.Timedelta(days=2)
+
+    def origin_H1(i, o, h, l, c):
+        return Candle(origin_h1_base + pd.Timedelta(hours=i), o, h, l, c, 1000)
+
+    h1 = [
+        origin_H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
+        origin_H1(1, 1.1021, 1.1023, 1.1010, 1.1013),  # sweeps the H4 liquidity point (low <= 1.1015)
+        origin_H1(2, 1.1013, 1.1014, 1.1008, 1.1010),  # touches the H4 reaction level (1.1012), bearish
+        origin_H1(3, 1.1010, 1.1035, 1.1005, 1.1030),  # bullish engulf -- the entry trigger
+        origin_H1(4, 1.1030, 1.1045, 1.1025, 1.1040),
+        origin_H1(5, 1.1040, 1.1060, 1.1035, 1.1055),
+        origin_H1(6, 1.1055, 1.1075, 1.1050, 1.1070),
+        origin_H1(7, 1.1070, 1.1085, 1.1065, 1.1080),  # high clears the 1:3 target
+    ]
+
+    _write("D", daily)
+    _write("H4", h4)
+    _write("H1", h1)
+
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert len(records) == 1
+    trade = records[0]
+
+    assert trade.trade_kind == "origin"
+    assert trade.stop_kind == "origin"
+    # 1.1015 (the swept liquidity point) minus a 1-pip pad -- NOT some
+    # multi-hundred-pip Daily structural extreme (e.g. the 1.090 strong low
+    # this fixture's daily series would otherwise produce).
+    assert trade.stop_loss == pytest.approx(1.1014)
+    assert trade.status == "closed_win"
+    assert trade.r_multiple == pytest.approx(3.0)
+
+
 def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():
     h4 = [
         H4(0, 1.1000, 1.1010, 1.0995, 1.1005),

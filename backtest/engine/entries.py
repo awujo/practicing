@@ -41,14 +41,18 @@ Four pieces:
      - continuation (no IRL formed, Video 12's optional-IRL variant): a
        TIGHTER stop, just past the engulfed candle's own extreme plus a
        small pip buffer -- not the usual 10-11 pip continuation stop.
-     - origin: stop beyond the structural extreme (strong high/low) plus
-       a small pip-padding buffer. NOTE (see runner.py): this reference
-       point is currently found via a pure time-proximity heuristic to
-       the daily bias flip, with no check that price is still price-close
-       to that structural extreme -- a known gap, deliberately left
-       out of scope for the imbalance-stop fix above (origin trades were
-       explicitly not touched by that change; still using the wide
-       structural-extreme stop until revisited separately).
+     - origin: stop beyond the structural extreme plus a small
+       pip-padding buffer. The structural extreme is the specific H4
+       liquidity point that was swept to trigger THIS entry
+       (`EntryCandidate.liquidity_price` in runner.py) -- the "particular
+       high/low that was actually created" Bishop's mentor describes
+       placing stops beyond (Video 13's direct origin stop-loss Q&A),
+       not a Daily-timeframe snapshot picked by time-proximity to the
+       bias flip (that used to be the reference point here, and could be
+       price-stale relative to the actual entry -- see runner.py's
+       module docstring for the fix history). Visually cross-checked
+       against Video 4's worked example, where the mentor's R:R tool
+       held a fixed ~9 pip stop while he only adjusted the target.
 
 5. Entry style (Section 5, "both sanctioned -- build/test both"):
    Aggressive enters directly off the key-level+imbalance setup;

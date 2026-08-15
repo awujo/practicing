@@ -402,10 +402,9 @@ built in phases so each is testable before the next depends on it:
       actually fires -- so `origin_stop_loss()` can end up anchored to a
       structural point that's now a long way from entry, producing stops
       (and 3R targets) far outside anything the source material
-      describes. **Not yet fixed** -- explicitly left out of scope for
-      now (see `entries.py`/`runner.py`'s docstrings).
+      describes.
 
-      What WAS fixed this pass, for continuation trades specifically: a
+      What was fixed in this pass, for continuation trades specifically: a
       real GBPUSD "plug and play" chart (user-supplied, cross-checked
       directly) confirmed that a plug-and-play stop sits just past the
       FAR edge of the specific imbalance overlapping the key level --
@@ -417,10 +416,47 @@ built in phases so each is testable before the next depends on it:
       overlaps an imbalance (`trade_kind == "continuation" and
       imbalance_overlap`) -- logged as `stop_kind == "imbalance"`.
       Deliberately scoped to continuation trades only per direct
-      instruction; origin trades still use the (currently stale-prone)
+      instruction; origin trades still used the (then stale-prone)
       structural-extreme stop. Covered by
       `test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades`
       in `engine/tests/test_runner.py`.
+
+      **Follow-up fix: the origin-trade stop-loss, verified frame-by-frame
+      against Video 13 and Video 4.** Video 13's direct student Q&A on
+      origin stop-loss placement says to stop "just beyond this
+      particular high/low -- the strong high/low that was actually
+      created -- give it a bit more room to breathe," and its worked Gold
+      example shows two tightly-spaced local key levels, not a
+      days-old daily extreme. Video 4's "origin of the move" walkthrough
+      goes further: frame-by-frame review of the mentor's own TradingView
+      risk/reward tool (downloaded from the video's GitHub release asset,
+      frames extracted with `ffmpeg` at 8s intervals) shows him repeatedly
+      dragging only the TARGET edge of the box while the STOP edge stays
+      fixed at a constant 9 pips (`0.00090`) below entry across every
+      frame -- direct visual confirmation that the origin stop is a
+      *local*, tightly-scoped point, matching the "two major assignments"
+      principle he states explicitly elsewhere in the same video ("price
+      is looking to attack liquidity... and rebalance... at what
+      particular pricing level do you expect price to bounce off from?").
+      This lines up exactly with a gate the runner already computes:
+      `_find_liquidity_setups()` finds, for every entry, the single H4
+      liquidity point that was swept to trigger that specific reaction
+      (`LiquiditySetup.liquidity_price`) -- the "particular high/low that
+      was actually created" the mentor means -- but it was being thrown
+      away; `origin_stop_loss()` instead pulled from a Daily-timeframe
+      strong-high/low snapshot (`_strong_at()`/`_strong_extreme_snapshots()`,
+      now removed) chosen by pure time-proximity to the bias flip, which
+      could be price-stale (or not yet set at all) by the time an H1
+      entry actually fired. Fix: `EntryCandidate` now carries
+      `liquidity_price` forward from its originating `LiquiditySetup`, and
+      `origin_stop_loss()` anchors to `candidate.liquidity_price` instead
+      -- the same local point used to trigger the trade in the first
+      place. Covered by
+      `test_run_backtest_anchors_origin_stop_to_the_setup_own_liquidity_point`,
+      which also demonstrates the old failure mode directly: with the
+      Daily strong-low snapshot not yet set that early after the bias
+      flip, the old code returned `None` and silently dropped the trade
+      entirely, rather than just mis-sizing its stop.
 
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just

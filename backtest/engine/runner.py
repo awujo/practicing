@@ -103,15 +103,20 @@ silently assumed:
   -- STRATEGY.md doesn't give a precise cutoff, and this is orthogonal to
   the new liquidity-cascade gate (it only affects which of the 4
   mechanized stop-loss rules applies to a setup the gate already
-  approved). Known gap, deliberately NOT fixed by the imbalance-stop
-  change above: this is a pure TIME-proximity heuristic with no check
-  that price is still PRICE-close to the origin's own structural extreme
-  by the time an H1 entry actually fires -- can produce origin stops (and
-  therefore 3R targets) far wider than anything in the source material
-  ever describes, which is the leading cause of trades that never
-  resolve within MAX_TRADE_DURATION_CANDLES. Origin trades were
-  explicitly left out of scope for now (see entries.py) pending a
-  separate fix.
+  approved). This is still a pure TIME-proximity heuristic and a known
+  labeling gap, but it no longer distorts stop-loss width: origin stops
+  used to anchor to a Daily-timeframe structural-extreme snapshot that
+  could be stale (PRICE-far from the origin's own structural extreme) by
+  the time an H1 entry actually fired, producing stops (and therefore 3R
+  targets) far wider than anything in the source material ever
+  describes -- the leading cause of trades that never resolved within
+  MAX_TRADE_DURATION_CANDLES. Fixed by anchoring `origin_stop_loss()` to
+  `EntryCandidate.liquidity_price` instead (see `origin_stop_loss()`'s
+  call site above) -- the SAME local H4 liquidity point that triggered
+  this specific entry, i.e. the "particular high/low that was actually
+  created" Bishop's mentor describes placing stops beyond (Video 13's
+  origin stop-loss Q&A), and visually confirmed against Video 4's
+  worked example (a fixed ~9 pip stop, not a distant swing).
 - QMR test-counting and imbalance-overlap for the entry's key level both
   use H1 candles/imbalances (the level's own timeframe), bounded to the
   next QMR_LOOKAHEAD candles rather than an unbounded forward scan.
@@ -215,41 +220,6 @@ def _last_direction_at(lookup, t):
     return directions[idx]
 
 
-def _strong_extreme_snapshots(daily_candles: list[Candle], daily_events):
-    """One O(n) pass building parallel (times, lows, highs) arrays of the
-    running strong_low/strong_high as of each daily candle, from
-    StructureTracker's already-computed events -- instead of re-running
-    the tracker per candle (which would be O(n^2)). Query with `_strong_at()`,
-    NOT a direct dict lookup by timestamp: callers query with H1/H4
-    timestamps that will essentially never exactly match a daily candle's
-    own timestamp, so this needs an as-of-time-t lookup ("look to the
-    left" to the most recent daily snapshot), not an exact-key match."""
-    events_sorted = sorted((e for e in daily_events if e.kind == "valid_sweep_break"), key=lambda e: e.time)
-    times, lows, highs = [], [], []
-    strong_low_price, strong_high_price = None, None
-    idx = 0
-    for c in daily_candles:
-        while idx < len(events_sorted) and events_sorted[idx].time <= c.time:
-            e = events_sorted[idx]
-            if e.direction == Direction.BULLISH:
-                strong_low_price = e.price
-            else:
-                strong_high_price = e.price
-            idx += 1
-        times.append(c.time)
-        lows.append(strong_low_price)
-        highs.append(strong_high_price)
-    return times, lows, highs
-
-
-def _strong_at(snapshots, t):
-    times, lows, highs = snapshots
-    idx = bisect.bisect_right(times, t) - 1
-    if idx < 0:
-        return None, None
-    return lows[idx], highs[idx]
-
-
 @dataclass(frozen=True)
 class LiquiditySetup:
     """One candidate Bishop-cascade setup: an H4 breakout that produced a
@@ -269,10 +239,18 @@ class LiquiditySetup:
 class EntryCandidate:
     """A confirmed Bishop-cascade reaction: the H1 index of the engulfing
     candle that reacted off `reaction_level` after `direction`'s
-    liquidity was swept. This IS the entry trigger."""
+    liquidity was swept. This IS the entry trigger.
+
+    `liquidity_price` carries over the setup's own swept liquidity point --
+    the "particular high/low that was actually created" by this specific
+    setup's sweep (Video 13's origin stop-loss Q&A), used as the origin
+    stop-loss anchor instead of a daily-timeframe snapshot that may be
+    stale relative to this exact entry (see `origin_stop_loss()`'s call
+    site in `run_backtest`)."""
     index: int
     direction: Direction
     reaction_level: KeyLevel
+    liquidity_price: float
 
 
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
@@ -349,7 +327,8 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> li
             prev, curr = h1[idx - 1], h1[idx]
             touched = (prev.low <= level_price <= prev.high) or (curr.low <= level_price <= curr.high)
             if touched and is_engulfing(prev, curr, setup.direction) and idx not in seen_indices:
-                candidates.append(EntryCandidate(idx, setup.direction, setup.reaction_level))
+                candidates.append(EntryCandidate(idx, setup.direction, setup.reaction_level,
+                                                  setup.liquidity_price))
                 seen_indices.add(idx)
                 break
 
@@ -455,7 +434,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
                                               weekly_first_origin.direction, "Weekly")
 
-    strong_snapshots = _strong_extreme_snapshots(daily, daily_structure_events)
     h4_lookup = _direction_lookup(h4_confirmations)
     h1_lookup = _direction_lookup(h1_confirmations)
 
@@ -518,11 +496,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             )
             stop_kind = "imbalance"
         elif trade_kind == "origin":
-            strong_low_price, strong_high_price = _strong_at(strong_snapshots, curr.time)
-            structural_extreme = strong_low_price if effective == Direction.BULLISH else strong_high_price
-            if structural_extreme is None:
-                continue
-            stop_loss = origin_stop_loss(structural_extreme, effective, pip_size=pip_size)
+            stop_loss = origin_stop_loss(candidate.liquidity_price, effective, pip_size=pip_size)
             stop_kind = "origin"
         elif classification.pattern == EntryPattern.FRESH_IRL_REQUIRED:
             stop_loss = continuation_stop_loss(entry_price, effective, pip_size=pip_size)
@@ -533,18 +507,19 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             stop_kind = "tight_no_irl"
 
         # A stop-loss on the wrong side of entry isn't a stop at all -- it's
-        # a corrupted trade. This actually happens for "origin" trades: the
-        # structural extreme comes from a Daily-timeframe snapshot that can
-        # be stale relative to the current H1 price (trade_kind == "origin"
-        # is currently a pure TIME-proximity heuristic to the bias flip --
-        # see ORIGIN_WINDOW -- with no check that price is still PRICE-close
-        # to the structural extreme it's meant to stop beyond). When that
-        # happens, e.g. a BULLISH trade's stop lands ABOVE entry, hitting it
-        # is actually a favorable price move, so the trade closes as
-        # "closed_loss" (exit_reason == "stop_hit") while its r_multiple is
-        # POSITIVE -- exactly the kind of corruption that produces a
-        # displayed win rate and total-R that don't mathematically agree
-        # (confirmed via a synthetic stress test; see backtest/README.md).
+        # a corrupted trade. This used to actually happen for "origin"
+        # trades, back when the structural extreme came from a
+        # Daily-timeframe snapshot picked by pure TIME-proximity to the
+        # bias flip (see ORIGIN_WINDOW) with no check that price was still
+        # PRICE-close to it by the time an H1 entry actually fired -- a
+        # BULLISH trade's stop could land ABOVE entry, so hitting it was
+        # actually a favorable price move, closing as "closed_loss"
+        # (exit_reason == "stop_hit") with a POSITIVE r_multiple (confirmed
+        # via a synthetic stress test; see backtest/README.md). Origin
+        # stops are now anchored to `candidate.liquidity_price` -- the same
+        # local sweep point that triggered this specific entry -- which by
+        # construction sits on the correct side, but this guard stays as a
+        # defensive check for all stop kinds.
         if not _stop_on_correct_side(entry_price, stop_loss, effective):
             continue
 
