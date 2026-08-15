@@ -157,6 +157,17 @@ def _strong_at(snapshots, t):
     return lows[idx], highs[idx]
 
 
+def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
+    """A BULLISH stop must sit below entry (it protects against price
+    falling); a BEARISH stop must sit above entry. If it doesn't, the
+    stop-loss computation produced garbage (see the call site in
+    `run_backtest` for the concrete "origin" trade scenario that triggers
+    this) and the trade must be skipped rather than opened."""
+    if direction == Direction.BULLISH:
+        return stop_loss < entry_price
+    return stop_loss > entry_price
+
+
 def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: float,
                             direction: Direction, path: list[Candle]):
     """Walk forward through `path` (candles after entry) to find whichever
@@ -299,6 +310,22 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             engulfed_extreme = prev.low if effective == Direction.BULLISH else prev.high
             stop_loss = tight_stop_loss_no_irl(engulfed_extreme, effective, pip_size=pip_size)
             stop_kind = "tight_no_irl"
+
+        # A stop-loss on the wrong side of entry isn't a stop at all -- it's
+        # a corrupted trade. This actually happens for "origin" trades: the
+        # structural extreme comes from a Daily-timeframe snapshot that can
+        # be stale relative to the current H1 price (trade_kind == "origin"
+        # is currently a pure TIME-proximity heuristic to the bias flip --
+        # see ORIGIN_WINDOW -- with no check that price is still PRICE-close
+        # to the structural extreme it's meant to stop beyond). When that
+        # happens, e.g. a BULLISH trade's stop lands ABOVE entry, hitting it
+        # is actually a favorable price move, so the trade closes as
+        # "closed_loss" (exit_reason == "stop_hit") while its r_multiple is
+        # POSITIVE -- exactly the kind of corruption that produces a
+        # displayed win rate and total-R that don't mathematically agree
+        # (confirmed via a synthetic stress test; see backtest/README.md).
+        if not _stop_on_correct_side(entry_price, stop_loss, effective):
+            continue
 
         target = primary_target(entry_price, stop_loss, effective)
 

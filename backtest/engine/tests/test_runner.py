@@ -4,7 +4,7 @@ import pytest
 from ...data_pipeline import cache
 from ..candles import Candle
 from ..structure import Direction
-from ..runner import run_backtest
+from ..runner import run_backtest, _stop_on_correct_side
 
 SOURCE = "test"
 SYMBOL = "RUNNERPAIR"
@@ -145,6 +145,21 @@ def test_run_backtest_weekly_bias_takes_priority_when_available(synthetic_cache_
     trade = records[0]
     assert trade.bias_weekly == Direction.BULLISH
     assert trade.effective_bias_timeframe == "Weekly"  # Weekly outranks Daily/H4 per TIMEFRAME_PRIORITY
+
+
+def test_stop_on_correct_side_rejects_inverted_bullish_stop():
+    # Regression test for a real corruption found via a synthetic stress
+    # run: an "origin" trade's stop comes from a Daily-timeframe structural
+    # extreme snapshot that can be stale relative to current H1 price. When
+    # that snapshot ends up ABOVE the entry price for a BULLISH trade, the
+    # computed "stop" isn't actually downside protection -- hitting it is a
+    # favorable move, so the trade would close as "closed_loss" while
+    # carrying a POSITIVE r_multiple. This must be rejected before a trade
+    # is opened, not silently logged.
+    assert _stop_on_correct_side(entry_price=1.2000, stop_loss=1.1950, direction=Direction.BULLISH) is True
+    assert _stop_on_correct_side(entry_price=1.2000, stop_loss=1.2050, direction=Direction.BULLISH) is False
+    assert _stop_on_correct_side(entry_price=1.2000, stop_loss=1.2050, direction=Direction.BEARISH) is True
+    assert _stop_on_correct_side(entry_price=1.2000, stop_loss=1.1950, direction=Direction.BEARISH) is False
 
 
 def test_run_backtest_falls_back_to_daily_when_weekly_data_missing(synthetic_cache):

@@ -292,6 +292,31 @@ built in phases so each is testable before the next depends on it:
       than real price action does) at ~13,700 trades in 86 seconds; real
       data should run faster than that worst case.
 
+      **Bug found and fixed via that same synthetic stress-testing
+      approach**: a real EURUSD run showed a mathematically impossible
+      combination -- a 1.6% win rate alongside a strongly positive total R.
+      Root cause: an "origin" trade's stop-loss is placed beyond a
+      Daily-timeframe "structural extreme" snapshot (`origin_stop_loss()`),
+      but `trade_kind == "origin"` is decided purely by TIME proximity to
+      the bias-flip breakpoint (`ORIGIN_WINDOW`), with no check that price
+      is still PRICE-close to that structural extreme by the time an entry
+      actually fires. When it isn't, the computed stop can land on the
+      WRONG side of entry (e.g. above entry for a bullish trade) -- hitting
+      it is then a favorable move, so the trade logs as `closed_loss` while
+      carrying a positive `r_multiple`, corrupting both the win-rate and
+      total-R numbers independently of each other. Fixed with a
+      `_stop_on_correct_side()` invariant check right after stop-loss
+      placement -- any trade whose computed stop isn't on the protective
+      side of entry is skipped rather than opened. Confirmed via a 20,000
+      H1-candle synthetic run: before the fix, 237 of 1433 closed trades
+      (16.5%) carried this exact corruption (all landing at a suspicious,
+      uniform +1.0R rather than genuine losses); after the fix, every
+      closed trade's `r_multiple` is cleanly either -1.0 (stop) or +3.0
+      (target), matching the primary 1:3 target exactly, with win rate and
+      total R back in mathematical agreement. Covered by
+      `test_stop_on_correct_side_rejects_inverted_bullish_stop` in
+      `engine/tests/test_runner.py`.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether
