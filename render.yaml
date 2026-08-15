@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: slk-backtest-viewer
+    env: python
+    plan: starter
+    buildCommand: pip install -r backtest/webapp/requirements.txt
+    startCommand: gunicorn backtest.webapp.app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GITHUB_REPO
+        value: awujo/trading
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: WEBAPP_USERNAME
+        sync: false
+      - key: WEBAPP_PASSWORD
+        sync: false

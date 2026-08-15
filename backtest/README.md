@@ -86,6 +86,70 @@ workflow once first, then come back and set the Pages source to
 `https://<owner>.github.io/<repo>/` and updates itself on every
 subsequent run -- no further manual steps.
 
+## Trade chart viewer (Render, not GitHub Pages)
+
+The `index.html` dashboard above is good for aggregate stats, but it
+doesn't show what a trade actually looked like on a chart -- no way to
+eyeball whether the stop/target/key-level were placed somewhere sane
+without hand-computing candle positions from the CSV. `backtest/webapp/`
+is a small on-demand viewer for exactly that: click a trade, see Daily/
+H4/H1 candlestick charts (same inline-SVG, no-CDN approach as the
+dashboard's equity curve) with the entry, stop, target, and key level
+drawn as horizontal lines, and the entry/exit candles marked.
+
+Two things make this different from just adding pages to the GitHub
+Pages site:
+- **It reads live from GitHub on every request** -- the candle cache from
+  the `data-latest` release, and whichever trade-log CSVs
+  `run-backtest.yml` has most recently published to `gh-pages`. It isn't
+  tied to any one backtest run; point it at the repo once and it reflects
+  every future run (any instrument, any style) automatically, no
+  redeploy needed.
+- **Charts render on click, not ahead of time.** With 300+ trades in a
+  single result set, pre-generating a chart page per trade would be slow
+  to build and wasteful for the trades nobody ever looks at. A trade's
+  chart is only rendered when its `/trade/<name>/<id>` page is requested.
+
+It's meant to run on [Render](https://render.com), not GitHub Pages,
+specifically so the repo can stay **private** -- Render pulls the repo's
+data server-side with a GitHub token, instead of GitHub Pages needing the
+whole repo to go public just to be viewable. The viewer itself also sits
+behind HTTP Basic Auth (`WEBAPP_USERNAME`/`WEBAPP_PASSWORD`) since it's
+showing the strategy's actual entries/stops/targets.
+
+**One-time setup on Render:**
+1. Create a Render account if you don't have one, connect it to GitHub,
+   and grant it access to the `awujo/trading` repo (Render's GitHub App
+   supports private repos).
+2. On the Render dashboard: **New +** -> **Blueprint**, pick this repo.
+   Render reads `render.yaml` at the repo root and creates the
+   `slk-backtest-viewer` web service automatically.
+3. Before (or right after) the first deploy, set these secret env vars on
+   the service (Render dashboard -> the service -> **Environment**):
+   - `GITHUB_TOKEN` -- a GitHub personal access token (fine-grained,
+     scoped to `awujo/trading`, **Contents: read-only** is enough) so the
+     service can read the private repo's `data-latest` release and
+     `gh-pages` results.
+   - `WEBAPP_USERNAME` / `WEBAPP_PASSWORD` -- whatever you want to log in
+     with. Leaving these unset does NOT lock you out, but it also means
+     the viewer isn't password-protected -- set them before sharing the
+     URL with anyone.
+4. Deploy. The service comes up at a `*.onrender.com` URL Render assigns
+   -- open it, log in, and click through to `/results/<instrument>_<style>`
+   for any published run, then any trade row for its chart.
+
+No further steps after that: every future `run-backtest.yml` run
+publishes new results to `gh-pages`, and the viewer picks them up on its
+own (results are re-fetched at most once a minute; the candle cache at
+most once an hour -- see `DATA_REFRESH_SECONDS`/`RESULTS_REFRESH_SECONDS`
+in `backtest/webapp/data_access.py` if you want to tune that).
+
+Run it locally instead with:
+```
+GITHUB_TOKEN=... WEBAPP_USERNAME=... WEBAPP_PASSWORD=... \
+  python -m backtest.webapp.app
+```
+
 ## Setup (running the pipeline manually instead)
 
 ```bash
