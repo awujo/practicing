@@ -1,0 +1,72 @@
+name: Transcribe video release
+
+# On-demand transcription for a knowledge-base source video, entirely on
+# GitHub's infrastructure. Given a release tag that holds an .mp4 asset
+# (the pattern already used for video1, remaining-videes, defi-bishop,
+# plug-and-play, etc.), downloads it, extracts audio, transcribes with
+# faster-whisper, and commits the raw transcript back to the repo under
+# knowledge-base/videos/<release_tag>/transcript.txt.
+#
+# Runs here specifically because this Claude Code session's own network
+# egress policy blocks huggingface.co (where faster-whisper's model
+# weights live) -- the same class of restriction already documented for
+# the Dukascopy data pipeline in backtest/README.md. A standard
+# GitHub-hosted runner has normal internet access, so this is the
+# reusable fix for every future video release too, not just a one-off.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag holding the video asset (e.g. plug-and-play)"
+        required: true
+      model:
+        description: "faster-whisper model size (tiny/base/small/medium/large-v3)"
+        required: false
+        default: "small"
+
+permissions:
+  contents: write
+
+jobs:
+  transcribe:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      WHISPER_MODEL: ${{ inputs.model }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg and faster-whisper
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install faster-whisper
+
+      - name: Download video asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/video
+          gh release download "$RELEASE_TAG" --pattern '*.mp4' --dir /tmp/video
+
+      - name: Extract audio
+        run: |
+          f=$(ls /tmp/video/*.mp4 | head -1)
+          ffmpeg -y -i "$f" -vn -ac 1 -ar 16000 -acodec pcm_s16le /tmp/video/audio.wav
+
+      - name: Transcribe
+        run: python .github/scripts/transcribe.py
+
+      - name: Commit transcript
+        run: |
+          mkdir -p "knowledge-base/videos/$RELEASE_TAG"
+          cp /tmp/video/transcript.txt "knowledge-base/videos/$RELEASE_TAG/transcript.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "knowledge-base/videos/$RELEASE_TAG/transcript.txt"
+          git diff --cached --quiet && echo "Nothing to commit" || git commit -m "Add transcript for $RELEASE_TAG"
+          git push
