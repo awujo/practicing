@@ -22,16 +22,40 @@ weekly->daily->3H/1H example, and an EURJPY weekly->daily example; a
 fourth, USDCHF, is sketched briefly in response to an audience question
 near the end.
 
-**Correction from a visual pass**: the audio-only draft of these notes
-had misread the third example's pair as "USDJPY" (the transcript
-garbles it as "ULJPY") and hadn't caught the USDCHF example at all.
-Confirmed by extracting frames from the source video with `ffmpeg`
-(session-local, no network needed) and reading them directly -- the
-browser tab titles are legible on-screen ("EUR JPY Chart," "USDCHF
-0.82105"). Everything else below was written from audio alone; no
-further frame-by-frame verification was done beyond these two spot
-checks, so treat drawn levels/annotations described below as inferred
-from narration, not visually confirmed.
+**Visual verification pass (full)**: beyond the initial 2-frame spot
+check that fixed the pair names (EURJPY, not "USDJPY"/"ULJPY"; USDCHF,
+previously missed entirely), a fuller pass extracted ~185 frames across
+the whole video plus a dense (8s-interval) set within each of the 4
+worked-example windows (NAS100, Gold, EURJPY, USDCHF -- 138 frames), all
+read directly. Findings:
+- Real horizontal rays / price-range tool marks are visible at concrete
+  prices in every example (NAS100 ~21,158 / ~21,449.4 / ~21,114.5 on the
+  4H chart; Gold a long horizontal ray at ~3,140 spanning the full
+  visible daily range, consistent with a weekly-timeframe anchor, plus a
+  sketched sweep-low -> swing-high -> sweep-low structure around
+  3,117-3,260; EURJPY a ~163.31 imbalance/FVG zone and a second reaction
+  level around ~161.8-162.0; USDCHF a ray at ~0.8256-0.8257 on a
+  30-MINUTE chart, matching the transcript's "let me use 30 minutes"
+  line) -- confirms these are genuinely marked levels, not just verbal
+  description.
+- No new named terminology appears written on-screen anywhere -- every
+  Bishop term (including "conservation sector") is spoken only, never
+  typed/labeled on a chart.
+- Much of the video between the 4 labeled examples is either talking
+  with idle pencil-tool doodling (loose squiggles/arrows, not real
+  levels) or browser-tab switches to X/Twitter -- including one where
+  Bishop reads "plug and play"'s definition straight off a ChatGPT
+  answer (word-for-word match to what's quoted below) and shows other
+  students' (@The_4thMan, @chaxbtbg) trade-result posts captioned "plug
+  and play" as social proof that the term circulates across the
+  community, not just from him.
+- No corrections needed to the mechanical claims below (daily-
+  confirmation fallback, conservation sector definition, aggressive-
+  entry-style confirmation) -- the visual evidence is consistent with,
+  not contradictory to, the audio-based draft in every case checked.
+Full frame-by-frame notes: see the session's scratch findings log if
+still available; not committed here since it's a working artifact, not
+a source document.
 
 ## What "plug and play" actually means (mostly a discipline framework,
 not a new pattern)
@@ -147,12 +171,15 @@ anyway), not a new detection rule.
   again) -- matches `detect_open_close_level()` exactly, no new mechanic.
 
 ## Open items
-- Video quality/ASR noise (see caveat above) means several passages
-  couldn't be reconstructed with full confidence -- if the "daily
-  confirmation fallback" or "conservation sector" rules get implemented,
-  it would be worth a second pass against the raw transcript (or the
-  source video directly) to confirm the exact wording before treating
-  either as a hard rule.
+- Video quality/ASR noise (see caveat above) still applies to the exact
+  WORDING of spoken rules like the daily-confirmation fallback and
+  "conservation sector" -- the visual pass confirmed the chart-level
+  mechanics (real levels, real price marks) but can't verify spoken
+  rule wording, since neither term ever appears written on-screen. If
+  the "daily confirmation fallback" or "conservation sector" rules get
+  implemented, it would still be worth a second listen against the raw
+  transcript (or the source video directly) to confirm the exact
+  wording before treating either as a hard rule.
 - The user's own chat description of plug-and-play ("mainly used as a
   continuation if the original setup was missed") doesn't map cleanly
   onto anything stated this explicitly in the video -- the closest match
