@@ -62,5 +62,26 @@ SIZING for such trades, not just on whether they're valid to take.
 - Candle-closure discipline still described as "very important," matching
   Section 4's wick-vs-close rule.
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-building-bias-2`,
+source: the `defi-bishop` GitHub release) and verified with 10s-interval
+frame extraction across all 6 real-trade case-study windows (EURCAD,
+SPX500, NZDJPY, GER40, AUS200, BTC), read directly, cross-referenced
+against the TradingView symbol sidebar in-frame. Two audio garbles
+resolved by the on-screen ticker: "80 years"/"SVAX" is unambiguously
+**SPX500**, and "MZJPY" is unambiguously **NZDJPY**. Confirms real,
+concretely-marked levels behind every case: EURCAD daily rays
+~1.61600-1.61700 and ~1.60100 (the exit-at-nearest-liquidity case study
+level); SPX500 weekly ray ~7,350 and daily rays ~7,590/~7,380; NZDJPY
+weekly ray ~93.500; GER40 weekly rays ~25,900/~24,700; AUS200 daily
+line-chart rays ~8,720/~8,980; BTCUSDT.P daily line-chart with a stack of
+6 horizontal rays from ~58,000 up to ~66,000 (consistent with the "flag
+this 57K" narration, close to the lowest marked ray). No corrections
+needed to the mechanical/risk-management claims above — only the two
+pair-name resolutions noted.
+
 ## Open items
-- No new terminology. 4 of 6 Bishop videos remain to be processed.
+- No new terminology beyond the target-sizing risk-management nuance
+  already documented above. All 6 of the original 6 Bishop videos plus
+  the additional multi-video release batch have now been visually
+  verified.
