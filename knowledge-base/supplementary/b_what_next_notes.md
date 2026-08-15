@@ -58,6 +58,21 @@ technique layered on top.
   counter-weekly-bias trades are a known, named exception category, used
   sparingly and consciously, not a hidden inconsistency in the rules.
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-what-next`,
+source: the `defi-bishop` GitHub release) since the original transcript
+used to write the notes above wasn't preserved on disk, then verified
+with dense (8s-interval) frame extraction across all 5 instrument
+windows, read directly rather than relying on transcript text alone.
+Confirms real, concretely-marked levels behind every example, not just
+narration: GBPCHF weekly/4H rays around ~1.05900 and ~1.05250 with a
+circled reaction candle; GBPCAD 4H ray near ~1.845; BTC (a line-chart
+zigzag view, not candles) horizontal marks around ~78,200 and ~77,800;
+EURGBP 4H ray at ~0.86603 with blue endpoint markers on the reaction
+candle; USOIL 4H rays around ~10,200 / ~9,850 / ~9,750. No written
+on-screen terminology beyond what's already captured above -- "QMR key
+level" and the rest are spoken only. No corrections to the notes above.
+
 ## Open items
 - No new terminology. **This completes all 6 Defi Bishop supplementary
   videos.** Only the remaining 54 of 60 pages of the chart-examples PDF
