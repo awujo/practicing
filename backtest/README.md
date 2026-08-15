@@ -363,12 +363,18 @@ built in phases so each is testable before the next depends on it:
       (Bishop notes it sometimes forms there instead of 4H); breakout and
       sweep+break as alternative confirmation-entry triggers (only
       engulfing is wired in -- Bishop's material describes 3 valid
-      types); "plug and play" (a looser continuation fallback used when
-      the primary reaction setup is missed -- not yet documented in the
-      knowledge base, so not encoded as a guess); Bishop's
-      imbalance-fill-priority override and "elbow structure" caution
-      (both documented in the knowledge base, neither wired into
-      `_find_liquidity_setups()` yet).
+      types); Bishop's imbalance-fill-priority override and "elbow
+      structure" caution (both documented in the knowledge base, neither
+      wired into `_find_liquidity_setups()` yet); and "plug and play"
+      (now documented --
+      `knowledge-base/supplementary/b_plug_and_play_notes.md`, transcribed
+      via the new `transcribe.yml` workflow below -- turned out to be
+      mostly a discipline framework plus two concrete new rules: a
+      daily-confirmation fallback when Daily doesn't independently
+      confirm but has repeatedly tested the same weekly level, and a
+      named compound entry signature ("conservation sector") with a
+      "resting liquidity nearby" component `ranking.py` doesn't currently
+      weight -- neither rule is wired into the engine yet).
 
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just

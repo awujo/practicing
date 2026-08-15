@@ -56,9 +56,20 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   yet (though `detect_confirmations()` already produces breakout/
   sweep_break events for H1, so this is a bounded extension, not new
   detection logic).
-- "Plug and play" (a looser continuation fallback used when the primary
-  4H/2H reaction setup is missed) is out of scope until it's documented
-  in the knowledge base -- not encoded as a guess.
+- "Plug and play" is now documented
+  (`knowledge-base/supplementary/b_plug_and_play_notes.md`, transcribed
+  from a Bishop community call) but NOT yet implemented here. It turned
+  out to be broader than the "continuation fallback" framing used
+  earlier in this docstring: mostly a discipline/consistency framework,
+  plus two concrete new rules worth implementing -- (1) a
+  daily-confirmation FALLBACK (when Daily doesn't independently confirm
+  after Weekly's bias, but Daily has tested/rejected the same weekly
+  level 2+ times, drop to 4H and require only ONE of breakout/sweep+break
+  instead of both), and (2) a named compound entry signature ("conservation
+  sector": disrespected + FVG-overlap + nearby resting liquidity, the last
+  of which isn't currently one of `ranking.py`'s 4 weighted factors). Its
+  entry MECHANIC is confirmed to be the same aggressive entry style
+  already implemented (`aggressive_entry_price()`), not a third style.
 - Bishop's imbalance-fill-priority refinement (a farther key level with a
   larger unfilled FVG can override the nearest-liquidity preference) and
   the "elbow structure" caution (a non-single-candle liquidity shape
