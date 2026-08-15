@@ -67,7 +67,7 @@ class TradeRecord:
 
     # Risk/target mechanics
     stop_loss: float = 0.0
-    stop_kind: str = ""                 # "origin" | "continuation" | "tight_no_irl"
+    stop_kind: str = ""                 # "origin" | "continuation" | "tight_no_irl" | "imbalance"
     risk_pips: float = 0.0
     primary_target: float = 0.0
 

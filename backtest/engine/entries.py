@@ -22,17 +22,33 @@ Four pieces:
 3. `irl_required()` -- Video 12: IRL formation is NECESSARY for an ORIGIN
    trade but OPTIONAL for a CONTINUATION trade.
 
-4. Stop-loss placement (Video 13, direct student Q&A) -- three distinct
-   mechanized rules, not one formula:
-     - origin: stop beyond the structural extreme (strong high/low) plus
-       a small pip-padding buffer.
-     - continuation (IRL formed): fixed ~10 pip stop -- the aggressive
-       default, trading faster 1:3 realization against a real,
-       acknowledged risk of getting stopped by a liquidity-hunt sweep
-       first.
+4. Stop-loss placement (Video 13, direct student Q&A, plus a user-supplied
+   Bishop-supplementary chart cross-check) -- four distinct mechanized
+   rules, not one formula:
+     - continuation, key level overlapping an imbalance ("plug and play"):
+       stop just past the FAR edge of that specific imbalance (the side
+       price would have to fully clear to invalidate the "came here to
+       sweep liquidity and rebalance THIS gap" thesis) plus a small pip
+       buffer. Visually confirmed against a real GBPUSD plug-and-play
+       chart: SL sat just beyond the imbalance candle's far extreme, not
+       at a fixed pip distance or a distant structural point. Takes
+       priority over the two continuation rules below when an overlapping
+       imbalance exists -- this is what "plug and play" actually is.
+     - continuation (IRL formed, no overlapping imbalance): fixed ~10 pip
+       stop -- the aggressive default, trading faster 1:3 realization
+       against a real, acknowledged risk of getting stopped by a
+       liquidity-hunt sweep first.
      - continuation (no IRL formed, Video 12's optional-IRL variant): a
        TIGHTER stop, just past the engulfed candle's own extreme plus a
        small pip buffer -- not the usual 10-11 pip continuation stop.
+     - origin: stop beyond the structural extreme (strong high/low) plus
+       a small pip-padding buffer. NOTE (see runner.py): this reference
+       point is currently found via a pure time-proximity heuristic to
+       the daily bias flip, with no check that price is still price-close
+       to that structural extreme -- a known gap, deliberately left
+       out of scope for the imbalance-stop fix above (origin trades were
+       explicitly not touched by that change; still using the wide
+       structural-extreme stop until revisited separately).
 
 5. Entry style (Section 5, "both sanctioned -- build/test both"):
    Aggressive enters directly off the key-level+imbalance setup;
@@ -114,6 +130,22 @@ def tight_stop_loss_no_irl(engulfed_candle_extreme: float, direction: Direction,
     own extreme plus a small buffer."""
     pad = padding_pips * pip_size
     return engulfed_candle_extreme - pad if direction == Direction.BULLISH else engulfed_candle_extreme + pad
+
+
+def imbalance_stop_loss(imbalance_low: float, imbalance_high: float, direction: Direction,
+                         padding_pips: float = 1.0, pip_size: float = 0.0001) -> float:
+    """"Plug and play" continuation stop, scoped to trades whose key level
+    overlaps a specific imbalance (FVG): price is expected to sweep
+    liquidity and rebalance THAT gap, and has no logical reason to trade
+    beyond its far edge to do so. Stop sits just past the far edge (the
+    side away from current price -- the side price would have to fully
+    clear to invalidate the fill-the-gap thesis) plus a small pip buffer,
+    mirroring `origin_stop_loss`'s/`tight_stop_loss_no_irl`'s padding
+    convention. `imbalance_low`/`imbalance_high` bound the gap itself
+    (an `Imbalance`'s `low`/`high` fields), not the wider displacement
+    candle's own range."""
+    pad = padding_pips * pip_size
+    return imbalance_low - pad if direction == Direction.BULLISH else imbalance_high + pad
 
 
 class EntryStyle(Enum):

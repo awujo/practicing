@@ -130,6 +130,34 @@ def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache
     assert records[0].entry_price == pytest.approx(1.1012)
 
 
+def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(synthetic_cache):
+    # Append 3 H1 candles -- well after the entry trigger at index 3, so the
+    # sweep/reaction/engulf sequence from `synthetic_cache` is untouched --
+    # forming a bullish FVG that brackets the H4 reaction level (1.1012):
+    # A.high=1.1008, C.low=1.1020. detect_imbalances() scans the whole H1
+    # series regardless of position relative to entry, so this becomes the
+    # key level's overlapping imbalance and should override the generic
+    # continuation stop-loss rule with the "plug and play" imbalance one.
+    extra = [
+        H1(7, 1.1002, 1.1008, 1.0998, 1.1000),
+        H1(8, 1.1000, 1.1025, 1.0995, 1.1022),
+        H1(9, 1.1022, 1.1028, 1.1020, 1.1024),
+    ]
+    _write("H1", extra)
+
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert len(records) == 1
+    trade = records[0]
+
+    assert trade.trade_kind == "continuation"
+    assert trade.imbalance_overlap is True
+    assert trade.stop_kind == "imbalance"
+    # Far edge of the overlapping imbalance (1.1008, the older candle's
+    # high) minus a 1-pip pad -- NOT the flat 10-pip continuation default
+    # (which would place the stop at 1.1020 instead).
+    assert trade.stop_loss == pytest.approx(1.1007)
+
+
 def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():
     h4 = [
         H4(0, 1.1000, 1.1010, 1.0995, 1.1005),

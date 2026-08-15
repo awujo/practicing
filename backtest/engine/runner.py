@@ -39,11 +39,12 @@ This is now implemented as a precomputed gate (`_find_liquidity_setups()`
 only H1 candles that are the confirmed reaction of an actual
 breakout->liquidity-sweep->KL-reaction sequence are even considered as
 entries. Everything downstream of that gate (Video 14's 3 execution
-patterns, the 3 mechanized stop-loss rules, the 1:3 target, MAE/MFE
-tracking) is unchanged from before -- only the SELECTIVITY of which
-candles get evaluated, and which key level they're evaluated against
-(the Bishop-validated H4 reaction level, not an ad-hoc H1-engulf-derived
-one), changed.
+patterns, the 1:3 target, MAE/MFE tracking) is unchanged from before --
+only the SELECTIVITY of which candles get evaluated, and which key level
+they're evaluated against (the Bishop-validated H4 reaction level, not an
+ad-hoc H1-engulf-derived one), changed. The stop-loss rules (see
+entries.py's module docstring) are now 4, not 3 -- see the "plug and
+play" note below.
 
 NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
 - The liquidity point is H4-only. Bishop explicitly notes it sometimes
@@ -56,20 +57,23 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   yet (though `detect_confirmations()` already produces breakout/
   sweep_break events for H1, so this is a bounded extension, not new
   detection logic).
-- "Plug and play" is now documented
+- "Plug and play" is documented
   (`knowledge-base/supplementary/b_plug_and_play_notes.md`, transcribed
-  from a Bishop community call) but NOT yet implemented here. It turned
-  out to be broader than the "continuation fallback" framing used
-  earlier in this docstring: mostly a discipline/consistency framework,
-  plus two concrete new rules worth implementing -- (1) a
-  daily-confirmation FALLBACK (when Daily doesn't independently confirm
-  after Weekly's bias, but Daily has tested/rejected the same weekly
-  level 2+ times, drop to 4H and require only ONE of breakout/sweep+break
-  instead of both), and (2) a named compound entry signature ("conservation
-  sector": disrespected + FVG-overlap + nearby resting liquidity, the last
-  of which isn't currently one of `ranking.py`'s 4 weighted factors). Its
-  entry MECHANIC is confirmed to be the same aggressive entry style
-  already implemented (`aggressive_entry_price()`), not a third style.
+  from a Bishop community call). It turned out to be broader than the
+  "continuation fallback" framing used earlier in this docstring: mostly
+  a discipline/consistency framework, plus concrete rules -- its STOP-LOSS
+  mechanic is now implemented (`imbalance_stop_loss()`, used whenever a
+  continuation trade's key level overlaps an imbalance -- see the
+  stop-loss selection block below), user-verified against a real GBPUSD
+  chart. Its entry MECHANIC is confirmed to be the same aggressive entry
+  style already implemented (`aggressive_entry_price()`), not a third
+  style. Still NOT yet implemented: (1) a daily-confirmation FALLBACK
+  (when Daily doesn't independently confirm after Weekly's bias, but
+  Daily has tested/rejected the same weekly level 2+ times, drop to 4H
+  and require only ONE of breakout/sweep+break instead of both), and (2)
+  a named compound entry signature ("conservation sector": disrespected +
+  FVG-overlap + nearby resting liquidity, the last of which isn't
+  currently one of `ranking.py`'s 4 weighted factors).
 - Bishop's imbalance-fill-priority refinement (a farther key level with a
   larger unfilled FVG can override the nearest-liquidity preference) and
   the "elbow structure" caution (a non-single-candle liquidity shape
@@ -97,9 +101,17 @@ silently assumed:
 - trade_kind ("origin" vs "continuation") is still approximated by
   proximity to the most recent Daily bias-flip breakpoint (ORIGIN_WINDOW)
   -- STRATEGY.md doesn't give a precise cutoff, and this is orthogonal to
-  the new liquidity-cascade gate (it only affects which of the 3
+  the new liquidity-cascade gate (it only affects which of the 4
   mechanized stop-loss rules applies to a setup the gate already
-  approved).
+  approved). Known gap, deliberately NOT fixed by the imbalance-stop
+  change above: this is a pure TIME-proximity heuristic with no check
+  that price is still PRICE-close to the origin's own structural extreme
+  by the time an H1 entry actually fires -- can produce origin stops (and
+  therefore 3R targets) far wider than anything in the source material
+  ever describes, which is the leading cause of trades that never
+  resolve within MAX_TRADE_DURATION_CANDLES. Origin trades were
+  explicitly left out of scope for now (see entries.py) pending a
+  separate fix.
 - QMR test-counting and imbalance-overlap for the entry's key level both
   use H1 candles/imbalances (the level's own timeframe), bounded to the
   next QMR_LOOKAHEAD candles rather than an unbounded forward scan.
@@ -123,7 +135,7 @@ from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
 from .entries import (
     is_engulfing, classify_entry_pattern, EntryPattern,
-    origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl,
+    origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl, imbalance_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
 from .trade_management import PositionManager, primary_target
@@ -489,7 +501,23 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                      and curr.time - last_daily_flip_time <= ORIGIN_WINDOW)
         trade_kind = "origin" if is_origin else "continuation"
 
-        if trade_kind == "origin":
+        # Computed before the stop-loss selection below (not just for the
+        # imbalance_overlap/fill_size stats further down) because "plug and
+        # play" -- a continuation trade whose key level overlaps an
+        # imbalance -- gets a different, imbalance-anchored stop-loss rule
+        # in preference to the generic continuation rules. See
+        # entries.py's module docstring for why this takes priority.
+        overlapping = [im for im in h1_imbalances if overlaps_level(im, new_key_level.price)]
+        imbalance_overlap = len(overlapping) > 0
+        widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
+        fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0
+
+        if trade_kind == "continuation" and imbalance_overlap:
+            stop_loss = imbalance_stop_loss(
+                widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
+            )
+            stop_kind = "imbalance"
+        elif trade_kind == "origin":
             strong_low_price, strong_high_price = _strong_at(strong_snapshots, curr.time)
             structural_extreme = strong_low_price if effective == Direction.BULLISH else strong_high_price
             if structural_extreme is None:
@@ -522,9 +550,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
         target = primary_target(entry_price, stop_loss, effective)
 
-        overlapping = [im for im in h1_imbalances if overlaps_level(im, new_key_level.price)]
-        imbalance_overlap = len(overlapping) > 0
-        fill_size = max((im.high - im.low for im in overlapping), default=0.0)
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 
         concurrent = len(mgr.open_positions(effective))

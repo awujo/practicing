@@ -219,11 +219,20 @@ built in phases so each is testable before the next depends on it:
       execution-facing entry patterns (direct mitigation, fresh-IRL-
       required, nested disrespect -- a restatement of Video 13's
       4-branch decision tree); Video 12's IRL-necessity rule (required
-      for origin trades, optional for continuation); Video 13's three
-      distinct mechanized stop-loss rules (origin: beyond the structural
-      extreme + padding; continuation: fixed ~10 pips; no-IRL
-      continuation: a tighter stop just past the engulfed candle's own
-      extreme); the Aggressive/Conservative entry-style split (Section 5,
+      for origin trades, optional for continuation); four distinct
+      mechanized stop-loss rules (Video 13, plus a user-supplied
+      "plug and play" chart cross-check): a continuation trade whose key
+      level overlaps an imbalance gets a stop just past the FAR edge of
+      that specific imbalance + padding (`imbalance_stop_loss()` --
+      takes priority whenever it applies, since this is what "plug and
+      play" actually is); a continuation trade with no overlapping
+      imbalance falls back to a fixed ~10 pips; a continuation trade with
+      no IRL formed gets a tighter stop just past the engulfed candle's
+      own extreme; an origin trade's stop goes beyond the structural
+      extreme + padding (this last rule still has the staleness issue
+      described below -- deliberately left out of scope when the
+      imbalance rule was added). The Aggressive/Conservative entry-style
+      split (Section 5,
       "both sanctioned -- build/test both"); trade stacking via
       `PositionManager` (Video 14 -- multiple concurrent same-direction
       positions, deliberately not restricted to origin-only or
@@ -342,7 +351,7 @@ built in phases so each is testable before the next depends on it:
         further bounded scan (`REACTION_LOOKAHEAD`) for an engulfing
         candle that also touches the reaction level -- the confirmed
         entry trigger.
-      Everything downstream (Video 14's 3 patterns, the 3 stop-loss
+      Everything downstream (Video 14's 3 patterns, the 4 stop-loss
       rules, the 1:3 target, MAE/MFE) is unchanged -- only WHICH candles
       get evaluated, and WHICH key level they're evaluated against (the
       Bishop-validated H4 level, not an ad-hoc H1-engulf-derived one),
@@ -365,16 +374,53 @@ built in phases so each is testable before the next depends on it:
       engulfing is wired in -- Bishop's material describes 3 valid
       types); Bishop's imbalance-fill-priority override and "elbow
       structure" caution (both documented in the knowledge base, neither
-      wired into `_find_liquidity_setups()` yet); and "plug and play"
-      (now documented --
-      `knowledge-base/supplementary/b_plug_and_play_notes.md`, transcribed
-      via the new `transcribe.yml` workflow below -- turned out to be
-      mostly a discipline framework plus two concrete new rules: a
-      daily-confirmation fallback when Daily doesn't independently
-      confirm but has repeatedly tested the same weekly level, and a
-      named compound entry signature ("conservation sector") with a
-      "resting liquidity nearby" component `ranking.py` doesn't currently
-      weight -- neither rule is wired into the engine yet).
+      wired into `_find_liquidity_setups()` yet); and "plug and play"'s
+      remaining two rules (its stop-loss mechanic is now implemented --
+      see below): a daily-confirmation fallback when Daily doesn't
+      independently confirm but has repeatedly tested the same weekly
+      level, and a named compound entry signature ("conservation sector")
+      with a "resting liquidity nearby" component `ranking.py` doesn't
+      currently weight.
+
+      **Root cause found for a pile of unresolved trades, and the "plug
+      and play" stop-loss fix.** A live run flagged something odd: 94 of
+      123 trades (76%) never resolved within `MAX_TRADE_DURATION_CANDLES`
+      (~3 weeks of H1 bars) and logged `still_open` -- overwhelmingly
+      `trade_kind == "origin"` trades. Investigation (re-checking every
+      stop-loss figure stated across all 18 core videos plus the Bishop
+      supplementary material) found that NONE of them ever describes a
+      stop wider than 10-15 pips -- Video 11's "10-15 pips on daily-
+      timeframe entries" is the single widest figure anywhere. `origin`
+      trades aren't an exception to that: Videos 4/12 describe the origin
+      entry as taken "right where order flow was confirmed" -- i.e.
+      essentially AT the strong high/low itself -- so "stop beyond the
+      strong high/low + room to breathe" (Video 13) and "~10-15 pips" are
+      describing the SAME stop, not two different scales. The bug: 
+      `trade_kind == "origin"` is decided purely by TIME proximity to the
+      daily bias flip (`ORIGIN_WINDOW`, 3 days), with no check that price
+      is still PRICE-close to the strong high/low by the time an H1 entry
+      actually fires -- so `origin_stop_loss()` can end up anchored to a
+      structural point that's now a long way from entry, producing stops
+      (and 3R targets) far outside anything the source material
+      describes. **Not yet fixed** -- explicitly left out of scope for
+      now (see `entries.py`/`runner.py`'s docstrings).
+
+      What WAS fixed this pass, for continuation trades specifically: a
+      real GBPUSD "plug and play" chart (user-supplied, cross-checked
+      directly) confirmed that a plug-and-play stop sits just past the
+      FAR edge of the specific imbalance overlapping the key level --
+      because the trade's whole thesis is "price came here to sweep
+      liquidity AND rebalance THIS gap," and has no logical reason to
+      trade beyond it if that thesis holds. `imbalance_stop_loss()`
+      implements this and now takes priority over the generic
+      continuation stop rules whenever a continuation trade's key level
+      overlaps an imbalance (`trade_kind == "continuation" and
+      imbalance_overlap`) -- logged as `stop_kind == "imbalance"`.
+      Deliberately scoped to continuation trades only per direct
+      instruction; origin trades still use the (currently stale-prone)
+      structural-extreme stop. Covered by
+      `test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades`
+      in `engine/tests/test_runner.py`.
 
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
