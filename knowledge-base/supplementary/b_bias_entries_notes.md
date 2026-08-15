@@ -78,6 +78,18 @@ not just entry timing).
   numbers not always given precisely in the audio, but consistent order
   of magnitude with Section 6's stated targets).
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-bias-entries`,
+source: the `defi-bishop` GitHub release) and verified with dense
+(8s-interval) frame extraction across all 4 trade windows, read
+directly. Confirms real, concretely-marked levels behind every trade:
+GBPAUD daily/4H rays around ~1.88200 and ~1.87400 with a circled
+reaction candle at ~1.88300; Japan225 (JP225) 4H rays around ~62,155
+and ~62,000 with a circled candle near the lower one; US30 4H ray
+around ~49,780; EURGBP 1H rays around ~0.86584 and ~0.86520 with a
+circled reaction candle. All four are real drawn levels, not just
+narration. No corrections to the notes above.
+
 ## Open items
 - No new terminology introduced; "single candle liquidity" (Bishop) =
   "single candle formation" (mentor, Video 18) — same concept, different
