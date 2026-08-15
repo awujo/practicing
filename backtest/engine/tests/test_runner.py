@@ -143,17 +143,23 @@ def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache
 
 
 def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(synthetic_cache):
-    # Append 3 H1 candles -- well after the entry trigger at index 3, so the
-    # sweep/reaction/engulf sequence from `synthetic_cache` is untouched --
-    # forming a bullish FVG that brackets the H4 reaction level (1.1012):
-    # A.high=1.1008, C.low=1.1020. detect_imbalances() scans the whole H1
-    # series regardless of position relative to entry, so this becomes the
-    # key level's overlapping imbalance and should override the generic
-    # continuation stop-loss rule with the "plug and play" imbalance one.
+    # Insert 3 H1 candles BETWEEN the sweep (index 1) and the reaction/
+    # engulf (indices 2-3), forming a bullish FVG that brackets the H4
+    # reaction level (1.101 -- see test_run_backtest_produces_a_winning_
+    # trade_end_to_end for why it's 1.101, not 1.1012): A.high=1.1009,
+    # C.low=1.1020. Deliberately placed BEFORE the entry, not after --
+    # imbalance_overlap now only matches imbalances formed between the
+    # key level's own formation and the entry (see the run_backtest
+    # comment at the overlapping= computation), matching "price is
+    # returning to fill an ALREADY-existing gap", not a gap that only
+    # forms later. B's own body is bearish and stays well clear of
+    # 1.101 specifically so no (prev, curr) pair among these 3 candles
+    # (or their neighbors) accidentally satisfies classify_entry_pattern's
+    # touched-and-engulfing check before the real entry at index 3.
     extra = [
-        H1(7, 1.1002, 1.1008, 1.0998, 1.1000),
-        H1(8, 1.1000, 1.1025, 1.0995, 1.1022),
-        H1(9, 1.1022, 1.1028, 1.1020, 1.1024),
+        Candle(H1_BASE + pd.Timedelta(hours=1.25), 1.1008, 1.1009, 1.0998, 1.1000, 1000),
+        Candle(H1_BASE + pd.Timedelta(hours=1.5), 1.1000, 1.1005, 1.0995, 1.0998, 1000),
+        Candle(H1_BASE + pd.Timedelta(hours=1.75), 1.1020, 1.1028, 1.1020, 1.1025, 1000),
     ]
     _write("H1", extra)
 
@@ -164,10 +170,39 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
     assert trade.trade_kind == "continuation"
     assert trade.imbalance_overlap is True
     assert trade.stop_kind == "imbalance"
-    # Far edge of the overlapping imbalance (1.1008, the older candle's
-    # high) minus a 1-pip pad -- NOT the flat 10-pip continuation default
-    # (which would place the stop at 1.1020 instead).
-    assert trade.stop_loss == pytest.approx(1.1007)
+    # Far edge of the overlapping imbalance (1.1009, A's high) minus a
+    # 1-pip pad -- NOT the flat 10-pip continuation default (which would
+    # place the stop at 1.1010 - 0.0010 = 1.1000 instead).
+    assert trade.stop_loss == pytest.approx(1.1008)
+
+
+def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthetic_cache):
+    # Regression test for a real bug found via the trade-chart viewer: a
+    # live trade got an 83-pip "plug and play" stop because h1_imbalances
+    # (computed once over the WHOLE H1 series) was matched against a key
+    # level's price with no regard for WHEN the imbalance formed --
+    # something from years away, price-only-coincidentally overlapping,
+    # could win. Same geometry as the "uses_imbalance_stop" test right
+    # above (a bullish gap bracketing the 1.101 reaction level), but
+    # placed hours AFTER the entry trigger instead of between the sweep
+    # and the reaction -- a gap that doesn't exist yet at entry time
+    # can't be the one price is "returning to fill", so it must NOT be
+    # picked up, and the trade should fall through to the generic
+    # continuation stop-loss rule instead.
+    extra = [
+        Candle(H1_BASE + pd.Timedelta(hours=10), 1.1008, 1.1009, 1.0998, 1.1000, 1000),
+        Candle(H1_BASE + pd.Timedelta(hours=10.5), 1.1000, 1.1005, 1.0995, 1.0998, 1000),
+        Candle(H1_BASE + pd.Timedelta(hours=11), 1.1020, 1.1028, 1.1020, 1.1025, 1000),
+    ]
+    _write("H1", extra)
+
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert len(records) == 1
+    trade = records[0]
+
+    assert trade.trade_kind == "continuation"
+    assert trade.imbalance_overlap is False
+    assert trade.stop_kind == "continuation"
 
 
 def test_run_backtest_anchors_origin_stop_to_the_setup_own_liquidity_point(tmp_path, monkeypatch):

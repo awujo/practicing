@@ -611,6 +611,41 @@ built in phases so each is testable before the next depends on it:
       so they never exercised the unbounded path) -- worth adding one
       if this area gets touched again.
 
+      **Found via the trade-chart viewer: the same "unbounded historical
+      match by price alone" bug, in imbalance matching.** The very first
+      real trade looked at through `backtest/webapp/`'s new candlestick
+      charts (a "plug and play" continuation trade) had an 83-pip stop --
+      nothing like the tight 5-15 pip stops every video example shows.
+      Its `imbalance_fill_size` was 114.4 pips: the "imbalance" it was
+      anchored to was a huge, clearly-anomalous gap. Root cause was the
+      same class of bug as the hang above, just in a different spot:
+      `h1_imbalances = detect_imbalances(h1)` is computed once over the
+      WHOLE multi-year H1 series, and `overlapping = [im for im in
+      h1_imbalances if overlaps_level(im, new_key_level.price)]` matched
+      by PRICE only -- an imbalance from years earlier or later, with
+      nothing to do with this setup, could win just because its price
+      range happened to bracket the key level, and `widest_imbalance`
+      then picked the single biggest one out of all of those spurious
+      matches. Same issue existed on the H4 side feeding `ranking.py`'s
+      `imbalance_overlap`/`imbalance_fill_size` factors
+      (`_rank_reaction_level()`'s `h4_imbalances` argument). Fix: both
+      sites now bound the imbalance match to a relevant time window --
+      the H1 site to between the key level's own formation and the entry
+      (`new_key_level.time <= im.time <= curr.time`, matching "price is
+      returning to fill an imbalance that already exists"), the H4 site
+      to the same current-structural-leg bound already used for
+      `candidate_levels`. Covered by
+      `test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry`,
+      a direct regression test for the exact scenario found live: an
+      otherwise-identical overlapping imbalance placed after entry is now
+      correctly excluded. Also changes `test_run_backtest_uses_imbalance_
+      stop_for_plug_and_play_continuation_trades`'s fixture, which used to
+      place its imbalance after the entry trigger too (fine for exercising
+      detection mechanics, but not actually a scenario "plug and play"
+      describes) -- it's now positioned between the sweep and the
+      reaction, which is what price returning to fill an already-existing
+      gap actually looks like.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

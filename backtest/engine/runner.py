@@ -356,7 +356,21 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         ]
         if not candidate_levels:
             continue
-        reaction_level = _rank_reaction_level(h4, candidate_levels, liquidity_point, h4_imbalances)
+
+        # Same "current leg" bound as candidate_levels above, applied to
+        # the imbalances score_candidates() checks for the
+        # imbalance_overlap/imbalance_fill_size ranking factors -- h4_imbalances
+        # is computed once over the WHOLE series, so without this an
+        # ancient, unrelated gap that happens to overlap a candidate
+        # level's price could win it the imbalance-quality factors it
+        # hasn't actually earned (see the matching fix + real example on
+        # the H1 side, at this function's call site in run_backtest).
+        leg_imbalances = [
+            im for im in h4_imbalances
+            if im.time <= liquidity_point.time
+            and (prev_breakout_time is None or im.time >= prev_breakout_time)
+        ]
+        reaction_level = _rank_reaction_level(h4, candidate_levels, liquidity_point, leg_imbalances)
 
         setups.append(LiquiditySetup(
             direction=brk.direction, breakout_time=brk.time,
@@ -556,7 +570,24 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # imbalance -- gets a different, imbalance-anchored stop-loss rule
         # in preference to the generic continuation rules. See
         # entries.py's module docstring for why this takes priority.
-        overlapping = [im for im in h1_imbalances if overlaps_level(im, new_key_level.price)]
+        #
+        # Bounded to imbalances formed between the key level's own
+        # formation and this entry -- NOT "any imbalance ever detected in
+        # h1_imbalances (the WHOLE H1 history) that happens to overlap
+        # this price," which is what this used to be. h1_imbalances is
+        # computed once over the full multi-year series, so an unbounded
+        # price-only match can pull in a gap from years earlier or later
+        # that has nothing to do with this setup -- confirmed directly via
+        # the trade-chart viewer: a real trade got an 83-pip "plug and
+        # play" stop anchored to a spuriously-matched 114-pip imbalance,
+        # nowhere near the tight 5-15 pip stops every video example shows.
+        # The bound below scopes it to "did an imbalance form while THIS
+        # level was being made and price coming back to react off it,"
+        # which is what "plug and play" actually describes.
+        overlapping = [
+            im for im in h1_imbalances
+            if overlaps_level(im, new_key_level.price) and new_key_level.time <= im.time <= curr.time
+        ]
         imbalance_overlap = len(overlapping) > 0
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
         fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0
