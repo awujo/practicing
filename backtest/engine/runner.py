@@ -30,9 +30,10 @@ plus the PDF chart examples:
        retracement side (a swing low after a bullish breakout, a swing
        high after a bearish one)
     -> price (H1) sweeps that liquidity point
-    -> price then reacts off the NEAREST same-direction H4 key level
-       (an engulfing candle touching/near that level, in the bias
-       direction)
+    -> price then reacts off the same-direction H4 key level
+       ranking.py's 4-factor scoring (`_rank_reaction_level()`) prefers
+       among whatever's still in play (an engulfing candle touching/near
+       that level, in the bias direction)
     -> that reaction candle IS the entry trigger.
 This is now implemented as a precomputed gate (`_find_liquidity_setups()`
 + `_find_entry_candidates()`) that runs BEFORE the main per-trade loop:
@@ -45,6 +46,23 @@ they're evaluated against (the Bishop-validated H4 reaction level, not an
 ad-hoc H1-engulf-derived one), changed. The stop-loss rules (see
 entries.py's module docstring) are now 4, not 3 -- see the "plug and
 play" note below.
+
+Reaction-level SELECTION among multiple same-direction candidates used to
+be a bare "whichever is nearest in price to the swept liquidity point"
+rule -- simple, but it could never reproduce Bishop's own stated
+overrides (a level tested/respected 2+ times preferred over a
+first-test break; a level with an overlapping imbalance preferred; a
+FARTHER level with a bigger unfilled imbalance winning outright over a
+nearer one -- "Repeating System"). `ranking.py`'s 4-factor
+`score_candidates()` existed but was never wired into this gate --
+`ranking_score` always logged `0.0`. `_rank_reaction_level()` now scores
+every same-direction candidate still in play by the time liquidity is
+swept (imbalance overlap, recency, historical QMR test count, imbalance
+fill size, `DEFAULT_WEIGHTS`) and picks the best-scored one, falling back
+to Video 18's `default_to_extreme()` on ties. `ranking_score` is still
+NOT logged on `TradeRecord` yet (the field stays at its `0.0` default) --
+wiring the winning candidate's actual score through is a natural
+follow-up, not done in this pass.
 
 NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
 - The liquidity point is H4-only. Bishop explicitly notes it sometimes
@@ -75,11 +93,12 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   FVG-overlap + nearby resting liquidity, the last of which isn't
   currently one of `ranking.py`'s 4 weighted factors).
 - Bishop's imbalance-fill-priority refinement (a farther key level with a
-  larger unfilled FVG can override the nearest-liquidity preference) and
-  the "elbow structure" caution (a non-single-candle liquidity shape
-  should be waited out in full, not traded on first touch) are both
-  documented in the knowledge base but not yet factored into
-  `_find_liquidity_setups()`.
+  larger unfilled FVG can override the nearest-liquidity preference) IS
+  now factored into `_find_liquidity_setups()`, via `_rank_reaction_level()`
+  -- see the reaction-level SELECTION paragraph above. The "elbow
+  structure" caution (a non-single-candle liquidity shape should be
+  waited out in full, not traded on first touch) is still documented in
+  the knowledge base but not yet factored in.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
@@ -136,7 +155,8 @@ from .candles import Candle, load_candles
 from .structure import Direction, StructureTracker
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
 from .liquidity import structural_liquidity_points
-from .imbalance import detect_imbalances, overlaps_level
+from .imbalance import Imbalance, detect_imbalances, overlaps_level
+from .ranking import score_candidates, default_to_extreme
 from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
 from .entries import (
     is_engulfing, classify_entry_pattern, EntryPattern,
@@ -253,16 +273,54 @@ class EntryCandidate:
     liquidity_price: float
 
 
+def _rank_reaction_level(h4: list[Candle], candidate_levels: list[KeyLevel], liquidity_point,
+                          h4_imbalances: list[Imbalance]) -> KeyLevel:
+    """Which same-direction H4 key level price is expected to react from,
+    among everything still in play by the time liquidity gets swept --
+    scored via ranking.py's 4-factor score_candidates() (STRATEGY.md
+    Section 5), not just whichever is nearest in price to the liquidity
+    point. "Nearest" can never reproduce Bishop's own imbalance-fill-
+    priority override -- a farther level with a bigger unfilled FVG can
+    win outright ("Repeating System") -- which is exactly the case this
+    replaces it for. Ties in score fall back to Video 18's
+    default_to_extreme(), using the liquidity point's own price as the
+    reference (the same "how far from here" framing the old nearest-price
+    rule used)."""
+    if len(candidate_levels) == 1:
+        return candidate_levels[0]
+
+    times = [c.time for c in h4]
+    levels_with_tests = []
+    for lvl in candidate_levels:
+        # How many times THIS level has already been tested-and-respected
+        # between its own formation and the liquidity sweep -- the same
+        # walk-forward-and-count logic used for the post-entry QMR stat,
+        # just windowed to what had actually happened by decision time,
+        # not the future.
+        start_idx = bisect.bisect_right(times, lvl.time)
+        end_idx = bisect.bisect_left(times, liquidity_point.time)
+        test_count, _ = count_tests_before_disrespect(h4[start_idx:end_idx], lvl)
+        levels_with_tests.append((lvl, test_count))
+
+    ranked = score_candidates(levels_with_tests, h4_imbalances)
+    top_score = ranked[0].score
+    tied = [r.level for r in ranked if abs(r.score - top_score) < 1e-9]
+    if len(tied) == 1:
+        return tied[0]
+    return default_to_extreme(tied, liquidity_point.price)
+
+
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
-                            n: int = 2) -> list[LiquiditySetup]:
+                            h4_imbalances: list[Imbalance], n: int = 2) -> list[LiquiditySetup]:
     """For each confirmed H4 breakout, find the first single-candle
     liquidity point (structural_liquidity_points with n=1 -- Bishop's
     primary/simplest case, see the module docstring for the not-yet-built
     structural/multi-candle generalization) that forms afterward on the
-    retracement side, and the nearest same-direction H4 key level for
-    price to react from once that liquidity is swept. A breakout that
-    never produces both simply yields no setup -- consistent with
-    Section 5B's "requires patience, don't force it" guidance."""
+    retracement side, and the same-direction H4 key level ranking.py's
+    4-factor scoring prefers for price to react from once that liquidity
+    is swept (see _rank_reaction_level()). A breakout that never produces
+    both simply yields no setup -- consistent with Section 5B's "requires
+    patience, don't force it" guidance."""
     liquidity_points = structural_liquidity_points(h4, n=1)
     breakouts = sorted(h4_confirmations, key=lambda c: c.time)
     setups = []
@@ -286,7 +344,7 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         ]
         if not candidate_levels:
             continue
-        reaction_level = min(candidate_levels, key=lambda lvl: abs(lvl.price - liquidity_point.price))
+        reaction_level = _rank_reaction_level(h4, candidate_levels, liquidity_point, h4_imbalances)
 
         setups.append(LiquiditySetup(
             direction=brk.direction, breakout_time=brk.time,
@@ -416,6 +474,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     daily_confirmations = detect_confirmations(daily, n)
     h4_confirmations = detect_confirmations(h4, n)
     h4_levels = detect_key_levels(h4, n)
+    h4_imbalances = detect_imbalances(h4)
     h1_confirmations = detect_confirmations(h1, n)
     h1_imbalances = detect_imbalances(h1)
 
@@ -437,7 +496,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h4_lookup = _direction_lookup(h4_confirmations)
     h1_lookup = _direction_lookup(h1_confirmations)
 
-    liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n)
+    liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, h4_imbalances, n)
     entry_candidates = _find_entry_candidates(h1, liquidity_setups)
 
     mgr = PositionManager()

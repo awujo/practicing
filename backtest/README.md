@@ -550,6 +550,42 @@ built in phases so each is testable before the next depends on it:
       flip, the old code returned `None` and silently dropped the trade
       entirely, rather than just mis-sizing its stop.
 
+      **Wiring in the ranking system (why the backtest's win rate looked
+      lower than a discretionary trader's).** After the origin-stop fix
+      above, a live EURUSD/conservative run went from 123 trades (94
+      `still_open`) to 396 (2 `still_open`) with a 28.2% win rate -- a
+      valid measurement now, but still well under a claimed ~80% for the
+      same strategy traded by hand. Investigating that gap turned up two
+      concrete, unrelated-to-Bishop's-teaching implementation gaps, not a
+      strategy misunderstanding: (1) `ranking.py` fully implements
+      Section 5's 4-factor key-level quality scoring (imbalance overlap,
+      recency, QMR test count, imbalance-fill-size override) but
+      `score_candidates()` was never called from `runner.py` --
+      `ranking_score` logged `0.0` on every single trade; (2)
+      `_find_liquidity_setups()`'s reaction-level selection was a bare
+      "nearest in price to the swept liquidity point" rule, which can
+      never reproduce Bishop's own "Repeating System" override (a farther
+      level with a bigger unfilled imbalance wins outright over a nearer
+      one). In short: the backtest was taking every mechanically
+      qualifying setup with zero discretion layered on top, while a
+      discretionary trader is constantly doing the selective filtering
+      `ranking.py` was built to formalize.
+
+      Fix: `_rank_reaction_level()` (new, in `runner.py`) scores every
+      same-direction H4 key level still in play by the time liquidity is
+      swept via `score_candidates()`, replacing the nearest-price pick,
+      and falls back to Video 18's `default_to_extreme()` on score ties.
+      `ranking_score` itself isn't threaded through to `TradeRecord` yet
+      (still logs `0.0`) -- a natural follow-up, not done in this pass.
+      Covered by
+      `test_rank_reaction_level_lets_a_bigger_imbalance_override_the_nearer_level`
+      (an isolated case with a clear, non-tied winner) and
+      `test_rank_reaction_level_returns_the_only_candidate_without_scoring`.
+      This changes which key level gets used for EVERY trade, origin and
+      continuation alike (not just origin trades, unlike the two fixes
+      above) -- expect the aggregate stats to move again on the next
+      real-data run, not just the origin subset.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

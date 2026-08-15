@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pandas as pd
 import pytest
 
@@ -5,9 +7,11 @@ from ...data_pipeline import cache
 from ..candles import Candle
 from ..structure import Direction
 from ..bias import detect_confirmations
-from ..key_levels import detect_key_levels
+from ..key_levels import KeyLevel, detect_key_levels
+from ..imbalance import Imbalance
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
+    _rank_reaction_level,
 )
 
 SOURCE = "test"
@@ -113,8 +117,15 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.entry_pattern == "fresh_irl_required"
     assert trade.trade_kind == "continuation"  # H1 data starts well past ORIGIN_WINDOW
     assert trade.stop_kind == "continuation"
-    assert trade.key_level_price == pytest.approx(1.1012)  # the H4 "V" reaction level, not an ad-hoc H1 level
-    assert trade.key_level_shape == "V"
+    # The H4 reaction level ranking.py's 4-factor scoring prefers among the
+    # 3 same-direction candidates in play (1.1005, 1.101, 1.1012) -- NOT
+    # just whichever is nearest in price to the swept liquidity point
+    # (1.1015), which would have picked 1.1012 instead. 1.101 and 1.1012
+    # tie on score here (equal DEFAULT_WEIGHTS on this small fixture), so
+    # Video 18's default_to_extreme() tie-break wins it: 1.101 is farther
+    # from the liquidity point than 1.1012, so it's preferred.
+    assert trade.key_level_price == pytest.approx(1.101)
+    assert trade.key_level_shape == "open_close"
     assert trade.entry_price == pytest.approx(1.1030)  # conservative -> engulf candle's close
     assert trade.status == "closed_win"
     assert trade.exit_reason == "target_hit"
@@ -127,7 +138,8 @@ def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache
 
     assert len(records) == 1
     # Aggressive enters at the key level itself (the H4 reaction level), not the confirmation close.
-    assert records[0].entry_price == pytest.approx(1.1012)
+    # See test_run_backtest_produces_a_winning_trade_end_to_end for why this is 1.101, not 1.1012.
+    assert records[0].entry_price == pytest.approx(1.101)
 
 
 def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(synthetic_cache):
@@ -246,14 +258,22 @@ def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level
     n = 2
     confs = detect_confirmations(h4, n)
     levels = detect_key_levels(h4, n)
-    setups = _find_liquidity_setups(h4, confs, levels, n)
+    setups = _find_liquidity_setups(h4, confs, levels, [], n)
 
     assert len(setups) == 1
     setup = setups[0]
     assert setup.direction == Direction.BULLISH
     assert setup.liquidity_price == pytest.approx(1.1015)
-    assert setup.reaction_level.price == pytest.approx(1.1012)
-    assert setup.reaction_level.shape == "V"
+    # 3 same-direction candidates are in play here (1.1005, 1.101, 1.1012)
+    # -- ranking.py's 4-factor scoring, not nearest-price, decides among
+    # them. 1.101 and 1.1012 tie on score with equal DEFAULT_WEIGHTS, so
+    # Video 18's default_to_extreme() tie-break picks 1.101 (farther from
+    # the liquidity point than 1.1012). See
+    # test_rank_reaction_level_lets_a_bigger_imbalance_override_the_nearer_level
+    # for the ranking logic tested in isolation, with a clear (non-tied)
+    # winner.
+    assert setup.reaction_level.price == pytest.approx(1.101)
+    assert setup.reaction_level.shape == "open_close"
 
 
 def test_find_liquidity_setups_yields_nothing_without_a_breakout():
@@ -264,7 +284,36 @@ def test_find_liquidity_setups_yields_nothing_without_a_breakout():
     n = 2
     confs = detect_confirmations(h4, n)
     levels = detect_key_levels(h4, n)
-    assert _find_liquidity_setups(h4, confs, levels, n) == []
+    assert _find_liquidity_setups(h4, confs, levels, [], n) == []
+
+
+def test_rank_reaction_level_lets_a_bigger_imbalance_override_the_nearer_level():
+    # Bishop's "Repeating System" imbalance-fill-priority rule: a farther
+    # key level with a bigger unfilled imbalance can override a nearer
+    # candidate outright. The old "always pick nearest in price" rule
+    # could never produce this -- this is the exact case ranking.py's
+    # 4-factor scoring exists to fix. Both candidates share the same
+    # timestamp and an empty test-count window, so recency/test_count
+    # contribute identically to both and can't be what decides it --
+    # isolating the imbalance factors as the only thing that can.
+    t = pd.Timestamp("2024-01-01")
+    h4 = [Candle(t, 1.10, 1.10, 1.10, 1.10, 1000), Candle(t + pd.Timedelta(hours=4), 1.10, 1.10, 1.10, 1.10, 1000)]
+
+    near_level = KeyLevel(time=t, price=1.1013, shape="open_close", default_bias=Direction.BULLISH)
+    far_level = KeyLevel(time=t, price=1.0950, shape="V", default_bias=Direction.BULLISH)
+    liquidity_point = SimpleNamespace(time=t, price=1.1015)  # near_level: 0.0002 away; far_level: 0.0065 away
+
+    imbalances = [Imbalance(time=t, low=1.0940, high=1.0960, direction=Direction.BULLISH)]  # overlaps far_level only
+
+    winner = _rank_reaction_level(h4, [near_level, far_level], liquidity_point, imbalances)
+    assert winner is far_level
+
+
+def test_rank_reaction_level_returns_the_only_candidate_without_scoring():
+    far_level = KeyLevel(time=pd.Timestamp("2024-01-01"), price=1.0950, shape="V", default_bias=Direction.BULLISH)
+    liquidity_point = SimpleNamespace(time=pd.Timestamp("2024-01-01"), price=1.1015)
+    # No h4 candles / imbalances needed -- a single candidate short-circuits before touching either.
+    assert _rank_reaction_level([], [far_level], liquidity_point, []) is far_level
 
 
 def test_run_backtest_rejects_a_bias_aligned_engulf_with_no_underlying_cascade(tmp_path, monkeypatch):
