@@ -34,7 +34,28 @@ included in Bishop's own compilation. This is a third independent source
 (beyond the mentor and Bishop) using the same "SLK" branded methodology
 name, further reinforcing that this is a real, shared community
 framework with multiple independent practitioners, not a single
-individual's idiosyncratic system.
+individual's idiosyncratic system. Minor stylistic note from the
+frame-by-frame pass below: mindguy0x's charts shade the imbalance zone
+in **grey** rather than Bishop's usual pink — same teal-target convention,
+different accent color — confirming the teal/pink (or teal/grey) scheme
+is a personal annotation choice layered on top of the shared mechanics,
+not itself part of the taught framework.
+
+## NEW: A fourth independent practitioner credited directly inside a
+chart annotation, not just via a separate social-media screenshot
+(page 8, EURGBP 2H chart)
+The 2H confirmation-entry label on this chart reads **"H2 High swept, Low
+standing V-shaped kl 4thman's CE"** — Bishop explicitly attributes that
+specific confirmation entry to **@The_4thMan**, the same fellow student
+already referenced (via a separate tweet screenshot) in the plug-and-play
+notes (`b_plug_and_play_notes.md`). This is a stronger form of cross-
+validation than a reposted social screenshot: Bishop is annotating
+someone else's entry directly into his own compiled trade-example deck,
+crediting it by name. Combined with the mindguy0x XAUUSD example, this
+compilation draws on at least three distinct SLK practitioners' real
+trades (Bishop himself, mindguy0x, and 4thMan) — reinforcing the
+"multiple independent SLK practitioners" finding with a second, more
+direct data point.
 
 ## NEW: Explicit real-time weekly-vs-daily conflict resolution (AUDUSD
 example, pages ~26-27)
@@ -96,13 +117,43 @@ whichever lower timeframe presents a clean signal.
 The large majority of examples pair the annotated TradingView chart with
 a real mobile broker app screenshot (MT4/MT5-style apps) showing actual
 buy/sell arrows plotted on the exact entry/exit points, confirming these
-are genuinely executed trades, not just retrospective chart marking.
+are genuinely executed trades, not just retrospective chart marking. One
+GBPNZD example (pages ~30-31) goes further than an arrow overlay: it
+shows an actual **closed-position order-history record** with printed
+numbers — `buy 0.33` lots, entry 2.30008, exit 2.30172, commission
+-2.31, realized profit +31.52 — the most concrete single piece of
+evidence in the whole deck that these are genuinely funded, executed,
+closed trades rather than retrospective chart annotation.
 
-## Status: PDF FULLY REVIEWED (60 of 60 pages)
+## Frame-by-frame intensive re-verification pass (all 60 pages,
+individually rendered and read as images, not just text-extracted)
+Every one of the 60 pages was re-rendered at 150 DPI and reviewed
+directly as an image (matching the same methodology used for the 9
+Bishop videos), specifically to catch anything a text-only or
+low-resolution pass would miss: exact watermarks, exact price levels on
+the price axis, drawn annotation shapes, and screenshot-within-screenshot
+detail. Every pair name, price level, teal/pink zone, and "1st/2nd Entry"
+trade-stacking label previously documented above was independently
+re-confirmed against the rendered pages with no discrepancies. The
+EURCHF broker screenshot's R:R was independently recomputed from the
+raw SL/TP numbers on page 6 (BUY LIMIT 0.93193, SL 0.93147, TP 0.93704)
+and comes out to almost exactly 11.1:1, confirming the "~1:11" claim
+above to the pip. The two genuinely NEW items surfaced by this deeper
+pass are documented above (4thMan's directly-credited entry, and the
+mindguy0x grey-shading variant); everything else already in this file
+held up exactly as written. The PDF's closing page also carries Bishop's
+official contact links — `x.com/Web3BishOp` and `t.me/Trade_with_BishOp`
+— confirming the source's identity beyond the in-chart "bish0p1"
+watermark.
+
+## Status: PDF FULLY REVIEWED (60 of 60 pages, now including a full
+frame-by-frame visual re-verification pass)
 This completes the Web3Bish0p/Defi Bishop supplementary chart-examples
-PDF. Combined with all 6 Bishop videos and all 18 core mentor videos, all
-source material provided for this project has now been processed. No
-new terminology or contradictions found in this final batch — only
-reinforcement, cross-asset validation, and the two items flagged above
-as genuinely new: the weekly-beats-daily explicit confirmation, and the
-third independent "SLK" practitioner.
+PDF. Combined with all 9 Bishop videos (all visually re-verified
+frame-by-frame) and all 18 core mentor videos, all source material
+provided for this project has now been processed to the same visual-
+verification standard throughout. No contradictions found in either
+pass — only reinforcement, cross-asset validation, and the small set of
+genuinely new items flagged above: the weekly-beats-daily explicit
+confirmation, the third/fourth independent "SLK" practitioners
+(mindguy0x and 4thMan), and the closed-trade order-history record.
