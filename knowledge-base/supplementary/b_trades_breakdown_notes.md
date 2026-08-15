@@ -2,9 +2,10 @@
 
 ## Content type
 A direct continuation of "Repeating System," breaking down another batch
-of real trades and misses from the same week (USDCHF, GBP-pair, USOIL,
-German40/DAX, an all-time-high index — NASDAQ or similar, EURGBP).
-Overwhelmingly reinforcement of the already-documented cascade
+of real trades and misses from the same week (USDCHF, GBPJPY, USOIL,
+GER40, NAS100, Japan225 (JP225), EURGBP — 7 instruments, corrected/
+completed by the visual pass below). Overwhelmingly reinforcement of the
+already-documented cascade
 (weekly/daily bias -> 4H breakout -> single candle liquidity -> rejection
 -> lower-timeframe confirmation entry -> target at nearest ERL). One
 minor new visual-pattern caution and one further honest admission about
@@ -56,6 +57,32 @@ alone.
   preferred confirmation timeframe; a Japan225-style missed entry) —
   consistent with prior risk-management honesty notes.
 
+## Visual verification pass
+Re-transcribed via `transcribe.yml` (video_slug `bishop-trades-breakdown-2`,
+source: the `defi-bishop` GitHub release) and verified with 10s-interval
+frame extraction across all 7 instrument windows, read directly, including
+the TradingView symbol sidebar visible in-frame. **Corrections to the
+Content type list above**: the vague "GBP-pair" is unambiguously GBPJPY
+(sidebar highlight + ticker), and the "all-time-high index — NASDAQ or
+similar" is unambiguously NAS100 (audio garbles "NAS100" as "this last
+hundred"; ticker and highlighted sidebar row confirm it). A 7th instrument,
+Japan225 (JP225), was also present in this video and is now added to the
+list — it was previously missing from the Content type summary. Confirms
+real, concretely-marked levels behind every trade: USDCHF 4H rays
+~0.78900/~0.78500 and 1H ray ~0.78450; GBPJPY weekly ray ~215.100/~214.100
+and 4H rays ~215.500/~214.700; USOIL 4H ray ~9,010 (consistent with the
+narration's own admission this trade never became a clean opportunity);
+GER40 4H — literal drawn zigzag connecting swing points ~24,700-25,000,
+i.e. the "elbow structure" itself visibly marked on the chart, not just
+described in audio, directly confirming the Elbow structure caution above
+is a real charted pattern; plus rays ~25,200/~25,100/~24,570; NAS100 4H
+line-chart view with a marked flat "trend line liquidity" segment
+~30,470-30,500 and rays ~30,700/~29,700; Japan225 4H rays ~67,400 and
+~65,650-65,700; EURGBP 4H ray ~0.86796. No corrections needed to any of
+the mechanical claims (Elbow structure, discretionary-judgment admission,
+reconfirmed cascade) — only the instrument-identification issues above.
+
 ## Open items
-- No new terminology. This is the 5th of 6 Bishop videos processed —
-  only "what_next" remains.
+- No new terminology beyond the Elbow structure caution already
+  documented. This is the 5th of 6 Bishop videos processed — only
+  "what_next" remains (already completed elsewhere in this pass).
