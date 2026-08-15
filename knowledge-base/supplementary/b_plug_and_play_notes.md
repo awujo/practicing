@@ -16,10 +16,22 @@ a specific detail matters.
 
 This is Bishop (not the main mentor -- he credits "Isaac" as the mentor
 who originated the underlying concept) teaching HIS OWN community his
-personal execution system, explicitly named "plug and play." Two real
-worked examples given in depth: a NAS100 4H/daily setup, and a Gold
-(XAUUSD) weekly->daily->3H/1H example; a USDJPY weekly->daily example is
-sketched more briefly.
+personal execution system, explicitly named "plug and play." Three real
+worked examples given in depth: a NAS100 4H/daily setup, a Gold (XAUUSD)
+weekly->daily->3H/1H example, and an EURJPY weekly->daily example; a
+fourth, USDCHF, is sketched briefly in response to an audience question
+near the end.
+
+**Correction from a visual pass**: the audio-only draft of these notes
+had misread the third example's pair as "USDJPY" (the transcript
+garbles it as "ULJPY") and hadn't caught the USDCHF example at all.
+Confirmed by extracting frames from the source video with `ffmpeg`
+(session-local, no network needed) and reading them directly -- the
+browser tab titles are legible on-screen ("EUR JPY Chart," "USDCHF
+0.82105"). Everything else below was written from audio alone; no
+further frame-by-frame verification was done beyond these two spot
+checks, so treat drawn levels/annotations described below as inferred
+from narration, not visually confirmed.
 
 ## What "plug and play" actually means (mostly a discipline framework,
 not a new pattern)
