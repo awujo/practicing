@@ -326,6 +326,7 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     setups = []
 
     for i, brk in enumerate(breakouts):
+        prev_breakout_time = breakouts[i - 1].time if i > 0 else None
         next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
         retracement_side = "low" if brk.direction == Direction.BULLISH else "high"
 
@@ -338,9 +339,20 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
             continue
         liquidity_point = candidate_points[0]
 
+        # Bounded to the CURRENT structural leg (since the previous breakout,
+        # any direction), not "every same-direction level in the whole
+        # series" -- a level from years before the market's last major
+        # direction change was never really "still in play" for this
+        # setup. This also keeps _rank_reaction_level()'s per-candidate
+        # QMR test-count scan (formation -> liquidity sweep) bounded to a
+        # single inter-breakout span instead of, in the worst case,
+        # decades of H4 candles -- across a multi-year backtest that
+        # unbounded version turns into a hang, not just a slowdown (see
+        # backtest/README.md's ranking-fix changelog entry).
         candidate_levels = [
             lvl for lvl in h4_key_levels
             if lvl.default_bias == brk.direction and lvl.time <= liquidity_point.time
+            and (prev_breakout_time is None or lvl.time >= prev_breakout_time)
         ]
         if not candidate_levels:
             continue

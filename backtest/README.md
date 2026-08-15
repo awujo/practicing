@@ -586,6 +586,31 @@ built in phases so each is testable before the next depends on it:
       above) -- expect the aggregate stats to move again on the next
       real-data run, not just the origin subset.
 
+      **Immediate follow-up: a real hang on the first live rerun.** The
+      real EURUSD/conservative run triggered right after this landed
+      never finished -- GitHub Actions' "Run backtest" step sat
+      `in_progress` for 20+ minutes with no output, versus ~1 minute for
+      every prior run. Root cause: `candidate_levels` in
+      `_find_liquidity_setups()` filtered same-direction H4 key levels by
+      `lvl.time <= liquidity_point.time` only -- no LOWER time bound. Over
+      a 23-year series that can be every matching-bias key level ever
+      detected, and `_rank_reaction_level()` now runs a
+      `count_tests_before_disrespect()` scan (formation -> liquidity
+      sweep) for EACH one -- for an old level, that window can span years
+      of H4 candles. A synthetic stress test confirmed it directly:
+      a 5,000-candle (~3.4 year) series took 32s with the unbounded
+      version; that scales worse than linearly as the series (and the
+      candidate pool) grows, matching the observed hang on 23 years of
+      real data. Fix: `candidate_levels` is now also bounded to the
+      CURRENT structural leg -- formed at or after the previous breakout,
+      any direction -- which caps both the candidate count and each
+      candidate's scan window to a single inter-breakout span. Same
+      synthetic test, WITH the fix: a 20,000-candle (~13 year) series
+      completed in 12s. Not yet covered by an automated regression test
+      (the synthetic fixtures in `test_runner.py` are all single-breakout,
+      so they never exercised the unbounded path) -- worth adding one
+      if this area gets touched again.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether
