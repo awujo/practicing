@@ -4,7 +4,7 @@ import pytest
 from ..candles import Candle
 from ..structure import Direction
 from ..key_levels import KeyLevel
-from ..bias import replay_bias, bias_at, Confirmation, ConfirmationKind
+from ..bias import replay_bias, bias_at, origin_time_at, Confirmation, ConfirmationKind
 
 
 def C(i, o, h, l, c):
@@ -64,3 +64,14 @@ def test_replay_bias_does_not_flip_if_lower_tf_still_confirms_original():
 def test_bias_at_returns_none_before_any_breakpoint():
     breakpoints = [(T(5), Direction.BULLISH)]
     assert bias_at(breakpoints, T(1)) is None
+
+
+def test_origin_time_at_returns_the_active_breakpoints_own_time():
+    breakpoints = [(T(0), Direction.BEARISH), (T(5), Direction.BULLISH)]
+    assert origin_time_at(breakpoints, T(3)) == T(0)   # still the bearish leg
+    assert origin_time_at(breakpoints, T(10)) == T(5)  # the bullish leg's own origin
+
+
+def test_origin_time_at_returns_none_before_any_breakpoint():
+    breakpoints = [(T(5), Direction.BULLISH)]
+    assert origin_time_at(breakpoints, T(1)) is None

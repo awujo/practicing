@@ -721,6 +721,58 @@ built in phases so each is testable before the next depends on it:
       reclaim, and two negative cases (the "other side" also breaking, no
       sweep at all).
 
+      **Entry-gate rebuild, part 4: origin/continuation by literal
+      sequence.** Same conversation corrected trade_kind's whole basis:
+      "origin" vs. "continuation" is about POSITION IN THE MOVE (first
+      instance vs. repeated instance), independent of which of the 4
+      confirmation-entry trigger types fired -- not a fixed time window.
+      The old `ORIGIN_WINDOW` heuristic (3 calendar days from the most
+      recent Daily bias-flip breakpoint) could misclassify a trade purely
+      because it happened to fall inside/outside an arbitrary window,
+      with no relationship to whether an earlier trade had actually
+      already been taken in that leg. `bias.py`'s new `origin_time_at()`
+      (a companion to `bias_at()`) returns the actual TIME of the
+      breakpoint currently in effect, not just its direction;
+      `runner.py`'s new `claimed_origins` bookkeeping in the main loop
+      claims the FIRST entry per (effective_tf, direction, origin_time)
+      leg as "origin" and labels every later entry in that same
+      still-active leg "continuation" -- H4 (which has no full
+      BiasCascade replay, only a running confirmation stream) uses its
+      own most recent confirmation's time as the origin-event stand-in
+      via the new `_last_time_at()`. Claiming only happens AFTER a
+      candidate survives the stop-on-correct-side guard, so a setup that
+      gets rejected there doesn't burn the "origin" slot for the real
+      first trade in that leg. `ORIGIN_WINDOW` is removed entirely.
+
+      This surfaced two real fixture/test consequences, not just a
+      rename: (1) a fixture with only ONE trade in its whole series is
+      now correctly "origin" by construction (nothing precedes it) --
+      `synthetic_cache`'s base scenario flips from "continuation" to
+      "origin", tightening its stop from a flat 10 pips to the swept
+      liquidity point (1.1015, stop 1.1014), which in turn needed one
+      more H1 candle appended so the now-closer 1:3 target still
+      resolves within the fixture. Tests that specifically exercise
+      "continuation" stop-loss behavior (the plug-and-play imbalance
+      stop, the ignores-imbalance-after-entry regression, aggressive
+      entry pricing) now call a new `_add_earlier_origin_trade()` helper
+      that appends a genuine second, independent H4 breakout+liquidity+
+      reaction cascade earlier in time, so it claims "origin" and leaves
+      the fixture's own trade as "continuation" -- verified directly
+      against `_find_liquidity_setups()`/`_find_entry_candidates()`
+      before wiring in, same practice as the original fixture derivation.
+      (2) This also surfaced a real, previously-invisible edge case:
+      `origin_stop_loss()` anchors only to the swept liquidity point, but
+      an AGGRESSIVE-style entry can land AT a reaction key level that
+      sits beyond that liquidity point in the trade direction, putting
+      the stop on the wrong side of entry. `_stop_on_correct_side()`
+      already catches and drops that trade rather than open a corrupted
+      one (no bug there), but it means aggressive+origin trades in that
+      configuration get silently skipped today. Not fixed in this pass
+      (out of scope for a classification-only change) -- flagged here as
+      a concrete Task 5 (stop-loss rebuild) follow-up: origin stops
+      should anchor past the FARTHEST point actually reached, not just
+      the liquidity point in isolation.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

@@ -120,14 +120,20 @@ silently assumed:
   adaptation (the "what happens right after price meets this level"
   question is the same regardless of which process identified the
   level), but a judgment call worth flagging.
-- trade_kind ("origin" vs "continuation") is still approximated by
-  proximity to the most recent Daily bias-flip breakpoint (ORIGIN_WINDOW)
-  -- STRATEGY.md doesn't give a precise cutoff, and this is orthogonal to
-  the new liquidity-cascade gate (it only affects which of the 4
-  mechanized stop-loss rules applies to a setup the gate already
-  approved). This is still a pure TIME-proximity heuristic and a known
-  labeling gap, but it no longer distorts stop-loss width: origin stops
-  used to anchor to a Daily-timeframe structural-extreme snapshot that
+- trade_kind ("origin" vs "continuation") is classified by literal
+  sequence, not a fixed time window: the FIRST entry taken since the
+  effective bias's own origin event is "origin", every subsequent entry
+  within that same still-active leg is "continuation" -- "position in the
+  move (first instance vs. repeated instance)", independent of which of
+  the 4 confirmation-entry trigger types actually fired (see the
+  `claimed_origins` bookkeeping in the main loop below; replaces the old
+  `ORIGIN_WINDOW` fixed-day-proximity heuristic, which could misclassify
+  a trade purely because it happened to fall inside/outside an arbitrary
+  window rather than by whether an earlier trade had already been taken
+  in that leg). This is orthogonal to the liquidity-cascade gate (it only
+  affects which of the mechanized stop-loss rules applies to a setup the
+  gate already approved). Origin stops used to anchor to a Daily-timeframe
+  structural-extreme snapshot that
   could be stale (PRICE-far from the origin's own structural extreme) by
   the time an H1 entry actually fired, producing stops (and therefore 3R
   targets) far wider than anything in the source material ever
@@ -159,7 +165,7 @@ from .structure import Direction, StructureTracker
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
 from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
-from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
+from .bias import detect_confirmations, replay_bias, bias_at, origin_time_at, resolve_effective_bias
 from .entries import (
     is_engulfing, classify_entry_pattern, EntryPattern,
     origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl, imbalance_stop_loss,
@@ -168,7 +174,6 @@ from .entries import (
 from .trade_management import PositionManager, primary_target
 from .trade_log import TradeRecord, write_trade_log, summarize
 
-ORIGIN_WINDOW = pd.Timedelta(days=3)
 QMR_LOOKAHEAD = 30
 FOLLOWING_LOOKAHEAD = 3
 
@@ -256,6 +261,19 @@ def _last_direction_at(lookup, t):
     if idx < 0:
         return None
     return directions[idx]
+
+
+def _last_time_at(lookup, t):
+    """H4/H1's origin-time counterpart to `origin_time_at()` (bias.py):
+    H4 and H1 don't get a full BiasCascade replay (see the module
+    docstring's MVP-simplifications list), so there's no breakpoints list
+    to query -- the most recent confirmation's own time before `t` stands
+    in as that tier's origin event instead."""
+    times, directions = lookup
+    idx = bisect.bisect_left(times, t) - 1
+    if idx < 0:
+        return None
+    return times[idx]
 
 
 def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
@@ -532,6 +550,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     mgr = PositionManager()
     records: list[TradeRecord] = []
     trade_id = 0
+    # Tracks which (effective_tf, direction, origin_time) legs have
+    # already had a trade taken -- the FIRST entry_candidate to claim a
+    # given leg is "origin", every later one in the same still-active leg
+    # is "continuation". entry_candidates is already time-sorted, so a
+    # plain set membership check is enough.
+    claimed_origins: set[tuple[str, Direction, object]] = set()
 
     for candidate in entry_candidates:
         i = candidate.index
@@ -576,10 +600,25 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             else conservative_entry_price(curr)
         )
 
-        last_daily_flip_time = daily_breakpoints[-1][0] if daily_breakpoints else None
-        is_origin = (last_daily_flip_time is not None
-                     and curr.time - last_daily_flip_time <= ORIGIN_WINDOW)
-        trade_kind = "origin" if is_origin else "continuation"
+        # trade_kind by literal position in the move, not a time window:
+        # the FIRST entry since the effective bias's own origin event
+        # claims "origin" for that (timeframe, direction, origin_time)
+        # leg; every subsequent entry in the same still-active leg is
+        # "continuation". H4 has no BiasCascade breakpoints (see the
+        # module docstring), so its own most recent confirmation time
+        # stands in for the origin event there. Only PEEK at
+        # claimed_origins here -- actually claiming it happens below,
+        # after the trade is confirmed to survive the stop-on-correct-side
+        # guard, so a setup that gets rejected there doesn't burn the
+        # "origin" slot for the real first trade in that leg.
+        if effective_tf == "Weekly":
+            origin_time = origin_time_at(weekly_breakpoints, curr.time)
+        elif effective_tf == "Daily":
+            origin_time = origin_time_at(daily_breakpoints, curr.time)
+        else:
+            origin_time = _last_time_at(h4_lookup, curr.time)
+        origin_key = (effective_tf, effective, origin_time)
+        trade_kind = "origin" if (origin_time is not None and origin_key not in claimed_origins) else "continuation"
 
         # Computed before the stop-loss selection below (not just for the
         # imbalance_overlap/fill_size stats further down) because "plug and
@@ -629,8 +668,9 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # a corrupted trade. This used to actually happen for "origin"
         # trades, back when the structural extreme came from a
         # Daily-timeframe snapshot picked by pure TIME-proximity to the
-        # bias flip (see ORIGIN_WINDOW) with no check that price was still
-        # PRICE-close to it by the time an H1 entry actually fired -- a
+        # bias flip (the old ORIGIN_WINDOW heuristic) with no check that
+        # price was still PRICE-close to it by the time an H1 entry
+        # actually fired -- a
         # BULLISH trade's stop could land ABOVE entry, so hitting it was
         # actually a favorable price move, closing as "closed_loss"
         # (exit_reason == "stop_hit") with a POSITIVE r_multiple (confirmed
@@ -641,6 +681,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # defensive check for all stop kinds.
         if not _stop_on_correct_side(entry_price, stop_loss, effective):
             continue
+        if trade_kind == "origin":
+            claimed_origins.add(origin_key)
 
         target = primary_target(entry_price, stop_loss, effective)
 

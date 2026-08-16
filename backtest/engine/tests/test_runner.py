@@ -27,9 +27,11 @@ def W(i, o, h, l, c):
     return Candle(pd.Timestamp("2023-01-01") + pd.Timedelta(weeks=i), o, h, l, c, 1000)
 
 
-H1_BASE = pd.Timestamp("2024-01-01") + pd.Timedelta(days=20)  # well past ORIGIN_WINDOW (3 days) and
-# past the daily series' own last internal bias flip (day 9), so this scenario exercises the
-# "continuation" trade_kind branch rather than "origin" -- see the daily candles below.
+H1_BASE = pd.Timestamp("2024-01-01") + pd.Timedelta(days=20)  # well past the daily series' own
+# last internal bias flip (day 9) -- comfortably within ALIGNMENT_LOOKBACK, but note that
+# trade_kind is now sequence-based (Task 4), not time-window-based: on its own, an entry
+# built from this base is "origin" (nothing precedes it in the fixture); see
+# _add_earlier_origin_trade() for tests that specifically need a "continuation" trade.
 
 
 def H1(i, o, h, l, c):
@@ -91,8 +93,15 @@ def synthetic_cache(tmp_path, monkeypatch):
         H1(2, 1.1013, 1.1014, 1.1008, 1.1010),  # touches the H4 reaction level (1.1012), bearish
         H1(3, 1.1010, 1.1035, 1.1005, 1.1030),  # bullish engulf of candle 2 -- the entry trigger
         H1(4, 1.1030, 1.1045, 1.1025, 1.1040),
-        H1(5, 1.1040, 1.1060, 1.1035, 1.1055),  # high clears the 1:3 target
+        H1(5, 1.1040, 1.1060, 1.1035, 1.1055),
         H1(6, 1.1055, 1.1075, 1.1050, 1.1070),
+        # trade_kind is now "origin" (Task 4: no earlier trade precedes this
+        # one in the base fixture), so the stop anchors tightly to the
+        # swept liquidity point (1.1015) rather than the old flat 10-pip
+        # continuation stop -- a tighter stop means a closer-in 1:3 target,
+        # needing one more candle to actually clear it than the old
+        # continuation-stop version of this fixture did.
+        H1(7, 1.1070, 1.1085, 1.1065, 1.1080),  # high clears the 1:3 target
     ]
 
     _write("D", daily)
@@ -112,8 +121,13 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.bias_daily == Direction.BULLISH
     assert trade.effective_bias_timeframe == "Daily"
     assert trade.entry_pattern == "fresh_irl_required"
-    assert trade.trade_kind == "continuation"  # H1 data starts well past ORIGIN_WINDOW
-    assert trade.stop_kind == "continuation"
+    # This is the ONLY trade in the whole series, so by Task 4's literal
+    # sequence rule ("first instance vs. repeated instance" -- nothing
+    # precedes it) it's "origin", anchored to the swept liquidity point
+    # (1.1015) rather than a fixed continuation pip stop.
+    assert trade.trade_kind == "origin"
+    assert trade.stop_kind == "origin"
+    assert trade.stop_loss == pytest.approx(1.1014)
     # 3 same-direction candidates are in play here (1.1005, 1.101, 1.1012),
     # nearest-to-extreme from the swept liquidity point (1.1015) is
     # [1.1012, 1.101, 1.1005] -- "we don't predict, we react": the nearest
@@ -130,16 +144,84 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
 
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
+    # This fixture's reaction level (1.1012) sits BEYOND (further in the
+    # trade direction than) the swept liquidity point (1.1015) that
+    # origin_stop_loss() anchors to -- fine for a conservative entry
+    # (1.103, well clear of both), but an aggressive entry AT the key
+    # level itself (1.1012) would land the origin stop on the WRONG side
+    # of entry, and _stop_on_correct_side() correctly drops the trade
+    # rather than open a corrupted one. Not what this test is actually
+    # about (entry-STYLE pricing, not trade_kind), so give it an earlier
+    # origin trade like the imbalance tests do, making this one
+    # "continuation" (tight_no_irl/continuation stop, never origin) so it
+    # exercises aggressive pricing cleanly. See Task 5 (stop-loss rebuild)
+    # for properly anchoring origin stops past the FARTHEST point reached,
+    # not just the liquidity point, which is the real fix for the
+    # aggressive+origin combination.
+    _add_earlier_origin_trade()
+
     records = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001)
 
-    assert len(records) == 1
+    assert len(records) == 2
+    assert records[0].trade_kind == "origin"
     # Aggressive enters at the key level itself (the H4 reaction level), not the confirmation close.
     # See test_run_backtest_produces_a_winning_trade_end_to_end for why this is 1.1012, the nearest
     # same-direction candidate to the swept liquidity point, not a scored pick.
-    assert records[0].entry_price == pytest.approx(1.1012)
+    assert records[1].trade_kind == "continuation"
+    assert records[1].entry_price == pytest.approx(1.1012)
+
+
+def _add_earlier_origin_trade():
+    """trade_kind is now sequence-based (Task 4: literal "first instance
+    vs. repeated instance" since the effective bias's own origin event --
+    see runner.py's `claimed_origins` bookkeeping), not a fixed time
+    window -- so a fixture with only ONE trade in the whole series is
+    always "origin" by construction (nothing precedes it). Tests that
+    specifically want to exercise "continuation" stop-loss behavior need a
+    genuine EARLIER trade in the same (Daily-effective, BULLISH) leg to
+    claim "origin" first. This appends a second, independent H4
+    breakout+liquidity+reaction cascade (H4 idx9-17, a fresh price range
+    so it doesn't interact with synthetic_cache's own idx0-8 swing
+    points) plus its own H1 sweep+engulf entry at day 10 -- after
+    synthetic_cache's own Daily confirmation (~day 8-9, needed for the
+    Daily+H4 alignment gate) but before H1_BASE (day 20), so it's
+    processed first and becomes "origin", leaving the caller's own
+    H1_BASE-anchored trade as "continuation". Verified directly against
+    _find_liquidity_setups()/_find_entry_candidates() before wiring in."""
+    def H4b(i, o, h, l, c):
+        return Candle(pd.Timestamp("2024-01-01") + pd.Timedelta(hours=4 * i), o, h, l, c, 1000)
+
+    extra_h4 = [
+        H4b(9, 1.1025, 1.1060, 1.1020, 1.1055),
+        H4b(10, 1.1055, 1.1065, 1.1050, 1.1060),
+        H4b(11, 1.1060, 1.1080, 1.1055, 1.1070),
+        H4b(12, 1.1070, 1.1075, 1.1060, 1.1065),
+        H4b(13, 1.1065, 1.1072, 1.1058, 1.1062),
+        H4b(14, 1.1062, 1.1095, 1.1060, 1.1090),  # BREAKOUT (closes beyond idx11's 1.1080 swing high)
+        H4b(15, 1.1090, 1.1098, 1.1085, 1.1092),
+        H4b(16, 1.1092, 1.1094, 1.1075, 1.1080),
+        H4b(17, 1.1080, 1.1088, 1.1078, 1.1085),
+    ]
+    second_base = pd.Timestamp("2024-01-01") + pd.Timedelta(days=10)
+
+    def S(i, o, h, l, c):
+        return Candle(second_base + pd.Timedelta(hours=i), o, h, l, c, 1000)
+
+    extra_h1 = [
+        S(0, 1.1063, 1.1067, 1.1061, 1.1064),
+        S(1, 1.1064, 1.1066, 1.1053, 1.1059),  # sweeps this cascade's own liquidity point (1.1058)
+        S(2, 1.1059, 1.1061, 1.1055, 1.1057),  # touches its reaction level (1.106), bearish
+        S(3, 1.1056, 1.1075, 1.1050, 1.1070),  # bullish engulf -- the entry trigger
+        S(4, 1.1070, 1.1090, 1.1065, 1.1085),
+        S(5, 1.1085, 1.1120, 1.1080, 1.1115),  # clears its own target
+    ]
+    _write("H4", extra_h4)
+    _write("H1", extra_h1)
 
 
 def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(synthetic_cache):
+    _add_earlier_origin_trade()
+
     # Insert 3 H1 candles BETWEEN the sweep (index 1) and the reaction/
     # engulf (indices 2-3), forming a bullish FVG that brackets the H4
     # reaction level (1.1012, the nearest same-direction candidate to the
@@ -161,8 +243,9 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
     _write("H1", extra)
 
     records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
-    assert len(records) == 1
-    trade = records[0]
+    assert len(records) == 2
+    assert records[0].trade_kind == "origin"  # the earlier, unrelated cascade claims it
+    trade = records[1]
 
     assert trade.trade_kind == "continuation"
     assert trade.imbalance_overlap is True
@@ -174,6 +257,8 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
 
 
 def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthetic_cache):
+    _add_earlier_origin_trade()
+
     # Regression test for a real bug found via the trade-chart viewer: a
     # live trade got an 83-pip "plug and play" stop because h1_imbalances
     # (computed once over the WHOLE H1 series) was matched against a key
@@ -194,8 +279,9 @@ def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthe
     _write("H1", extra)
 
     records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
-    assert len(records) == 1
-    trade = records[0]
+    assert len(records) == 2
+    assert records[0].trade_kind == "origin"  # the earlier, unrelated cascade claims it
+    trade = records[1]
 
     assert trade.trade_kind == "continuation"
     assert trade.imbalance_overlap is False
