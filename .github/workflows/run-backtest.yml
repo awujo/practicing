@@ -7,6 +7,14 @@ name: Run backtest
 # for one instrument/entry-style, regenerates the results dashboard, and
 # publishes it to GitHub Pages -- no local machine involved, and nothing
 # to download to see the results.
+#
+# run-name below (using the dispatch inputs) is what lets the webapp's
+# "Run a backtest" page and the Actions tab itself show which instrument/
+# style/year/rr a given run was actually for -- the default "Run backtest"
+# title is otherwise identical across every run, indistinguishable in a list.
+
+run-name: >-
+  Run backtest: ${{ inputs.instrument }} ${{ inputs.style }}${{ inputs.year && format(' {0}', inputs.year) || '' }}${{ inputs.rr && format(' rr={0}', inputs.rr) || '' }}
 
 on:
   workflow_dispatch:

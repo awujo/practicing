@@ -21,6 +21,19 @@ Two caches, refreshed independently:
     -- short enough that a just-published run shows up quickly, long
     enough that a burst of clicks on the same result set doesn't refetch
     on every request.
+
+Also triggers new backtest runs (`run_backtest_dispatch()`): the webapp
+itself never runs `run_backtest()` -- Render's free tier has tight
+request timeouts and a single worker, wrong for a ~60-90s full-history
+run blocking every other visitor. Instead it calls GitHub's
+workflow_dispatch API to kick off the SAME `run-backtest.yml` used
+throughout this project, which runs on GitHub's own infrastructure with
+no timeout/RAM pressure, then polls for that run's status and links to
+the (already-supported) results view once it publishes. This means
+`GITHUB_TOKEN` needs `actions:write` (or classic PAT `repo` scope) on top
+of the read access the rest of this module already needed -- if it's
+missing, `run_backtest_dispatch()` fails with a 403/404 from GitHub, not
+a silent no-op.
 """
 
 import bisect
@@ -30,6 +43,7 @@ import os
 import tarfile
 import threading
 import time
+from datetime import datetime
 
 import requests
 
@@ -42,6 +56,10 @@ TOKEN = os.environ.get("GITHUB_TOKEN")
 DATA_CACHE_DIR = os.environ.get("DATA_CACHE_DIR", "/tmp/slk-webapp-data")
 DATA_REFRESH_SECONDS = int(os.environ.get("DATA_REFRESH_SECONDS", 3600))
 RESULTS_REFRESH_SECONDS = int(os.environ.get("RESULTS_REFRESH_SECONDS", 60))
+
+# The workflow whose workflow_dispatch inputs (instrument/style/year/rr)
+# this drives -- see run_backtest_dispatch() below.
+RUN_BACKTEST_WORKFLOW = "run-backtest.yml"
 
 _data_lock = threading.Lock()
 _instrument_fetched_at: dict[str, float] = {}
@@ -176,3 +194,67 @@ def get_trade(name: str, trade_id: str) -> dict | None:
         if row.get("trade_id") == str(trade_id):
             return row
     return None
+
+
+def result_name_for(instrument: str, style: str, year: int | None = None, rr: float | None = None) -> str:
+    """The result-set name (matching a gh-pages results/{name}.csv file)
+    a `run_backtest_dispatch()` call with these same parameters will
+    eventually publish. MUST stay in sync with runner.py's `main()` CLI
+    suffix logic (year -> `_{year}`, rr -> `_rr{rr:g}`) -- duplicated
+    here rather than imported since the webapp and the engine are
+    separate deployable units (the webapp doesn't need the engine's own
+    dependencies installed)."""
+    suffix = f"_{year}" if year else ""
+    if rr is not None:
+        suffix += f"_rr{rr:g}"
+    return f"{instrument}_{style}{suffix}"
+
+
+def run_backtest_dispatch(instrument: str, style: str, year: int | None = None,
+                           rr: float | None = None, ref: str = "main") -> float:
+    """Triggers `run-backtest.yml` via workflow_dispatch with these
+    inputs. Returns the trigger time (UTC epoch seconds) -- GitHub's
+    dispatch API returns no run ID (a real API limitation), so the
+    caller must separately poll `find_dispatched_run()` with this
+    timestamp to find the run it just created."""
+    inputs = {"instrument": instrument, "style": style}
+    if year:
+        inputs["year"] = str(year)
+    if rr:
+        inputs["rr"] = str(rr)
+    resp = requests.post(
+        f"{GITHUB_API}/repos/{REPO}/actions/workflows/{RUN_BACKTEST_WORKFLOW}/dispatches",
+        headers=_headers(), json={"ref": ref, "inputs": inputs}, timeout=30,
+    )
+    resp.raise_for_status()
+    return time.time()
+
+
+def find_dispatched_run(triggered_at: float) -> dict | None:
+    """One-shot lookup (no internal polling loop -- see the module
+    docstring's request-timeout reasoning) for the newest workflow_dispatch
+    run of `RUN_BACKTEST_WORKFLOW` created at/after `triggered_at` (minus a
+    small buffer for clock skew between this server and GitHub's). Returns
+    None if nothing matches yet -- the caller (the webapp's status page)
+    re-calls this on each page auto-refresh until it resolves, rather than
+    blocking a single request on it."""
+    resp = requests.get(
+        f"{GITHUB_API}/repos/{REPO}/actions/workflows/{RUN_BACKTEST_WORKFLOW}/runs",
+        headers=_headers(), params={"event": "workflow_dispatch", "per_page": 5}, timeout=30,
+    )
+    resp.raise_for_status()
+    buffer_seconds = 15
+    for run in resp.json().get("workflow_runs", []):
+        created_at = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00")).timestamp()
+        if created_at >= triggered_at - buffer_seconds:
+            return run
+    return None
+
+
+def get_workflow_run(run_id: int) -> dict:
+    """Current status/conclusion/html_url for a specific run, for polling
+    after `find_dispatched_run()` has located it."""
+    resp = requests.get(f"{GITHUB_API}/repos/{REPO}/actions/runs/{run_id}",
+                         headers=_headers(), timeout=30)
+    resp.raise_for_status()
+    return resp.json()

@@ -18,17 +18,28 @@ place.
 
 import bisect
 import os
+import secrets
+import time
 
 import pandas as pd
-from flask import Flask, Response, abort, request
+from flask import Flask, Response, abort, redirect, request, url_for
 
 from . import data_access
+from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from .charts import render_candlestick_svg
 
 app = Flask(__name__)
 
 WEBAPP_USERNAME = os.environ.get("WEBAPP_USERNAME")
 WEBAPP_PASSWORD = os.environ.get("WEBAPP_PASSWORD")
+
+# In-memory only, keyed by an unguessable token handed to the browser via
+# the redirect URL -- fine for a single-worker, single-operator tool (see
+# render.yaml's 1-worker note); doesn't survive a restart, and a run
+# triggered right as the dyno recycles would need to be re-found via the
+# GitHub Actions tab. Not persisted anywhere heavier since there's no
+# multi-user or multi-instance requirement here.
+_pending_runs: dict[str, dict] = {}
 
 # granularity -> (candles before entry, candles after entry) shown per chart.
 CHART_WINDOWS = {
@@ -78,10 +89,118 @@ def _nearest_index(times: list, t) -> int | None:
 @app.route("/")
 def index():
     names = data_access.list_result_sets()
+    run_link = '<p><a href="/run">&#9654; Run a new backtest</a></p>'
     if not names:
-        return _page("<h1>SLK Backtest Viewer</h1><p>No results published yet -- run run-backtest.yml first.</p>")
+        return _page(f"<h1>SLK Backtest Viewer</h1>{run_link}<p>No results published yet -- run run-backtest.yml first.</p>")
     items = "".join(f'<li><a href="/results/{_escape(n)}">{_escape(n)}</a></li>' for n in names)
-    return _page(f"<h1>SLK Backtest Viewer</h1><ul>{items}</ul>")
+    return _page(f"<h1>SLK Backtest Viewer</h1>{run_link}<ul>{items}</ul>")
+
+
+@app.route("/run")
+def run_form():
+    options = "".join(f'<option value="{_escape(sym)}">{_escape(sym)}</option>'
+                       for sym in sorted(DUKASCOPY_INSTRUMENTS))
+    body = f'''
+<p><a href="/">&larr; all results</a></p>
+<h1>Run a new backtest</h1>
+<p class="meta">Runs on GitHub Actions (not this server) -- takes roughly a
+minute. Leave Year/R:R blank for the full history / default 3:1 target.</p>
+<form action="/run/start" method="post">
+  <p><label>Instrument<br><select name="instrument">{options}</select></label></p>
+  <p><label>Style<br>
+    <select name="style"><option value="conservative">conservative</option><option value="aggressive">aggressive</option></select>
+  </label></p>
+  <p><label>Year (optional)<br><input type="number" name="year" min="2000" max="2100" placeholder="e.g. 2026"></label></p>
+  <p><label>R:R (optional)<br><input type="number" name="rr" min="0.5" max="10" step="0.5" placeholder="e.g. 4"></label></p>
+  <p><button type="submit">Run backtest</button></p>
+</form>
+'''
+    return _page(body, title="Run a backtest")
+
+
+@app.route("/run/start", methods=["POST"])
+def run_start():
+    instrument = request.form.get("instrument", "").strip().upper()
+    style = request.form.get("style", "conservative")
+    if instrument not in DUKASCOPY_INSTRUMENTS or style not in ("aggressive", "conservative"):
+        abort(400)
+    year = request.form.get("year", "").strip()
+    year = int(year) if year else None
+    rr = request.form.get("rr", "").strip()
+    rr = float(rr) if rr else None
+
+    triggered_at = data_access.run_backtest_dispatch(instrument, style, year=year, rr=rr)
+    token = secrets.token_urlsafe(16)
+    _pending_runs[token] = {
+        "instrument": instrument, "style": style, "year": year, "rr": rr,
+        "triggered_at": triggered_at, "run_id": None,
+        "result_name": data_access.result_name_for(instrument, style, year=year, rr=rr),
+    }
+    return redirect(url_for("run_status", token=token))
+
+
+@app.route("/run/status/<token>")
+def run_status(token):
+    pending = _pending_runs.get(token)
+    if pending is None:
+        abort(404)
+
+    if pending["run_id"] is None:
+        found = data_access.find_dispatched_run(pending["triggered_at"])
+        if found is not None:
+            pending["run_id"] = found["id"]
+            pending["html_url"] = found["html_url"]
+
+    label = f'{pending["instrument"]} {pending["style"]}'
+    if pending["year"]:
+        label += f' {pending["year"]}'
+    if pending["rr"]:
+        label += f' rr={pending["rr"]:g}'
+
+    if pending["run_id"] is None:
+        # Not found yet -- either GitHub's API hasn't listed it yet, or
+        # (rarely) dispatch itself failed silently on GitHub's side.
+        # Keep auto-refreshing; give up asking after a couple of minutes
+        # of not even finding the run record.
+        if time.time() - pending["triggered_at"] > 120:
+            return _page(
+                f'<h1>Run a backtest</h1><p class="meta">{_escape(label)}</p>'
+                '<p>Still haven\'t found this run on GitHub Actions after 2 minutes -- '
+                'check the <a href="https://github.com/'
+                f'{_escape(data_access.REPO)}/actions/workflows/run-backtest.yml">Actions tab</a> '
+                'directly, or the token may be missing the actions:write scope.</p>',
+                title="Run a backtest",
+            )
+        return _page(
+            f'<h1>Run a backtest</h1><meta http-equiv="refresh" content="3">'
+            f'<p class="meta">{_escape(label)}</p><p>Queued, waiting for GitHub to register the run&hellip;</p>',
+            title="Run a backtest",
+        )
+
+    run = data_access.get_workflow_run(pending["run_id"])
+    status, conclusion = run["status"], run.get("conclusion")
+
+    if status != "completed":
+        return _page(
+            f'<h1>Run a backtest</h1><meta http-equiv="refresh" content="5">'
+            f'<p class="meta">{_escape(label)}</p>'
+            f'<p>{_escape(status)}&hellip; (<a href="{_escape(run["html_url"])}">watch on GitHub</a>)</p>',
+            title="Run a backtest",
+        )
+
+    if conclusion != "success":
+        return _page(
+            f'<h1>Run a backtest</h1><p class="meta">{_escape(label)}</p>'
+            f'<p>Run finished with conclusion "{_escape(conclusion)}" -- '
+            f'<a href="{_escape(run["html_url"])}">see the logs on GitHub</a>.</p>',
+            title="Run a backtest",
+        )
+
+    return _page(
+        f'<h1>Run a backtest</h1><p class="meta">{_escape(label)}</p>'
+        f'<p>Done. <a href="/results/{_escape(pending["result_name"])}">View results &rarr;</a></p>',
+        title="Run a backtest",
+    )
 
 
 @app.route("/results/<name>")

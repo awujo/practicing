@@ -127,9 +127,14 @@ showing the strategy's actual entries/stops/targets.
 3. Before (or right after) the first deploy, set these secret env vars on
    the service (Render dashboard -> the service -> **Environment**):
    - `GITHUB_TOKEN` -- a GitHub personal access token (fine-grained,
-     scoped to `awujo/trading`, **Contents: read-only** is enough) so the
-     service can read the private repo's `data-latest` release and
-     `gh-pages` results.
+     scoped to `awujo/trading`) so the service can read the private
+     repo's `data-latest` release and `gh-pages` results, AND (since the
+     "Run a new backtest" feature below was added) trigger new
+     `run-backtest.yml` runs. Needs both **Contents: read-only** and
+     **Actions: read and write** -- a token created before that feature
+     existed, with Contents-only, will 403/404 on the "Run a new
+     backtest" page specifically (viewing existing results still works
+     fine) until its permissions are widened or it's regenerated.
    - `WEBAPP_USERNAME` / `WEBAPP_PASSWORD` -- whatever you want to log in
      with. Leaving these unset does NOT lock you out, but it also means
      the viewer isn't password-protected -- set them before sharing the
@@ -177,6 +182,31 @@ Run it locally instead with:
 GITHUB_TOKEN=... WEBAPP_USERNAME=... WEBAPP_PASSWORD=... \
   python -m backtest.webapp.app
 ```
+
+**Run a new backtest from the viewer.** `/run` is a small form
+(instrument, style, optional year, optional R:R) that triggers a fresh
+`run-backtest.yml` run and takes you to a status page that auto-refreshes
+until it's done, then links straight to `/results/<name>` for that run --
+same page every other result already renders on. Deliberately does NOT
+run `run_backtest()` on the Render server itself: free tier's tight
+request timeout and single worker are the wrong shape for a ~60-90s
+full-history run blocking every other visitor. Instead it calls GitHub's
+workflow_dispatch API (`data_access.run_backtest_dispatch()`) to kick off
+the exact same workflow this whole project already uses, which runs on
+GitHub's own infrastructure with no timeout/RAM pressure, then polls
+`data_access.find_dispatched_run()`/`get_workflow_run()` for that run's
+status (GitHub's dispatch API returns no run ID, a real API limitation --
+finding "the run I just started" means listing recent runs and matching
+by trigger timestamp, with a small clock-skew buffer). Pending-run state
+(which token maps to which triggered run) lives in an in-memory dict, not
+a database -- fine for a single-worker, single-operator tool, but it
+means a run triggered right as the free-tier dyno spins down/restarts
+would need to be re-found via the GitHub Actions tab directly rather than
+the status page. Covered by `backtest/webapp/tests/test_data_access.py`
+(the dispatch payload, matching-run lookup, run-status passthrough, all
+against mocked `requests` calls -- no real network) and `test_app.py`
+(the form, input validation, and all three status-page states: queued,
+in-progress, done/failed).
 
 ## Setup (running the pipeline manually instead)
 
