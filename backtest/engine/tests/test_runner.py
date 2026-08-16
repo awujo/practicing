@@ -8,7 +8,7 @@ from ..bias import detect_confirmations, Confirmation, ConfirmationKind
 from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
-    _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl,
+    _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
 )
 
 SOURCE = "test"
@@ -142,22 +142,28 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.entry_price == pytest.approx(1.1030)  # conservative -> engulf candle's close
     assert trade.status == "closed_win"
     assert trade.exit_reason == "target_hit"
-    # Task 6: target is ERL-capped, not a flat 3:1 -- H4's own idx6 swing
-    # high (1.1042) sits closer than the raw 3:1 target (entry 1.1030 +
-    # 3 * risk 0.0026 = 1.1108 would be), so the real, already-visible
-    # structural point wins instead of letting the target run past it.
-    assert trade.primary_target == pytest.approx(1.1042)
-    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1004))
+    # Task 8: ERL is Daily/Weekly period extremes only, not H4 swing
+    # fractals (an earlier version capped here at H4 idx6's swing high --
+    # wrong, H4 is the cascade's own internal timeframe, not external).
+    # This fixture's own 9-day daily series has day8's own high (1.120)
+    # dwarfing everything before it, but day8 itself can never qualify as
+    # a candidate (no day9 exists yet to confirm it's a COMPLETED period)
+    # -- so every earlier day's high counts as already "swept" by day8's
+    # still-forming high well before this entry, leaving no valid ERL
+    # candidate at all. The plain, uncapped 3:1 target applies.
+    assert trade.primary_target == pytest.approx(1.1108)
+    assert trade.r_multiple == pytest.approx(3.0)
     assert trade.mfe_r is not None and trade.mfe_r >= trade.r_multiple  # ran at least as far as the close
 
     # Task 7: stop/target decision audit trail. The engulfing stop wasn't
     # too wide, so no fallback -- natural_stop_loss equals the stop
-    # actually used. The ERL cap DID bind (1.1042 vs. the uncapped 1.1108).
+    # actually used. No ERL candidate qualified, so raw_target and
+    # primary_target match and erl_capped is False.
     assert trade.natural_stop_loss == pytest.approx(trade.stop_loss)
     assert trade.stop_fallback_used is False
     assert trade.raw_target == pytest.approx(1.1108)
-    assert trade.erl_price == pytest.approx(1.1042)
-    assert trade.erl_capped is True
+    assert trade.erl_price is None
+    assert trade.erl_capped is False
 
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
@@ -453,11 +459,14 @@ def test_run_backtest_produces_an_origin_trade_close_to_the_bias_bootstrap(tmp_p
     # (1.1015) the old origin-keyed rule used either.
     assert trade.stop_loss == pytest.approx(1.1004)
     assert trade.status == "closed_win"
-    # Task 6: ERL-capped at H4 idx6's swing high (1.1042), same as
-    # test_run_backtest_produces_a_winning_trade_end_to_end (same H4
-    # series, entry price).
-    assert trade.primary_target == pytest.approx(1.1042)
-    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1004))
+    # Task 8: ERL is Daily/Weekly period extremes, not H4 -- and as of
+    # this early (day 2) entry, no completed prior day's high reaches
+    # anywhere near entry (1.1030) yet, so no ERL candidate qualifies and
+    # the plain, uncapped 3:1 target applies.
+    assert trade.primary_target == pytest.approx(1.1108)
+    assert trade.r_multiple == pytest.approx(3.0)
+    assert trade.erl_price is None
+    assert trade.erl_capped is False
 
 
 def test_reaction_trigger_prefers_engulfing_then_falls_through_to_fourth_man():
@@ -545,11 +554,12 @@ def test_run_backtest_fires_on_a_fourth_man_reaction(tmp_path, monkeypatch):
     # sweeping) -- the 4th-man default.
     assert trade.stop_loss == pytest.approx(1.0997)
     assert trade.status == "closed_win"
-    # Task 6: ERL-capped at H4 idx2's swing high (1.1030) -- entry (1.1012,
-    # conservative -> confirmation candle's close) sits below it, so it's
-    # the nearest untaken external liquidity in the trade direction.
-    assert trade.primary_target == pytest.approx(1.1030)
-    assert trade.r_multiple == pytest.approx((1.1030 - 1.1012) / (1.1012 - 1.0997))
+    # Task 8: ERL is Daily/Weekly period extremes, not H4 -- same
+    # dwarfed-by-day8's-still-forming-high reasoning as
+    # test_run_backtest_produces_a_winning_trade_end_to_end, so no ERL
+    # candidate qualifies and the plain, uncapped 3:1 target applies.
+    assert trade.primary_target == pytest.approx(1.1057)
+    assert trade.r_multiple == pytest.approx(3.0)
 
 
 def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_wide(tmp_path, monkeypatch):
@@ -609,10 +619,12 @@ def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_w
     # engulfed wick (1.0950).
     assert trade.stop_loss == pytest.approx(1.1011)
     assert trade.status == "closed_win"
-    # Task 6: ERL-capped at H4 idx6's swing high (1.1042), same as
-    # test_run_backtest_produces_a_winning_trade_end_to_end.
-    assert trade.primary_target == pytest.approx(1.1042)
-    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1011))
+    # Task 8: ERL is Daily/Weekly period extremes, not H4 -- same
+    # dwarfed-by-day8's-still-forming-high reasoning as
+    # test_run_backtest_produces_a_winning_trade_end_to_end, so no ERL
+    # candidate qualifies and the plain, uncapped 3:1 target applies.
+    assert trade.primary_target == pytest.approx(1.1087)
+    assert trade.r_multiple == pytest.approx(3.0)
 
     # Task 7: the audit trail shows what the natural (too-wide) stop
     # WOULD have been -- 1 pip beyond the 64-pip wick (1.0950) -- even
@@ -621,42 +633,85 @@ def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_w
     assert trade.stop_fallback_used is True
 
 
-def test_nearest_erl_picks_the_closest_untaken_point_across_timeframes():
-    h4 = [
-        H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
-        H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
-        H4(2, 1.1010, 1.1060, 1.1005, 1.1020),  # swing high, 1.1060 -- nearer than daily's
-        H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
-        H4(4, 1.1015, 1.1022, 1.1008, 1.1012),
-    ]
+def test_unswept_period_extremes_excludes_the_still_forming_last_period():
     daily = [
-        D(0, 1.0990, 1.1000, 1.0980, 1.0995),
-        D(1, 1.0995, 1.1010, 1.0990, 1.1000),
-        D(2, 1.1000, 1.1200, 1.0990, 1.1010),  # swing high, 1.1200 -- farther than H4's
-        D(3, 1.1010, 1.1030, 1.1000, 1.1020),
-        D(4, 1.1020, 1.1040, 1.1010, 1.1030),
+        D(0, 1.0990, 1.1050, 1.0980, 1.1000),  # completed -- high 1.1050
+        D(1, 1.1000, 1.1010, 1.0990, 1.1005),  # completed -- high 1.1010
+        D(2, 1.1005, 1.1005, 1.0995, 1.1000),  # LAST candle -- can't confirm it's "complete" yet
+    ]
+    # Neither day0 nor day1 is exceeded by anything after it (day2's own
+    # high, 1.1005, is smaller than both), so both survive -- but day2
+    # itself is never returned regardless of its own high, since there's
+    # no day3 yet to confirm day2 has actually closed.
+    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-05"), "high")
+    assert extremes == [pytest.approx(1.1050), pytest.approx(1.1010)]
+
+
+def test_unswept_period_extremes_excludes_a_high_already_swept_by_a_later_day():
+    daily = [
+        D(0, 1.0990, 1.1050, 1.0980, 1.1000),  # completed high 1.1050 -- swept below
+        D(1, 1.1000, 1.1010, 1.0990, 1.1005),
+        D(2, 1.1005, 1.1080, 1.0995, 1.1010),  # day2's high (1.1080) exceeds day0's (1.1050)
+        D(3, 1.1010, 1.1015, 1.1000, 1.1012),  # only here to confirm day2 has closed
+    ]
+    # day0's high (1.1050) was exceeded by day2's high (1.1080) before day3
+    # even starts -- no longer real untaken liquidity. Only day2's own high
+    # (now itself confirmed complete by day3) remains.
+    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-05"), "high")
+    assert extremes == [pytest.approx(1.1080)]
+
+
+def test_nearest_erl_picks_the_closest_untaken_point_across_daily_and_weekly():
+    daily = [
+        D(0, 1.0990, 1.1060, 1.0980, 1.1000),  # nearer than weekly's
+        D(1, 1.1000, 1.1010, 1.0990, 1.1005),
+        D(2, 1.1005, 1.1010, 1.0995, 1.1008),  # confirms day0/day1 complete
+    ]
+    weekly = [
+        W(0, 1.0990, 1.1200, 1.0980, 1.1000),  # farther than daily's
+        W(1, 1.1000, 1.1010, 1.0990, 1.1005),
     ]
     entry_price = 1.1030
     as_of_time = pd.Timestamp("2024-01-05")
 
-    erl = _nearest_erl(Direction.BULLISH, entry_price, as_of_time, h4, daily, [])
-    assert erl == pytest.approx(1.1060)  # the nearer H4 point wins, not daily's farther (but real) 1.1200
+    erl = _nearest_erl(Direction.BULLISH, entry_price, as_of_time, daily, weekly)
+    assert erl == pytest.approx(1.1060)  # the nearer daily point wins, not weekly's farther (but real) 1.1200
 
 
-def test_nearest_erl_ignores_points_that_have_not_formed_yet_or_are_behind_entry():
-    h4 = [
-        H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
-        H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
-        H4(2, 1.1010, 1.1060, 1.1005, 1.1020),  # swing high, forms at H4(2)'s own time
-        H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
-        H4(4, 1.1015, 1.1022, 1.1008, 1.1012),
+def test_nearest_erl_ignores_points_behind_entry():
+    daily = [
+        D(0, 1.1000, 1.1060, 1.0995, 1.1010),
+        D(1, 1.1010, 1.1015, 1.1005, 1.1012),
+        D(2, 1.1012, 1.1018, 1.1008, 1.1015),  # confirms day0/day1 complete
     ]
-    # as_of_time BEFORE the swing high even forms -- not "visible" yet.
-    assert _nearest_erl(Direction.BULLISH, 1.1005, pd.Timestamp("2024-01-01"), h4) is None
-    # as_of_time AFTER it forms, but the point (1.1060) is BEHIND entry
-    # (1.1070) in the trade direction -- already passed, not an external
-    # constraint anymore.
-    assert _nearest_erl(Direction.BULLISH, 1.1070, pd.Timestamp("2024-01-05"), h4) is None
+    # day0's high (1.1060) is BEHIND entry (1.1070) in the trade direction
+    # -- already passed, not an external constraint anymore.
+    assert _nearest_erl(Direction.BULLISH, 1.1070, pd.Timestamp("2024-01-05"), daily) is None
+
+
+def test_run_backtest_calls_nearest_erl_with_only_daily_and_weekly(synthetic_cache, monkeypatch):
+    # Wiring regression test for the actual bug: an earlier version of
+    # this call site passed h4 into _nearest_erl() alongside daily/weekly,
+    # treating H4's own dense swing fractals as if they were external
+    # liquidity -- on real EURUSD data that capped 96% of trades and flipped
+    # a backtest from solidly positive total R to negative. H4 is the
+    # cascade's own internal working timeframe, not external relative to
+    # it, so it must never reach _nearest_erl() at all.
+    import backtest.engine.runner as runner_module
+    calls = []
+    original = runner_module._nearest_erl
+
+    def spy(direction, entry_price, as_of_time, *period_series):
+        calls.append(period_series)
+        return original(direction, entry_price, as_of_time, *period_series)
+
+    monkeypatch.setattr(runner_module, "_nearest_erl", spy)
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+
+    assert len(records) == 1
+    assert len(calls) == 1
+    # exactly 2 series passed (daily, weekly) -- never a 3rd (h4)
+    assert len(calls[0]) == 2
 
 
 def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():

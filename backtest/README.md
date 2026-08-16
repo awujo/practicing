@@ -936,8 +936,56 @@ built in phases so each is testable before the next depends on it:
       moves toward the "intelligent system" framing raised in the
       originating conversation); breakout-as-its-own-entry-trigger;
       the "cover other nearby same-type KL" stop-width rule; 2H liquidity
-      fallback; whether a candidate ERL point has already been swept
-      before entry.
+      fallback.
+
+      **ERL redefinition: Daily/Weekly period extremes, not H4 swing
+      fractals.** The first real backtest run after the 7-part rebuild
+      above (EURUSD, full 2003-2026 history, conservative style) surfaced
+      a serious problem in part 6's ERL cap: total R went from +71
+      (pre-rebuild baseline) to -22, DESPITE win rate improving from 31%
+      to 77%. Breaking the "after" run down by `erl_capped`: 530 of 551
+      trades (96%) got their target capped, and those capped trades
+      averaged only +0.025R per trade -- wins were real but tiny, nowhere
+      near enough to cover the fixed -1R losses. Root cause: `_nearest_erl
+      ()` used a generic 2-candle swing fractal (`structural_liquidity_
+      points(..., n=2)`) across H4/Daily/Weekly as its ERL definition --
+      on 23 years of H4 candles there's a swing point every few bars, so
+      it fired on nearly every trade. That's not what ERL means in this
+      codebase's own pre-existing model: `liquidity.py`'s
+      `SequentialLiquidityTracker` (Section 3, built well before this
+      rebuild) already defines ERL as a PERIOD's own high/low (previous
+      daily/weekly/monthly/session extreme), and this rebuild's Task 6
+      never consulted it, inventing a new and wrong concept from scratch
+      instead. Fixed: `_nearest_erl()` now only accepts Daily/Weekly
+      candle series (H4 dropped entirely -- it's the entry cascade's own
+      internal working timeframe, not external relative to it) and a new
+      `_unswept_period_extremes()` treats each period's own high/low as a
+      candidate, excluding (a) the still-forming period `as_of_time`
+      itself falls inside (a "previous" reference has to have actually
+      closed) and (b) any period extreme already exceeded by a LATER
+      period before entry (once swept, it's not real untaken liquidity
+      anymore -- the exact gap flagged as a known limitation in part 6,
+      now filled in, since its real-world impact wasn't visible until
+      tested against actual market data). Implemented as an O(n)
+      monotonic-stack "next greater/smaller-or-equal element" scan per
+      call, not an O(n^2) rescan per candidate -- a Daily series alone is
+      8,000+ candles across a full backtest, called once per trade.
+      Even a genuinely correct ERL doesn't always cause a reversal when
+      swept (direct user correction) -- that's inherently probabilistic
+      and this fix doesn't pretend to model it; it only stops manufacturing
+      false-positive ERL candidates that were never real external
+      liquidity in the first place. New tests replace the old H4-fractal-
+      based ones: `_unswept_period_extremes()` isolation tests (still-
+      forming exclusion, already-swept exclusion), `_nearest_erl()`
+      cross-timeframe/behind-entry tests using only Daily/Weekly, and a
+      wiring regression test asserting the runner never passes H4 into
+      `_nearest_erl()` again. Every part-6/7 fixture's `primary_target`/
+      `erl_price`/`erl_capped` assertions were re-verified against the
+      corrected behavior -- most now resolve to the plain, uncapped 3:1
+      target, since the shared fixture's own tiny 9-day Daily series has
+      no genuine untaken high near the relevant price range once day 8's
+      dominant spike (needed to bootstrap the Daily bias) is excluded as
+      still-forming.
 
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just

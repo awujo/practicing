@@ -113,15 +113,18 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   implemented -- the trigger-keyed stop rules only account for the
   SINGLE reaction level/candle currently in play, not other close-by
   same-shape candidates from `reaction_level_candidates`.
-- Target: `_nearest_erl()` doesn't check whether an ERL candidate has
-  already been swept by price before entry -- only formed-before-entry
-  and beyond-entry-price. An already-taken swing point isn't real
-  external liquidity anymore, but that refinement isn't modeled here
-  (see `_nearest_erl()`'s own docstring). It also doesn't distinguish
-  4:1 from the flat 3:1 default (`RISK_REWARD_PRIMARY` in
-  trade_management.py) -- STRATEGY.md's "3:1 or 4:1" isn't given a
-  precise selection rule between the two, so this keeps the existing 3:1
-  baseline and only adds the ERL cap on top of it.
+- Target: `_nearest_erl()` (revised -- see the "ERL redefinition" entry
+  in backtest/README.md's changelog) sources candidates from Daily/Weekly
+  period extremes only, excludes the still-forming current period, and
+  excludes anything already swept by a later period before entry. It
+  does NOT distinguish 4:1 from the flat 3:1 default (`RISK_REWARD_
+  PRIMARY` in trade_management.py) -- STRATEGY.md's "3:1 or 4:1" isn't
+  given a precise selection rule between the two, so this keeps the
+  existing 3:1 baseline and only adds the ERL cap on top of it. And even
+  a genuinely correct ERL doesn't always cause a reversal when swept
+  (direct user correction) -- that's inherently probabilistic and not
+  something a deterministic cap can model; this only fixes the
+  false-positive rate of what counts as a candidate in the first place.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
@@ -247,30 +250,77 @@ def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float
     return abs(entry_price - stop_loss) / pip_size > max_pips
 
 
+def _unswept_period_extremes(series: list[Candle], as_of_time, kind: str) -> list[float]:
+    """Every COMPLETED period's own high (kind="high") or low (kind="low")
+    in `series` that hasn't been touched/exceeded by any LATER period in
+    the same series before `as_of_time` -- Section 3's actual ERL
+    definition (`SequentialLiquidityTracker`): "previous daily/weekly
+    high/low," a period's own extreme, not an arbitrary multi-candle
+    swing fractal. The LAST period (whichever one `as_of_time` itself
+    falls inside) is always excluded -- a still-forming period isn't a
+    fixed "previous" reference yet.
+
+    O(n) per call via a monotonic stack (the standard "next greater/
+    smaller-or-equal element" problem) to find each period's own sweep
+    point, not an O(n^2) rescan per candidate -- this runs once per
+    trade, and a Daily series alone is ~8,000+ candles across a full
+    multi-year backtest."""
+    n = len(series)
+    sweep_index: list[int | None] = [None] * n
+    stack: list[int] = []
+    if kind == "high":
+        for i in range(n):
+            while stack and series[stack[-1]].high <= series[i].high:
+                sweep_index[stack.pop()] = i
+            stack.append(i)
+    else:
+        for i in range(n):
+            while stack and series[stack[-1]].low >= series[i].low:
+                sweep_index[stack.pop()] = i
+            stack.append(i)
+
+    extremes = []
+    for i in range(n - 1):
+        if series[i + 1].time > as_of_time:
+            break  # period i+1 hasn't started yet -- period i is still the CURRENT one, excluded
+        if sweep_index[i] is not None and series[sweep_index[i]].time <= as_of_time:
+            continue  # already swept by a later period before entry -- not real untaken liquidity anymore
+        extremes.append(series[i].high if kind == "high" else series[i].low)
+    return extremes
+
+
 def _nearest_erl(direction: Direction, entry_price: float, as_of_time,
-                  *candle_series: list[Candle]) -> float | None:
+                  *period_series: list[Candle]) -> float | None:
     """The nearest untaken external range liquidity point, in the trade
-    direction, across whichever candle series are passed (4H/Daily/Weekly)
-    -- "price wants to go from internal range liquidity to external," not
-    beyond it (direct user correction; see trade_management.py's
-    `primary_target()`, which uses this to cap the default 1:3/4:1 R:R
-    rather than let it overshoot a real, already-visible structural
-    point). Only formed-before-entry-time and beyond-entry-price
-    filtering -- does NOT check whether the point has already been swept
-    by price between its formation and entry (a further refinement, not
-    modeled here). Returns None if nothing qualifies on any series passed
-    (the caller then falls back to the plain, uncapped rr target)."""
+    direction, across whichever PERIOD candle series are passed (Daily/
+    Weekly -- NOT H4: H4 is the entry cascade's own internal working
+    timeframe, not external relative to it). "Price wants to go from
+    internal range liquidity to external," not beyond it (direct user
+    correction; see trade_management.py's `primary_target()`, which uses
+    this to cap the default 1:3/4:1 R:R rather than let it overshoot a
+    real, already-visible structural point).
+
+    Deliberately NOT "any nearby swing high/low" -- an earlier version of
+    this function used a generic 2-candle fractal detector across H4/
+    Daily/Weekly, which on real EURUSD data capped 96% of trades (a
+    swing point every few H4 candles isn't external liquidity, it's
+    noise) and flipped a backtest from solidly positive total R to
+    negative despite a much higher win rate. See `_unswept_period_
+    extremes()` for the corrected definition. Even a genuinely correct
+    ERL doesn't always cause a reversal when swept -- that's inherently
+    probabilistic and not something a deterministic cap can model; this
+    only fixes the false-positive rate, not that deeper limitation.
+    Returns None if nothing qualifies on any series passed (the caller
+    then falls back to the plain, uncapped rr target)."""
     kind = "high" if direction == Direction.BULLISH else "low"
     candidates = []
-    for series in candle_series:
+    for series in period_series:
         if not series:
             continue
-        for p in structural_liquidity_points(series, n=2):
-            if p.kind != kind or p.time > as_of_time:
-                continue
-            beyond = p.price > entry_price if direction == Direction.BULLISH else p.price < entry_price
+        for price in _unswept_period_extremes(series, as_of_time, kind):
+            beyond = price > entry_price if direction == Direction.BULLISH else price < entry_price
             if beyond:
-                candidates.append(p.price)
+                candidates.append(price)
     if not candidates:
         return None
     return min(candidates) if direction == Direction.BULLISH else max(candidates)
@@ -812,10 +862,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
         # Target is ERL-capped, not a fixed 3:1 (direct user correction --
         # "price wants to go from internal range liquidity to external",
-        # capped by the REAL external range liquidity visible on
-        # 4H/Daily/Weekly, not an unconditional ratio). Weekly may be [].
+        # capped by the REAL external range liquidity -- Daily/Weekly's own
+        # period extremes, not an unconditional ratio). H4 deliberately
+        # excluded (it's the cascade's own internal timeframe, not external
+        # relative to it -- see _nearest_erl()'s docstring). Weekly may be [].
         raw_target = primary_target(entry_price, stop_loss, effective)
-        erl_price = _nearest_erl(effective, entry_price, curr.time, h4, daily, weekly)
+        erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly)
         target = primary_target(entry_price, stop_loss, effective, erl_price=erl_price)
         erl_capped = target != raw_target
 

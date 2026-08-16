@@ -15,8 +15,12 @@ Four pieces:
    bread-and-butter target... take the 1:3 when it's there"), ERL-capped:
    3:1/4:1 is the DEFAULT, not a fixed target -- a direct user correction
    that a straight R:R target overshooting the real external range
-   liquidity visible on 4H/Daily/Weekly should be capped there instead
-   (`erl_price` parameter, computed by runner.py's `_nearest_erl()`).
+   liquidity should be capped there instead (`erl_price` parameter,
+   computed by runner.py's `_nearest_erl()` from Daily/Weekly period
+   extremes -- NOT H4 or a generic swing fractal; an earlier version used
+   both and, on real EURUSD data, ended up capping 96% of trades since a
+   dense H4 series always has SOME nearby swing point, which isn't the
+   same thing as genuine external liquidity).
 
 3. `tiered_exit_targets()` -- Video 16's major exit-targeting rule: a
    storyline built from a given timeframe's key level is expected to
