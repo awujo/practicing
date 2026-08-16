@@ -6,12 +6,12 @@ import pytest
 from ...data_pipeline import cache
 from ..candles import Candle
 from ..structure import Direction
-from ..bias import detect_confirmations
+from ..bias import detect_confirmations, Confirmation, ConfirmationKind
 from ..key_levels import KeyLevel, detect_key_levels
 from ..imbalance import Imbalance
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
-    _rank_reaction_level,
+    _rank_reaction_level, _aligned_timeframes,
 )
 
 SOURCE = "test"
@@ -205,6 +205,69 @@ def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthe
     assert trade.stop_kind == "continuation"
 
 
+def test_aligned_timeframes_requires_each_tiers_own_confirmation():
+    t = pd.Timestamp("2024-06-01")
+
+    def conf(days_before, direction):
+        return Confirmation(t - pd.Timedelta(days=days_before), direction, ConfirmationKind.BREAKOUT, 1.10)
+
+    weekly = [conf(20, Direction.BULLISH)]
+    daily = [conf(5, Direction.BULLISH)]
+    h4 = [conf(1, Direction.BULLISH)]
+
+    assert _aligned_timeframes(Direction.BULLISH, t, weekly, daily, h4) == ["Weekly", "Daily", "H4"]
+
+
+def test_aligned_timeframes_excludes_a_tier_confirming_the_opposite_direction():
+    t = pd.Timestamp("2024-06-01")
+
+    def conf(days_before, direction):
+        return Confirmation(t - pd.Timedelta(days=days_before), direction, ConfirmationKind.BREAKOUT, 1.10)
+
+    daily = [conf(5, Direction.BEARISH)]  # opposite direction -- shouldn't count
+    h4 = [conf(1, Direction.BULLISH)]
+
+    assert _aligned_timeframes(Direction.BULLISH, t, [], daily, h4) == ["H4"]
+
+
+def test_aligned_timeframes_excludes_a_confirmation_outside_the_lookback_window():
+    t = pd.Timestamp("2024-06-01")
+    daily = [Confirmation(t - pd.Timedelta(days=200), Direction.BULLISH, ConfirmationKind.BREAKOUT, 1.10)]
+    h4 = [Confirmation(t - pd.Timedelta(hours=1), Direction.BULLISH, ConfirmationKind.BREAKOUT, 1.10)]
+
+    assert _aligned_timeframes(Direction.BULLISH, t, [], daily, h4) == ["H4"]
+
+
+def test_aligned_timeframes_excludes_a_confirmation_that_hasnt_happened_yet():
+    # A future-dated confirmation (relative to `t`) can't be what price is
+    # currently aligned with -- same reasoning as the imbalance-matching
+    # fix: only what's already happened counts.
+    t = pd.Timestamp("2024-06-01")
+    daily = [Confirmation(t + pd.Timedelta(days=1), Direction.BULLISH, ConfirmationKind.BREAKOUT, 1.10)]
+    h4 = [Confirmation(t - pd.Timedelta(hours=1), Direction.BULLISH, ConfirmationKind.BREAKOUT, 1.10)]
+
+    assert _aligned_timeframes(Direction.BULLISH, t, [], daily, h4) == ["H4"]
+
+
+def test_run_backtest_rejects_an_h4_setup_with_no_daily_alignment(synthetic_cache):
+    # "4H can't stand alone if at least the Daily isn't aligned to it."
+    # synthetic_cache's own daily series only gives its breakout/sweep+break
+    # confirmations around day 8-9, and H1_BASE sits ~20 days later --
+    # within ALIGNMENT_LOOKBACK for H4, but this test additionally monkeypatches
+    # H4's own lookback down to something the fixture's H4 breakout (day ~1)
+    # can't reach from H1_BASE (day 20), simulating "H4 aligned, but nothing
+    # else nearby enough to count as Daily support" and confirming the trade
+    # gets rejected rather than taken on H4 alone.
+    import backtest.engine.runner as runner_module
+    original = runner_module.ALIGNMENT_LOOKBACK
+    runner_module.ALIGNMENT_LOOKBACK = {**original, "Daily": pd.Timedelta(days=0)}
+    try:
+        records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    finally:
+        runner_module.ALIGNMENT_LOOKBACK = original
+    assert records == []
+
+
 def test_run_backtest_anchors_origin_stop_to_the_setup_own_liquidity_point(tmp_path, monkeypatch):
     # Same Bishop cascade as `synthetic_cache`, but with H1 candles placed
     # within ORIGIN_WINDOW (3 days) of the Daily bias flip (bootstrapped at
@@ -223,6 +286,16 @@ def test_run_backtest_anchors_origin_stop_to_the_setup_own_liquidity_point(tmp_p
     monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
 
     daily = [
+        # Prepended so the new multi-timeframe alignment gate has a Daily
+        # breakout to find before entry (day 2) -- a swing high peaking at
+        # day -3 (1.099), with day 0's own close (1.102, unchanged below)
+        # confirming the breakout above it. Doesn't touch day 0 onward, so
+        # first_origin's sweep+break detection (day ~8-9) is unaffected.
+        D(-5, 1.090, 1.093, 1.088, 1.091),
+        D(-4, 1.091, 1.096, 1.089, 1.093),
+        D(-3, 1.093, 1.099, 1.091, 1.095),  # swing high, price 1.099
+        D(-2, 1.095, 1.097, 1.092, 1.094),
+        D(-1, 1.094, 1.096, 1.090, 1.093),
         D(0, 1.100, 1.105, 1.098, 1.102),
         D(1, 1.102, 1.108, 1.100, 1.106),
         D(2, 1.106, 1.112, 1.104, 1.107),

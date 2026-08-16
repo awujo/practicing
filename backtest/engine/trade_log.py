@@ -55,6 +55,7 @@ class TradeRecord:
     bias_h4: object = None
     bias_h1: object = None
     effective_bias_timeframe: str | None = None
+    aligned_timeframes: str = ""        # comma-joined subset of "Weekly,Daily,H4" -- see _aligned_timeframes()
 
     # Key-level ranking factors (Phase 2)
     key_level_price: float = 0.0

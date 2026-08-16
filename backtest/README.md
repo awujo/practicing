@@ -646,6 +646,29 @@ built in phases so each is testable before the next depends on it:
       reaction, which is what price returning to fill an already-existing
       gap actually looks like.
 
+      **Entry-gate rebuild, part 1: multi-timeframe alignment.** A long
+      user walkthrough (real charts, direct Q&A) surfaced that the entry
+      gate was missing something Bishop's material treats as load-bearing:
+      "4H can't stand alone if at least the Daily isn't aligned to it."
+      `resolve_effective_bias()` only ever checked which single
+      highest-priority timeframe had an active bias reading -- it never
+      confirmed that Daily and H4 *each* independently gave their own
+      breakout or sweep+break (never an open-close break or plain engulf,
+      per the bias-flip rules already in `bias.py`) agreeing with the
+      trade direction. `_aligned_timeframes()` (new) checks Weekly/Daily/H4
+      each for their own recent confirmation, bounded by `ALIGNMENT_LOOKBACK`
+      per tier (a modeling choice, not a number from the source material);
+      `run_backtest` now requires at least Daily+H4 aligned before a setup
+      is even considered, and logs which tiers aligned on `TradeRecord`
+      (`aligned_timeframes`) so a later pass can check whether more
+      alignment actually correlates with a better win rate. This is the
+      first of several planned entry-gate changes from that same
+      conversation (four distinct confirmation-entry trigger types
+      replacing the single engulf-only path, origin/continuation
+      reclassified as independent of which trigger fired, per-trigger stop
+      rules, and ERL-capped targets) -- landing incrementally, each with
+      its own tests, rather than as one large change.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

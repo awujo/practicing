@@ -170,6 +170,22 @@ ORIGIN_WINDOW = pd.Timedelta(days=3)
 QMR_LOOKAHEAD = 30
 FOLLOWING_LOOKAHEAD = 3
 
+# How far back a tier's OWN breakout/sweep+break can be and still count as
+# "aligned" with the current H1 entry candidate. Bounded for the same
+# reason candidate_levels/imbalance matching got bounded elsewhere in this
+# file (an unboundedly old confirmation isn't really "aligned" with what's
+# happening right now). Chosen generously per tier's own timescale -- not
+# a specific number given in the source material, which only states the
+# qualitative rule: more tiers aligned via their own breakout/sweep+break
+# = higher-probability trade; "4H can't stand alone if at least the Daily
+# isn't aligned to it" (direct guidance) -- Daily+H4 is the practical
+# minimum, Weekly is a bonus when it's there too.
+ALIGNMENT_LOOKBACK = {
+    "Weekly": pd.Timedelta(days=120),
+    "Daily": pd.Timedelta(days=45),
+    "H4": pd.Timedelta(days=21),
+}
+
 # How many H1 candles forward to search, after an H4 single-candle
 # liquidity point forms, for price to actually sweep it. Bounded for the
 # same "don't force it, and don't scan forever" reasons as
@@ -238,6 +254,28 @@ def _last_direction_at(lookup, t):
     if idx < 0:
         return None
     return directions[idx]
+
+
+def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
+                         daily_confirmations, h4_confirmations) -> list[str]:
+    """Which of Weekly/Daily/H4 currently show THEIR OWN breakout or
+    sweep+break confirming `direction`, within a bounded recency window
+    (ALIGNMENT_LOOKBACK) of `as_of_time` -- never satisfied by an
+    open-close break or plain engulf, since detect_confirmations() never
+    produces those events. This is the multi-timeframe ALIGNMENT check
+    (more tiers aligned = higher-probability trade), a different question
+    from resolve_effective_bias()'s "which single highest-priority
+    timeframe has an active bias reading right now". Returns the aligned
+    subset in TIMEFRAME_PRIORITY order, e.g. ["Daily", "H4"]."""
+    aligned = []
+    for label, confirmations in (("Weekly", weekly_confirmations),
+                                  ("Daily", daily_confirmations),
+                                  ("H4", h4_confirmations)):
+        lookback = ALIGNMENT_LOOKBACK[label]
+        recent = [c for c in confirmations if c.time <= as_of_time and as_of_time - c.time <= lookback]
+        if recent and max(recent, key=lambda c: c.time).direction == direction:
+            aligned.append(label)
+    return aligned
 
 
 @dataclass(frozen=True)
@@ -498,6 +536,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
     daily_levels = detect_key_levels(daily, n)
     daily_confirmations = detect_confirmations(daily, n)
+    weekly_confirmations = detect_confirmations(weekly, n) if weekly else []
     h4_confirmations = detect_confirmations(h4, n)
     h4_levels = detect_key_levels(h4, n)
     h4_imbalances = detect_imbalances(h4)
@@ -545,6 +584,19 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # (bounded) time between the H4 breakout and the eventual H1
         # reaction, and a stale-direction setup should not be traded.
         if effective is None or effective != candidate.direction:
+            continue
+
+        # Multi-timeframe ALIGNMENT gate -- separate from (and stricter
+        # than) the effective-bias check above. "4H can't stand alone if
+        # at least the Daily isn't aligned to it": require Daily and H4 to
+        # each show their OWN breakout/sweep+break confirming this
+        # direction, not just whichever single highest-priority timeframe
+        # resolve_effective_bias() picked. Weekly, when it also aligns, is
+        # logged but not required -- it's a probability booster, not a
+        # gate by itself.
+        aligned = _aligned_timeframes(candidate.direction, curr.time,
+                                       weekly_confirmations, daily_confirmations, h4_confirmations)
+        if not ("Daily" in aligned and "H4" in aligned):
             continue
 
         new_key_level = candidate.reaction_level
@@ -662,6 +714,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             bias_h4=h4_bias,
             bias_h1=h1_bias,
             effective_bias_timeframe=effective_tf,
+            aligned_timeframes=",".join(aligned),
             key_level_price=new_key_level.price,
             key_level_shape=new_key_level.shape,
             imbalance_overlap=imbalance_overlap,
