@@ -9,6 +9,7 @@ from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
+    _resolve_date_range,
 )
 
 SOURCE = "test"
@@ -211,6 +212,38 @@ def test_run_backtest_respects_a_custom_rr(synthetic_cache):
     entry, stop = default_run[0].entry_price, default_run[0].stop_loss
     assert default_run[0].raw_target == pytest.approx(entry + 3 * (entry - stop))
     assert rr4_run[0].raw_target == pytest.approx(entry + 4 * (entry - stop))
+
+
+def test_resolve_date_range_returns_tz_aware_utc_bounds():
+    # Regression test for a real bug: pd.Timestamp(year=..., month=...,
+    # day=...) is tz-NAIVE by default, but cached candle timestamps are
+    # tz-aware UTC (parsed from the CSV's own "+00:00" ISO strings) --
+    # comparing naive against aware raises "Cannot compare tz-naive and
+    # tz-aware timestamps". This slipped past every other test in this
+    # file because ALL of this file's own fixtures build NAIVE
+    # timestamps throughout (see H1_BASE etc.) -- only a real production
+    # run against real (aware) cached data actually hit it.
+    start, end = _resolve_date_range(2026, None, None)
+    assert start.tzinfo is not None and end.tzinfo is not None
+
+    production_like_time = pd.Timestamp("2026-06-15T12:00:00+00:00")  # tz-aware, like real candle data
+    assert start <= production_like_time <= end  # must not raise
+
+
+def test_resolve_date_range_year_shorthand_spans_the_whole_calendar_year():
+    start, end = _resolve_date_range(2026, None, None)
+    assert start == pd.Timestamp("2026-01-01T00:00:00+00:00")
+    assert end == pd.Timestamp("2026-12-31T23:59:59+00:00")
+
+
+def test_resolve_date_range_widens_a_bare_end_date_to_end_of_day():
+    start, end = _resolve_date_range(None, "2026-03-01", "2026-03-10")
+    assert start == pd.Timestamp("2026-03-01T00:00:00+00:00")
+    assert end == pd.Timestamp("2026-03-10T23:59:59+00:00")
+
+
+def test_resolve_date_range_returns_none_none_when_nothing_given():
+    assert _resolve_date_range(None, None, None) == (None, None)
 
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):

@@ -957,6 +957,34 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     return records
 
 
+def _utc(ts: pd.Timestamp) -> pd.Timestamp:
+    """Cached candle timestamps are tz-aware UTC (the CSV's own ISO
+    strings carry a "+00:00" offset, which pandas parses as such) --
+    comparing a tz-naive start_date/end_date against curr.time raises
+    TypeError (`Cannot compare tz-naive and tz-aware timestamps`), so
+    every CLI-supplied date bound must be coerced to UTC before being
+    passed to `run_backtest()`. A real bug the first --year run hit:
+    `pd.Timestamp(year=..., month=..., day=...)` is naive by default, and
+    this codebase's own test fixtures are ALSO naive throughout (see
+    test_runner.py), so nothing caught it locally -- only a real
+    tz-aware production run did."""
+    return ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+
+
+def _resolve_date_range(year: int | None, start: str | None, end: str | None):
+    """CLI --year/--start/--end -> (start_date, end_date) UTC bounds for
+    `run_backtest()`. --year is shorthand for the whole calendar year;
+    --end (bare date) is widened to end-of-day so the whole day is
+    included, not just its first instant."""
+    if year is not None:
+        start_date = _utc(pd.Timestamp(year=year, month=1, day=1))
+        end_date = _utc(pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59))
+    else:
+        start_date = _utc(pd.Timestamp(start)) if start else None
+        end_date = _utc(pd.Timestamp(end) + pd.Timedelta(hours=23, minutes=59, seconds=59)) if end else None
+    return start_date, end_date
+
+
 def main():
     import argparse
 
@@ -974,13 +1002,7 @@ def main():
                          help=f"Target risk:reward ratio (STRATEGY.md's '3:1 or 4:1'). Defaults to {RISK_REWARD_PRIMARY:g}.")
     args = parser.parse_args()
 
-    if args.year is not None:
-        start_date = pd.Timestamp(year=args.year, month=1, day=1)
-        end_date = pd.Timestamp(year=args.year, month=12, day=31, hour=23, minute=59, second=59)
-    else:
-        start_date = pd.Timestamp(args.start) if args.start else None
-        # a bare date defaults to midnight -- widen to end-of-day so the whole --end day is included
-        end_date = (pd.Timestamp(args.end) + pd.Timedelta(hours=23, minutes=59, seconds=59)) if args.end else None
+    start_date, end_date = _resolve_date_range(args.year, args.start, args.end)
 
     run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date}
     if args.rr is not None:
