@@ -46,7 +46,8 @@ class TradeRecord:
     entry_price: float = 0.0
     entry_pattern: str = ""             # "direct_mitigation" | "fresh_irl_required" | "nested_disrespect"
     entry_style: str = ""               # "aggressive" | "conservative"
-    trade_kind: str = ""                # "origin" | "continuation"
+    trade_kind: str = ""                # "origin" | "continuation" -- independent of trigger_type
+    trigger_type: str = ""              # "plug_and_play" | "engulfing" | "fourth_man" -- see entries.py
 
     # Multi-timeframe bias context at entry
     bias_monthly: object = None         # Direction | None
@@ -68,7 +69,7 @@ class TradeRecord:
 
     # Risk/target mechanics
     stop_loss: float = 0.0
-    stop_kind: str = ""                 # "origin" | "continuation" | "tight_no_irl" | "imbalance"
+    stop_kind: str = ""                 # "plug_and_play" | "engulfing" | "fourth_man" | "*_kl_fallback"
     risk_pips: float = 0.0
     primary_target: float = 0.0
 

@@ -32,9 +32,9 @@ plus the PDF chart examples:
     -> price (H1) sweeps that liquidity point
     -> price then reacts off a same-direction H4 key level -- tried
        nearest-to-extreme in order, whichever one actually produces a real
-       reaction first (an engulfing candle touching/near that level, in
-       the bias direction), not a scored pick (see the reaction-level
-       SELECTION paragraph below)
+       reaction first (an engulfing OR 4th-man confirmation touching that
+       level, in the bias direction -- `_reaction_trigger()`), not a
+       scored pick (see the reaction-level SELECTION paragraph below)
     -> that reaction candle IS the entry trigger.
 This is now implemented as a precomputed gate (`_find_liquidity_setups()`
 + `_find_entry_candidates()`) that runs BEFORE the main per-trade loop:
@@ -44,9 +44,10 @@ entries. Everything downstream of that gate (Video 14's 3 execution
 patterns, the 1:3 target, MAE/MFE tracking) is unchanged from before --
 only the SELECTIVITY of which candles get evaluated, and which key level
 they're evaluated against (the Bishop-validated H4 reaction level, not an
-ad-hoc H1-engulf-derived one), changed. The stop-loss rules (see
-entries.py's module docstring) are now 4, not 3 -- see the "plug and
-play" note below.
+ad-hoc H1-engulf-derived one), changed. Stop-loss selection is keyed to
+WHICH TRIGGER fired -- plug and play / engulfing / 4th-man, plus a
+universal fallback -- not to trade_kind (see entries.py's module
+docstring point 5 and the stop-loss selection block below).
 
 Reaction-level SELECTION among multiple same-direction candidates is NOT
 a ranking/scoring problem -- an earlier version of this gate scored every
@@ -57,7 +58,8 @@ same-direction H4 key level still in play (bounded to the current
 structural leg) nearest-to-extreme by distance from the swept liquidity
 point, and `_find_entry_candidates()` tries them in that order, taking
 whichever one is the first to actually produce a genuine reaction
-(touched + engulfing) within the bounded lookahead window -- falling
+(touched + engulfing or 4th-man confirmation) within the bounded
+lookahead window -- falling
 through to the next candidate if the nearer one never holds. The extreme
 (farthest) candidate is the LAST RESORT, not a scored pick, and a deep
 retracement through the breakout point does NOT disqualify a candidate
@@ -70,12 +72,15 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   forms on 2H instead ("some time its the 2H that will give us a single
   candle liquidity after the 4H breakout") -- a 2H fallback isn't wired
   in yet.
-- Only ENGULFING is accepted as the confirmation-entry trigger. Bishop's
-  material describes 3 valid confirmation-entry types (breakout,
-  engulfing, sweep+break) -- the other two aren't wired into this gate
-  yet (though `detect_confirmations()` already produces breakout/
-  sweep_break events for H1, so this is a bounded extension, not new
-  detection logic).
+- ENGULFING and 4TH-MAN CONFIRMATION are both wired as reaction triggers
+  now (`_reaction_trigger()`, engulfing checked first); a direct
+  breakout/sweep+break of the reaction level itself is the one
+  remaining confirmation-entry trigger type NOT wired into this gate
+  (though `detect_confirmations()` already produces breakout/sweep_break
+  events for H1, so this is a bounded extension, not new detection
+  logic) -- its stop-loss rule (`breakout_leg_stop_loss()`, the low of
+  the whole leg that produced the breakout) isn't added yet either,
+  since nothing would call it.
 - "Plug and play" is documented
   (`knowledge-base/supplementary/b_plug_and_play_notes.md`, transcribed
   from a Bishop community call). It turned out to be broader than the
@@ -102,6 +107,12 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   structure" caution (a non-single-candle liquidity shape should be
   waited out in full, not traded on first touch) is still documented in
   the knowledge base but not yet factored in.
+- Stop-loss (see entries.py's module docstring point 5 for the full
+  per-trigger breakdown): "must also clear any other nearby same-type KL
+  price could still reach, not just the nearest one" is NOT yet
+  implemented -- the trigger-keyed stop rules only account for the
+  SINGLE reaction level/candle currently in play, not other close-by
+  same-shape candidates from `reaction_level_candidates`.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
@@ -130,21 +141,22 @@ silently assumed:
   `ORIGIN_WINDOW` fixed-day-proximity heuristic, which could misclassify
   a trade purely because it happened to fall inside/outside an arbitrary
   window rather than by whether an earlier trade had already been taken
-  in that leg). This is orthogonal to the liquidity-cascade gate (it only
-  affects which of the mechanized stop-loss rules applies to a setup the
-  gate already approved). Origin stops used to anchor to a Daily-timeframe
-  structural-extreme snapshot that
-  could be stale (PRICE-far from the origin's own structural extreme) by
-  the time an H1 entry actually fired, producing stops (and therefore 3R
-  targets) far wider than anything in the source material ever
-  describes -- the leading cause of trades that never resolved within
-  MAX_TRADE_DURATION_CANDLES. Fixed by anchoring `origin_stop_loss()` to
-  `EntryCandidate.liquidity_price` instead (see `origin_stop_loss()`'s
-  call site above) -- the SAME local H4 liquidity point that triggered
-  this specific entry, i.e. the "particular high/low that was actually
-  created" Bishop's mentor describes placing stops beyond (Video 13's
-  origin stop-loss Q&A), and visually confirmed against Video 4's
-  worked example (a fixed ~9 pip stop, not a distant swing).
+  in that leg). trade_kind is now PURELY a logged/audit field -- it does
+  NOT affect stop-loss selection (that's keyed to trigger type instead,
+  see the "Stop-loss selection" paragraph above and entries.py's module
+  docstring point 5). It used to: an earlier version of this file gave
+  "origin" trades their own stop-loss rule, anchored to
+  `EntryCandidate.liquidity_price` (the swept H4 liquidity point) and
+  taking priority over the trigger-specific rules -- a direct user
+  correction retired that framing entirely ("keyed to trigger type, not
+  origin/continuation"). That retirement also incidentally fixed a real
+  bug it had introduced: an aggressive entry AT a reaction key level that
+  sits beyond the swept liquidity point (in the trade's own direction)
+  could land that old origin stop on the WRONG side of entry --
+  `_stop_on_correct_side()` caught it defensively, but the trade was
+  silently dropped. The new engulfing/4th-man stop rules derive from
+  price actually near entry, not a separate liquidity-point reference, so
+  this can no longer happen for those two triggers.
 - QMR test-counting and imbalance-overlap for the entry's key level both
   use H1 candles/imbalances (the level's own timeframe), bounded to the
   next QMR_LOOKAHEAD candles rather than an unbounded forward scan.
@@ -167,8 +179,8 @@ from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, origin_time_at, resolve_effective_bias
 from .entries import (
-    is_engulfing, classify_entry_pattern, EntryPattern,
-    origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl, imbalance_stop_loss,
+    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern,
+    origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
 from .trade_management import PositionManager, primary_target
@@ -203,10 +215,27 @@ ALIGNMENT_LOOKBACK = {
 LIQUIDITY_SWEEP_LOOKAHEAD = 120
 
 # How many H1 candles forward, after the liquidity sweep, to search for a
-# reaction off the nearby H4 key level (an engulfing candle touching it,
-# in the setup's direction). Shorter than LIQUIDITY_SWEEP_LOOKAHEAD since
-# a genuine reaction should follow the sweep fairly quickly.
+# reaction off the nearby H4 key level (an engulfing or 4th-man candle
+# touching it, in the setup's direction). Shorter than
+# LIQUIDITY_SWEEP_LOOKAHEAD since a genuine reaction should follow the
+# sweep fairly quickly.
 REACTION_LOOKAHEAD = 40
+
+# Judgment call, not a number from the source material: how many pips a
+# trigger's own natural stop-loss anchor (engulfing/4th-man's own wick)
+# can sit from entry before it's "too wide" and the universal 4H-KL
+# fallback (the reaction level itself) takes over instead -- "if the
+# logic is correct and price shouldn't come back to it... The probability
+# is like 1 or 2 out of 10" (direct user quote). STRATEGY.md's own worked
+# examples run 5-15 pips; picked generously above that so genuinely tight
+# setups are never second-guessed, while a blown-out anchor (e.g. an
+# unusually wide sweep-candle wick) still gets caught.
+MAX_NATURAL_STOP_PIPS = 30.0
+
+
+def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float,
+                            max_pips: float = MAX_NATURAL_STOP_PIPS) -> bool:
+    return abs(entry_price - stop_loss) / pip_size > max_pips
 
 # How many H1 candles forward to search for a stop/target hit before
 # giving up and marking a trade "still_open". Two independent reasons
@@ -319,20 +348,28 @@ class LiquiditySetup:
 
 @dataclass(frozen=True)
 class EntryCandidate:
-    """A confirmed Bishop-cascade reaction: the H1 index of the engulfing
-    candle that reacted off `reaction_level` after `direction`'s
-    liquidity was swept. This IS the entry trigger.
+    """A confirmed Bishop-cascade reaction: the H1 index of the candle
+    that reacted off `reaction_level` after `direction`'s liquidity was
+    swept. This IS the entry trigger.
+
+    `trigger` -- which of the confirmation-entry trigger types actually
+    fired at `index`: "engulfing" or "fourth_man" (checked in that
+    priority order at each candle -- see `_find_entry_candidates()`). NOT
+    yet "plug_and_play" or "breakout" here: plug-and-play is a promotion
+    applied downstream once an overlapping imbalance is confirmed (run_
+    backtest's `overlapping=` computation, which needs h1_imbalances --
+    not available at this point in the pipeline), and breakout-as-its-
+    own-trigger isn't wired into this search yet (see the module
+    docstring's NOT-YET-BUILT list).
 
     `liquidity_price` carries over the setup's own swept liquidity point --
     the "particular high/low that was actually created" by this specific
-    setup's sweep (Video 13's origin stop-loss Q&A), used as the origin
-    stop-loss anchor instead of a daily-timeframe snapshot that may be
-    stale relative to this exact entry (see `origin_stop_loss()`'s call
-    site in `run_backtest`)."""
+    setup's sweep (Video 13's origin stop-loss Q&A)."""
     index: int
     direction: Direction
     reaction_level: KeyLevel
     liquidity_price: float
+    trigger: str
 
 
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
@@ -395,17 +432,32 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     return setups
 
 
+def _reaction_trigger(prev: Candle, curr: Candle, direction: Direction) -> str | None:
+    """Which confirmation-entry trigger, if any, fires on this (prev, curr)
+    pair: engulfing checked first, then 4th-man confirmation -- an
+    arbitrary but documented priority for the (rare) case both patterns'
+    conditions could coexist on the same candle pair. Returns None if
+    neither fires."""
+    if is_engulfing(prev, curr, direction):
+        return "engulfing"
+    fourth_man = fourth_man_confirmation_level(prev, curr)
+    if fourth_man is not None and fourth_man.default_bias == direction:
+        return "fourth_man"
+    return None
+
+
 def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> list[EntryCandidate]:
     """For each setup: bounded forward-scan H1 for the sweep of
     `liquidity_price`, then -- "we don't predict, we react" -- try each of
     `reaction_level_candidates` in nearest-to-extreme order, each scanning
     the same bounded REACTION_LOOKAHEAD window from the sweep for a
-    genuine touch-and-engulf. The first candidate that actually produces
-    one wins; if the nearest candidate never gets touched-and-confirmed,
-    price may still run to the next one down the list, with the extreme
-    candidate as the last resort. At most one candidate per setup (the
-    first qualifying reaction), deduped by H1 index in case two setups
-    converge on the same candle."""
+    genuine touch-and-react (`_reaction_trigger()`: engulfing or 4th-man
+    confirmation). The first candidate that actually produces one wins;
+    if the nearest candidate never gets touched-and-confirmed, price may
+    still run to the next one down the list, with the extreme candidate
+    as the last resort. At most one candidate per setup (the first
+    qualifying reaction), deduped by H1 index in case two setups converge
+    on the same candle."""
     times = [c.time for c in h1]
     candidates: list[EntryCandidate] = []
     seen_indices: set[int] = set()
@@ -427,14 +479,19 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> li
         for level in setup.reaction_level_candidates:
             level_price = level.price
             found_idx = None
+            found_trigger = None
             for idx in range(sweep_idx + 1, min(sweep_idx + 1 + REACTION_LOOKAHEAD, len(h1))):
                 prev, curr = h1[idx - 1], h1[idx]
                 touched = (prev.low <= level_price <= prev.high) or (curr.low <= level_price <= curr.high)
-                if touched and is_engulfing(prev, curr, setup.direction) and idx not in seen_indices:
-                    found_idx = idx
+                if not touched or idx in seen_indices:
+                    continue
+                trigger = _reaction_trigger(prev, curr, setup.direction)
+                if trigger is not None:
+                    found_idx, found_trigger = idx, trigger
                     break
             if found_idx is not None:
-                candidates.append(EntryCandidate(found_idx, setup.direction, level, setup.liquidity_price))
+                candidates.append(EntryCandidate(found_idx, setup.direction, level,
+                                                  setup.liquidity_price, found_trigger))
                 seen_indices.add(found_idx)
                 break
 
@@ -648,21 +705,42 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
         fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0
 
-        if trade_kind == "continuation" and imbalance_overlap:
+        # Stop-loss is keyed to WHICH TRIGGER fired, NOT to trade_kind --
+        # origin/continuation is an independent axis (Video 12's
+        # IRL-requirement question), not a stop-loss selector. See
+        # entries.py's module docstring point 5 for the full rationale
+        # and the direct user correction this replaced.
+        if imbalance_overlap:
+            # Plug and play takes priority over the trigger-specific rules
+            # below whenever an overlapping imbalance exists, regardless
+            # of which trigger geometry also fired on the same candle --
+            # this is what "plug and play" actually is.
             stop_loss = imbalance_stop_loss(
                 widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
             )
-            stop_kind = "imbalance"
-        elif trade_kind == "origin":
-            stop_loss = origin_stop_loss(candidate.liquidity_price, effective, pip_size=pip_size)
-            stop_kind = "origin"
-        elif classification.pattern == EntryPattern.FRESH_IRL_REQUIRED:
-            stop_loss = continuation_stop_loss(entry_price, effective, pip_size=pip_size)
-            stop_kind = "continuation"
-        else:
+            stop_kind = "plug_and_play"
+            trigger_type = "plug_and_play"
+        elif candidate.trigger == "engulfing":
+            trigger_type = "engulfing"
+            engulfing_extreme = curr.low if effective == Direction.BULLISH else curr.high
             engulfed_extreme = prev.low if effective == Direction.BULLISH else prev.high
-            stop_loss = tight_stop_loss_no_irl(engulfed_extreme, effective, pip_size=pip_size)
-            stop_kind = "tight_no_irl"
+            natural = engulfing_stop_loss(engulfing_extreme, engulfed_extreme, effective, pip_size=pip_size)
+            if _natural_stop_too_wide(entry_price, natural, pip_size):
+                stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
+                stop_kind = "engulfing_kl_fallback"
+            else:
+                stop_loss = natural
+                stop_kind = "engulfing"
+        else:  # candidate.trigger == "fourth_man"
+            trigger_type = "fourth_man"
+            sweep_extreme = curr.low if effective == Direction.BULLISH else curr.high
+            natural = fourth_man_stop_loss(sweep_extreme, effective, pip_size=pip_size)
+            if _natural_stop_too_wide(entry_price, natural, pip_size):
+                stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
+                stop_kind = "fourth_man_kl_fallback"
+            else:
+                stop_loss = natural
+                stop_kind = "fourth_man"
 
         # A stop-loss on the wrong side of entry isn't a stop at all -- it's
         # a corrupted trade. This used to actually happen for "origin"
@@ -716,6 +794,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             entry_pattern=classification.pattern.value,
             entry_style=entry_style,
             trade_kind=trade_kind,
+            trigger_type=trigger_type,
             bias_weekly=weekly_bias,
             bias_daily=daily_bias,
             bias_h4=h4_bias,

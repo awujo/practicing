@@ -7,6 +7,7 @@ from ..key_levels import KeyLevel
 from ..entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern, irl_required,
     origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl,
+    engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
 
@@ -118,6 +119,26 @@ def test_stop_loss_placements():
 
     # Tight (no-IRL continuation): 1 pip beyond the engulfed candle's own extreme.
     assert tight_stop_loss_no_irl(1.0985, Direction.BULLISH, padding_pips=1.0, pip_size=0.0001) == pytest.approx(1.0984)
+
+
+def test_engulfing_stop_loss_uses_the_more_extreme_of_both_wicks():
+    # Engulfed candle's low (1.0980) is LOWER than the engulfing candle's
+    # own low (1.0990) -- "the engulfing candle might sweep the engulfed
+    # candle... the lowest btw both of them" -- so the stop must clear
+    # 1.0980, not just 1.0990.
+    assert engulfing_stop_loss(1.0990, 1.0980, Direction.BULLISH, padding_pips=1.0, pip_size=0.0001) \
+        == pytest.approx(1.0979)
+    # When the ENGULFING candle's own wick is the more extreme one instead.
+    assert engulfing_stop_loss(1.0975, 1.0980, Direction.BULLISH, padding_pips=1.0, pip_size=0.0001) \
+        == pytest.approx(1.0974)
+    # Bearish mirror: the higher of the two highs wins.
+    assert engulfing_stop_loss(1.1010, 1.1020, Direction.BEARISH, padding_pips=1.0, pip_size=0.0001) \
+        == pytest.approx(1.1021)
+
+
+def test_fourth_man_stop_loss_pads_beyond_the_sweeping_candles_extreme():
+    assert fourth_man_stop_loss(1.0990, Direction.BULLISH, padding_pips=1.0, pip_size=0.0001) == pytest.approx(1.0989)
+    assert fourth_man_stop_loss(1.1020, Direction.BEARISH, padding_pips=1.0, pip_size=0.0001) == pytest.approx(1.1021)
 
 
 def test_entry_style_prices():

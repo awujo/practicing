@@ -773,6 +773,81 @@ built in phases so each is testable before the next depends on it:
       should anchor past the FARTHEST point actually reached, not just
       the liquidity point in isolation.
 
+      **Entry-gate rebuild, part 5: stop-loss keyed to trigger type.**
+      Same conversation delivered a direct correction to the whole
+      stop-loss model: placement is keyed to WHICH CONFIRMATION-ENTRY
+      TRIGGER fired -- plug and play / engulfing / 4th man confirmation /
+      breakout-as-entry -- NOT to trade_kind. The old "origin trades get
+      their own stop rule, anchored to the swept liquidity point, taking
+      priority over everything else" framing (part 4's own follow-up
+      note above) is retired entirely. Three of the four triggers are now
+      wired into the gate itself:
+      - `_find_entry_candidates()`'s reaction search now uses a new
+        `_reaction_trigger()` (checks engulfing first, then Task 3's
+        `fourth_man_confirmation_level()`) instead of only accepting
+        engulfing -- `EntryCandidate` carries a new `trigger` field.
+      - Two new stop-loss functions in `entries.py`: `engulfing_stop_loss()`
+        (a pad beyond whichever of the engulfing/engulfed candles' own
+        wicks is MORE EXTREME -- "the engulfing candle might sweep the
+        engulfed candle... the lowest btw both of them", a direct
+        correction to an earlier version of this rule that only used the
+        engulfing candle's own wick) and `fourth_man_stop_loss()` (a pad
+        below/above the sweeping candle's own extreme, the 4th-man
+        default).
+      - A UNIVERSAL fallback, applying across all four trigger types:
+        when a trigger's own natural stop anchor comes out unreasonably
+        wide, fall back to the H4 key level itself (the reaction level
+        the setup rejected from) instead -- "if the logic is correct and
+        price shouldn't come back to it... The probability is like 1 or 2
+        out of 10" (direct user quote). `origin_stop_loss()` is REUSED for
+        this (its formula -- pad beyond a specific reference price -- was
+        already exactly right; only its ROLE changed, from an
+        origin-specific rule to a cross-trigger fallback; see its
+        docstring). The new `_natural_stop_too_wide()` (runner.py) decides
+        when to use it, gated by a new `MAX_NATURAL_STOP_PIPS` constant
+        (30 pips -- a judgment call, not a number from the source
+        material, picked generously above STRATEGY.md's own 5-15 pip
+        worked examples).
+      - Plug and play (imbalance overlap) still takes priority over the
+        other three rules whenever it applies, unchanged from before.
+      - New `trigger_type` field on `TradeRecord`, and `stop_kind` values
+        changed to match: `"plug_and_play"` / `"engulfing"` /
+        `"fourth_man"` (plus `"engulfing_kl_fallback"` /
+        `"fourth_man_kl_fallback"` when the universal fallback fires) --
+        replacing the old `"imbalance"` / `"origin"` / `"continuation"` /
+        `"tight_no_irl"` values. `continuation_stop_loss()` and
+        `tight_stop_loss_no_irl()` are no longer wired into this gate
+        (same "still exists, no longer called" treatment `ranking.py` got
+        in part 2) since trade_kind/IRL-required no longer select the
+        stop rule.
+
+      This incidentally FIXES the wrong-side-stop edge case part 4
+      flagged as a follow-up: an aggressive entry at a reaction level
+      beyond the swept liquidity point no longer risks a wrong-side stop,
+      because the engulfing/4th-man rules derive from price actually near
+      entry rather than a separate liquidity-point reference --
+      `test_run_backtest_aggressive_style_enters_at_key_level_price` no
+      longer needs the `_add_earlier_origin_trade()` workaround it
+      briefly picked up in part 4 and now asserts a real, single-trade
+      stop value directly. Every existing fixture whose expected stop_kind/
+      stop_loss depended on the old model was re-verified against the
+      actual code (not guessed) and updated -- most fixtures needed one
+      more trailing H1 candle since the new engulfing-derived stops tend
+      tighter, pushing the 1:3 target further from entry than the old
+      liquidity-point anchor did. Two new dedicated tests cover the pieces
+      with no prior coverage: `test_run_backtest_fires_on_a_fourth_man_
+      reaction` (an end-to-end entry via the 4th-man trigger, not just the
+      isolated detector) and `test_run_backtest_falls_back_to_the_key_
+      level_when_the_natural_stop_is_too_wide` (a 64-pip engulfed wick
+      correctly triggers the universal fallback instead of chasing it).
+
+      NOT done in this pass, flagged rather than silently skipped (see
+      runner.py's and entries.py's own module docstrings): breakout-as-
+      its-own-entry-trigger still isn't detected (so `breakout_leg_stop_
+      loss()` isn't added either, since nothing would call it); the "must
+      also clear any other nearby same-type KL still reachable" stop-width
+      rule isn't implemented.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

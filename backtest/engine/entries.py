@@ -44,36 +44,50 @@ Six pieces:
    trade but OPTIONAL for a CONTINUATION trade.
 
 5. Stop-loss placement (Video 13, direct student Q&A, plus a user-supplied
-   Bishop-supplementary chart cross-check) -- four distinct mechanized
-   rules, not one formula:
-     - continuation, key level overlapping an imbalance ("plug and play"):
-       stop just past the FAR edge of that specific imbalance (the side
-       price would have to fully clear to invalidate the "came here to
-       sweep liquidity and rebalance THIS gap" thesis) plus a small pip
-       buffer. Visually confirmed against a real GBPUSD plug-and-play
-       chart: SL sat just beyond the imbalance candle's far extreme, not
-       at a fixed pip distance or a distant structural point. Takes
-       priority over the two continuation rules below when an overlapping
-       imbalance exists -- this is what "plug and play" actually is.
-     - continuation (IRL formed, no overlapping imbalance): fixed ~10 pip
-       stop -- the aggressive default, trading faster 1:3 realization
-       against a real, acknowledged risk of getting stopped by a
-       liquidity-hunt sweep first.
-     - continuation (no IRL formed, Video 12's optional-IRL variant): a
-       TIGHTER stop, just past the engulfed candle's own extreme plus a
-       small pip buffer -- not the usual 10-11 pip continuation stop.
-     - origin: stop beyond the structural extreme plus a small
-       pip-padding buffer. The structural extreme is the specific H4
-       liquidity point that was swept to trigger THIS entry
-       (`EntryCandidate.liquidity_price` in runner.py) -- the "particular
-       high/low that was actually created" Bishop's mentor describes
-       placing stops beyond (Video 13's direct origin stop-loss Q&A),
-       not a Daily-timeframe snapshot picked by time-proximity to the
-       bias flip (that used to be the reference point here, and could be
-       price-stale relative to the actual entry -- see runner.py's
-       module docstring for the fix history). Visually cross-checked
-       against Video 4's worked example, where the mentor's R:R tool
-       held a fixed ~9 pip stop while he only adjusted the target.
+   Bishop-supplementary chart cross-check -- REVISED by a later, more
+   extensive user walkthrough: stop-loss is keyed to WHICH CONFIRMATION-
+   ENTRY TRIGGER fired, NOT to origin-vs-continuation. The old framing
+   below this point in the file's history -- "origin" as its own
+   stop-loss category, anchored to the swept liquidity point and taking
+   priority whenever trade_kind == "origin" -- was a misreading the user
+   directly corrected: origin/continuation is an independent axis (Video
+   12's IRL-requirement question), not a stop-loss selector. The 4
+   TRIGGER-keyed rules, each a distinct mechanized formula:
+     - plug and play (imbalance overlapping the key level): stop just
+       past the FAR edge of that specific imbalance (the side price would
+       have to fully clear to invalidate the "came here to sweep
+       liquidity and rebalance THIS gap" thesis) plus a small pip buffer
+       (`imbalance_stop_loss()`). Visually confirmed against a real
+       GBPUSD plug-and-play chart. Takes priority over the other 3 rules
+       whenever an overlapping imbalance exists -- this is what "plug and
+       play" actually is, regardless of which trigger geometry also fired
+       on the same candle.
+     - engulfing: a pad beyond whichever is MORE EXTREME between the
+       engulfing candle's own wick and the engulfed candle's wick
+       (`engulfing_stop_loss()`) -- "the engulfing candle might sweep the
+       engulfed candle... the lowest btw both of them," per the user's
+       direct correction (an earlier version of this rule used only the
+       engulfing candle's own wick).
+     - 4th man confirmation: a pad below/above the low/high of the candle
+       that did the sweeping (`fourth_man_stop_loss()`) -- the DEFAULT
+       only; if that candle's wick is unusually wide, this is overridden
+       by the universal fallback below.
+     - breakout-as-entry (NOT YET WIRED as its own detected trigger in
+       runner.py -- see its module docstring): not just the breakout
+       candle's low, but the low of the WHOLE LEG that produced the
+       breakout (`breakout_leg_stop_loss()`, not yet added since nothing
+       calls it yet).
+   UNIVERSAL FALLBACK, applying to ALL FOUR trigger types alike: if the
+   trigger's own natural anchor comes out unreasonably wide, fall back to
+   placing the stop below/above the H4 key level the setup rejected from
+   (the reaction level itself) instead -- "if the logic is correct and
+   price shouldn't come back to it... The probability is like 1 or 2 out
+   of 10" (direct user quote). `origin_stop_loss()` (kept, name notwith-
+   standing -- see its own docstring) supplies this fallback's formula;
+   runner.py's `_natural_stop_too_wide()` decides when to use it. Also:
+   when multiple same-type key levels sit close together, the stop must
+   cover ALL of them still plausibly reachable, not just the nearest --
+   NOT YET implemented (flagged, not silently skipped).
 
 6. Entry style (Section 5, "both sanctioned -- build/test both"):
    Aggressive enters directly off the key-level+imbalance setup;
@@ -156,8 +170,41 @@ def irl_required(trade_kind: str) -> bool:
 
 def origin_stop_loss(structural_extreme: float, direction: Direction,
                       padding_pips: float = 1.0, pip_size: float = 0.0001) -> float:
+    """Despite the name (kept for the sake of its existing callers/tests
+    predating the trigger-type stop-loss rework -- see module docstring
+    point 5), this is now used for TWO distinct roles that happen to
+    share the identical "pad beyond a specific reference price" formula:
+    (1) historically, an origin trade's stop anchored to the swept
+    liquidity point; (2) the UNIVERSAL cross-trigger fallback -- pass the
+    H4 key level's own price (the level the setup rejected from) as
+    `structural_extreme` when a trigger's natural stop anchor is too wide
+    (see runner.py's `_natural_stop_too_wide()`)."""
     pad = padding_pips * pip_size
     return structural_extreme - pad if direction == Direction.BULLISH else structural_extreme + pad
+
+
+def engulfing_stop_loss(engulfing_extreme: float, engulfed_extreme: float, direction: Direction,
+                         padding_pips: float = 1.0, pip_size: float = 0.0001) -> float:
+    """A pad beyond whichever of the two candles' wicks is MORE EXTREME --
+    "the engulfing candle might sweep the engulfed candle... the lowest
+    btw both of them" (direct user correction; an earlier version of this
+    rule used only the engulfing candle's own wick). `engulfing_extreme`/
+    `engulfed_extreme` are each candle's own low (bullish) or high
+    (bearish)."""
+    pad = padding_pips * pip_size
+    if direction == Direction.BULLISH:
+        return min(engulfing_extreme, engulfed_extreme) - pad
+    return max(engulfing_extreme, engulfed_extreme) + pad
+
+
+def fourth_man_stop_loss(sweep_candle_extreme: float, direction: Direction,
+                          padding_pips: float = 1.0, pip_size: float = 0.0001) -> float:
+    """A pad below/above the low/high of the candle that did the sweeping
+    -- the DEFAULT only; the user's own judgment overrides this when that
+    candle's wick is unusually wide (see the universal fallback, module
+    docstring point 5)."""
+    pad = padding_pips * pip_size
+    return sweep_candle_extreme - pad if direction == Direction.BULLISH else sweep_candle_extreme + pad
 
 
 def continuation_stop_loss(entry_price: float, direction: Direction,
