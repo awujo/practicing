@@ -5,7 +5,7 @@ from ..candles import Candle
 from ..structure import Direction
 from ..key_levels import KeyLevel
 from ..entries import (
-    is_engulfing, classify_entry_pattern, EntryPattern, irl_required,
+    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern, irl_required,
     origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl,
     aggressive_entry_price, conservative_entry_price,
 )
@@ -30,6 +30,40 @@ def test_partial_body_does_not_count_as_engulfing():
     prev = C(0, 1.1020, 1.1025, 1.0995, 1.1000)
     curr = C(1, 1.1005, 1.1030, 1.1003, 1.1015)  # bullish but doesn't fully cover prev's body
     assert not is_engulfing(prev, curr, Direction.BULLISH)
+
+
+def test_fourth_man_confirmation_bullish_sweep_and_reclaim():
+    prev = C(0, 1.1010, 1.1020, 1.1000, 1.1015)  # range 1.1000-1.1020
+    curr = C(1, 1.1015, 1.1018, 1.0990, 1.1005)  # sweeps below 1.1000, closes back above it, high stays under 1.1020
+    level = fourth_man_confirmation_level(prev, curr)
+    assert level is not None
+    assert level.shape == "V"
+    assert level.default_bias == Direction.BULLISH
+    assert level.price == pytest.approx(curr.close)
+
+
+def test_fourth_man_confirmation_bearish_sweep_and_reclaim():
+    prev = C(0, 1.1010, 1.1020, 1.1000, 1.1005)  # range 1.1000-1.1020
+    curr = C(1, 1.1005, 1.1030, 1.1008, 1.1012)  # sweeps above 1.1020, closes back below it, low stays over 1.1000
+    level = fourth_man_confirmation_level(prev, curr)
+    assert level is not None
+    assert level.shape == "A"
+    assert level.default_bias == Direction.BEARISH
+    assert level.price == pytest.approx(curr.close)
+
+
+def test_fourth_man_confirmation_none_when_the_other_side_also_breaks():
+    prev = C(0, 1.1010, 1.1020, 1.1000, 1.1015)
+    # Sweeps below 1.1000 AND takes out the high (1.1020) too -- prev's
+    # high isn't "still standing", so this isn't a valid 4th-man pattern.
+    curr = C(1, 1.1015, 1.1025, 1.0990, 1.1022)
+    assert fourth_man_confirmation_level(prev, curr) is None
+
+
+def test_fourth_man_confirmation_none_without_a_sweep():
+    prev = C(0, 1.1010, 1.1020, 1.1000, 1.1015)
+    curr = C(1, 1.1015, 1.1018, 1.1005, 1.1010)  # stays fully inside prev's range -- no sweep either side
+    assert fourth_man_confirmation_level(prev, curr) is None
 
 
 def test_direct_mitigation_when_next_candle_taps_level():

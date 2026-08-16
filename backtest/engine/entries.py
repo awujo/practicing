@@ -1,13 +1,34 @@
 """
 Entry triggers -- STRATEGY.md Section 5.
 
-Four pieces:
+Six pieces:
 
 1. `is_engulfing()` -- standard engulfing-candle detection. Section 5:
    "An engulfing candle consuming one/both of [a V/A-shape's candles] is
    functionally equivalent to a body-close break of a V/A-shape level."
 
-2. `classify_entry_pattern()` -- Video 14's 3 execution-facing patterns
+2. `fourth_man_confirmation_level()` -- "4th man confirmation": a distinct
+   confirmation-entry trigger, NOT in the transcribed knowledge base --
+   real name Bishop's own students use for it, confirmed directly by the
+   user. A 2-candle liquidity-sweep-and-reclaim: `curr` sweeps `prev`'s
+   liquidity on one side, closes back INTO `prev`'s range, while `prev`'s
+   OTHER side stays untouched ("still standing") -- e.g. bullish: curr's
+   low sweeps below prev's low, curr closes back above prev's low, and
+   prev's high is never touched by curr. That reclaim pattern itself IS
+   treated as forming a V-shape (bullish) or A-shape (bearish) key level
+   -- same "V"/"A" shape labels and closing-price convention key_levels.py
+   already uses, and the same "2 candles in, one KeyLevel out" shape as
+   `detect_open_close_level()` -- usable directly as the entry trigger, or
+   as one of a level's SELECTION candidates. Preferred on 1H/2H per direct
+   user guidance ("I prefer it on 1h or 2H rather than 30M"); Bishop's own
+   material also allows 30M. This mechanized reading -- the sweep+reclaim
+   pattern itself constitutes the V/A shape, rather than a separate V/A
+   formation required afterward -- is a judgment call flagged here, not a
+   literal transcription; the user separately acknowledged this class of
+   pattern is "best on intelligence system" and only approximately
+   mechanizable.
+
+3. `classify_entry_pattern()` -- Video 14's 3 execution-facing patterns
    (a restatement of Video 13's exhaustive 4-branch decision tree):
      - DIRECT_MITIGATION: the very next candle taps the new key level
        directly and continues [Video 13 branches 1 and 3].
@@ -19,10 +40,10 @@ Four pieces:
        [branch 4] -- triggers the ~70% "return to the closer level" rule
        (Phase 2's key-level ranking already captures that preference).
 
-3. `irl_required()` -- Video 12: IRL formation is NECESSARY for an ORIGIN
+4. `irl_required()` -- Video 12: IRL formation is NECESSARY for an ORIGIN
    trade but OPTIONAL for a CONTINUATION trade.
 
-4. Stop-loss placement (Video 13, direct student Q&A, plus a user-supplied
+5. Stop-loss placement (Video 13, direct student Q&A, plus a user-supplied
    Bishop-supplementary chart cross-check) -- four distinct mechanized
    rules, not one formula:
      - continuation, key level overlapping an imbalance ("plug and play"):
@@ -54,7 +75,7 @@ Four pieces:
        against Video 4's worked example, where the mentor's R:R tool
        held a fixed ~9 pip stop while he only adjusted the target.
 
-5. Entry style (Section 5, "both sanctioned -- build/test both"):
+6. Entry style (Section 5, "both sanctioned -- build/test both"):
    Aggressive enters directly off the key-level+imbalance setup;
    Conservative waits for the lower-timeframe confirmation candle's close.
 """
@@ -73,6 +94,24 @@ def is_engulfing(prev: Candle, curr: Candle, direction: Direction) -> bool:
                 and curr.open <= prev.close and curr.close >= prev.open)
     return (prev.close > prev.open and curr.close < curr.open
             and curr.open >= prev.close and curr.close <= prev.open)
+
+
+def fourth_man_confirmation_level(prev: Candle, curr: Candle) -> KeyLevel | None:
+    """"4th man confirmation" -- see module docstring point 2. `curr`
+    sweeps one side of `prev`'s range, closes back INTO it, while `prev`'s
+    OTHER side stays untouched:
+      - BULLISH: curr.low < prev.low (swept), curr.close > prev.low
+        (reclaimed), curr.high < prev.high (prev's high still standing).
+      - BEARISH: mirror -- curr.high > prev.high, curr.close < prev.high,
+        curr.low > prev.low (prev's low still standing).
+    Returns a V-shape (bullish) / A-shape (bearish) KeyLevel at `curr`'s
+    close (key_levels.py's closing-price convention), or None if neither
+    side's conditions hold."""
+    if curr.low < prev.low and curr.close > prev.low and curr.high < prev.high:
+        return KeyLevel(curr.time, curr.close, "V", Direction.BULLISH)
+    if curr.high > prev.high and curr.close < prev.high and curr.low > prev.low:
+        return KeyLevel(curr.time, curr.close, "A", Direction.BEARISH)
+    return None
 
 
 class EntryPattern(Enum):

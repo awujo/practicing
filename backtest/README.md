@@ -697,6 +697,30 @@ built in phases so each is testable before the next depends on it:
       1.101 -- see the fixture's own H1 comments, which already described
       1.1012 and were never updated when scoring was wired in.
 
+      **Entry-gate rebuild, part 3: the 4th-man confirmation trigger.**
+      Same conversation surfaced a 4th distinct confirmation-entry trigger
+      type, beyond plug-and-play/breakout-sweep+break/engulfing: "4th man
+      confirmation" (a name Bishop's own students use, not present
+      anywhere in the transcribed knowledge base -- confirmed directly by
+      the user). `entries.py`'s new `fourth_man_confirmation_level()` is a
+      2-candle liquidity-sweep-and-reclaim detector: the current candle
+      sweeps one side of the previous candle's range, closes back INTO
+      it, while the previous candle's OTHER side stays untouched ("still
+      standing") -- the same shape Bishop's supplementary "building bias
+      with liquidity" material uses backward-looking for bias, here used
+      forward-looking as a direct entry trigger. Returns a V-shape
+      (bullish) / A-shape (bearish) `KeyLevel` at the reclaim candle's
+      close, matching key_levels.py's existing closing-price convention
+      and the "2 candles in, one KeyLevel out" shape `detect_open_close_
+      level()` already uses. Preferred on 1H/2H per direct user guidance,
+      with 30M also valid per Bishop's own material -- not yet wired into
+      `runner.py`'s entry gate (that's the next part, alongside the other
+      3 trigger types and the origin/continuation rework); this pass is
+      the standalone, tested detection primitive only. Covered by
+      `engine/tests/test_entries.py`: valid bullish/bearish sweep-and-
+      reclaim, and two negative cases (the "other side" also breaking, no
+      sweep at all).
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether
