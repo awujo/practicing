@@ -266,6 +266,33 @@ h1 { margin-bottom: 0.25rem; }
 </section>
 
 <section>
+  <h2>GBPAUD_conservative_2026</h2>
+  <table>
+    <tr><td>Total trades</td><td>11</td></tr>
+    <tr><td>Closed trades</td><td>11</td></tr>
+    <tr><td>Win rate</td><td>36.4%</td></tr>
+    <tr><td>Average R</td><td>0.27</td></tr>
+    <tr><td>Total R</td><td>2.94</td></tr>
+  </table>
+  <h3>Equity curve (cumulative R)</h3>
+  <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" style="background:#fafafa;border:1px solid #ddd"><line x1="10" y1="190.0" x2="630" y2="190.0" stroke="#999" stroke-dasharray="4" /><polyline points="10.0,98.0 72.0,40.7 134.0,71.3 196.0,102.0 258.0,10.0 320.0,40.7 382.0,71.3 444.0,102.0 506.0,38.5 568.0,69.1 630.0,99.8" fill="none" stroke="#2563eb" stroke-width="2" /></svg>
+  <p><a href="results/GBPAUD_conservative_2026.csv">Download raw trade log (CSV)</a></p>
+  
+  <h3>Trade-by-trade reasoning</h3>
+  
+  <div class="trades-scroll">
+    <table class="trades">
+      <thead><tr>
+        <th>Entry time</th><th>Dir</th><th>Bias cascade</th><th>Why this trade</th>
+        <th>Entry</th><th>Stop</th><th>Target</th><th>Outcome</th><th>R</th>
+      </tr></thead>
+      <tbody><tr class="win"><td>2026-03-20T12:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bearish &rarr; effective: Weekly</td><td>direct_mitigation (continuation, trigger: plug_and_play, aligned: Daily,H4) on open_close @ 1.891925 &mdash; QMR 1, FVG overlap, stop: plug_and_play</td><td>1.89135</td><td>1.88779</td><td>1.90203</td><td>closed_win (target_hit)</td><td class="rcol">+3.00R</td></tr><tr class="win"><td>2026-03-23T17:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: plug_and_play, aligned: Daily,H4) on open_close @ 1.911055 &mdash; QMR 0, FVG overlap, stop: plug_and_play</td><td>1.91383</td><td>1.90983</td><td>1.92132</td><td>closed_win (target_hit)</td><td class="rcol">+1.87R</td></tr><tr class="loss"><td>2026-03-27T05:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: engulfing, aligned: Daily,H4) on open_close @ 1.93164 &mdash; QMR 0, no FVG, stop: engulfing_kl_fallback</td><td>1.93371</td><td>1.93154</td><td>1.94022</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="loss"><td>2026-06-11T16:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bearish &rarr; effective: Weekly</td><td>direct_mitigation (continuation, trigger: engulfing, aligned: Daily,H4) on V @ 1.90704 &mdash; QMR 0, no FVG, stop: engulfing</td><td>1.90782</td><td>1.90561</td><td>1.9144500000000002</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="win"><td>2026-06-26T15:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: engulfing, aligned: Daily,H4) on open_close @ 1.91483 &mdash; QMR 1, no FVG, stop: engulfing</td><td>1.91447</td><td>1.91166</td><td>1.9228999999999998</td><td>closed_win (target_hit)</td><td class="rcol">+3.00R</td></tr><tr class="loss"><td>2026-06-30T19:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bearish &rarr; effective: Weekly</td><td>direct_mitigation (continuation, trigger: fourth_man, aligned: Daily,H4) on open_close @ 1.91587 &mdash; QMR 0, no FVG, stop: fourth_man</td><td>1.91577</td><td>1.91486</td><td>1.9184999999999999</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="loss"><td>2026-07-02T15:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: fourth_man, aligned: Daily,H4) on open_close @ 1.92711 &mdash; QMR 2, no FVG, stop: fourth_man</td><td>1.92789</td><td>1.92693</td><td>1.9307700000000003</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="loss"><td>2026-07-17T03:00:00+00:00</td><td>bullish</td><td>Weekly=bullish &middot; Daily=bearish &middot; H4=bullish &middot; H1=bullish &rarr; effective: Weekly</td><td>direct_mitigation (continuation, trigger: fourth_man, aligned: Daily,H4) on open_close @ 1.9284 &mdash; QMR 0, no FVG, stop: fourth_man</td><td>1.92831</td><td>1.92727</td><td>1.9314299999999998</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="win"><td>2026-07-22T14:00:00+00:00</td><td>bearish</td><td>Weekly=bearish &middot; Daily=bearish &middot; H4=bearish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (origin, trigger: engulfing, aligned: Daily,H4) on A @ 1.91274 &mdash; QMR 0, no FVG, stop: engulfing</td><td>1.91156</td><td>1.91395</td><td>1.90661</td><td>closed_win (target_hit)</td><td class="rcol">+2.07R</td></tr><tr class="loss"><td>2026-08-06T08:00:00+00:00</td><td>bearish</td><td>Weekly=bearish &middot; Daily=bearish &middot; H4=bearish &middot; H1=bearish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: fourth_man, aligned: Daily,H4) on A @ 1.91202 &mdash; QMR 0, no FVG, stop: fourth_man</td><td>1.9113</td><td>1.91277</td><td>1.9068899999999998</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr><tr class="loss"><td>2026-08-10T16:00:00+00:00</td><td>bearish</td><td>Weekly=bearish &middot; Daily=bearish &middot; H4=bearish &middot; H1=bullish &rarr; effective: Weekly</td><td>fresh_irl_required (continuation, trigger: engulfing, aligned: Daily,H4) on A @ 1.91492 &mdash; QMR 2, no FVG, stop: engulfing</td><td>1.91382</td><td>1.91516</td><td>1.9098000000000004</td><td>closed_loss (stop_hit)</td><td class="rcol">-1.00R</td></tr></tbody>
+    </table>
+  </div>
+
+</section>
+
+<section>
   <h2>GBPCAD_conservative_2026</h2>
   <table>
     <tr><td>Total trades</td><td>8</td></tr>
