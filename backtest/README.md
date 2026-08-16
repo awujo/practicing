@@ -669,6 +669,34 @@ built in phases so each is testable before the next depends on it:
       rules, and ERL-capped targets) -- landing incrementally, each with
       its own tests, rather than as one large change.
 
+      **Entry-gate rebuild, part 2: reaction-level selection is reactive,
+      not scored.** The same conversation corrected a deeper assumption:
+      which same-direction H4 key level price actually reacts from isn't
+      a ranking/scoring problem at all -- "we don't predict, we react."
+      `_rank_reaction_level()` (part of the ranking-fix change above) is
+      removed; `_find_liquidity_setups()` now orders every same-direction
+      candidate still in play (same current-structural-leg bound as
+      before) nearest-to-extreme by distance from the swept liquidity
+      point, and `_find_entry_candidates()` tries them in that order,
+      taking whichever candidate is the first to actually produce a
+      genuine touch-and-engulf reaction within the existing
+      `REACTION_LOOKAHEAD` window -- falling through to the next candidate
+      if the nearer one never holds. The extreme (farthest) candidate is
+      the last resort, not a scored pick, and a deep retracement through
+      the breakout point does NOT disqualify a candidate from being
+      reacted off. `ranking.py` and its own tests are untouched and still
+      exercise the 4-factor scoring logic standalone; they're just no
+      longer wired into this gate. Covered by updating
+      `test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level`
+      to assert the full nearest-to-extreme ordering instead of a single
+      scored winner, and by the two now-redundant `_rank_reaction_level`
+      isolation tests being removed (the function no longer exists). This
+      also flips the shared `synthetic_cache` fixture's actual reaction
+      level back to 1.1012 (the nearest candidate, which already produces
+      a genuine reaction in that fixture) instead of the scored tie-break's
+      1.101 -- see the fixture's own H1 comments, which already described
+      1.1012 and were never updated when scoring was wired in.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether
