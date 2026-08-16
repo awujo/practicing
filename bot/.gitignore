@@ -1,0 +1,7 @@
+# Live trading state -- never commit the audit DB (grows large, and may
+# contain account-identifying data via MT5 ticket numbers) or credentials.
+*.db
+.env
+
+__pycache__/
+*.pyc

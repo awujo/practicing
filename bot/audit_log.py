@@ -1,0 +1,170 @@
+"""
+Durable, ML-training-oriented audit log for the live bot.
+
+Every entry decision (allowed or declined, and why), every exit, and every
+phase transition gets one row -- not just the financial bookkeeping (which
+is all the offline account_audit_log.csv had), but the SAME strategy
+feature vector backtest/engine/trade_log.py's TradeRecord captures (bias
+states, trigger_type, key-level ranking factors, ERL info) PLUS the
+execution-quality reality a backtest never has to deal with (requested vs.
+filled price, spread at decision time, latency) PLUS the account-state
+context the risk manager saw. The point: this data should be directly
+usable to train a model later on "given this exact situation, what
+happened" -- backtest data and live data share the same feature columns
+on purpose, so the two datasets can eventually be combined rather than
+needing to be reconciled after the fact.
+
+SQLite, not CSV: a live bot needs to survive restarts without losing
+rows mid-write, and needs a place to go back and fill in a trade's
+OUTCOME once it closes (an entry decision and its eventual result are two
+separate events in time) -- `update_outcome()` does that by row id.
+Exporting to CSV for an external training pipeline is one query away
+(`export_csv()`), so nothing about this format lands you back at
+CSV-parsing figuring out data types.
+"""
+
+import csv
+import sqlite3
+from dataclasses import dataclass, fields
+from datetime import datetime, timezone
+
+
+@dataclass
+class DecisionRecord:
+    event_type: str          # "entry_attempt" | "exit" | "phase_transition" | "health_halt"
+    decision: str             # Decision.value from risk_manager.py, or "n/a" for phase_transition
+    reason: str
+    timestamp: str = ""       # ISO8601 UTC; auto-filled by AuditLog.append() if left blank
+    instrument: str = ""
+    trade_id: str = ""        # MT5 position ticket, once assigned
+    risk_amount: float = 0.0
+
+    # Strategy feature context -- mirrors backtest/engine/trade_log.py's
+    # TradeRecord field-for-field on purpose (see module docstring).
+    direction: str = ""
+    entry_timeframe: str = ""
+    entry_price: float | None = None
+    entry_pattern: str = ""
+    trade_kind: str = ""
+    trigger_type: str = ""
+    bias_monthly: str = ""
+    bias_weekly: str = ""
+    bias_daily: str = ""
+    bias_h4: str = ""
+    bias_h1: str = ""
+    effective_bias_timeframe: str = ""
+    aligned_timeframes: str = ""
+    key_level_price: float | None = None
+    key_level_shape: str = ""
+    ranking_score: float | None = None
+    stop_loss: float | None = None
+    stop_kind: str = ""
+    primary_target: float | None = None
+    erl_price: float | None = None
+    erl_capped: bool = False
+
+    # Execution-quality context -- what a backtest never has to model.
+    requested_price: float | None = None
+    filled_price: float | None = None
+    slippage_points: float | None = None
+    spread_at_decision: float | None = None
+    latency_ms: float | None = None
+
+    # Account-state context the risk manager saw at this exact moment.
+    phase: str = ""
+    balance: float | None = None
+    equity: float | None = None
+    day_start_balance: float | None = None
+    phase_start_balance: float | None = None
+    open_positions_count: int = 0
+    open_risk_total: float = 0.0
+    daily_dd_pct: float | None = None
+    overall_dd_pct: float | None = None
+
+    # Outcome -- unknown at entry time, filled in later via update_outcome().
+    exit_price: float | None = None
+    exit_reason: str | None = None
+    r_multiple: float | None = None
+    realized_pnl: float | None = None
+    mae_r: float | None = None
+    mfe_r: float | None = None
+
+
+_FIELD_NAMES = [f.name for f in fields(DecisionRecord)]
+_COLUMN_TYPES = {
+    "risk_amount": "REAL", "entry_price": "REAL", "key_level_price": "REAL",
+    "ranking_score": "REAL", "stop_loss": "REAL", "primary_target": "REAL", "erl_price": "REAL",
+    "erl_capped": "INTEGER", "requested_price": "REAL", "filled_price": "REAL",
+    "slippage_points": "REAL", "spread_at_decision": "REAL", "latency_ms": "REAL",
+    "balance": "REAL", "equity": "REAL", "day_start_balance": "REAL", "phase_start_balance": "REAL",
+    "open_positions_count": "INTEGER", "open_risk_total": "REAL",
+    "daily_dd_pct": "REAL", "overall_dd_pct": "REAL",
+    "exit_price": "REAL", "r_multiple": "REAL", "realized_pnl": "REAL", "mae_r": "REAL", "mfe_r": "REAL",
+}
+
+
+class AuditLog:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+        self._ensure_schema()
+
+    def _ensure_schema(self):
+        columns_sql = ", ".join(
+            f'"{name}" {_COLUMN_TYPES.get(name, "TEXT")}' for name in _FIELD_NAMES
+        )
+        self._conn.execute(f"CREATE TABLE IF NOT EXISTS decisions (id INTEGER PRIMARY KEY AUTOINCREMENT, {columns_sql})")
+        self._conn.execute("CREATE INDEX IF NOT EXISTS idx_decisions_instrument_trade ON decisions (instrument, trade_id)")
+        self._conn.execute("CREATE INDEX IF NOT EXISTS idx_decisions_timestamp ON decisions (timestamp)")
+        self._conn.commit()
+
+    def append(self, record: DecisionRecord) -> int:
+        if not record.timestamp:
+            record.timestamp = datetime.now(timezone.utc).isoformat()
+        row = {name: getattr(record, name) for name in _FIELD_NAMES}
+        row["erl_capped"] = int(bool(row["erl_capped"]))
+        placeholders = ", ".join(f":{name}" for name in _FIELD_NAMES)
+        columns = ", ".join(f'"{name}"' for name in _FIELD_NAMES)
+        cur = self._conn.execute(f"INSERT INTO decisions ({columns}) VALUES ({placeholders})", row)
+        self._conn.commit()
+        return cur.lastrowid
+
+    def update_outcome(self, row_id: int, exit_price: float, exit_reason: str,
+                        r_multiple: float, realized_pnl: float,
+                        mae_r: float | None = None, mfe_r: float | None = None):
+        self._conn.execute(
+            "UPDATE decisions SET exit_price=?, exit_reason=?, r_multiple=?, realized_pnl=?, mae_r=?, mfe_r=? WHERE id=?",
+            (exit_price, exit_reason, r_multiple, realized_pnl, mae_r, mfe_r, row_id),
+        )
+        self._conn.commit()
+
+    def find_open_entry_row(self, instrument: str, trade_id: str) -> int | None:
+        """Looks up the row id of the entry_attempt/accepted decision for
+        a given (instrument, trade_id) so its outcome can be filled in
+        once MT5 reports the position closed."""
+        cur = self._conn.execute(
+            "SELECT id FROM decisions WHERE instrument=? AND trade_id=? AND event_type='entry_attempt' "
+            "AND decision='allow' AND exit_reason IS NULL ORDER BY id DESC LIMIT 1",
+            (instrument, trade_id),
+        )
+        row = cur.fetchone()
+        return row["id"] if row else None
+
+    def export_csv(self, path: str):
+        cur = self._conn.execute("SELECT * FROM decisions ORDER BY id")
+        rows = cur.fetchall()
+        if not rows:
+            return
+        with open(path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(dict(row))
+
+    def recent(self, limit: int = 50) -> list[sqlite3.Row]:
+        cur = self._conn.execute("SELECT * FROM decisions ORDER BY id DESC LIMIT ?", (limit,))
+        return cur.fetchall()
+
+    def close(self):
+        self._conn.close()
