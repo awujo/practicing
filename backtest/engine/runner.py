@@ -607,15 +607,22 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
 
     for c in path:
         if direction == Direction.BULLISH:
-            worst = min(worst, c.low)
-            best = max(best, c.high)
             stop_hit = c.low <= stop_loss
             target_hit = c.high >= target_price
+            # On the candle that actually triggers the stop, cap the adverse
+            # excursion at the stop price itself rather than the candle's raw
+            # low: a single wide-range (or gapping) candle can undershoot the
+            # stop by many multiples of R, but the position is closed the
+            # instant the stop is touched, so MAE beyond that point is
+            # unobservable, not real -- without this cap mae_r can read as
+            # -10R, -28R etc. on a trade whose realized loss is exactly -1R.
+            worst = min(worst, stop_loss if stop_hit else c.low)
+            best = max(best, c.high)
         else:
-            worst = max(worst, c.high)
-            best = min(best, c.low)
             stop_hit = c.high >= stop_loss
             target_hit = c.low <= target_price
+            worst = max(worst, stop_loss if stop_hit else c.high)
+            best = min(best, c.low)
 
         adverse = (entry_price - worst) if direction == Direction.BULLISH else (worst - entry_price)
         favorable = (best - entry_price) if direction == Direction.BULLISH else (entry_price - best)

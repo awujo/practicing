@@ -9,7 +9,7 @@ from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
-    _resolve_date_range, _parse_rr,
+    _resolve_date_range, _parse_rr, _resolve_trade_outcome,
 )
 
 SOURCE = "test"
@@ -257,6 +257,57 @@ def test_parse_rr_accepts_ratio_notation():
     assert _parse_rr("3:1") == 3.0
     assert _parse_rr("4:1") == 4.0
     assert _parse_rr("2:0.5") == 4.0
+
+
+def _h1(i, o, h, l, c):
+    return Candle(pd.Timestamp("2024-01-01") + pd.Timedelta(hours=i), o, h, l, c, 1000)
+
+
+def test_resolve_trade_outcome_caps_mae_at_the_stop_on_a_wide_stop_hit_candle():
+    # A real 2026 GBPUSD backtest produced mae_r=-28 on a trade whose
+    # realized loss was exactly -1R: a single wide H1 candle undershot a
+    # tight stop by many multiples of R, and the old code recorded that
+    # candle's raw low as MAE instead of capping at the stop price (the
+    # position is closed the instant the stop is touched, so excursion
+    # beyond that point was never actually experienced).
+    entry, stop, target = 100.0, 99.0, 103.0  # risk = 1.0
+    path = [_h1(1, 100.0, 100.2, 70.0, 71.0)]  # low blows straight through the stop
+    reason, price, time, mae_r, mfe_r = _resolve_trade_outcome(entry, stop, target, Direction.BULLISH, path)
+    assert reason == "stop_hit"
+    assert price == stop
+    assert mae_r == -1.0  # capped, not -30
+
+
+def test_resolve_trade_outcome_caps_mae_on_a_bearish_wide_stop_hit_candle():
+    entry, stop, target = 100.0, 101.0, 97.0  # risk = 1.0
+    path = [_h1(1, 100.0, 130.0, 99.8, 129.0)]  # high blows straight through the stop
+    reason, price, time, mae_r, mfe_r = _resolve_trade_outcome(entry, stop, target, Direction.BEARISH, path)
+    assert reason == "stop_hit"
+    assert price == stop
+    assert mae_r == -1.0
+
+
+def test_resolve_trade_outcome_still_tracks_real_mae_before_a_clean_stop_hit():
+    entry, stop, target = 100.0, 99.0, 103.0  # risk = 1.0
+    path = [
+        _h1(1, 100.0, 100.5, 99.4, 99.6),   # dips to -0.6R, doesn't touch stop
+        _h1(2, 99.6, 99.8, 99.0, 99.0),      # then touches the stop exactly
+    ]
+    reason, price, time, mae_r, mfe_r = _resolve_trade_outcome(entry, stop, target, Direction.BULLISH, path)
+    assert reason == "stop_hit"
+    assert mae_r == -1.0
+
+
+def test_resolve_trade_outcome_mfe_is_not_capped_on_a_wide_target_hit_candle():
+    # MFE overshoot on a target-hit candle is real, legitimate information
+    # (price kept moving favorably before/around the target) -- only the
+    # MAE-on-stop-hit case is the bug; this pins that MFE is untouched.
+    entry, stop, target = 100.0, 99.0, 103.0  # risk = 1.0
+    path = [_h1(1, 100.0, 110.0, 99.8, 109.0)]  # high blows well past the target
+    reason, price, time, mae_r, mfe_r = _resolve_trade_outcome(entry, stop, target, Direction.BULLISH, path)
+    assert reason == "target_hit"
+    assert price == target
+    assert mfe_r == 10.0  # (110 - 100) / 1.0, uncapped
 
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
