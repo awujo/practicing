@@ -985,6 +985,18 @@ def _resolve_date_range(year: int | None, start: str | None, end: str | None):
     return start_date, end_date
 
 
+def _parse_rr(value: str) -> float:
+    """Accepts a plain multiple ("4") or STRATEGY.md-style ratio notation
+    ("3:1", "4:1") -- traders naturally write R:R as a ratio, and GitHub's
+    manual workflow_dispatch UI has no input validation to stop it, so a
+    bare `type=float` here rejects exactly the input people actually type."""
+    text = value.strip()
+    if ":" in text:
+        left, _, right = text.partition(":")
+        return float(left) / float(right)
+    return float(text)
+
+
 def main():
     import argparse
 
@@ -998,8 +1010,9 @@ def main():
                          help="Only report trades entered in this calendar year. Shorthand for --start YYYY-01-01 --end YYYY-12-31.")
     parser.add_argument("--start", default=None, help="Only report trades entered on/after this date (YYYY-MM-DD).")
     parser.add_argument("--end", default=None, help="Only report trades entered on/before this date (YYYY-MM-DD, inclusive of the whole day).")
-    parser.add_argument("--rr", type=float, default=None,
-                         help=f"Target risk:reward ratio (STRATEGY.md's '3:1 or 4:1'). Defaults to {RISK_REWARD_PRIMARY:g}.")
+    parser.add_argument("--rr", type=_parse_rr, default=None,
+                         help=f"Target risk:reward multiple, as a bare number or ratio (STRATEGY.md's '3:1 or 4:1', "
+                              f"either '4' or '4:1' both work). Defaults to {RISK_REWARD_PRIMARY:g}.")
     args = parser.parse_args()
 
     start_date, end_date = _resolve_date_range(args.year, args.start, args.end)

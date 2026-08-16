@@ -22,6 +22,7 @@ import secrets
 import time
 
 import pandas as pd
+import requests
 from flask import Flask, Response, abort, redirect, request, url_for
 
 from . import data_access
@@ -96,6 +97,18 @@ def index():
     return _page(f"<h1>SLK Backtest Viewer</h1>{run_link}<ul>{items}</ul>")
 
 
+def _parse_rr(text: str) -> float:
+    """Accepts a bare number ("4") or STRATEGY.md-style ratio notation
+    ("3:1", "4:1") -- kept in sync with runner.py's own `_parse_rr` (not
+    imported -- the webapp and engine are separate deployable units, see
+    data_access.result_name_for's docstring for the same reasoning)."""
+    text = text.strip()
+    if ":" in text:
+        left, _, right = text.partition(":")
+        return float(left) / float(right)
+    return float(text)
+
+
 @app.route("/run")
 def run_form():
     options = "".join(f'<option value="{_escape(sym)}">{_escape(sym)}</option>'
@@ -111,7 +124,7 @@ minute. Leave Year/R:R blank for the full history / default 3:1 target.</p>
     <select name="style"><option value="conservative">conservative</option><option value="aggressive">aggressive</option></select>
   </label></p>
   <p><label>Year (optional)<br><input type="number" name="year" min="2000" max="2100" placeholder="e.g. 2026"></label></p>
-  <p><label>R:R (optional)<br><input type="number" name="rr" min="0.5" max="10" step="0.5" placeholder="e.g. 4"></label></p>
+  <p><label>R:R (optional)<br><input type="text" name="rr" placeholder="e.g. 4 or 3:1"></label></p>
   <p><button type="submit">Run backtest</button></p>
 </form>
 '''
@@ -124,12 +137,30 @@ def run_start():
     style = request.form.get("style", "conservative")
     if instrument not in DUKASCOPY_INSTRUMENTS or style not in ("aggressive", "conservative"):
         abort(400)
-    year = request.form.get("year", "").strip()
-    year = int(year) if year else None
-    rr = request.form.get("rr", "").strip()
-    rr = float(rr) if rr else None
+    year_text = request.form.get("year", "").strip()
+    rr_text = request.form.get("rr", "").strip()
 
-    triggered_at = data_access.run_backtest_dispatch(instrument, style, year=year, rr=rr)
+    try:
+        year = int(year_text) if year_text else None
+        rr = _parse_rr(rr_text) if rr_text else None
+    except ValueError:
+        return _page(
+            '<p><a href="/run">&larr; try again</a></p><h1>Run a backtest</h1>'
+            f'<p>Couldn\'t parse Year "{_escape(year_text)}" or R:R "{_escape(rr_text)}" -- '
+            'Year should be a plain number (e.g. 2026), R:R a number or ratio (e.g. 4 or 3:1).</p>',
+            title="Run a backtest",
+        ), 400
+
+    try:
+        triggered_at = data_access.run_backtest_dispatch(instrument, style, year=year, rr=rr)
+    except (requests.exceptions.RequestException, RuntimeError) as exc:
+        return _page(
+            '<p><a href="/run">&larr; try again</a></p><h1>Run a backtest</h1>'
+            f'<p>Couldn\'t trigger the workflow: {_escape(exc)}</p>'
+            '<p>Common cause: GITHUB_TOKEN is missing the actions:write scope.</p>',
+            title="Run a backtest",
+        ), 502
+
     token = secrets.token_urlsafe(16)
     _pending_runs[token] = {
         "instrument": instrument, "style": style, "year": year, "rr": rr,
@@ -146,7 +177,13 @@ def run_status(token):
         abort(404)
 
     if pending["run_id"] is None:
-        found = data_access.find_dispatched_run(pending["triggered_at"])
+        try:
+            found = data_access.find_dispatched_run(pending["triggered_at"])
+        except (requests.exceptions.RequestException, RuntimeError) as exc:
+            return _page(
+                f'<h1>Run a backtest</h1><p>Couldn\'t check GitHub Actions: {_escape(exc)}</p>',
+                title="Run a backtest",
+            ), 502
         if found is not None:
             pending["run_id"] = found["id"]
             pending["html_url"] = found["html_url"]
@@ -177,7 +214,13 @@ def run_status(token):
             title="Run a backtest",
         )
 
-    run = data_access.get_workflow_run(pending["run_id"])
+    try:
+        run = data_access.get_workflow_run(pending["run_id"])
+    except (requests.exceptions.RequestException, RuntimeError) as exc:
+        return _page(
+            f'<h1>Run a backtest</h1><p>Couldn\'t check GitHub Actions: {_escape(exc)}</p>',
+            title="Run a backtest",
+        ), 502
     status, conclusion = run["status"], run.get("conclusion")
 
     if status != "completed":

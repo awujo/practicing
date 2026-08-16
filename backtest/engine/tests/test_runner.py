@@ -9,7 +9,7 @@ from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
-    _resolve_date_range,
+    _resolve_date_range, _parse_rr,
 )
 
 SOURCE = "test"
@@ -244,6 +244,19 @@ def test_resolve_date_range_widens_a_bare_end_date_to_end_of_day():
 
 def test_resolve_date_range_returns_none_none_when_nothing_given():
     assert _resolve_date_range(None, None, None) == (None, None)
+
+
+def test_parse_rr_accepts_a_bare_number():
+    assert _parse_rr("4") == 4.0
+
+
+def test_parse_rr_accepts_ratio_notation():
+    # This is the exact input that crashed a real GitHub Actions run:
+    # someone typed "3:1" (STRATEGY.md's own notation) into a bare
+    # `type=float` argument.
+    assert _parse_rr("3:1") == 3.0
+    assert _parse_rr("4:1") == 4.0
+    assert _parse_rr("2:0.5") == 4.0
 
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
