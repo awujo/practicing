@@ -899,6 +899,46 @@ built in phases so each is testable before the next depends on it:
       refinement isn't modeled) -- flagged in runner.py's module
       docstring rather than silently skipped.
 
+      **Entry-gate rebuild, part 7 (final): stop/target decision audit
+      trail, and the dashboard catches up.** Closes out the 7-part
+      rebuild from the same conversation. `TradeRecord` gains 5 new
+      fields, persisted specifically so the empirical claims behind
+      parts 5-6's mechanized rules can eventually be validated against
+      real data instead of just assumed -- e.g. the direct user quote
+      behind the universal stop-loss fallback ("if the logic is correct
+      and price shouldn't come back to it... The probability is like 1
+      or 2 out of 10") is exactly the kind of claim a backtest dataset
+      should be able to check, not just encode: `natural_stop_loss` (what
+      the trigger's own rule would have placed, before any fallback),
+      `stop_fallback_used`, `raw_target` (the plain rr target before any
+      ERL cap), `erl_price` (the ERL actually used to cap it, if any),
+      `erl_capped`. Wired through `run_backtest`'s stop-loss and target
+      blocks alongside the values already being computed there -- no new
+      detection logic, just persisting decisions already being made.
+      `report.py`'s trade-by-trade reasoning table also now shows
+      `trigger_type` and `aligned_timeframes` per row (previously
+      computed and logged since parts 1 and 5, but never surfaced on the
+      dashboard) -- `.get()` with a "—" placeholder so CSVs from earlier
+      runs, before these columns existed, still render instead of
+      erroring. New tests: audit-trail assertions added to the part 5/6
+      tests that already exercise the plug-and-play/engulfing/4th-man/
+      fallback/ERL-cap paths (rather than duplicating fixtures), a CSV
+      round-trip check for the new fields, and a report test confirming
+      graceful degradation on an older-format CSV missing the newer
+      columns entirely.
+
+      NOT done in this pass, and not attempted (see runner.py's module
+      docstring for the full list this rebuild leaves open): whether
+      price later revisits an unused natural/default stop level even
+      after the trade closed (would need a post-close forward scan --
+      the single most direct way to validate the "1 or 2 out of 10"
+      claim itself, and the most natural next step if this backtest ever
+      moves toward the "intelligent system" framing raised in the
+      originating conversation); breakout-as-its-own-entry-trigger;
+      the "cover other nearby same-type KL" stop-width rule; 2H liquidity
+      fallback; whether a candidate ERL point has already been swept
+      before entry.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

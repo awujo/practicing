@@ -150,6 +150,15 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1004))
     assert trade.mfe_r is not None and trade.mfe_r >= trade.r_multiple  # ran at least as far as the close
 
+    # Task 7: stop/target decision audit trail. The engulfing stop wasn't
+    # too wide, so no fallback -- natural_stop_loss equals the stop
+    # actually used. The ERL cap DID bind (1.1042 vs. the uncapped 1.1108).
+    assert trade.natural_stop_loss == pytest.approx(trade.stop_loss)
+    assert trade.stop_fallback_used is False
+    assert trade.raw_target == pytest.approx(1.1108)
+    assert trade.erl_price == pytest.approx(1.1042)
+    assert trade.erl_capped is True
+
 
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
     # This fixture's reaction level (1.1012) sits BEYOND (further in the
@@ -256,6 +265,10 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
     # would otherwise get (Task 5: plug and play takes priority over the
     # trigger-specific rules whenever an overlapping imbalance exists).
     assert trade.stop_loss == pytest.approx(1.1008)
+    # Task 7: no fallback concept for plug and play -- the imbalance-
+    # anchored stop IS the natural rule.
+    assert trade.natural_stop_loss == pytest.approx(1.1008)
+    assert trade.stop_fallback_used is False
 
 
 def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthetic_cache):
@@ -600,6 +613,12 @@ def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_w
     # test_run_backtest_produces_a_winning_trade_end_to_end.
     assert trade.primary_target == pytest.approx(1.1042)
     assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1011))
+
+    # Task 7: the audit trail shows what the natural (too-wide) stop
+    # WOULD have been -- 1 pip beyond the 64-pip wick (1.0950) -- even
+    # though the fallback fired and stop_loss ended up at 1.1011 instead.
+    assert trade.natural_stop_loss == pytest.approx(1.0949)
+    assert trade.stop_fallback_used is True
 
 
 def test_nearest_erl_picks_the_closest_untaken_point_across_timeframes():

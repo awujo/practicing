@@ -3,15 +3,25 @@ Structured per-trade logging.
 
 Built specifically so the eventual backtest dataset is more than a win/
 loss tally -- it's a real feature set for training a model later. Every
-closed trade gets logged with its full multi-timeframe bias context, the
-key-level ranking factors that led to the entry (Phase 2's 4 factors),
-the entry pattern that fired, which stop-loss rule was used, and --
-critically -- MAE/MFE (max adverse/favorable excursion during the
-trade's life), not just the final win/loss label. STRATEGY.md's own
-honesty about near-misses ("tight stops have genuinely almost gotten
-stopped out before the correct move played out", Section 6) is exactly
-the kind of signal a bare win/loss label throws away; MAE captures it
-directly, in R-multiples so it's comparable across instruments/pip sizes.
+closed trade gets logged with its full multi-timeframe bias context
+(including `aligned_timeframes`, which of Weekly/Daily/H4 confirmed
+independently -- entry-gate rebuild part 1), the key-level ranking
+factors that led to the entry (Phase 2's 4 factors), the entry pattern
+that fired, `trigger_type` (which of the 4 confirmation-entry triggers
+actually fired -- entry-gate rebuild part 5) and a stop/target DECISION
+audit trail (the trigger's own natural stop-loss vs. what was actually
+used, whether the universal 4H-KL fallback fired, the plain rr target
+vs. the ERL cap that was actually applied -- entry-gate rebuild parts
+5-6) -- not just the final numbers, so the empirical claims behind these
+mechanized rules (e.g. "the KL fallback almost never gets revisited
+deeply, maybe 1 or 2 out of 10") can eventually be validated against real
+data, not just assumed. And -- critically -- MAE/MFE (max adverse/
+favorable excursion during the trade's life), not just the final win/loss
+label. STRATEGY.md's own honesty about near-misses ("tight stops have
+genuinely almost gotten stopped out before the correct move played out",
+Section 6) is exactly the kind of signal a bare win/loss label throws
+away; MAE captures it directly, in R-multiples so it's comparable across
+instruments/pip sizes.
 """
 
 from dataclasses import dataclass, fields
@@ -72,6 +82,20 @@ class TradeRecord:
     stop_kind: str = ""                 # "plug_and_play" | "engulfing" | "fourth_man" | "*_kl_fallback"
     risk_pips: float = 0.0
     primary_target: float = 0.0
+
+    # Stop/target decision audit trail -- persisted specifically so the
+    # backtest dataset can validate the empirical claims behind these
+    # mechanized rules (not just assume them), and so a future "intelligent
+    # system" pass has real features to train on rather than only the
+    # final win/loss outcome. NOT yet persisted: whether price later
+    # revisited an unused natural/default level even after the trade
+    # closed (would need a post-close forward scan -- a real follow-up,
+    # not implemented here).
+    natural_stop_loss: float = 0.0      # what the trigger's own rule would have placed, before any fallback
+    stop_fallback_used: bool = False    # True when natural_stop_loss was too wide and the KL fallback fired
+    raw_target: float = 0.0             # the plain rr target, before any ERL cap
+    erl_price: float | None = None      # the nearest untaken ERL used to cap the target, if any
+    erl_capped: bool = False            # True when raw_target was reduced to erl_price
 
     # Stacking context
     concurrent_open_positions_at_entry: int = 0

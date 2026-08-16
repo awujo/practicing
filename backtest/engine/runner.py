@@ -752,33 +752,43 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             # Plug and play takes priority over the trigger-specific rules
             # below whenever an overlapping imbalance exists, regardless
             # of which trigger geometry also fired on the same candle --
-            # this is what "plug and play" actually is.
+            # this is what "plug and play" actually is. No fallback
+            # concept applies here -- the imbalance-anchored stop IS the
+            # rule, not a "natural" value that could be overridden.
             stop_loss = imbalance_stop_loss(
                 widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
             )
             stop_kind = "plug_and_play"
             trigger_type = "plug_and_play"
+            natural_stop_loss = stop_loss
+            stop_fallback_used = False
         elif candidate.trigger == "engulfing":
             trigger_type = "engulfing"
             engulfing_extreme = curr.low if effective == Direction.BULLISH else curr.high
             engulfed_extreme = prev.low if effective == Direction.BULLISH else prev.high
             natural = engulfing_stop_loss(engulfing_extreme, engulfed_extreme, effective, pip_size=pip_size)
+            natural_stop_loss = natural
             if _natural_stop_too_wide(entry_price, natural, pip_size):
                 stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
                 stop_kind = "engulfing_kl_fallback"
+                stop_fallback_used = True
             else:
                 stop_loss = natural
                 stop_kind = "engulfing"
+                stop_fallback_used = False
         else:  # candidate.trigger == "fourth_man"
             trigger_type = "fourth_man"
             sweep_extreme = curr.low if effective == Direction.BULLISH else curr.high
             natural = fourth_man_stop_loss(sweep_extreme, effective, pip_size=pip_size)
+            natural_stop_loss = natural
             if _natural_stop_too_wide(entry_price, natural, pip_size):
                 stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
                 stop_kind = "fourth_man_kl_fallback"
+                stop_fallback_used = True
             else:
                 stop_loss = natural
                 stop_kind = "fourth_man"
+                stop_fallback_used = False
 
         # A stop-loss on the wrong side of entry isn't a stop at all -- it's
         # a corrupted trade. This used to actually happen for "origin"
@@ -804,8 +814,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # "price wants to go from internal range liquidity to external",
         # capped by the REAL external range liquidity visible on
         # 4H/Daily/Weekly, not an unconditional ratio). Weekly may be [].
+        raw_target = primary_target(entry_price, stop_loss, effective)
         erl_price = _nearest_erl(effective, entry_price, curr.time, h4, daily, weekly)
         target = primary_target(entry_price, stop_loss, effective, erl_price=erl_price)
+        erl_capped = target != raw_target
 
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 
@@ -853,6 +865,11 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             stop_kind=stop_kind,
             risk_pips=abs(entry_price - stop_loss) / pip_size,
             primary_target=target,
+            natural_stop_loss=natural_stop_loss,
+            stop_fallback_used=stop_fallback_used,
+            raw_target=raw_target,
+            erl_price=erl_price,
+            erl_capped=erl_capped,
             concurrent_open_positions_at_entry=concurrent,
             exit_price=exit_price,
             exit_reason=exit_reason,

@@ -25,6 +25,7 @@ def make_record(trade_id, status, r_multiple=None, direction=Direction.BULLISH):
         entry_pattern="direct_mitigation",
         entry_style="conservative",
         trade_kind="continuation",
+        trigger_type="engulfing",
         bias_daily=Direction.BULLISH,
         effective_bias_timeframe="Daily",
         key_level_price=1.0990,
@@ -32,9 +33,14 @@ def make_record(trade_id, status, r_multiple=None, direction=Direction.BULLISH):
         imbalance_overlap=True,
         qmr_test_count=2,
         stop_loss=1.0980,
-        stop_kind="continuation",
+        stop_kind="engulfing",
         risk_pips=20,
         primary_target=1.1060,
+        natural_stop_loss=1.0980,
+        stop_fallback_used=False,
+        raw_target=1.1120,
+        erl_price=1.1060,
+        erl_capped=True,
         exit_price=1.1060 if status == "closed_win" else 1.0980,
         exit_reason="target_hit" if status == "closed_win" else "stop_hit",
         r_multiple=r_multiple,
@@ -61,6 +67,11 @@ def test_write_and_read_back_csv_roundtrip():
         assert rows[0]["bias_daily"] == "bullish"
         assert rows[0]["r_multiple"] == "3.0"
         assert "2024-01-01" in rows[0]["entry_time"]     # timestamp serialized to isoformat
+        # Task 7's stop/target decision audit trail fields round-trip too.
+        assert rows[0]["trigger_type"] == "engulfing"
+        assert rows[0]["stop_fallback_used"] == "False"
+        assert rows[0]["erl_price"] == "1.106"
+        assert rows[0]["erl_capped"] == "True"
 
 
 def test_write_trade_log_handles_empty_list_without_error():

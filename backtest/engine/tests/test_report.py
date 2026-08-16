@@ -76,8 +76,8 @@ def test_generate_report_includes_trade_reasoning_table():
         csv_path = os.path.join(results_dir, "EURUSD_conservative.csv")
         fieldnames = [
             "entry_time", "direction", "bias_daily", "bias_h4", "bias_h1",
-            "effective_bias_timeframe", "entry_pattern", "trade_kind",
-            "key_level_shape", "key_level_price", "qmr_test_count",
+            "effective_bias_timeframe", "entry_pattern", "trade_kind", "trigger_type",
+            "aligned_timeframes", "key_level_shape", "key_level_price", "qmr_test_count",
             "imbalance_overlap", "stop_kind", "entry_price", "stop_loss",
             "primary_target", "status", "exit_reason", "r_multiple",
         ]
@@ -88,9 +88,10 @@ def test_generate_report_includes_trade_reasoning_table():
                 "entry_time": "2024-01-05T10:00:00", "direction": "bullish",
                 "bias_daily": "bullish", "bias_h4": "bullish", "bias_h1": "bullish",
                 "effective_bias_timeframe": "Daily", "entry_pattern": "direct_mitigation",
-                "trade_kind": "continuation", "key_level_shape": "V",
+                "trade_kind": "continuation", "trigger_type": "engulfing",
+                "aligned_timeframes": "Daily,H4", "key_level_shape": "V",
                 "key_level_price": "1.1020", "qmr_test_count": "2",
-                "imbalance_overlap": "True", "stop_kind": "tight_no_irl",
+                "imbalance_overlap": "True", "stop_kind": "engulfing",
                 "entry_price": "1.1030", "stop_loss": "1.0994",
                 "primary_target": "1.1138", "status": "closed_win",
                 "exit_reason": "target_hit", "r_multiple": "3.0",
@@ -103,9 +104,39 @@ def test_generate_report_includes_trade_reasoning_table():
 
         assert "Trade-by-trade reasoning" in html
         assert "direct_mitigation" in html
+        assert "trigger: engulfing" in html
+        assert "aligned: Daily,H4" in html
         assert "QMR 2" in html
         assert "FVG overlap" in html
         assert "+3.00R" in html
+
+
+def test_generate_report_renders_older_csvs_missing_the_newer_columns():
+    # trigger_type/aligned_timeframes (entry-gate rebuild) didn't exist on
+    # CSVs from earlier runs -- the reasoning row must degrade gracefully
+    # (a "—" placeholder) rather than erroring on the missing columns.
+    with tempfile.TemporaryDirectory() as tmp:
+        results_dir = os.path.join(tmp, "results")
+        os.makedirs(results_dir)
+        csv_path = os.path.join(results_dir, "EURUSD_conservative.csv")
+        fieldnames = ["entry_time", "direction", "entry_pattern", "trade_kind",
+                      "status", "exit_reason", "r_multiple"]
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow({
+                "entry_time": "2024-01-05T10:00:00", "direction": "bullish",
+                "entry_pattern": "direct_mitigation", "trade_kind": "continuation",
+                "status": "closed_win", "exit_reason": "target_hit", "r_multiple": "3.0",
+            })
+
+        out_dir = os.path.join(tmp, "site")
+        out_path = generate_report(results_dir=results_dir, out_dir=out_dir)
+        with open(out_path) as f:
+            html = f.read()
+
+        assert "trigger: —" in html
+        assert "aligned: —" in html
 
 
 def test_trades_table_caps_display_and_shows_note(monkeypatch):
