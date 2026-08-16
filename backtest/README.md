@@ -848,6 +848,57 @@ built in phases so each is testable before the next depends on it:
       also clear any other nearby same-type KL still reachable" stop-width
       rule isn't implemented.
 
+      **Entry-gate rebuild, part 6: ERL-capped targets.** Same
+      conversation's last correction to the mechanics: 3:1/4:1 is a
+      DEFAULT, not an unconditional target -- "price wants to go from
+      internal range liquidity to external," and a straight R:R target
+      that would overshoot the REAL external range liquidity actually
+      visible on 4H/Daily/Weekly should be capped there instead, not left
+      to run past it. `trade_management.py`'s `primary_target()` gains an
+      optional `erl_price` parameter: when given, it caps the plain 1:3
+      target at `erl_price` if the plain target would overshoot it
+      (backward compatible -- omitting `erl_price` reproduces the old
+      unconditional behavior exactly, so every pre-existing caller/test
+      of `primary_target()` is untouched). `runner.py`'s new
+      `_nearest_erl()` computes that price: the nearest untaken
+      structural swing point (`structural_liquidity_points()`, n=2), in
+      the trade direction, across whichever of 4H/Daily/Weekly candle
+      series are passed -- checking all three and taking whichever is
+      NEAREST naturally recovers "the real, closest constraint" without
+      needing to prioritize by timeframe, since a closer H4 point already
+      wins over a farther Daily/Weekly one by construction. Wired into
+      the main loop's target computation (`erl_price = _nearest_erl(...)`
+      before `primary_target(...)`). Keeps the existing 3:1
+      `RISK_REWARD_PRIMARY` baseline unchanged -- STRATEGY.md's "3:1 or
+      4:1" isn't given a precise rule for choosing between the two, so
+      this only adds the cap on top of the existing default rather than
+      guessing a selection rule.
+
+      This immediately started binding in nearly every existing fixture:
+      the shared `synthetic_cache`-derived H4 series has its own genuine
+      swing highs (H4 idx2 at 1.1030, idx6 at 1.1042) sitting closer than
+      the raw 3:1 target for most of this session's entry prices --
+      correct, realistic behavior for the toy fixture's tight structure,
+      not a bug to route around. Every affected test's `r_multiple`
+      assertion was recomputed from the actual capped `primary_target`
+      (now also asserted directly, not just the resulting R-multiple) so
+      the ERL-cap behavior is visible in test code, not just incidentally
+      passing. Two new dedicated `_nearest_erl()` unit tests cover the
+      piece with no other coverage: picking the nearer of two real,
+      already-formed points across different timeframes (not just
+      whichever series happens to be checked first), and excluding a
+      point that hasn't formed yet as of entry time or that already sits
+      behind entry (not a forward constraint anymore). `trade_management
+      .py` also gained a direct `primary_target()` ERL-capping test
+      (capped when nearer, unchanged when the ERL sits beyond the plain
+      target, and the bearish mirror).
+
+      NOT done in this pass: `_nearest_erl()` doesn't check whether a
+      candidate point has already been swept by price before entry (an
+      already-taken swing point isn't real ERL anymore, but that
+      refinement isn't modeled) -- flagged in runner.py's module
+      docstring rather than silently skipped.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

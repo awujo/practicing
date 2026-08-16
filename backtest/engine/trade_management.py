@@ -12,7 +12,11 @@ Four pieces:
    it's up to the caller which setups get fed in as new positions.
 
 2. `primary_target()` -- the 1:3 risk-reward baseline ("the repeatable
-   bread-and-butter target... take the 1:3 when it's there").
+   bread-and-butter target... take the 1:3 when it's there"), ERL-capped:
+   3:1/4:1 is the DEFAULT, not a fixed target -- a direct user correction
+   that a straight R:R target overshooting the real external range
+   liquidity visible on 4H/Daily/Weekly should be capped there instead
+   (`erl_price` parameter, computed by runner.py's `_nearest_erl()`).
 
 3. `tiered_exit_targets()` -- Video 16's major exit-targeting rule: a
    storyline built from a given timeframe's key level is expected to
@@ -72,9 +76,22 @@ class PositionManager:
 
 
 def primary_target(entry_price: float, stop_loss: float, direction: Direction,
-                    rr: float = RISK_REWARD_PRIMARY) -> float:
+                    rr: float = RISK_REWARD_PRIMARY, erl_price: float | None = None) -> float:
+    """The plain rr (default 1:3) target, ERL-capped when `erl_price` is
+    given: "price wants to go from internal range liquidity to external"
+    -- not beyond it (direct user correction; STRATEGY.md's flat 1:3
+    baseline never accounted for this). `erl_price` should be the nearest
+    untaken external range liquidity point currently visible on
+    4H/Daily/Weekly, in the trade direction (see runner.py's
+    `_nearest_erl()`). If the plain rr target would overshoot it, the
+    target is capped there instead -- effectively reducing the realized
+    R:R rather than the fixed 1:3 ratio itself, since the ratio isn't a
+    separately tracked quantity here."""
     risk = abs(entry_price - stop_loss)
-    return entry_price + risk * rr if direction == Direction.BULLISH else entry_price - risk * rr
+    raw_target = entry_price + risk * rr if direction == Direction.BULLISH else entry_price - risk * rr
+    if erl_price is None:
+        return raw_target
+    return min(raw_target, erl_price) if direction == Direction.BULLISH else max(raw_target, erl_price)
 
 
 @dataclass(frozen=True)

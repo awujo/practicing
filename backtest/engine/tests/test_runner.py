@@ -8,7 +8,7 @@ from ..bias import detect_confirmations, Confirmation, ConfirmationKind
 from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
-    _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide,
+    _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl,
 )
 
 SOURCE = "test"
@@ -142,7 +142,12 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.entry_price == pytest.approx(1.1030)  # conservative -> engulf candle's close
     assert trade.status == "closed_win"
     assert trade.exit_reason == "target_hit"
-    assert trade.r_multiple == pytest.approx(3.0)
+    # Task 6: target is ERL-capped, not a flat 3:1 -- H4's own idx6 swing
+    # high (1.1042) sits closer than the raw 3:1 target (entry 1.1030 +
+    # 3 * risk 0.0026 = 1.1108 would be), so the real, already-visible
+    # structural point wins instead of letting the target run past it.
+    assert trade.primary_target == pytest.approx(1.1042)
+    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1004))
     assert trade.mfe_r is not None and trade.mfe_r >= trade.r_multiple  # ran at least as far as the close
 
 
@@ -435,7 +440,11 @@ def test_run_backtest_produces_an_origin_trade_close_to_the_bias_bootstrap(tmp_p
     # (1.1015) the old origin-keyed rule used either.
     assert trade.stop_loss == pytest.approx(1.1004)
     assert trade.status == "closed_win"
-    assert trade.r_multiple == pytest.approx(3.0)
+    # Task 6: ERL-capped at H4 idx6's swing high (1.1042), same as
+    # test_run_backtest_produces_a_winning_trade_end_to_end (same H4
+    # series, entry price).
+    assert trade.primary_target == pytest.approx(1.1042)
+    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1004))
 
 
 def test_reaction_trigger_prefers_engulfing_then_falls_through_to_fourth_man():
@@ -523,7 +532,11 @@ def test_run_backtest_fires_on_a_fourth_man_reaction(tmp_path, monkeypatch):
     # sweeping) -- the 4th-man default.
     assert trade.stop_loss == pytest.approx(1.0997)
     assert trade.status == "closed_win"
-    assert trade.r_multiple == pytest.approx(3.0)
+    # Task 6: ERL-capped at H4 idx2's swing high (1.1030) -- entry (1.1012,
+    # conservative -> confirmation candle's close) sits below it, so it's
+    # the nearest untaken external liquidity in the trade direction.
+    assert trade.primary_target == pytest.approx(1.1030)
+    assert trade.r_multiple == pytest.approx((1.1030 - 1.1012) / (1.1012 - 1.0997))
 
 
 def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_wide(tmp_path, monkeypatch):
@@ -583,7 +596,48 @@ def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_w
     # engulfed wick (1.0950).
     assert trade.stop_loss == pytest.approx(1.1011)
     assert trade.status == "closed_win"
-    assert trade.r_multiple == pytest.approx(3.0)
+    # Task 6: ERL-capped at H4 idx6's swing high (1.1042), same as
+    # test_run_backtest_produces_a_winning_trade_end_to_end.
+    assert trade.primary_target == pytest.approx(1.1042)
+    assert trade.r_multiple == pytest.approx((1.1042 - 1.1030) / (1.1030 - 1.1011))
+
+
+def test_nearest_erl_picks_the_closest_untaken_point_across_timeframes():
+    h4 = [
+        H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
+        H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
+        H4(2, 1.1010, 1.1060, 1.1005, 1.1020),  # swing high, 1.1060 -- nearer than daily's
+        H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
+        H4(4, 1.1015, 1.1022, 1.1008, 1.1012),
+    ]
+    daily = [
+        D(0, 1.0990, 1.1000, 1.0980, 1.0995),
+        D(1, 1.0995, 1.1010, 1.0990, 1.1000),
+        D(2, 1.1000, 1.1200, 1.0990, 1.1010),  # swing high, 1.1200 -- farther than H4's
+        D(3, 1.1010, 1.1030, 1.1000, 1.1020),
+        D(4, 1.1020, 1.1040, 1.1010, 1.1030),
+    ]
+    entry_price = 1.1030
+    as_of_time = pd.Timestamp("2024-01-05")
+
+    erl = _nearest_erl(Direction.BULLISH, entry_price, as_of_time, h4, daily, [])
+    assert erl == pytest.approx(1.1060)  # the nearer H4 point wins, not daily's farther (but real) 1.1200
+
+
+def test_nearest_erl_ignores_points_that_have_not_formed_yet_or_are_behind_entry():
+    h4 = [
+        H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
+        H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
+        H4(2, 1.1010, 1.1060, 1.1005, 1.1020),  # swing high, forms at H4(2)'s own time
+        H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
+        H4(4, 1.1015, 1.1022, 1.1008, 1.1012),
+    ]
+    # as_of_time BEFORE the swing high even forms -- not "visible" yet.
+    assert _nearest_erl(Direction.BULLISH, 1.1005, pd.Timestamp("2024-01-01"), h4) is None
+    # as_of_time AFTER it forms, but the point (1.1060) is BEHIND entry
+    # (1.1070) in the trade direction -- already passed, not an external
+    # constraint anymore.
+    assert _nearest_erl(Direction.BULLISH, 1.1070, pd.Timestamp("2024-01-05"), h4) is None
 
 
 def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():

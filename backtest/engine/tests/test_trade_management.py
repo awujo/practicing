@@ -51,6 +51,22 @@ def test_primary_target_is_1_to_3():
     assert target_bear == pytest.approx(1.0970)
 
 
+def test_primary_target_is_capped_by_a_closer_erl_price():
+    entry, stop = 1.1000, 1.0990  # 10 pip risk -> plain 1:3 target would be 1.1030
+    # ERL sits BEFORE the plain target -- caps there instead.
+    capped = primary_target(entry, stop, Direction.BULLISH, erl_price=1.1020)
+    assert capped == pytest.approx(1.1020)
+
+    # ERL sits BEYOND the plain target -- doesn't change anything (the
+    # plain 1:3 ratio is still the tighter, binding constraint).
+    uncapped = primary_target(entry, stop, Direction.BULLISH, erl_price=1.1080)
+    assert uncapped == pytest.approx(1.1030)
+
+    # Bearish mirror.
+    capped_bear = primary_target(1.1000, 1.1010, Direction.BEARISH, erl_price=1.0985)
+    assert capped_bear == pytest.approx(1.0985)
+
+
 def test_tiered_exit_targets():
     tiers = tiered_exit_targets(entry_timeframe_erl=1.1050, origin_timeframe_next_key_level=1.1200)
     assert tiers.partial_target == pytest.approx(1.1050)

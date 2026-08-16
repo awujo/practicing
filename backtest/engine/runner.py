@@ -113,6 +113,15 @@ NOT YET BUILT in this gate (explicit follow-ups, not silently skipped):
   implemented -- the trigger-keyed stop rules only account for the
   SINGLE reaction level/candle currently in play, not other close-by
   same-shape candidates from `reaction_level_candidates`.
+- Target: `_nearest_erl()` doesn't check whether an ERL candidate has
+  already been swept by price before entry -- only formed-before-entry
+  and beyond-entry-price. An already-taken swing point isn't real
+  external liquidity anymore, but that refinement isn't modeled here
+  (see `_nearest_erl()`'s own docstring). It also doesn't distinguish
+  4:1 from the flat 3:1 default (`RISK_REWARD_PRIMARY` in
+  trade_management.py) -- STRATEGY.md's "3:1 or 4:1" isn't given a
+  precise selection rule between the two, so this keeps the existing 3:1
+  baseline and only adds the ERL cap on top of it.
 
 Further MVP simplifications, each flagged where it happens rather than
 silently assumed:
@@ -236,6 +245,35 @@ MAX_NATURAL_STOP_PIPS = 30.0
 def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float,
                             max_pips: float = MAX_NATURAL_STOP_PIPS) -> bool:
     return abs(entry_price - stop_loss) / pip_size > max_pips
+
+
+def _nearest_erl(direction: Direction, entry_price: float, as_of_time,
+                  *candle_series: list[Candle]) -> float | None:
+    """The nearest untaken external range liquidity point, in the trade
+    direction, across whichever candle series are passed (4H/Daily/Weekly)
+    -- "price wants to go from internal range liquidity to external," not
+    beyond it (direct user correction; see trade_management.py's
+    `primary_target()`, which uses this to cap the default 1:3/4:1 R:R
+    rather than let it overshoot a real, already-visible structural
+    point). Only formed-before-entry-time and beyond-entry-price
+    filtering -- does NOT check whether the point has already been swept
+    by price between its formation and entry (a further refinement, not
+    modeled here). Returns None if nothing qualifies on any series passed
+    (the caller then falls back to the plain, uncapped rr target)."""
+    kind = "high" if direction == Direction.BULLISH else "low"
+    candidates = []
+    for series in candle_series:
+        if not series:
+            continue
+        for p in structural_liquidity_points(series, n=2):
+            if p.kind != kind or p.time > as_of_time:
+                continue
+            beyond = p.price > entry_price if direction == Direction.BULLISH else p.price < entry_price
+            if beyond:
+                candidates.append(p.price)
+    if not candidates:
+        return None
+    return min(candidates) if direction == Direction.BULLISH else max(candidates)
 
 # How many H1 candles forward to search for a stop/target hit before
 # giving up and marking a trade "still_open". Two independent reasons
@@ -762,7 +800,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if trade_kind == "origin":
             claimed_origins.add(origin_key)
 
-        target = primary_target(entry_price, stop_loss, effective)
+        # Target is ERL-capped, not a fixed 3:1 (direct user correction --
+        # "price wants to go from internal range liquidity to external",
+        # capped by the REAL external range liquidity visible on
+        # 4H/Daily/Weekly, not an unconditional ratio). Weekly may be [].
+        erl_price = _nearest_erl(effective, entry_price, curr.time, h4, daily, weekly)
+        target = primary_target(entry_price, stop_loss, effective, erl_price=erl_price)
 
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 
