@@ -987,6 +987,27 @@ built in phases so each is testable before the next depends on it:
       dominant spike (needed to bootstrap the Daily bias) is excluded as
       still-forming.
 
+      **Year/date-range filtering and configurable R:R.** `run_backtest()`
+      gains `start_date`/`end_date`/`rr` parameters (and the CLI gains
+      `--year`/`--start`/`--end`/`--rr`, `run-backtest.yml` gains matching
+      `year`/`rr` workflow_dispatch inputs) so a specific calendar year
+      (e.g. 2026) or an alternate target ratio (STRATEGY.md's "3:1 or
+      4:1", not just the 3:1 default) can be reported without a code
+      change. Deliberately NOT a data-loading window: start_date/end_date
+      only gate which finished trades get appended to the returned/
+      written records -- ALL cached history still loads and still drives
+      bias-building, alignment, `claimed_origins` origin/continuation
+      bookkeeping, and `concurrent_open_positions_at_entry` stacking
+      context, so a 2020 trade still correctly claims an "origin" slot
+      even when only 2026 is being reported, and pre-2026 open positions
+      still count toward stacking for a 2026 entry. Narrowing the loaded
+      data itself would silently break all of that context, not just trim
+      the output. The CLI writes filtered/alternate-rr runs to a
+      suffixed filename (`EURUSD_conservative_2026.csv`,
+      `..._rr4.csv`) rather than the canonical `{instrument}_{style}.csv`,
+      so they land alongside the main dashboard entry instead of
+      overwriting it.
+
       `report.py` turns the CSV trade logs into the GitHub Pages
       dashboard described above -- dependency-free (no Chart.js/CDN, just
       inline SVG generated in Python), so it renders identically whether

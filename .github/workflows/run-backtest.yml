@@ -23,6 +23,14 @@ on:
         options:
           - aggressive
           - conservative
+      year:
+        description: "Optional: only report trades entered in this calendar year (e.g. 2026). Leave blank for full history."
+        required: false
+        default: ""
+      rr:
+        description: "Optional: target risk:reward ratio (STRATEGY.md's '3:1 or 4:1'). Leave blank for the 3:1 default."
+        required: false
+        default: ""
 
 permissions:
   contents: write # needed to publish to the gh-pages branch
@@ -69,9 +77,10 @@ jobs:
 
       - name: Run backtest
         run: |
-          python -m backtest.engine.runner \
-            --instrument "${{ inputs.instrument }}" \
-            --style "${{ inputs.style }}"
+          args=(--instrument "${{ inputs.instrument }}" --style "${{ inputs.style }}")
+          if [ -n "${{ inputs.year }}" ]; then args+=(--year "${{ inputs.year }}"); fi
+          if [ -n "${{ inputs.rr }}" ]; then args+=(--rr "${{ inputs.rr }}"); fi
+          python -m backtest.engine.runner "${args[@]}"
 
       - name: Generate results dashboard
         run: python -m backtest.engine.report

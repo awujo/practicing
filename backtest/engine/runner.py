@@ -195,7 +195,7 @@ from .entries import (
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
-from .trade_management import PositionManager, primary_target
+from .trade_management import PositionManager, primary_target, RISK_REWARD_PRIMARY
 from .trade_log import TradeRecord, write_trade_log, summarize
 
 QMR_LOOKAHEAD = 30
@@ -632,11 +632,24 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
 
 
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
-                  pip_size: float | None = None, n: int = 2) -> list[TradeRecord]:
+                  pip_size: float | None = None, n: int = 2,
+                  start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
     pip_size: defaults to `default_pip_size(instrument)` when not given.
+    start_date/end_date: optional pd.Timestamp bounds (inclusive) on which
+    trades get RECORDED, by entry time -- NOT a data-loading window. All
+    cached history still loads and still drives bias-building, alignment,
+    `claimed_origins` origin/continuation bookkeeping, and stacking
+    context (`concurrent_open_positions_at_entry`); a trade from 2020
+    still correctly claims an "origin" slot even when only 2026 is being
+    reported, and open positions from before the window still count
+    toward stacking for a 2026 entry. Narrowing the loaded data itself
+    would silently break all of that context, not just trim the output.
+    rr: the target risk:reward ratio (STRATEGY.md's "3:1 or 4:1" --
+    `trade_management.RISK_REWARD_PRIMARY`, 3.0, by default), still
+    ERL-capped on top exactly as at the default ratio.
     """
     if entry_style not in ("aggressive", "conservative"):
         raise ValueError("entry_style must be 'aggressive' or 'conservative'")
@@ -866,9 +879,9 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # period extremes, not an unconditional ratio). H4 deliberately
         # excluded (it's the cascade's own internal timeframe, not external
         # relative to it -- see _nearest_erl()'s docstring). Weekly may be [].
-        raw_target = primary_target(entry_price, stop_loss, effective)
+        raw_target = primary_target(entry_price, stop_loss, effective, rr=rr)
         erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly)
-        target = primary_target(entry_price, stop_loss, effective, erl_price=erl_price)
+        target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price)
         erl_capped = target != raw_target
 
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
@@ -888,6 +901,16 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             r_multiple = signed / risk if risk else 0.0
             status = "closed_win" if exit_reason == "target_hit" else "closed_loss"
             mgr.close_position(pos, status)
+
+        # Date-range filtering happens HERE, on the finished record, not
+        # earlier -- everything above (bias, alignment, claimed_origins,
+        # stacking) must still see the full history regardless of what's
+        # actually being reported (see the start_date/end_date docstring
+        # above).
+        if start_date is not None and curr.time < start_date:
+            continue
+        if end_date is not None and curr.time > end_date:
+            continue
 
         trade_id += 1
         records.append(TradeRecord(
@@ -943,11 +966,35 @@ def main():
     parser.add_argument("--source", default="dukascopy")
     parser.add_argument("--pip-size", type=float, default=None, help="Overrides the per-instrument default (see DEFAULT_PIP_SIZES).")
     parser.add_argument("--out", default=None, help="Output CSV path. Defaults to backtest/results/{instrument}_{style}.csv")
+    parser.add_argument("--year", type=int, default=None,
+                         help="Only report trades entered in this calendar year. Shorthand for --start YYYY-01-01 --end YYYY-12-31.")
+    parser.add_argument("--start", default=None, help="Only report trades entered on/after this date (YYYY-MM-DD).")
+    parser.add_argument("--end", default=None, help="Only report trades entered on/before this date (YYYY-MM-DD, inclusive of the whole day).")
+    parser.add_argument("--rr", type=float, default=None,
+                         help=f"Target risk:reward ratio (STRATEGY.md's '3:1 or 4:1'). Defaults to {RISK_REWARD_PRIMARY:g}.")
     args = parser.parse_args()
 
-    records = run_backtest(args.instrument, args.style, source=args.source, pip_size=args.pip_size)
+    if args.year is not None:
+        start_date = pd.Timestamp(year=args.year, month=1, day=1)
+        end_date = pd.Timestamp(year=args.year, month=12, day=31, hour=23, minute=59, second=59)
+    else:
+        start_date = pd.Timestamp(args.start) if args.start else None
+        # a bare date defaults to midnight -- widen to end-of-day so the whole --end day is included
+        end_date = (pd.Timestamp(args.end) + pd.Timedelta(hours=23, minutes=59, seconds=59)) if args.end else None
 
-    out_path = args.out or f"backtest/results/{args.instrument}_{args.style}.csv"
+    run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date}
+    if args.rr is not None:
+        run_kwargs["rr"] = args.rr
+    records = run_backtest(args.instrument, args.style, **run_kwargs)
+
+    suffix = ""
+    if args.year is not None:
+        suffix += f"_{args.year}"
+    elif args.start or args.end:
+        suffix += f"_{args.start or 'start'}_{args.end or 'end'}"
+    if args.rr is not None:
+        suffix += f"_rr{args.rr:g}"
+    out_path = args.out or f"backtest/results/{args.instrument}_{args.style}{suffix}.csv"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     write_trade_log(records, out_path)
 

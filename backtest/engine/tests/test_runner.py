@@ -166,6 +166,53 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.erl_capped is False
 
 
+def test_run_backtest_filters_by_date_range(synthetic_cache):
+    # This fixture's only trade enters on H1_BASE (day 20).
+    entry_day = H1_BASE.normalize()
+
+    # A range that excludes the entry entirely.
+    before = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                           start_date=entry_day + pd.Timedelta(days=1))
+    assert before == []
+    after = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                          end_date=entry_day - pd.Timedelta(days=1))
+    assert after == []
+
+    # A range that includes it.
+    included = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                             start_date=entry_day, end_date=entry_day + pd.Timedelta(days=1))
+    assert len(included) == 1
+    assert included[0].trade_id == 1  # reported IDs stay contiguous from 1, not from the full-history count
+
+
+def test_run_backtest_date_filtering_does_not_corrupt_origin_continuation_tracking(synthetic_cache):
+    # The earlier, unrelated cascade (day 10) still claims "origin" for
+    # its leg even when the reporting window excludes it -- the later
+    # (day 20) trade must still come out "continuation", not get
+    # incorrectly promoted to "origin" just because its true predecessor
+    # was filtered out of the OUTPUT. Narrowing the reported window must
+    # never narrow what claimed_origins bookkeeping actually sees.
+    _add_earlier_origin_trade()
+
+    full = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert [r.trade_kind for r in full] == ["origin", "continuation"]
+
+    filtered = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                             start_date=H1_BASE.normalize())
+    assert len(filtered) == 1
+    assert filtered[0].trade_kind == "continuation"  # NOT "origin"
+
+
+def test_run_backtest_respects_a_custom_rr(synthetic_cache):
+    default_run = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    rr4_run = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, rr=4.0)
+
+    assert len(default_run) == len(rr4_run) == 1
+    entry, stop = default_run[0].entry_price, default_run[0].stop_loss
+    assert default_run[0].raw_target == pytest.approx(entry + 3 * (entry - stop))
+    assert rr4_run[0].raw_target == pytest.approx(entry + 4 * (entry - stop))
+
+
 def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache):
     # This fixture's reaction level (1.1012) sits BEYOND (further in the
     # trade direction than) the swept liquidity point (1.1015) -- with the
