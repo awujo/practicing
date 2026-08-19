@@ -7,7 +7,7 @@ Source material and extracted strategy notes from mentor's video course (12 vide
 - `knowledge-base/frames/video-XX/` — key chart/setup screenshots extracted from each video
 - `knowledge-base/STRATEGY.md` — the consolidated, cumulative strategy rulebook (built up as videos are processed)
 - `backtest/` — backtesting code (once strategy rules are formalized)
-- `bot/` — live automation code (once backtesting validates the strategy)
+- `bot/` — live MT5 trading bot (see `bot/README.md`): account/phase config, risk manager, audit logging, MT5 data/execution adapters
 
 ## Ingesting a new source video
 

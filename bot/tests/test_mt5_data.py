@@ -1,6 +1,6 @@
 import pytest
 
-from .fake_mt5 import FakeMT5, make_rate, make_position, make_symbol_info
+from .fake_mt5 import FakeMT5, make_rate, make_position, make_symbol_info, make_deal
 from ..mt5_data import MT5Client, MT5ConnectionError
 
 DAY = 86400
@@ -160,3 +160,39 @@ def test_position_risk_falls_back_to_notional_exposure_when_stop_is_zero():
     state = client.account_state(day_start_balance=100000.0, phase_start_balance=100000.0)
     pos = state.open_positions[0]
     assert pos.risk_amount == pytest.approx(0.1 * 2000.0 * 100.0)
+
+
+def test_fetch_closed_deal_returns_the_exit_deal_reporting_a_stop_hit():
+    fake = FakeMT5()
+    fake.deals_by_position[42] = (
+        make_deal(entry=fake.DEAL_ENTRY_IN, price=1.1737, profit=0.0, reason=0),
+        make_deal(entry=fake.DEAL_ENTRY_OUT, price=1.1729, profit=-1000.0, reason=fake.DEAL_REASON_SL),
+    )
+    client = make_client(fake)
+    deal = client.fetch_closed_deal(42)
+    assert deal is not None
+    assert deal.price == 1.1729
+    assert deal.profit == -1000.0
+    assert deal.reason == "stop_hit"
+
+
+def test_fetch_closed_deal_reports_a_target_hit():
+    fake = FakeMT5()
+    fake.deals_by_position[43] = (
+        make_deal(entry=fake.DEAL_ENTRY_OUT, price=1.1826, profit=3000.0, reason=fake.DEAL_REASON_TP),
+    )
+    client = make_client(fake)
+    deal = client.fetch_closed_deal(43)
+    assert deal.reason == "target_hit"
+
+
+def test_fetch_closed_deal_returns_none_when_no_history_found_yet():
+    client = make_client(FakeMT5())
+    assert client.fetch_closed_deal(999) is None
+
+
+def test_fetch_closed_deal_returns_none_when_only_an_entry_deal_exists_no_exit_yet():
+    fake = FakeMT5()
+    fake.deals_by_position[44] = (make_deal(entry=fake.DEAL_ENTRY_IN, price=1.1737, profit=0.0, reason=0),)
+    client = make_client(fake)
+    assert client.fetch_closed_deal(44) is None

@@ -50,6 +50,14 @@ class MT5ConnectionError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class ClosedDeal:
+    ticket: int
+    price: float
+    reason: str  # "stop_hit" | "target_hit" | "manual_or_other"
+    profit: float
+
+
 @dataclass
 class RawPosition:
     """What we need out of MT5's positions_get() rows -- deliberately not
@@ -158,6 +166,30 @@ class MT5Client:
             day_start_balance=day_start_balance, phase_start_balance=phase_start_balance,
             open_positions=open_positions,
         )
+
+    def fetch_closed_deal(self, ticket: int) -> ClosedDeal | None:
+        """The least-verified method in this module -- history_deals_get's
+        exact return shape/behavior (does `position=` filter the way the
+        docs suggest, is there always exactly one DEAL_ENTRY_OUT deal per
+        closed position, how do partial closes show up) needs confirming
+        against a real account. Returns None (not a raised error) when
+        nothing is found, since "this position hasn't shown up in history
+        yet" is an expected, retry-worthy state, not a connection failure."""
+        deals = self._mt5.history_deals_get(position=ticket)
+        if not deals:
+            return None
+        closing = next((d for d in deals if d.entry == self._mt5.DEAL_ENTRY_OUT), None)
+        if closing is None:
+            return None
+        return ClosedDeal(ticket=ticket, price=closing.price,
+                           reason=self._deal_reason_name(closing.reason), profit=closing.profit)
+
+    def _deal_reason_name(self, reason_code) -> str:
+        if reason_code == getattr(self._mt5, "DEAL_REASON_SL", object()):
+            return "stop_hit"
+        if reason_code == getattr(self._mt5, "DEAL_REASON_TP", object()):
+            return "target_hit"
+        return "manual_or_other"
 
     def _position_risk(self, position) -> float:
         """$ lost if this position's OWN stop is hit -- computed from its

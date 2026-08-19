@@ -29,6 +29,11 @@ class FakeMT5:
     TRADE_RETCODE_INVALID_STOPS = 10016
     TRADE_RETCODE_NO_MONEY = 10019
 
+    DEAL_ENTRY_IN = 0
+    DEAL_ENTRY_OUT = 1
+    DEAL_REASON_SL = 3
+    DEAL_REASON_TP = 4
+
     def __init__(self):
         self.initialized = False
         self.logged_in = False
@@ -46,6 +51,7 @@ class FakeMT5:
         # falls back to a plain successful fill at the requested price.
         self.order_send_queue: list = []
         self.order_send_calls: list[dict] = []
+        self.deals_by_position: dict[int, tuple] = {}
 
     def order_send(self, request):
         self.order_send_calls.append(request)
@@ -96,6 +102,9 @@ class FakeMT5:
     def symbol_info(self, symbol):
         return self.symbols.get(symbol)
 
+    def history_deals_get(self, position=None):
+        return self.deals_by_position.get(position, ())
+
 
 def make_rate(time_unix, o, h, l, c, tick_volume=1000):
     return {"time": time_unix, "open": o, "high": h, "low": l, "close": c, "tick_volume": tick_volume}
@@ -103,6 +112,10 @@ def make_rate(time_unix, o, h, l, c, tick_volume=1000):
 
 def make_position(ticket, symbol, price_open, sl, volume):
     return SimpleNamespace(ticket=ticket, symbol=symbol, price_open=price_open, sl=sl, volume=volume)
+
+
+def make_deal(entry, price, profit, reason):
+    return SimpleNamespace(entry=entry, price=price, profit=profit, reason=reason)
 
 
 def make_symbol_info(trade_tick_value=1.0, trade_tick_size=0.0001, trade_contract_size=100000.0,
