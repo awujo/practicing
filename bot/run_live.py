@@ -1,29 +1,43 @@
 """
-Entry point -- wires the real `MetaTrader5` package into everything else
-in bot/. This is the one file in bot/ that imports MetaTrader5 directly;
-everywhere else takes it as an injected dependency specifically so it can
-be swapped for the test fake (see bot/tests/fake_mt5.py).
+Entry point -- wires a real MT5 connection into everything else in bot/.
+This is the one file in bot/ that imports an MT5 client library directly;
+everywhere else takes `mt5` as an injected dependency specifically so it
+can be swapped for the test fake (see bot/tests/fake_mt5.py).
 
-Not runnable in this sandbox (no MT5 terminal reachable, and the
-MetaTrader5 package itself needs a running terminal to connect to) --
-this needs to run on the machine that actually has MT5 installed and
-logged in (a Windows VPS, or Linux via Wine per the earlier discussion).
+Two ways to get a real `mt5` object, chosen with --bridge:
 
-Usage:
+  - "native" (default on Windows): `import MetaTrader5 as mt5` directly.
+    Only works when this process itself is running as a Windows process
+    with a local MT5 terminal -- i.e. actually on Windows, or run via
+    Wine's own Python interpreter (not your system Python).
+
+  - "mt5linux" (what an Ubuntu VPS needs): the official MetaTrader5
+    package has no Linux wheels, so native Ubuntu Python can't import it
+    directly even with the MT5 terminal running under Wine. The
+    `mt5linux` package bridges this: a small proxy server runs inside
+    Wine's Python (where the real MetaTrader5 package works), and this
+    process connects to it over a local socket as a normal native Linux
+    Python client. See bot/README.md's "Ubuntu VPS setup" section for how
+    to actually get the Wine-side server running -- that half is NOT
+    something this script does for you.
+
+Not runnable in this sandbox either way (no MT5 terminal reachable) --
+needs a machine with MT5 actually installed and logged in.
+
+Usage (Ubuntu VPS via mt5linux, the expected path for this deployment):
     MT5_PHASE1_LOGIN=... MT5_PHASE1_PASSWORD=... MT5_PHASE1_SERVER=... \\
-    MT5_SYMBOL_SUFFIX=.a \\
     python -m bot.run_live --account-type prop_firm --phase phase1 \\
-        --instruments EURUSD,GBPUSD,USDJPY,XAUUSD
+        --instruments EURUSD,GBPUSD,USDJPY,XAUUSD \\
+        --bridge mt5linux --bridge-host 127.0.0.1 --bridge-port 18812
 
-MT5_SYMBOL_SUFFIX defaults to "" (no suffix) -- set it to whatever your
-broker's Market Watch actually shows (e.g. ".a", "m", "_i") before
-running against a real account. Check by opening MT5's Market Watch and
-comparing what's listed there against the plain internal names in
-backtest/data_pipeline/instruments.py.
+MT5_SYMBOL_SUFFIX / --symbol-suffix defaults to "" (no suffix) -- set it
+to whatever your broker's Market Watch actually shows (e.g. ".a", "m",
+"_i") before running against a real account.
 """
 
 import argparse
 import logging
+import os
 import time
 
 from .config import load_personal_profile, load_prop_firm_profile
@@ -35,6 +49,24 @@ from .orchestrator import LiveBot
 POLL_SECONDS = 5  # how often run_once() checks for a new candle close -- cheap when nothing's happened
 
 
+def _connect_mt5(bridge: str, bridge_host: str, bridge_port: int):
+    """Returns an object exposing the same method/attribute surface as
+    the real `MetaTrader5` module -- either the module itself (native) or
+    an mt5linux proxy instance (bridge). Both are handed to MT5Client/
+    MT5Execution unchanged; neither of those classes knows or cares which
+    one they got, by design."""
+    if bridge == "native":
+        import MetaTrader5 as mt5
+        return mt5
+    if bridge == "mt5linux":
+        # NOT verified from this development environment -- mt5linux's
+        # exact constructor signature/behavior needs confirming against
+        # your actual Wine-side server once it's running.
+        from mt5linux import MetaTrader5
+        return MetaTrader5(host=bridge_host, port=bridge_port)
+    raise ValueError(f"unknown --bridge {bridge!r}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run the live SLK trading bot against MT5.")
     parser.add_argument("--account-type", choices=("prop_firm", "personal"), required=True)
@@ -42,7 +74,13 @@ def main():
                          help="required when --account-type=prop_firm")
     parser.add_argument("--instruments", required=True, help="comma-separated, e.g. EURUSD,GBPUSD,XAUUSD")
     parser.add_argument("--style", choices=("aggressive", "conservative"), default="conservative")
-    parser.add_argument("--symbol-suffix", default="", help="broker's Market Watch suffix, e.g. .a")
+    parser.add_argument("--symbol-suffix", default=os.environ.get("MT5_SYMBOL_SUFFIX", ""),
+                         help="broker's Market Watch suffix, e.g. .a")
+    parser.add_argument("--bridge", choices=("native", "mt5linux"), default="mt5linux",
+                         help="'mt5linux' for an Ubuntu/Wine VPS (default), 'native' when this process "
+                              "itself runs as a Windows process with MT5 installed locally")
+    parser.add_argument("--bridge-host", default="127.0.0.1", help="mt5linux server host")
+    parser.add_argument("--bridge-port", type=int, default=18812, help="mt5linux server port")
     parser.add_argument("--audit-db", default="bot_audit_log.db")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args()
@@ -57,7 +95,7 @@ def main():
     else:
         profile = load_personal_profile()
 
-    import MetaTrader5 as mt5  # imported here, not at module scope -- see module docstring
+    mt5 = _connect_mt5(args.bridge, args.bridge_host, args.bridge_port)
 
     creds = profile.active_credentials
     mt5_client = MT5Client(mt5, login=creds.login, password=creds.password,

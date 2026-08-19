@@ -1,6 +1,17 @@
 # The rest of bot/ (config, risk_manager, audit_log, mt5_data, mt5_execution,
-# orchestrator) has NO dependency on the real MetaTrader5 package -- it's
-# injected, so all of that is tested against bot/tests/fake_mt5.py without
-# it. Only run_live.py (the actual entry point) needs this, and only on
-# the machine that has an MT5 terminal to connect to.
-MetaTrader5
+# orchestrator) has NO dependency on either package below -- both are only
+# ever imported inside run_live.py's _connect_mt5(), and only the branch
+# matching your --bridge choice actually runs. Everything else is tested
+# against bot/tests/fake_mt5.py without needing either installed.
+#
+# On an Ubuntu VPS (the expected deployment target -- see the "Ubuntu VPS
+# setup" section in this file's README.md): install mt5linux HERE, on the
+# native Linux side. The real MetaTrader5 package goes inside Wine's own
+# Python instead (a separate install, not this requirements.txt -- see
+# the README) since it has no Linux wheels.
+mt5linux
+
+# Only needed if you ever run this directly on Windows (--bridge native)
+# instead of the Ubuntu/mt5linux path. Leave commented out on the VPS --
+# `pip install` will just fail on Linux since there's no wheel for it.
+# MetaTrader5
