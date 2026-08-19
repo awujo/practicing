@@ -14,6 +14,21 @@ class FakeMT5:
     TIMEFRAME_H4 = "H4"
     TIMEFRAME_H1 = "H1"
 
+    ORDER_TYPE_BUY = 0
+    ORDER_TYPE_SELL = 1
+    TRADE_ACTION_DEAL = 1
+    ORDER_TIME_GTC = 0
+    ORDER_FILLING_IOC = 1
+
+    TRADE_RETCODE_DONE = 10009
+    TRADE_RETCODE_REQUOTE = 10004
+    TRADE_RETCODE_TIMEOUT = 10012
+    TRADE_RETCODE_CONNECTION = 10031
+    TRADE_RETCODE_PRICE_CHANGED = 10020
+    TRADE_RETCODE_PRICE_OFF = 10021
+    TRADE_RETCODE_INVALID_STOPS = 10016
+    TRADE_RETCODE_NO_MONEY = 10019
+
     def __init__(self):
         self.initialized = False
         self.logged_in = False
@@ -25,6 +40,19 @@ class FakeMT5:
         self._last_error = (0, "no error")
         self._fail_init = False
         self._fail_login = False
+
+        # order_send scripting: a queue of results to return in sequence
+        # (lets tests simulate "requote then success", etc.); if empty,
+        # falls back to a plain successful fill at the requested price.
+        self.order_send_queue: list = []
+        self.order_send_calls: list[dict] = []
+
+    def order_send(self, request):
+        self.order_send_calls.append(request)
+        if self.order_send_queue:
+            return self.order_send_queue.pop(0)
+        return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=1001,
+                                price=request["price"], comment="ok")
 
     def initialize(self):
         if self._fail_init:
@@ -77,6 +105,10 @@ def make_position(ticket, symbol, price_open, sl, volume):
     return SimpleNamespace(ticket=ticket, symbol=symbol, price_open=price_open, sl=sl, volume=volume)
 
 
-def make_symbol_info(trade_tick_value=1.0, trade_tick_size=0.0001, trade_contract_size=100000.0):
+def make_symbol_info(trade_tick_value=1.0, trade_tick_size=0.0001, trade_contract_size=100000.0,
+                      trade_mode=1, volume_min=0.01, volume_max=100.0, volume_step=0.01,
+                      point=0.0001, trade_stops_level=0, spread=10):
     return SimpleNamespace(trade_tick_value=trade_tick_value, trade_tick_size=trade_tick_size,
-                            trade_contract_size=trade_contract_size)
+                            trade_contract_size=trade_contract_size, trade_mode=trade_mode,
+                            volume_min=volume_min, volume_max=volume_max, volume_step=volume_step,
+                            point=point, trade_stops_level=trade_stops_level, spread=spread)
