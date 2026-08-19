@@ -6,8 +6,9 @@ from ..mt5_data import MT5Client, MT5ConnectionError
 DAY = 86400
 
 
-def make_client(fake, suffix=""):
-    return MT5Client(fake, login=12345, password="pw", server="Demo-Server", symbol_suffix=suffix)
+def make_client(fake, suffix="", overrides=None):
+    return MT5Client(fake, login=12345, password="pw", server="Demo-Server",
+                      symbol_suffix=suffix, symbol_overrides=overrides)
 
 
 def test_connect_succeeds_and_marks_healthy():
@@ -196,3 +197,9 @@ def test_fetch_closed_deal_returns_none_when_only_an_entry_deal_exists_no_exit_y
     fake.deals_by_position[44] = (make_deal(entry=fake.DEAL_ENTRY_IN, price=1.1737, profit=0.0, reason=0),)
     client = make_client(fake)
     assert client.fetch_closed_deal(44) is None
+
+
+def test_broker_symbol_override_takes_priority_over_suffix():
+    client = make_client(FakeMT5(), suffix=".a", overrides={"NAS100": "USTEC"})
+    assert client.broker_symbol("NAS100") == "USTEC"
+    assert client.broker_symbol("EURUSD") == "EURUSD.a"

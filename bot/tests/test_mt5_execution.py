@@ -208,3 +208,9 @@ def test_broker_symbol_suffix_is_applied_to_orders():
     ex = make_exec(fake, symbol_suffix=".a")
     ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert fake.order_send_calls[-1]["symbol"] == "EURUSD.a"
+
+
+def test_broker_symbol_override_takes_priority_over_suffix_in_execution_too():
+    ex = make_exec(FakeMT5(), symbol_suffix=".a", symbol_overrides={"NAS100": "USTEC"})
+    assert ex.broker_symbol("NAS100") == "USTEC"
+    assert ex.broker_symbol("EURUSD") == "EURUSD.a"

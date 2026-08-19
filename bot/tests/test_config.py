@@ -1,7 +1,7 @@
 import pytest
 
 from ..config import (
-    AccountProfile, MT5Credentials, PhaseConfig, PhaseRules, PersonalRules,
+    AccountProfile, MT5Credentials, PhaseConfig, PhaseRules, PersonalRules, SymbolMap,
     DEFAULT_PHASE1_RULES, DEFAULT_PHASE2_RULES, DEFAULT_FUNDED_RULES,
     _credentials_from_env, load_prop_firm_profile, load_personal_profile,
 )
@@ -98,3 +98,24 @@ def test_load_personal_profile_reads_mt5_personal_env_vars(monkeypatch):
     profile = load_personal_profile(risk_flat=750.0)
     assert profile.account_type == "personal"
     assert profile.active_rules.risk_normal == 750.0
+
+
+# ---- SymbolMap ----
+
+def test_symbol_map_applies_the_suffix_to_unmapped_symbols():
+    m = SymbolMap(suffix=".a")
+    assert m.broker_symbol("EURUSD") == "EURUSD.a"
+
+
+def test_symbol_map_with_no_suffix_returns_the_plain_name():
+    m = SymbolMap()
+    assert m.broker_symbol("EURUSD") == "EURUSD"
+
+
+def test_symbol_map_override_takes_priority_over_the_suffix():
+    # Confirmed on MetaQuotes-Demo: NAS100 doesn't exist as such -- it's
+    # USTEC. A suffix alone can never produce that, only an override can.
+    m = SymbolMap(suffix=".a", overrides={"NAS100": "USTEC", "JP225": "JPN225"})
+    assert m.broker_symbol("NAS100") == "USTEC"
+    assert m.broker_symbol("JP225") == "JPN225"
+    assert m.broker_symbol("EURUSD") == "EURUSD.a"  # unmapped symbols still get the suffix

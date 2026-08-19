@@ -36,6 +36,24 @@ class MT5Credentials:
 
 
 @dataclass(frozen=True)
+class SymbolMap:
+    """How internal instrument codes (backtest/data_pipeline/instruments.py's
+    EURUSD, NAS100, JP225, ...) map onto whatever a specific broker's
+    Market Watch actually calls them. A single suffix (".a", "m", ...)
+    covers most brokers, but NOT all -- confirmed on MetaQuotes-Demo, for
+    example: `NAS100` doesn't exist at all, it's `USTEC`; `JP225` is
+    `JPN225`. `overrides` handles a genuine rename like that; `suffix`
+    still applies to every OTHER symbol not explicitly overridden."""
+    suffix: str = ""
+    overrides: dict[str, str] = field(default_factory=dict)
+
+    def broker_symbol(self, internal_symbol: str) -> str:
+        if internal_symbol in self.overrides:
+            return self.overrides[internal_symbol]
+        return f"{internal_symbol}{self.suffix}"
+
+
+@dataclass(frozen=True)
 class PhaseRules:
     """The risk rules active for one phase. `profit_target_pct=None` means
     no target (funded stage: no target to hit, just don't breach)."""

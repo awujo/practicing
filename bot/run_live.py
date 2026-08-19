@@ -33,9 +33,21 @@ Usage (Ubuntu VPS via mt5linux, the expected path for this deployment):
 MT5_SYMBOL_SUFFIX / --symbol-suffix defaults to "" (no suffix) -- set it
 to whatever your broker's Market Watch actually shows (e.g. ".a", "m",
 "_i") before running against a real account.
+
+A suffix alone isn't always enough -- some symbols get renamed outright,
+not just suffixed. MT5_SYMBOL_OVERRIDES / --symbol-overrides takes a JSON
+object of {internal_name: broker_name} for exactly those cases, applied
+on top of (and taking priority over) the suffix -- see config.SymbolMap.
+METAQUOTES_DEMO_OVERRIDES below is the confirmed mapping for testing
+against the MetaQuotes-Demo server specifically (NAS100 -> USTEC,
+JP225 -> JPN225) -- it is NOT applied automatically, since a real prop
+firm's broker will very likely need a different mapping. USOIL and
+ETHUSD are NOT in it -- still unconfirmed on that server as of writing;
+check Market Watch's Energy/Crypto categories before trading either.
 """
 
 import argparse
+import json
 import logging
 import os
 import time
@@ -47,6 +59,16 @@ from .mt5_execution import MT5Execution
 from .orchestrator import LiveBot
 
 POLL_SECONDS = 5  # how often run_once() checks for a new candle close -- cheap when nothing's happened
+
+# Confirmed via the MT5 mobile app's Market Watch search on MetaQuotes-Demo
+# (forex majors/crosses and metals were all plain, no suffix, no rename --
+# only these two indices differed so far). Opt into this explicitly, e.g.:
+#   --symbol-overrides '{"NAS100": "USTEC", "JP225": "JPN225"}'
+# It is never applied automatically.
+METAQUOTES_DEMO_OVERRIDES = {
+    "NAS100": "USTEC",
+    "JP225": "JPN225",
+}
 
 
 def _connect_mt5(bridge: str, bridge_host: str, bridge_port: int):
@@ -76,6 +98,9 @@ def main():
     parser.add_argument("--style", choices=("aggressive", "conservative"), default="conservative")
     parser.add_argument("--symbol-suffix", default=os.environ.get("MT5_SYMBOL_SUFFIX", ""),
                          help="broker's Market Watch suffix, e.g. .a")
+    parser.add_argument("--symbol-overrides", default=os.environ.get("MT5_SYMBOL_OVERRIDES", "{}"),
+                         help='JSON {internal_name: broker_name} for symbols that are renamed outright, '
+                              'not just suffixed, e.g. \'{"NAS100": "USTEC"}\'')
     parser.add_argument("--bridge", choices=("native", "mt5linux"), default="mt5linux",
                          help="'mt5linux' for an Ubuntu/Wine VPS (default), 'native' when this process "
                               "itself runs as a Windows process with MT5 installed locally")
@@ -95,15 +120,20 @@ def main():
     else:
         profile = load_personal_profile()
 
+    try:
+        symbol_overrides = json.loads(args.symbol_overrides)
+    except json.JSONDecodeError as exc:
+        parser.error(f"--symbol-overrides is not valid JSON: {exc}")
+
     mt5 = _connect_mt5(args.bridge, args.bridge_host, args.bridge_port)
 
     creds = profile.active_credentials
-    mt5_client = MT5Client(mt5, login=creds.login, password=creds.password,
-                            server=creds.server, symbol_suffix=args.symbol_suffix)
+    mt5_client = MT5Client(mt5, login=creds.login, password=creds.password, server=creds.server,
+                            symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides)
     mt5_client.connect()
     logger.info("connected to MT5 (%s @ %s)", creds.login, creds.server)
 
-    mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix)
+    mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides)
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 

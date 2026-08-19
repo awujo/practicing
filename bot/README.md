@@ -52,13 +52,21 @@ drift risk between what was backtested and what trades live.
      the machine that's going to use them. A demo account is low-stakes;
      build the habit before it's a prop-firm or funded login.
 
-2. **Symbol suffix.** Check MT5's Market Watch search for each of
+2. **Symbol mapping.** Check MT5's Market Watch search for each of
    `backtest/data_pipeline/instruments.py`'s plain symbol names (EURUSD,
-   XAUUSD, US30, NAS100, JP225, ETHUSD, USOIL, ...) -- forex majors and
-   indices/metals/crypto sometimes get different suffix treatment even on
-   the SAME server, so checking only one or two forex pairs isn't enough
-   to conclude there's no suffix anywhere. Set `--symbol-suffix` (or
-   `MT5_SYMBOL_SUFFIX`) to whatever's actually there.
+   XAUUSD, US30, NAS100, JP225, ETHUSD, USOIL, ...). A suffix isn't
+   always the whole story -- confirmed on MetaQuotes-Demo: forex majors/
+   crosses and metals are all plain (no suffix), but `NAS100` doesn't
+   exist there at all -- it's `USTEC` -- and `JP225` is `JPN225`. `USOIL`
+   and `ETHUSD` are still unconfirmed on that server; check Energy/Crypto
+   categories before trading either. `config.SymbolMap` handles both
+   cases: `--symbol-suffix` (`MT5_SYMBOL_SUFFIX`) for a plain suffix
+   applied to everything, `--symbol-overrides` (`MT5_SYMBOL_OVERRIDES`,
+   JSON) for symbols that are renamed outright -- overrides win when both
+   would apply to the same symbol. `run_live.py`'s `METAQUOTES_DEMO_OVERRIDES`
+   constant holds the confirmed mapping for that specific server; it's
+   never applied automatically since a real prop firm's broker will very
+   likely need a different one.
 
 3. **Demo first.** Test everything against a demo MT5 account before
    pointing this at a prop-firm evaluation or personal funded account --
@@ -78,7 +86,8 @@ drift risk between what was backtested and what trades live.
    pip install -r bot/requirements.txt
    MT5_PHASE1_LOGIN=... MT5_PHASE1_PASSWORD=... MT5_PHASE1_SERVER=... \
        python -m bot.run_live --account-type prop_firm --phase phase1 \
-       --instruments EURUSD,GBPUSD,USDJPY,XAUUSD --symbol-suffix ""
+       --instruments EURUSD,GBPUSD,USDJPY,XAUUSD,NAS100,JP225 \
+       --symbol-overrides '{"NAS100": "USTEC", "JP225": "JPN225"}'
    ```
 
 ## Ubuntu VPS setup (mt5linux bridge)
@@ -128,7 +137,7 @@ a sign something in `bot/`'s own code is wrong.
 
 ## Testing
 
-`bot/tests/` -- 90 tests, all runnable without any MT5 connection
+`bot/tests/` -- 95 tests, all runnable without any MT5 connection
 (`fake_mt5.py` mimics the real package's documented return shapes for
 `mt5_data.py`/`mt5_execution.py`; everything else has no MT5 dependency
 at all). Run with `python -m pytest bot/`.

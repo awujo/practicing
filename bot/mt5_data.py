@@ -31,6 +31,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from backtest.engine.candles import Candle
+from .config import SymbolMap
 from .risk_manager import AccountState, OpenPosition
 
 GRANULARITIES = ("D", "H4", "H1", "W")
@@ -73,12 +74,13 @@ class MT5Client:
     responsible for catching MT5ConnectionError and going fail-closed
     (stop opening new trades) rather than assuming a retry will succeed."""
 
-    def __init__(self, mt5_module, login: int, password: str, server: str, symbol_suffix: str = ""):
+    def __init__(self, mt5_module, login: int, password: str, server: str, symbol_suffix: str = "",
+                 symbol_overrides: dict[str, str] | None = None):
         self._mt5 = mt5_module
         self._login = login
         self._password = password
         self._server = server
-        self._symbol_suffix = symbol_suffix
+        self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
         self._connected = False
         # last CLOSED candle time seen per (internal_symbol, granularity) --
         # used to detect "a new candle just closed" without re-processing
@@ -86,7 +88,7 @@ class MT5Client:
         self._last_closed_time: dict[tuple[str, str], pd.Timestamp] = {}
 
     def broker_symbol(self, internal_symbol: str) -> str:
-        return f"{internal_symbol}{self._symbol_suffix}"
+        return self._symbol_map.broker_symbol(internal_symbol)
 
     def connect(self) -> None:
         if not self._mt5.initialize():

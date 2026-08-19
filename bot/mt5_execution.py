@@ -20,6 +20,8 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 
+from .config import SymbolMap
+
 
 # A conservative allowlist, not "retry everything" -- retcodes here are
 # transient/broker-side (requote, timeout, connection issue) and retrying
@@ -61,11 +63,11 @@ class ExecutionResult:
 
 
 class MT5Execution:
-    def __init__(self, mt5_module, symbol_suffix: str = "", max_slippage_points: float = 10,
-                 max_spread_points: float | None = None, max_retries: int = 3,
-                 retry_backoff_seconds: float = 1.0, magic_number: int = 20260101):
+    def __init__(self, mt5_module, symbol_suffix: str = "", symbol_overrides: dict[str, str] | None = None,
+                 max_slippage_points: float = 10, max_spread_points: float | None = None,
+                 max_retries: int = 3, retry_backoff_seconds: float = 1.0, magic_number: int = 20260101):
         self._mt5 = mt5_module
-        self._symbol_suffix = symbol_suffix
+        self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
         self._max_slippage_points = max_slippage_points
         self._max_spread_points = max_spread_points
         self._max_retries = max_retries
@@ -73,7 +75,7 @@ class MT5Execution:
         self._magic_number = magic_number
 
     def broker_symbol(self, internal_symbol: str) -> str:
-        return f"{internal_symbol}{self._symbol_suffix}"
+        return self._symbol_map.broker_symbol(internal_symbol)
 
     def compute_lot_size(self, internal_symbol: str, risk_amount: float,
                           entry_price: float, stop_loss: float) -> ValidationResult:
