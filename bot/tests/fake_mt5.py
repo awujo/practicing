@@ -18,7 +18,9 @@ class FakeMT5:
     ORDER_TYPE_SELL = 1
     TRADE_ACTION_DEAL = 1
     ORDER_TIME_GTC = 0
+    ORDER_FILLING_FOK = 0
     ORDER_FILLING_IOC = 1
+    ORDER_FILLING_RETURN = 2
 
     TRADE_RETCODE_DONE = 10009
     TRADE_RETCODE_REQUOTE = 10004
@@ -120,8 +122,9 @@ def make_deal(entry, price, profit, reason):
 
 def make_symbol_info(trade_tick_value=1.0, trade_tick_size=0.0001, trade_contract_size=100000.0,
                       trade_mode=1, volume_min=0.01, volume_max=100.0, volume_step=0.01,
-                      point=0.0001, trade_stops_level=0, spread=10):
+                      point=0.0001, trade_stops_level=0, spread=10, filling_mode=3):
     return SimpleNamespace(trade_tick_value=trade_tick_value, trade_tick_size=trade_tick_size,
                             trade_contract_size=trade_contract_size, trade_mode=trade_mode,
                             volume_min=volume_min, volume_max=volume_max, volume_step=volume_step,
-                            point=point, trade_stops_level=trade_stops_level, spread=spread)
+                            point=point, trade_stops_level=trade_stops_level, spread=spread,
+                            filling_mode=filling_mode)

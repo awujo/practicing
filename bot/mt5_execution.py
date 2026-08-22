@@ -150,7 +150,7 @@ class MT5Execution:
             "magic": self._magic_number,
             "comment": "slk-bot",
             "type_time": self._mt5.ORDER_TIME_GTC,
-            "type_filling": self._mt5.ORDER_FILLING_IOC,
+            "type_filling": self._filling_type(symbol),
         }
 
         attempts = 0
@@ -185,6 +185,22 @@ class MT5Execution:
 
         return ExecutionResult(success=False, requested_price=entry_price,
                                 reason="exhausted retries", attempts=attempts)
+
+    def _filling_type(self, symbol: str) -> int:
+        """Picks a filling mode the symbol/broker actually supports rather
+        than assuming IOC everywhere -- `symbol_info().filling_mode` is a
+        bitmask (SYMBOL_FILLING_FOK=1, SYMBOL_FILLING_IOC=2) of what's
+        allowed for that symbol; some brokers (confirmed on MetaQuotes-
+        Demo) support neither and require "Market execution" (RETURN)
+        instead. Sending an unsupported mode gets the whole order rejected
+        with TRADE_RETCODE_INVALID_FILL, not silently downgraded."""
+        info = self._mt5.symbol_info(symbol)
+        mode = getattr(info, "filling_mode", 0) if info else 0
+        if mode & 2:
+            return self._mt5.ORDER_FILLING_IOC
+        if mode & 1:
+            return self._mt5.ORDER_FILLING_FOK
+        return self._mt5.ORDER_FILLING_RETURN
 
     def _point_size(self, symbol: str) -> float:
         info = self._mt5.symbol_info(symbol)

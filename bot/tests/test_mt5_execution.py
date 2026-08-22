@@ -214,3 +214,35 @@ def test_broker_symbol_override_takes_priority_over_suffix_in_execution_too():
     ex = make_exec(FakeMT5(), symbol_suffix=".a", symbol_overrides={"NAS100": "USTEC"})
     assert ex.broker_symbol("NAS100") == "USTEC"
     assert ex.broker_symbol("EURUSD") == "EURUSD.a"
+
+
+# ---- filling mode selection ----
+# Confirmed live on MetaQuotes-Demo: hardcoding ORDER_FILLING_IOC gets a
+# real order rejected with TRADE_RETCODE_INVALID_FILL on brokers that only
+# support "Market execution" (Return). type_filling must be picked from
+# the symbol's own filling_mode bitmask, not assumed.
+
+def test_order_uses_ioc_when_the_symbol_supports_it():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001, filling_mode=2)  # IOC bit only
+    ex = make_exec(fake)
+    ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
+    assert fake.order_send_calls[-1]["type_filling"] == fake.ORDER_FILLING_IOC
+
+
+def test_order_falls_back_to_fok_when_ioc_is_not_supported():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001, filling_mode=1)  # FOK bit only
+    ex = make_exec(fake)
+    ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
+    assert fake.order_send_calls[-1]["type_filling"] == fake.ORDER_FILLING_FOK
+
+
+def test_order_falls_back_to_return_when_neither_fok_nor_ioc_is_supported():
+    # This is the exact case hit against the real MetaQuotes-Demo broker --
+    # filling_mode with neither bit set means "Market execution" only.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001, filling_mode=0)
+    ex = make_exec(fake)
+    ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
+    assert fake.order_send_calls[-1]["type_filling"] == fake.ORDER_FILLING_RETURN
