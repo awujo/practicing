@@ -96,44 +96,127 @@ MT5 has no native Linux client and the `MetaTrader5` Python package has
 no Linux wheels, so this needs two pieces running side by side: the real
 MT5 terminal + a Windows Python under Wine (where `MetaTrader5` actually
 works), and this repo's normal native-Linux Python talking to it through
-`mt5linux`'s bridge server. Run this in its own directory/venv, isolated
-from whatever else is already on the VPS:
+`mt5linux`'s bridge server. This section reflects what actually worked,
+end to end, against a real VPS and a real MetaQuotes-Demo account --
+a manual `wine mt5setup.exe` install was tried first and abandoned after
+hours of a stuck installer with no clear cause; the Docker route below
+worked on the first real attempt.
 
 ```bash
-# 1. Wine + the MT5 terminal
-sudo dpkg --add-architecture i386 && sudo apt update
-sudo apt install -y wine wine32 winbind
-winecfg   # first run creates ~/.wine -- accept the defaults (Windows 10)
-wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe
-wine mt5setup.exe   # click through the installer
+# 1. The MT5 terminal + Wine + a KasmVNC browser-viewable desktop, all in
+#    one prebuilt image -- avoids the manual Wine/Xvfb dance entirely.
+#    Pick a host port for the noVNC viewer that doesn't collide with
+#    anything else already running (check `docker ps` / `ss -tlnp` first).
+docker run -d --name mt5 -p 18080:3000 gmag11/metatrader5_vnc
+# Watch it install (Wine, the MT5 terminal, a Wine-side Python) via:
+docker logs -f mt5
+# Then open http://<vps-ip>:18080 in a browser -- you'll see the actual
+# MT5 desktop. Click through the first-run "Select a company to open an
+# account with" dialog (MetaQuotes Ltd.) and log in with your demo
+# credentials there, same as you would on a real desktop.
 
-# 2. A Windows Python inside that same Wine prefix, and the real
-#    MetaTrader5 package installed INTO it (not your system Python)
-wget https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
-wine python-3.11.9-amd64.exe   # click through, note the install path
-wine "C:\Users\$USER\AppData\Local\Programs\Python\Python311\python.exe" -m pip install MetaTrader5 mt5linux
+# 2. mt5linux: the image ships a NEWER version (1.1.1 as of writing) that
+#    has genuine Python-3.12-only syntax in a 3.12-targeted rewrite --
+#    fails with a SyntaxError on this image's Python 3.11. Downgrade to
+#    the older, simpler RPyC-bridge version on BOTH sides:
+docker exec -u abc mt5 pip3 install --break-system-packages "mt5linux<1.0"   # Linux side
+docker exec -u abc mt5 wine "C:\Program Files (x86)\Python39-32\python.exe" \
+    -m pip install "mt5linux<1.0"                                            # Wine side
 
-# 3. Start the bridge server (leave this running -- tmux/screen/systemd,
-#    not your interactive shell, since it needs to survive logout)
-wine "C:\Users\$USER\AppData\Local\Programs\Python\Python311\python.exe" -m mt5linux
+# 3. numpy 2.x breaks the real MetaTrader5 package's compiled _core on
+#    the Wine side (built against numpy<2):
+docker exec -u abc mt5 wine "C:\Program Files (x86)\Python39-32\python.exe" \
+    -m pip install "numpy<2"
 
-# 4. Native Linux side: this repo's own venv, separate from other
-#    projects on the VPS
-cd /path/to/trading
-python3 -m venv .venv-bot && source .venv-bot/bin/activate
-pip install -r backtest/data_pipeline/requirements.txt -r bot/requirements.txt
+# 4. Start the bridge server on the Wine side (tmux, not your interactive
+#    shell -- a dropped SSH session killing this is exactly what cost
+#    hours during initial setup):
+tmux new -s bridge1
+docker exec -u abc mt5 wine "C:\Program Files (x86)\Python39-32\python.exe" -m mt5linux
+# Ctrl+B then D to detach once it prints "server started on [...]:18812"
+
+# 5. In the MT5 terminal itself (via the noVNC viewer), click "Algo
+#    Trading" in the toolbar so it's ON (green) -- fresh accounts start
+#    with it off, and order_send() gets rejected without it, even though
+#    the API connection itself works fine.
+
+# 6. Native Linux side: this repo's own dependencies inside the container
+#    (no separate venv needed -- the container's own Python is already
+#    isolated from the host):
+docker cp /path/to/trading mt5:/config/trading
+docker exec -u abc mt5 pip3 install --break-system-packages \
+    -r /config/trading/bot/requirements.txt \
+    -r /config/trading/backtest/data_pipeline/requirements.txt
 MT5_PHASE1_LOGIN=... MT5_PHASE1_PASSWORD=... MT5_PHASE1_SERVER=MetaQuotes-Demo \
-    python -m bot.run_live --account-type prop_firm --phase phase1 \
+    docker exec -u abc -e MT5_PHASE1_LOGIN -e MT5_PHASE1_PASSWORD -e MT5_PHASE1_SERVER \
+    -w /config/trading mt5 python3 -m bot.run_live --account-type prop_firm --phase phase1 \
     --instruments EURUSD,GBPUSD,USDJPY,XAUUSD --symbol-suffix "" \
     --bridge mt5linux --bridge-host 127.0.0.1 --bridge-port 18812
 ```
 
-This whole sequence is written from `mt5linux`/Wine's documented usage
-patterns, not run end-to-end from this development environment -- exact
-paths, package versions, and the bridge server's startup behavior will
-need real troubleshooting on your actual VPS. Expect the first attempt
-not to work cleanly; that's normal for a Wine-based bridge like this, not
-a sign something in `bot/`'s own code is wrong.
+**Updating the code on the VPS later:** `docker cp` copies *into* an
+existing directory rather than replacing it if the destination already
+exists -- `docker cp .../bot mt5:/config/trading/bot` silently nests as
+`/config/trading/bot/bot/...` instead of overwriting, leaving stale code
+running with no error. Always `docker exec -u root mt5 rm -rf
+/config/trading/bot` first, then `docker cp` fresh (needs `-u root`,
+since the earlier `docker cp` leaves those files root-owned and the
+non-root `abc` user can't delete them).
+
+**Memory:** MT5's embedded WebView2 browser component (used for the
+in-terminal Market/news panels, unrelated to actual trading) can eat
+several GB on its own -- `docker exec -u root mt5 pkill -f
+msedgewebview2` reclaims it; the core trading pipeline doesn't depend on
+it. Check `docker stats --no-stream` before assuming you need more RAM.
+
+### Running more than one account on the same VPS
+
+Confirmed working: a second (or third) MT5 account only costs about
+400MB (one `terminal64.exe` + one `mt5linux` server), not a whole
+second container, as long as WebView2 is kept suppressed. Steps:
+
+```bash
+# Copy the terminal install (NOT the whole first account's state) to a
+# new portable location, then strip the copied login/session state --
+# `cp -r` copies Config/ and Bases/ too, which makes the copy silently
+# auto-login as the FIRST account instead of showing a fresh signup wizard.
+docker exec -u abc mt5 cp -r "/config/.wine/drive_c/Program Files/MetaTrader 5" \
+    "/config/.wine/drive_c/MT5-Second"
+docker exec -u abc mt5 rm -rf "/config/.wine/drive_c/MT5-Second/Config" \
+    "/config/.wine/drive_c/MT5-Second/Bases"
+docker exec -d -u abc -e DISPLAY=:1 mt5 wine "C:\MT5-Second\terminal64.exe" /portable
+# Then via noVNC: "Select a company" -> MetaQuotes Ltd. -> "Open a demo
+# account" (not "Login to an existing account" -- there's nothing saved
+# to log into). Enable Algo Trading on this one too.
+
+# A second bridge server, different port (mt5linux's Wine-side Python
+# is one persistent process per port -- one process can only ever be
+# attached to one terminal at a time):
+tmux new -s bridge2
+docker exec -u abc mt5 wine "C:\Program Files (x86)\Python39-32\python.exe" \
+    -m mt5linux --port 18813
+```
+
+**Critical gotcha, confirmed live:** once a second terminal exists on the
+same Wine prefix, `mt5.initialize()` called with **no path** stops being
+reliable for either terminal -- it resolves to whatever terminal was most
+recently made "default" system-wide (apparently keyed off the last
+explicit `initialize(path=...)` call from *any* process on the prefix),
+not necessarily the one that bridge/account is supposed to be talking to.
+This actually happened: a test meant for the first (default) account
+silently placed a real order on the second account instead, discovered
+only because `account_info().login` was checked before trusting the
+result. **Once more than one terminal exists on a VPS, pass
+`--terminal-path` (`MT5_TERMINAL_PATH`) explicitly for every account, including the first/default one --
+never rely on the no-path fallback again, and always print/check
+`account_info().login` before trusting an order result.**
+
+```bash
+python -m bot.run_live --account-type prop_firm --phase phase1 \
+    --bridge-port 18812 --terminal-path 'C:\Program Files\MetaTrader 5\terminal64.exe' ...
+python -m bot.run_live --account-type prop_firm --phase phase1 \
+    --bridge-port 18813 --terminal-path 'C:\MT5-Second\terminal64.exe' ...
+```
 
 ## Testing
 
