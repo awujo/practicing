@@ -75,12 +75,20 @@ class MT5Client:
     (stop opening new trades) rather than assuming a retry will succeed."""
 
     def __init__(self, mt5_module, login: int, password: str, server: str, symbol_suffix: str = "",
-                 symbol_overrides: dict[str, str] | None = None):
+                 symbol_overrides: dict[str, str] | None = None, terminal_path: str | None = None):
         self._mt5 = mt5_module
         self._login = login
         self._password = password
         self._server = server
         self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
+        # Which terminal.exe to target -- required when more than one MT5
+        # install shares a single Wine prefix/mt5linux bridge (e.g. two
+        # portable accounts on the same VPS): mt5.initialize() with no path
+        # falls back to whatever terminal MT5 finds via its default
+        # lookup, which silently connects to the WRONG account's terminal
+        # rather than failing loudly. None keeps the old single-terminal
+        # behavior (native Windows, or a VPS running only one account).
+        self._terminal_path = terminal_path
         self._connected = False
         # last CLOSED candle time seen per (internal_symbol, granularity) --
         # used to detect "a new candle just closed" without re-processing
@@ -91,7 +99,9 @@ class MT5Client:
         return self._symbol_map.broker_symbol(internal_symbol)
 
     def connect(self) -> None:
-        if not self._mt5.initialize():
+        initialized = self._mt5.initialize(path=self._terminal_path) if self._terminal_path \
+            else self._mt5.initialize()
+        if not initialized:
             raise MT5ConnectionError(f"mt5.initialize() failed: {self._mt5.last_error()}")
         if not self._mt5.login(self._login, password=self._password, server=self._server):
             raise MT5ConnectionError(f"mt5.login() failed for login {self._login}@{self._server}: "

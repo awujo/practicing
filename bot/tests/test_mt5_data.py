@@ -18,6 +18,25 @@ def test_connect_succeeds_and_marks_healthy():
     assert client.is_healthy() is True
 
 
+def test_connect_with_no_terminal_path_calls_initialize_with_no_args():
+    fake = FakeMT5()
+    client = make_client(fake)
+    client.connect()
+    assert fake.initialize_path is None
+
+
+def test_connect_passes_terminal_path_through_to_initialize():
+    # Required when more than one MT5 install shares a single Wine
+    # prefix/mt5linux bridge (e.g. two portable accounts on the same VPS)
+    # -- without this, initialize() falls back to whatever terminal MT5
+    # finds by default, silently connecting to the WRONG account.
+    fake = FakeMT5()
+    client = MT5Client(fake, login=12345, password="pw", server="Demo-Server",
+                        terminal_path=r"C:\MT5-Aggressive\terminal64.exe")
+    client.connect()
+    assert fake.initialize_path == r"C:\MT5-Aggressive\terminal64.exe"
+
+
 def test_connect_raises_on_initialize_failure():
     fake = FakeMT5()
     fake._fail_init = True

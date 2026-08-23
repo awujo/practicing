@@ -106,6 +106,12 @@ def main():
                               "itself runs as a Windows process with MT5 installed locally")
     parser.add_argument("--bridge-host", default="127.0.0.1", help="mt5linux server host")
     parser.add_argument("--bridge-port", type=int, default=18812, help="mt5linux server port")
+    parser.add_argument("--terminal-path", default=os.environ.get("MT5_TERMINAL_PATH"),
+                         help="Windows path to a specific terminal64.exe, e.g. 'C:\\\\MT5-Aggressive\\\\terminal64.exe'. "
+                              "Required when more than one MT5 install/account shares a single Wine prefix/bridge -- "
+                              "without it, mt5.initialize() falls back to whatever terminal MT5 finds by default, "
+                              "which silently connects to the WRONG account rather than failing loudly. Not needed "
+                              "when only one terminal is installed.")
     parser.add_argument("--audit-db", default="bot_audit_log.db")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args()
@@ -129,7 +135,8 @@ def main():
 
     creds = profile.active_credentials
     mt5_client = MT5Client(mt5, login=creds.login, password=creds.password, server=creds.server,
-                            symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides)
+                            symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides,
+                            terminal_path=args.terminal_path)
     mt5_client.connect()
     logger.info("connected to MT5 (%s @ %s)", creds.login, creds.server)
 
