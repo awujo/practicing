@@ -858,6 +858,25 @@ def test_run_backtest_calls_nearest_erl_with_only_daily_and_weekly(synthetic_cac
     assert len(calls[0]) == 2
 
 
+def test_run_backtest_skips_erl_cap_entirely_when_disabled(synthetic_cache, monkeypatch):
+    # erl_cap=False is for comparing flat-rr against ERL-capped, not a
+    # claim that the cap is wrong -- _nearest_erl() must not even be
+    # called (not just have its result ignored), and the recorded target
+    # must equal the flat rr target with nothing capping it.
+    import backtest.engine.runner as runner_module
+    calls = []
+    monkeypatch.setattr(runner_module, "_nearest_erl", lambda *a, **k: calls.append(a))
+
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, erl_cap=False)
+
+    assert len(records) == 1
+    assert calls == []
+    trade = records[0]
+    assert trade.erl_price is None
+    assert trade.erl_capped is False
+    assert trade.primary_target == trade.raw_target
+
+
 def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():
     h4 = [
         H4(0, 1.1000, 1.1010, 1.0995, 1.1005),

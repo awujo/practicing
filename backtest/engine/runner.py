@@ -640,7 +640,8 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
 
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
-                  start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY) -> list[TradeRecord]:
+                  start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
+                  erl_cap: bool = True) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -657,6 +658,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     rr: the target risk:reward ratio (STRATEGY.md's "3:1 or 4:1" --
     `trade_management.RISK_REWARD_PRIMARY`, 3.0, by default), still
     ERL-capped on top exactly as at the default ratio.
+    erl_cap: when True (default), the target is capped at the nearest
+    Daily/Weekly external range liquidity point (see `_nearest_erl()`),
+    per the direct user correction recorded in trade_management.py. When
+    False, every trade targets a flat `rr` with no cap at all -- for
+    comparing the two approaches against each other, not a claim that the
+    cap was wrong.
     """
     if entry_style not in ("aggressive", "conservative"):
         raise ValueError("entry_style must be 'aggressive' or 'conservative'")
@@ -887,7 +894,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # excluded (it's the cascade's own internal timeframe, not external
         # relative to it -- see _nearest_erl()'s docstring). Weekly may be [].
         raw_target = primary_target(entry_price, stop_loss, effective, rr=rr)
-        erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly)
+        erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly) if erl_cap else None
         target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price)
         erl_capped = target != raw_target
 
@@ -1020,11 +1027,15 @@ def main():
     parser.add_argument("--rr", type=_parse_rr, default=None,
                          help=f"Target risk:reward multiple, as a bare number or ratio (STRATEGY.md's '3:1 or 4:1', "
                               f"either '4' or '4:1' both work). Defaults to {RISK_REWARD_PRIMARY:g}.")
+    parser.add_argument("--no-erl-cap", action="store_true",
+                         help="Disable the external range liquidity target cap -- every trade targets a flat "
+                              "--rr instead. For comparing against the (default) ERL-capped behavior.")
     args = parser.parse_args()
 
     start_date, end_date = _resolve_date_range(args.year, args.start, args.end)
 
-    run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date}
+    run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date,
+                  "erl_cap": not args.no_erl_cap}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
     records = run_backtest(args.instrument, args.style, **run_kwargs)
@@ -1036,6 +1047,8 @@ def main():
         suffix += f"_{args.start or 'start'}_{args.end or 'end'}"
     if args.rr is not None:
         suffix += f"_rr{args.rr:g}"
+    if args.no_erl_cap:
+        suffix += "_noerlcap"
     out_path = args.out or f"backtest/results/{args.instrument}_{args.style}{suffix}.csv"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     write_trade_log(records, out_path)
