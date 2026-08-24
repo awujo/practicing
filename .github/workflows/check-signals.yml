@@ -1,0 +1,54 @@
+name: Check recent signals
+
+# On-demand check for whether the strategy produced any entry signal since
+# a given time -- runs entirely on GitHub's own infrastructure, so it
+# never competes with a live bot process for CPU (unlike running the same
+# check on the VPS, which slowed the live bots down doing it).
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "ISO datetime (UTC), e.g. 2026-08-24T05:00:00. Leave blank for the last 24 hours."
+        required: false
+        default: ""
+      instruments:
+        description: "Optional comma-separated internal symbols. Leave blank for all (minus USOIL/ETHUSD)."
+        required: false
+        default: ""
+      styles:
+        description: "Comma-separated entry styles to check."
+        required: false
+        default: "conservative,aggressive"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp || {
+            echo "::error::No 'data-latest' release found -- run the fetch-data workflow first."
+            exit 1
+          }
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+
+      - name: Run check
+        run: |
+          args=()
+          if [ -n "${{ inputs.since }}" ]; then args+=(--since "${{ inputs.since }}"); fi
+          if [ -n "${{ inputs.instruments }}" ]; then args+=(--instruments "${{ inputs.instruments }}"); fi
+          if [ -n "${{ inputs.styles }}" ]; then args+=(--styles "${{ inputs.styles }}"); fi
+          python -m backtest.engine.check_recent_signals "${args[@]}"
