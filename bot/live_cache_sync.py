@@ -52,7 +52,17 @@ def sync_recent_from_mt5(mt5_client: MT5Client, instrument: str, source: str = "
     for granularity in granularities:
         candles = mt5_client.fetch_candles(instrument, granularity, count=lookback_count)
         rows = [
-            {"time": c.time.isoformat(), "open": c.open, "high": c.high,
+            # Matches the exact format every other writer in the data
+            # pipeline uses (dukascopy_client.py, fetch_crypto.py,
+            # resample.py) -- "+00:00" replaced with "Z". Mixing this
+            # with the plain isoformat() (which keeps "+00:00") in the
+            # same CSV column is what caused a real crash: pandas
+            # partially fails to parse a column with two different ISO
+            # variants, leaving some rows as real Timestamps and others
+            # as raw strings, which blows up any later comparison
+            # between them (confirmed live -- TypeError: '>' not
+            # supported between instances of 'Timestamp' and 'str').
+            {"time": c.time.isoformat().replace("+00:00", "Z"), "open": c.open, "high": c.high,
              "low": c.low, "close": c.close, "volume": c.volume}
             for c in candles
         ]

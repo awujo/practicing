@@ -64,7 +64,7 @@ def test_sync_recent_from_mt5_merges_onto_existing_bootstrapped_history(tmp_path
     monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
     # Simulate a prior bootstrap: some older history already on disk.
     cache_module.append("dukascopy", "EURUSD", "H1", [
-        {"time": pd.Timestamp(1 * DAY, unit="s", tz="UTC").isoformat(),
+        {"time": pd.Timestamp(1 * DAY, unit="s", tz="UTC").isoformat().replace("+00:00", "Z"),
          "open": 1.08, "high": 1.09, "low": 1.07, "close": 1.085, "volume": 500.0},
     ])
 
@@ -82,3 +82,32 @@ def test_sync_recent_from_mt5_merges_onto_existing_bootstrapped_history(tmp_path
 
     df = cache_module.load("dukascopy", "EURUSD", "H1")
     assert len(df) == 2  # the old bootstrapped row + the new MT5 row, merged
+
+
+def test_sync_recent_from_mt5_writes_time_in_the_same_iso_format_as_the_rest_of_the_pipeline(tmp_path, monkeypatch):
+    # Confirmed live: writing plain isoformat() (keeps "+00:00") instead of
+    # the "Z"-suffixed format every other writer in the data pipeline uses
+    # (dukascopy_client.py, fetch_crypto.py, resample.py) mixes two ISO
+    # variants in one CSV column. pandas then partially fails to parse it,
+    # leaving some rows as real Timestamps and others as raw strings --
+    # which crashed run_backtest() with a real TypeError comparing them,
+    # taking down the live bot entirely. This checks the raw file content,
+    # not just that pandas can eventually make sense of it.
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),  # forming
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    fake.rates_by_symbol_timeframe[("EURUSD", "D1")] = []
+    fake.rates_by_symbol_timeframe[("EURUSD", "H4")] = []
+    fake.rates_by_symbol_timeframe[("EURUSD", "W1")] = []
+    client = MT5Client(fake, login=1, password="pw", server="Demo")
+
+    sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+
+    raw = cache_module.cache_path("dukascopy", "EURUSD", "H1")
+    with open(raw) as f:
+        content = f.read()
+    assert "+00:00" not in content
+    assert content.count("Z") >= 1
