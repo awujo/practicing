@@ -36,6 +36,26 @@ def test_plain_breakout_detected_without_prior_sweep():
     assert sweep_breaks == []  # no sweep ever happened, so nothing should be tagged sweep_break
 
 
+def test_plain_breakout_uses_the_swing_candles_close_not_its_wick():
+    # Direct user correction: SLK reads breakouts off the LINE CHART (closing
+    # prices) throughout, matching how A/V-shape key levels already work --
+    # not the swing candle's wick. A later candle that closes beyond the
+    # swing candle's CLOSE (1.107) but not beyond its wick HIGH (1.112) must
+    # still count as a breakout.
+    candles = [
+        C(0, 1.100, 1.105, 1.098, 1.102),
+        C(1, 1.102, 1.108, 1.100, 1.106),
+        C(2, 1.106, 1.112, 1.104, 1.107),  # swing high: wick high=1.112, close=1.107
+        C(3, 1.107, 1.109, 1.102, 1.104),
+        C(4, 1.104, 1.106, 1.100, 1.103),
+        C(5, 1.103, 1.108, 1.101, 1.105),
+        C(6, 1.105, 1.111, 1.104, 1.109),  # closes at 1.109: beyond the swing's CLOSE, not its wick
+    ]
+    confirmations = detect_confirmations(candles, n=2)
+    breakouts = [c for c in confirmations if c.kind == ConfirmationKind.BREAKOUT]
+    assert any(c.direction == Direction.BULLISH and c.time == T(6) for c in breakouts)
+
+
 def test_sweep_break_not_double_counted_as_breakout():
     # Reuses Phase 1's exact sweep+break sequence -- must be tagged SWEEP_BREAK only, not also BREAKOUT.
     candles = [

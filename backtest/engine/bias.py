@@ -58,9 +58,17 @@ class Confirmation:
     price: float
 
 
-def detect_confirmations(candles: list[Candle], n: int = 2) -> list[Confirmation]:
+def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout: bool = True) -> list[Confirmation]:
     """Merge plain breakouts and sweep+break-of-structure events into one
-    confirmation stream, each tagged with which visual pattern it was."""
+    confirmation stream, each tagged with which visual pattern it was.
+
+    close_based_breakout: when True (default), a plain breakout's
+    reference level is the swing candle's own CLOSE, matching how SLK
+    reads breakouts off the line chart throughout (direct user
+    correction) -- the same convention A/V-shape key levels already use.
+    When False, the level is the swing candle's wick extreme instead (the
+    pre-correction behavior) -- kept only so the two can be compared
+    against each other, not because the wick-based reading is preferred."""
     tracker = StructureTracker(n)
     sweep_events = [e for e in tracker.run(candles) if e.kind == "valid_sweep_break"]
     sweep_break_keys = {(e.time, e.direction) for e in sweep_events}
@@ -86,14 +94,20 @@ def detect_confirmations(candles: list[Candle], n: int = 2) -> list[Confirmation
             last_swing_low = candles[i]
             claimed_low = False
 
+        # Direct user correction: SLK reads breakouts off the LINE CHART
+        # (closing prices) throughout -- the reference level is the swing
+        # candle's own CLOSE by default, matching how A/V-shape key levels
+        # already work, not its wick.
         if (last_swing_low is not None and not claimed_low
-                and body_closes_beyond(c, last_swing_low.low, Direction.BEARISH)):
+                and body_closes_beyond(c, last_swing_low.close if close_based_breakout else last_swing_low.low,
+                                        Direction.BEARISH)):
             if (c.time, Direction.BEARISH) not in sweep_break_keys:
                 confirmations.append(Confirmation(c.time, Direction.BEARISH, ConfirmationKind.BREAKOUT, c.close))
             claimed_low = True
 
         if (last_swing_high is not None and not claimed_high
-                and body_closes_beyond(c, last_swing_high.high, Direction.BULLISH)):
+                and body_closes_beyond(c, last_swing_high.close if close_based_breakout else last_swing_high.high,
+                                        Direction.BULLISH)):
             if (c.time, Direction.BULLISH) not in sweep_break_keys:
                 confirmations.append(Confirmation(c.time, Direction.BULLISH, ConfirmationKind.BREAKOUT, c.close))
             claimed_high = True

@@ -641,7 +641,7 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
-                  erl_cap: bool = True) -> list[TradeRecord]:
+                  erl_cap: bool = True, close_based_breakout: bool = True) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -664,6 +664,11 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     False, every trade targets a flat `rr` with no cap at all -- for
     comparing the two approaches against each other, not a claim that the
     cap was wrong.
+    close_based_breakout: when True (default), a plain breakout's
+    reference level is the swing candle's own CLOSE (line chart), not its
+    wick -- direct user correction, matching how A/V-shape key levels
+    already work. When False, uses the wick instead (pre-correction
+    behavior) -- kept only for comparing the two against each other.
     """
     if entry_style not in ("aggressive", "conservative"):
         raise ValueError("entry_style must be 'aggressive' or 'conservative'")
@@ -691,11 +696,11 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         return []  # no confirmed structure to bootstrap a bias from
 
     daily_levels = detect_key_levels(daily, n)
-    daily_confirmations = detect_confirmations(daily, n)
-    weekly_confirmations = detect_confirmations(weekly, n) if weekly else []
-    h4_confirmations = detect_confirmations(h4, n)
+    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
+    weekly_confirmations = detect_confirmations(weekly, n, close_based_breakout=close_based_breakout) if weekly else []
+    h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
     h4_levels = detect_key_levels(h4, n)
-    h1_confirmations = detect_confirmations(h1, n)
+    h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout)
     h1_imbalances = detect_imbalances(h1)
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
@@ -1030,12 +1035,15 @@ def main():
     parser.add_argument("--no-erl-cap", action="store_true",
                          help="Disable the external range liquidity target cap -- every trade targets a flat "
                               "--rr instead. For comparing against the (default) ERL-capped behavior.")
+    parser.add_argument("--wick-based-breakout", action="store_true",
+                         help="Use the swing candle's wick (high/low) as a plain breakout's reference level "
+                              "instead of its close (line chart, the default). For comparing against each other.")
     args = parser.parse_args()
 
     start_date, end_date = _resolve_date_range(args.year, args.start, args.end)
 
     run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date,
-                  "erl_cap": not args.no_erl_cap}
+                  "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
     records = run_backtest(args.instrument, args.style, **run_kwargs)
@@ -1049,6 +1057,8 @@ def main():
         suffix += f"_rr{args.rr:g}"
     if args.no_erl_cap:
         suffix += "_noerlcap"
+    if args.wick_based_breakout:
+        suffix += "_wickbreakout"
     out_path = args.out or f"backtest/results/{args.instrument}_{args.style}{suffix}.csv"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     write_trade_log(records, out_path)
