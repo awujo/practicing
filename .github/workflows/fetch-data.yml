@@ -12,10 +12,16 @@ name: Fetch backtest data
 # low-activity repos. `workflow_dispatch` below always works regardless
 # -- use the "Run workflow" button on the Actions tab if a scheduled run
 # seems to have been skipped.
+#
+# Hourly (not daily) specifically so hourly-signal-check.yml -- which
+# triggers right after this completes -- always has genuinely fresh
+# Dukascopy data to check against, not up to a day stale. The fetch
+# itself is incremental (see fetch_dukascopy.py), so the hourly cadence
+# costs little beyond whatever candles actually closed since the last run.
 
 on:
   schedule:
-    - cron: "0 3 * * *" # daily at 03:00 UTC
+    - cron: "0 * * * *" # hourly, on the hour
   workflow_dispatch: {}
 
 permissions:

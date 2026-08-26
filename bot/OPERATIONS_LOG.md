@@ -62,18 +62,33 @@ the live bot's foundation), see [`../PROJECT_HISTORY.md`](../PROJECT_HISTORY.md)
 ## Diagnostic tooling (doesn't touch the VPS)
 
 - `.github/workflows/fetch-data.yml` -- refreshes the Dukascopy data
-  cache (daily at 03:00 UTC, or `workflow_dispatch` on demand). Publishes
-  to the `data-latest` GitHub release.
+  cache (hourly, on the hour, or `workflow_dispatch` on demand -- was
+  daily until 2026-08-26, bumped to hourly specifically so the check
+  below always has genuinely fresh data). Publishes to the `data-latest`
+  GitHub release.
 - `.github/workflows/check-signals.yml` -- runs `run_backtest()` against
   that cached Dukascopy data only (no MT5 involved) for a given `since`
   time / instrument list / style list, and prints every signal found.
   Built specifically so "did the strategy actually produce a setup this
   week" can be checked without running anything on the VPS (which
   visibly slows down the live bots' own poll loop when tried directly).
-  Takes ~25-40 min for the full 25-instrument x 2-style sweep.
-- Both are triggered via the GitHub API (`actions_run_trigger` /
+  Takes ~25-40 min for the full 25-instrument x 2-style sweep -- use this
+  one for an ad hoc, longer-range check.
+- `.github/workflows/hourly-signal-check.yml` -- the automated,
+  continuous version: fires right after every `fetch-data.yml` run
+  completes, checks a rolling 3-hour window across all instruments/both
+  styles, and posts the result to that run's Actions job summary (visible
+  on the Actions tab without opening logs). This is the reference feed
+  to actually compare a live account's `decisions` table against --
+  a signal that shows up here with nothing anywhere near it in the
+  matching audit database is concrete evidence MT5 is still missing
+  something, independent of whether the strategy just didn't find a
+  setup that hour. Added 2026-08-26, right after the broker-clock-offset
+  fix, specifically to give that fix something to be checked against
+  going forward rather than trusting it on faith.
+- All three are triggered via the GitHub API (`actions_run_trigger` /
   `POST .../dispatches`) or the Actions tab UI -- no VPS access needed to
-  run either.
+  run any of them.
 
 ## Incident log
 

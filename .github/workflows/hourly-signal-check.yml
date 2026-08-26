@@ -1,0 +1,59 @@
+name: Hourly signal check (Dukascopy reference)
+
+# Runs right after every fetch-data.yml refresh and checks whether the
+# strategy would have produced any entry signal in the last few hours --
+# purely against Dukascopy data, entirely independent of MT5 and the
+# live bots. This is the reference feed: if this finds a signal on some
+# instrument/style and the corresponding live account's audit_log.db
+# (bot/OPERATIONS_LOG.md has the current DB paths) has NO row anywhere
+# near that entry_time, that's concrete evidence MT5 is still missing
+# something -- even after the broker-clock-offset fix -- rather than the
+# strategy just genuinely not finding a setup that hour.
+#
+# `since` is a 3-hour rolling window on an hourly cadence -- deliberately
+# overlapping, not a tight 1-hour slice, as a safety margin against
+# Dukascopy's own data-publish lag and workflow-timing jitter. That means
+# the same signal will legitimately reprint across a few consecutive
+# runs; that's expected, not a bug -- treat this as "did X show up
+# recently", not a de-duplicated event stream.
+
+on:
+  workflow_run:
+    workflows: ["Fetch backtest data"]
+    types: [completed]
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp || {
+            echo "::error::No 'data-latest' release found -- run the fetch-data workflow first."
+            exit 1
+          }
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+
+      - name: Run check (last 3 hours, both styles, all instruments)
+        run: |
+          SINCE=$(date -u -d '-3 hours' '+%Y-%m-%dT%H:%M:%S')
+          {
+            echo "## Hourly signal check -- since ${SINCE} UTC"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python -m backtest.engine.check_recent_signals --since "$SINCE" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
