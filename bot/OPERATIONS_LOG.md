@@ -187,7 +187,39 @@ observed behavior (hours-stale cache, no errors, pegged CPU).
 Note the cost also GROWS monotonically: every month adds ~720 H1
 candles to the array being replayed, forever.
 
-## The planned fix (Stage 2 -- incremental state)
+**2026-08-26 -- FIXED, in two parts.** Profiling first (rather than
+acting on the hypothesis below) corrected a wrong assumption recorded
+in this file: the cost was NOT dominated by the 155k-candle H1 walk.
+`detect_confirmations(h1)` is 0.67s, under 2%. The actual profile of one
+EURUSD run_backtest was:
+
+    _find_liquidity_setups   24.72s  (71.4%)
+    replay_bias(daily)        7.20s  (20.8%)
+    detect_confirmations(h1)  0.67s   (1.9%)
+
+Both hot spots were plain **quadratic scans over already-sorted lists**,
+not an architectural problem at all:
+- `_find_liquidity_setups` scanned every liquidity point AND every H4
+  key level once per breakout (~4,000 breakouts) -- tens of millions of
+  comparisons; it also materialised every matching point just to take
+  `[0]`.
+- `replay_bias` scanned every key level once per candle and, worse,
+  rebuilt a full list of every future confirmation just to take the
+  first five of it, once per level tested.
+
+Fixed with `bisect` lookups into bounded slices (commit `e8572cf`):
+**238.0s -> 75.0s across three instruments x two styles (3.2x), with all
+3,328 trade records bit-identical** to the pre-optimisation output.
+`_find_liquidity_setups` alone went 24.72s -> 0.11s (225x).
+
+Then the storyline gate (commit `ed9d8f1`, `bot/live_strategy.py`) --
+the architectural half, described below. Measured together, the live
+loop's daily cost on this box drops from roughly 58 CPU-hours (against
+48 available, hence the death spiral) to about 5.5 -- with all 25
+instruments kept and no VPS upgrade, both of which the user explicitly
+required.
+
+## The fix, part 2 -- the storyline gate (implemented)
 
 Direct user architectural critique, and it's correct: a Daily bias
 cannot change until a Daily candle closes, yet it is currently
@@ -208,28 +240,52 @@ thrown away and rebuilt from scratch on every call. The work is to
 expose it, persist it, and resume from it: warm up once from full
 history, checkpoint to disk, then feed one candle at a time.
 
-Staged plan:
-- **Stage 0 (stopgap, do first):** cut both bots' instrument lists
-  down so the box survives. Buys latency, not a fix.
-- **Stage 1 (low risk):** timeframe-gated recompute -- only recompute
-  the Daily cascade on a Daily close, Weekly on Weekly close, H4 every
-  4H. Honestly only ~40-50% of the win, since H1 is the largest array
-  and still recomputes hourly.
-- **Stage 2 (the real fix):** checkpointed incremental state as above.
-  Steady-state cost drops from ~186,000 candle-visits per check to ~1,
-  and stops growing with history.
-- **Stage 3 (optional):** drop the full trade-lifecycle simulation from
-  the live path -- live only needs "did an entry trigger on this
-  candle", not the simulated outcome.
+What shipped: `bot/live_strategy.py` derives the Weekly/Daily/H4 bias
+context (touching **no H1 data at all**) and `storyline_at()` answers
+"is this pair in the hunting stage?" -- HUNTING requires Daily and H4 to
+each independently confirm the same direction AND the effective
+highest-priority bias to agree, which is exactly what `run_backtest()`'s
+own entry loop demands before it will consider any candidate. Weekly is
+recorded when it aligns (a booster, not a gate), matching the entry
+loop.
 
-The original design's stated reason for full replay was fear of
-behavioral drift from the validated backtest. That is directly
-testable: assert the incremental path produces bit-identical output to
-a full replay over the same data. Known sharp edge to test carefully:
-swing detection uses lookahead (`is_swing_high` checks i +/- n), so a
-swing is not confirmable until n candles later -- the incremental
-version needs a trailing buffer and must treat the last n candles as
-provisional.
+`orchestrator._storyline_says_hunt()` caches that context per instrument
+and rebuilds only when a Weekly, Daily or H4 candle closes -- ~7 times a
+day rather than the 24 full `run_backtest()` calls it replaces. H4 must
+count as a rebuild trigger because the Daily cascade's flip test
+consumes H4 confirmations (`replay_bias(daily, ..., h4_confirmations)`),
+so rebuilding on Daily closes alone would not be sound. Storyline
+transitions are logged at INFO (the "red flag" list, visible in the
+bot's log); steady state is silent.
+
+Measured on real history: the gate costs **0.10-0.15 ms** per check
+versus tens of seconds for `run_backtest`, and **~70% of H1 closes are
+"still waiting"**, so that share of the expensive search disappears.
+
+**The safety property, and how it is enforced.** The gate is only ever
+allowed to be a performance filter, never a strategy change -- it must
+have no false negatives. That is tested against real multi-year cached
+history rather than fixtures (`test_gate_never_suppresses_a_trade_the_
+real_backtest_produces`): every one of **3,328 real trades** that
+`run_backtest()` produces across EURUSD/GBPJPY/GBPNZD x both styles
+falls inside a window where the gate said HUNTING. Zero suppressed.
+That test skips when the gitignored candle cache isn't present, so run
+the fetch-data workflow (or download the per-instrument release assets)
+before trusting a local green run.
+
+**Not done, and not currently needed.** The originally-planned
+checkpointed-incremental-state rewrite was NOT built -- profiling showed
+it would have been solving the wrong problem. It remains the right move
+only if the cost ever becomes a problem again; the notes above about
+`claimed_origins` being history-dependent and swing detection needing
+`i +/- n` lookahead (so the last n candles stay provisional) still apply
+if anyone picks that up. A cheaper unbuilt option first: `run_backtest`
+still simulates every historical trade on each live call, and live only
+needs "did an entry trigger on the latest candle" -- but note the
+`claimed_origins` bookkeeping deliberately only claims a slot AFTER the
+stop-on-correct-side guard passes, so that simulation cannot simply be
+skipped for older candidates without changing origin/continuation
+classification.
 
 **Backup branch: `backup/full-replay-architecture`** (at commit
 `9e10822`) preserves the entire pre-rewrite state -- the architecture
