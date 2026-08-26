@@ -222,35 +222,46 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
     # confirmation-window slice alone built a full list of every future
     # confirmation, thousands of entries, just to take the first five of
     # it, once per level tested).
-    level_times = [lvl.time for lvl in levels_sorted]
     confirmations_sorted = sorted(confirmations, key=lambda conf: conf.time)
     confirmation_times = [conf.time for conf in confirmations_sorted]
-    # Levels are only ever ADDED to tested_level_times, never removed, so
-    # once a prefix of levels_sorted is fully tested it can be skipped
-    # permanently rather than re-walked on every later candle.
-    first_untested = 0
+
+    # Indexed by PRICE, not time. The dominant filter per candle is
+    # `c.low <= level.price <= c.high`, and a single candle's range spans
+    # a tiny slice of the whole series' price history -- so bisecting the
+    # price axis turns the inner loop from "every level so far" into "the
+    # handful this candle actually touches". Time-ordering the eligible
+    # subset afterwards preserves the original's semantics exactly: it
+    # walked levels in time order and stopped at the first qualifying
+    # one, which is the earliest-by-time match.
+    #
+    # This matters far more than it looks: on the live VPS the previous
+    # time-only version left build_htf_context() at 131s per instrument
+    # (~55 min per pass per bot), because levels that never qualify are
+    # never marked tested, so the scan kept re-walking all of them.
+    by_price = sorted(levels_sorted, key=lambda lvl: lvl.price)
+    level_prices = [lvl.price for lvl in by_price]
 
     for c in candles:
-        while (first_untested < len(levels_sorted)
-                and levels_sorted[first_untested].time in tested_level_times):
-            first_untested += 1
-        # Only levels strictly BEFORE this candle are eligible (the
-        # original's `level.time >= c.time -> continue`).
-        upper = bisect.bisect_left(level_times, c.time)
-        for idx in range(first_untested, upper):
-            level = levels_sorted[idx]
-            if level.time in tested_level_times:
+        lo = bisect.bisect_left(level_prices, c.low)
+        hi = bisect.bisect_right(level_prices, c.high)
+        if lo == hi:
+            continue
+        eligible = None
+        for idx in range(lo, hi):
+            level = by_price[idx]
+            if level.time >= c.time or level.time in tested_level_times:
                 continue
             if level.default_bias != cascade.direction:
                 continue
-            if not (c.low <= level.price <= c.high):
-                continue
-            tested_level_times.add(level.time)
-            start = bisect.bisect_right(confirmation_times, c.time)
-            window = confirmations_sorted[start:start + confirmation_window]
-            if cascade.check_flip(level, c, window):
-                breakpoints.append((c.time, cascade.direction))
-            break  # one level tested per candle is enough for this replay
+            if eligible is None or level.time < eligible.time:
+                eligible = level
+        if eligible is None:
+            continue
+        tested_level_times.add(eligible.time)
+        start = bisect.bisect_right(confirmation_times, c.time)
+        window = confirmations_sorted[start:start + confirmation_window]
+        if cascade.check_flip(eligible, c, window):
+            breakpoints.append((c.time, cascade.direction))
 
     return breakpoints
 

@@ -27,11 +27,14 @@ costs one short seek and zero writes.
 """
 
 import fcntl
+import logging
 import os
 import tempfile
 from contextlib import contextmanager
 
 import pandas as pd
+
+logger = logging.getLogger("backtest.data_pipeline.cache")
 
 DATA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
@@ -58,8 +61,19 @@ def _file_lock(path: str, exclusive: bool):
     an exclusive one. The fast append path holds the write lock for
     microseconds; only the rare full merge holds it meaningfully long."""
     lock_file = path + ".lock"
-    os.makedirs(os.path.dirname(lock_file), exist_ok=True)
-    handle = open(lock_file, "a+")
+    try:
+        os.makedirs(os.path.dirname(lock_file), exist_ok=True)
+        handle = open(lock_file, "a+")
+    except OSError as exc:
+        # A lock file we can't open (e.g. left behind root-owned by a
+        # diagnostic run, while the bot runs as a normal user) must not
+        # take an instrument down. Degrade to the pre-locking behavior --
+        # still safe against a torn read, since append() writes in one
+        # call and the merge path swaps atomically via os.replace() --
+        # rather than raising into the caller's loop.
+        logger.warning("cache lock unavailable (%s: %s) -- proceeding without it", lock_file, exc)
+        yield
+        return
     try:
         fcntl.flock(handle, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
         yield
