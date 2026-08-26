@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import pandas as pd
@@ -32,6 +33,20 @@ def make_bot(fake, tmp_path, instruments=("EURUSD",)):
     audit = AuditLog(str(tmp_path / "audit.db"))
     return LiveBot(profile=make_profile(), mt5_client=client, mt5_exec=execu,
                     audit_log=audit, instruments=instruments), audit, client
+
+
+@contextmanager
+def gate_open():
+    """Hold the storyline gate open.
+
+    The gate itself (Daily/H4 alignment -> is this pair even worth an H1
+    search) is covered in test_live_strategy.py, including against real
+    cached history. These orchestrator tests are about what happens once
+    an instrument IS being hunted, so holding it open keeps them focused
+    on that -- and independent of whether real candle data happens to be
+    present, which is gitignored and absent on a clean checkout."""
+    with patch.object(LiveBot, "_storyline_says_hunt", return_value=True):
+        yield
 
 
 def a_trade_record(entry_time, trade_id=1, direction=Direction.BULLISH):
@@ -113,6 +128,50 @@ def test_no_new_candle_means_no_run_backtest_call(tmp_path):
     mock_rb.assert_not_called()
 
 
+# ---- the storyline gate: skip the expensive search on pairs that aren't set up ----
+
+def test_a_waiting_instrument_never_reaches_run_backtest(tmp_path):
+    # The whole point of the gate: on a pair whose Daily and H4 haven't
+    # aligned, the H1 entry search (tens of seconds of full-history work)
+    # must not run at all. Running it on all 25 instruments every hour is
+    # what put the live bots hours behind -- see OPERATIONS_LOG.md.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch.object(LiveBot, "_storyline_says_hunt", return_value=False), \
+         patch("bot.orchestrator.run_backtest") as mock_rb:
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    mock_rb.assert_not_called()
+    assert audit.recent(10) == []
+
+
+def test_the_gate_rebuilds_its_context_only_when_a_higher_timeframe_closes(tmp_path):
+    # The Weekly/Daily/H4 context is what makes the gate cheap: it must
+    # be reused across H1 closes, not rebuilt on each one.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    candle = type("C", (), {"time": entry_time})()
+
+    def only_h1_closes(instrument, timeframe):
+        return candle if timeframe == "H1" else None
+
+    fake_ctx = object()
+    with patch.object(bot.mt5_client, "new_candle_closed", side_effect=only_h1_closes), \
+         patch("bot.orchestrator.build_htf_context", return_value=fake_ctx) as mock_build, \
+         patch("bot.orchestrator.storyline_at") as mock_story:
+        mock_story.return_value = type("S", (), {"stage": "waiting_htf", "reason": "x"})()
+        bot._storyline_says_hunt("EURUSD", entry_time)   # first time -- must build
+        bot._storyline_says_hunt("EURUSD", entry_time)   # no HTF close since -- must reuse
+
+    assert mock_build.call_count == 1
+
+
 # ---- resilience: one instrument's unexpected error shouldn't kill the loop ----
 
 def test_unexpected_error_on_one_instrument_does_not_stop_the_others(tmp_path):
@@ -135,7 +194,7 @@ def test_unexpected_error_on_one_instrument_does_not_stop_the_others(tmp_path):
         return type("C", (), {"time": entry_time})()
 
     with patch.object(bot.mt5_client, "new_candle_closed", side_effect=new_candle_side_effect), \
-         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
          patch("bot.orchestrator.run_backtest", return_value=[record]):
         bot.run_once()  # must not raise
 
@@ -153,7 +212,7 @@ def test_fresh_signal_declined_by_risk_manager_is_logged_and_not_placed(tmp_path
     record = a_trade_record(entry_time)
 
     with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
-         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
          patch("bot.orchestrator.run_backtest", return_value=[record]):
         mock_new_candle.return_value = type("C", (), {"time": entry_time})()
         bot.run_once()
@@ -173,7 +232,7 @@ def test_fresh_signal_allowed_and_placed_successfully_is_tracked(tmp_path):
     record = a_trade_record(entry_time)
 
     with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
-         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
          patch("bot.orchestrator.run_backtest", return_value=[record]):
         mock_new_candle.return_value = type("C", (), {"time": entry_time})()
         bot.run_once()
@@ -195,7 +254,7 @@ def test_fresh_signal_with_invalid_sizing_is_declined_before_any_order(tmp_path)
     record = a_trade_record(entry_time)
 
     with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
-         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
          patch("bot.orchestrator.run_backtest", return_value=[record]):
         mock_new_candle.return_value = type("C", (), {"time": entry_time})()
         bot.run_once()
@@ -215,7 +274,7 @@ def test_only_the_record_matching_the_new_candles_time_is_considered(tmp_path):
     records = [a_trade_record(old_time, trade_id=1), a_trade_record(new_time, trade_id=2)]
 
     with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
-         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
          patch("bot.orchestrator.run_backtest", return_value=records):
         mock_new_candle.return_value = type("C", (), {"time": new_time})()
         bot.run_once()

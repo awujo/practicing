@@ -30,6 +30,7 @@ from backtest.engine.trade_log import TradeRecord
 from .audit_log import AuditLog, DecisionRecord
 from .config import AccountProfile
 from .live_cache_sync import sync_recent_from_mt5
+from .live_strategy import HUNTING, HTFContext, build_htf_context, storyline_at
 from .mt5_data import MT5Client, MT5ConnectionError
 from .mt5_execution import MT5Execution
 from .risk_manager import Decision, RiskManager
@@ -62,6 +63,10 @@ class LiveBot:
     today: object = field(init=False, default=None)
     tracked_positions: dict[tuple[str, int], TrackedPosition] = field(init=False, default_factory=dict)
     halted: bool = field(init=False, default=False)
+    # Cached Weekly/Daily/H4 bias context per instrument, plus the last
+    # storyline stage logged for it -- see _storyline_says_hunt().
+    _htf_contexts: dict[str, HTFContext] = field(init=False, default_factory=dict)
+    _storyline_stage: dict[str, str] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self.risk_manager = RiskManager(self.profile.active_rules, self.profile.terminates_on_dd)
@@ -133,10 +138,56 @@ class LiveBot:
             logger.warning("cache sync failed for %s, skipping this candle: %s", instrument, exc)
             return
 
+        # The storyline gate -- see live_strategy.py. Running the full
+        # entry search on every instrument every hour is what buried the
+        # VPS (OPERATIONS_LOG.md, 2026-08-26); a manual trader doesn't
+        # re-analyse a pair whose Daily and 4H haven't aligned yet, and
+        # neither should this. Costs well under a millisecond, versus
+        # tens of seconds for the run_backtest() below, and is tested to
+        # never suppress a signal run_backtest() would have produced.
+        if not self._storyline_says_hunt(instrument, new_candle.time):
+            return
+
         records = run_backtest(instrument, self.entry_style, source=self.source)
         fresh = [r for r in records if r.entry_time == new_candle.time and r.status != "still_open"]
         for record in fresh:
             self._consider_entry(instrument, record, state)
+
+    def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
+        """Is this instrument in the hunting stage (Daily and H4 aligned,
+        higher-timeframe bias agreeing) at `as_of_time`?
+
+        The Weekly/Daily/H4 context this reads only changes when one of
+        THOSE timeframes closes, so it's cached per instrument and rebuilt
+        only then -- roughly 7 times a day rather than the 24 full
+        run_backtest() calls it replaces. H4 counts as a rebuild trigger
+        because the Daily cascade's flip test consumes H4 confirmations
+        (see live_strategy.needs_rebuild)."""
+        closed = {}
+        for granularity in ("W", "D", "H4"):
+            try:
+                closed[granularity] = self.mt5_client.new_candle_closed(instrument, granularity)
+            except MT5ConnectionError as exc:
+                logger.warning("new_candle_closed(%s, %s) failed: %s", instrument, granularity, exc)
+                closed[granularity] = None
+
+        ctx = self._htf_contexts.get(instrument)
+        if ctx is None or any(c is not None for c in closed.values()):
+            ctx = build_htf_context(instrument, source=self.source)
+            if ctx is None:
+                logger.debug("%s: no higher-timeframe structure to bootstrap a bias from", instrument)
+                self._htf_contexts.pop(instrument, None)
+                return False
+            self._htf_contexts[instrument] = ctx
+
+        storyline = storyline_at(ctx, as_of_time)
+        previous = self._storyline_stage.get(instrument)
+        if storyline.stage != previous:
+            # Only log the transition, not every hour it stays put --
+            # this is the "red flag" list becoming visible in the log.
+            logger.info("%s: %s -- %s", instrument, storyline.stage, storyline.reason)
+            self._storyline_stage[instrument] = storyline.stage
+        return storyline.stage == HUNTING
 
     def _consider_entry(self, instrument: str, record: TradeRecord, state):
         risk = self.risk_manager.risk_for_next_trade(state)
