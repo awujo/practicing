@@ -11,6 +11,7 @@ already on disk.
 """
 
 import os
+import tempfile
 import pandas as pd
 
 DATA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
@@ -48,7 +49,24 @@ def append(source: str, symbol: str, granularity: str, rows: list[dict]):
         combined = new_df
 
     combined = combined.drop_duplicates(subset="time").sort_values("time")
-    combined.to_csv(path, index=False)
+
+    # Write atomically -- confirmed live: two bot processes (conservative +
+    # aggressive) both call append() for the SAME instrument/granularity
+    # file concurrently. A plain to_csv(path) truncates then writes in
+    # place, so a concurrent reader in the OTHER process can catch the
+    # file mid-truncation and see it as empty -- crashed a live bot with
+    # pandas.errors.EmptyDataError. Writing to a temp file in the same
+    # directory and os.replace()-ing it into place is atomic on POSIX, so
+    # a concurrent reader always sees either the complete old file or the
+    # complete new one, never a partial state.
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+    os.close(tmp_fd)
+    try:
+        combined.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path)
+    except BaseException:
+        os.remove(tmp_path)
+        raise
     return len(new_df)
 
 

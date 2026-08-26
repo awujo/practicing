@@ -113,6 +113,37 @@ def test_no_new_candle_means_no_run_backtest_call(tmp_path):
     mock_rb.assert_not_called()
 
 
+# ---- resilience: one instrument's unexpected error shouldn't kill the loop ----
+
+def test_unexpected_error_on_one_instrument_does_not_stop_the_others(tmp_path):
+    # Confirmed live: an uncaught exception inside _check_instrument() for
+    # ONE instrument (e.g. a cache read/write edge case, not an
+    # MT5ConnectionError -- those are already handled) used to propagate
+    # out of run_once() and kill the whole process, taking every other
+    # tracked instrument down with it.
+    fake = FakeMT5()
+    fake.symbols.setdefault("GBPUSD", make_symbol_info(point=0.0001))
+    bot, audit, client = make_bot(fake, tmp_path, instruments=("EURUSD", "GBPUSD"))
+
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+    record.instrument = "GBPUSD"
+
+    def new_candle_side_effect(instrument, timeframe):
+        if instrument == "EURUSD":
+            raise RuntimeError("simulated unexpected failure")
+        return type("C", (), {"time": entry_time})()
+
+    with patch.object(bot.mt5_client, "new_candle_closed", side_effect=new_candle_side_effect), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        bot.run_once()  # must not raise
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["instrument"] == "GBPUSD"  # the healthy instrument was still checked
+
+
 def test_fresh_signal_declined_by_risk_manager_is_logged_and_not_placed(tmp_path):
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)

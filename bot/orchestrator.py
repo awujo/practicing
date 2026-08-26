@@ -106,7 +106,17 @@ class LiveBot:
             self.halted = False  # equity recovered above the limit on its own -- log the all-clear implicitly via the next normal decision
 
         for instrument in self.instruments:
-            self._check_instrument(instrument, state)
+            try:
+                self._check_instrument(instrument, state)
+            except Exception:
+                # Confirmed live: an uncaught exception anywhere in one
+                # instrument's check (e.g. a cache/data edge case) used to
+                # kill the entire process -- including every OTHER
+                # instrument's checks and all future iterations. One bad
+                # instrument must degrade to "skip it this iteration," not
+                # take the whole live bot down.
+                logger.exception("unexpected error checking %s -- skipping this instrument this iteration",
+                                  instrument)
 
     def _check_instrument(self, instrument: str, state):
         try:
