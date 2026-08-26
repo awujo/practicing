@@ -394,7 +394,7 @@ def _last_time_at(lookup, t):
 
 
 def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
-                         daily_confirmations, h4_confirmations) -> list[str]:
+                         daily_confirmations, h4_confirmations, lookups=None) -> list[str]:
     """Which of Weekly/Daily/H4 currently show THEIR OWN breakout or
     sweep+break confirming `direction`, within a bounded recency window
     (ALIGNMENT_LOOKBACK) of `as_of_time` -- never satisfied by an
@@ -403,14 +403,37 @@ def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
     (more tiers aligned = higher-probability trade), a different question
     from resolve_effective_bias()'s "which single highest-priority
     timeframe has an active bias reading right now". Returns the aligned
-    subset in TIMEFRAME_PRIORITY order, e.g. ["Daily", "H4"]."""
+    subset in TIMEFRAME_PRIORITY order, e.g. ["Daily", "H4"].
+
+    `lookups` is an optional pre-built {label: _direction_lookup(...)}
+    mapping. This runs once per timeframe per entry candidate --
+    thousands of candidates against confirmation lists thousands long --
+    so re-deriving those arrays per call, as the original list
+    comprehension effectively did, is a multi-million-operation scan
+    buried inside the entry loop, and one of the reasons a single
+    run_backtest took ~8 minutes on the live VPS. run_backtest builds
+    them once and passes them in; callers that don't care (tests) omit
+    it and get the same answer, just more slowly."""
+    if lookups is None:
+        lookups = {
+            "Weekly": _direction_lookup(weekly_confirmations),
+            "Daily": _direction_lookup(daily_confirmations),
+            "H4": _direction_lookup(h4_confirmations),
+        }
+
     aligned = []
-    for label, confirmations in (("Weekly", weekly_confirmations),
-                                  ("Daily", daily_confirmations),
-                                  ("H4", h4_confirmations)):
-        lookback = ALIGNMENT_LOOKBACK[label]
-        recent = [c for c in confirmations if c.time <= as_of_time and as_of_time - c.time <= lookback]
-        if recent and max(recent, key=lambda c: c.time).direction == direction:
+    for label in ("Weekly", "Daily", "H4"):
+        times, directions = lookups[label]
+        if not times:
+            continue
+        # Only the MOST RECENT confirmation at or before `as_of_time` can
+        # win the `max(...)` this used to do, so bisect straight to it.
+        idx = bisect.bisect_right(times, as_of_time) - 1
+        if idx < 0:
+            continue
+        if as_of_time - times[idx] > ALIGNMENT_LOOKBACK[label]:
+            continue
+        if directions[idx] == direction:
             aligned.append(label)
     return aligned
 
@@ -737,6 +760,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                                               weekly_first_origin.direction, "Weekly")
 
     h4_lookup = _direction_lookup(h4_confirmations)
+    # Built once here, not per entry candidate -- see _aligned_timeframes().
+    alignment_lookups = {
+        "Weekly": _direction_lookup(weekly_confirmations),
+        "Daily": _direction_lookup(daily_confirmations),
+        "H4": h4_lookup,
+    }
     h1_lookup = _direction_lookup(h1_confirmations)
 
     liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n)
@@ -779,7 +808,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # logged but not required -- it's a probability booster, not a
         # gate by itself.
         aligned = _aligned_timeframes(candidate.direction, curr.time,
-                                       weekly_confirmations, daily_confirmations, h4_confirmations)
+                                       weekly_confirmations, daily_confirmations, h4_confirmations,
+                                       lookups=alignment_lookups)
         if not ("Daily" in aligned and "H4" in aligned):
             continue
 
