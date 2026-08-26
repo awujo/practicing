@@ -154,12 +154,98 @@ Commit `4a0f1bf`. **Not yet confirmed whether audit rows start
 populating now that this is live -- check `decisions` table row counts
 after this has run through a few H1 closes.**
 
+**2026-08-26 -- ROOT CAUSE of the missed signals: the VPS cannot keep
+up with the full-replay architecture.** After the timestamp fix went
+live, a real Dukascopy-confirmed signal (GBPNZD, 11:00 UTC, both
+styles) was STILL missed, with both audit DBs empty and the cache
+hours stale. Investigation ruled out, in order: the offset fix itself
+(no errors), a crashed/hung terminal (the MT5 feed was confirmed
+healthy and ticking live via a direct API query -- broker clock ~3h
+ahead, exactly as expected), and a blocked/hung bot process
+(`/proc/<pid>/stat` showed both in state `R`, actively burning ~70-77%
+CPU each).
+
+The real cause is architectural. `run_backtest()` is called on EVERY
+new H1 candle close, per instrument, per style -- and it re-walks the
+ENTIRE cached history each time (see `runner.py`'s own docstring:
+`start_date`/`end_date` deliberately do NOT narrow the data load,
+because `claimed_origins` bookkeeping and bias-building need it all).
+Per instrument that's roughly 143k H1 + 36k H4 + 6k D + 1.2k W ~=
+**186,000 candles walked (several times over) to evaluate the ONE
+candle that just closed.**
+
+Measured cost: ~50s per `run_backtest` per instrument on a dedicated
+GitHub Actions core. This VPS has **2 vCPUs at load average ~7**
+(3-4x oversubscribed), 1.4GB of 2GB swap in active use, and the `mt5`
+container alone showing 2414% CPU across 266 PIDs (two full MT5
+terminals + Wine + WebView2, two `mt5linux` bridges, both bots). That
+inflates each run to ~175s+. With 25 instruments x 2 styles, all H1
+candles closing simultaneously on the hour, that's ~146 minutes of work
+per 60-minute hour -- it can never catch up, which is exactly the
+observed behavior (hours-stale cache, no errors, pegged CPU).
+
+Note the cost also GROWS monotonically: every month adds ~720 H1
+candles to the array being replayed, forever.
+
+## The planned fix (Stage 2 -- incremental state)
+
+Direct user architectural critique, and it's correct: a Daily bias
+cannot change until a Daily candle closes, yet it is currently
+recomputed 24x/day; a Weekly bias is recomputed 168x/week. And no
+check needs 2003's H1 candles re-walked to know what the current H1
+just did. The reference point raised was another SLK-based scanner
+(built by "DevT", using IC Markets data) that tracks the last BOS as
+state and reacts to the next event, rather than replaying history.
+
+The good news, and why this is a bounded refactor rather than a
+rewrite: the detection code is ALREADY sequential state machines
+internally -- `detect_confirmations()` walks forward carrying
+`last_swing_high`/`last_swing_low`/`claimed_high`/`claimed_low`,
+`replay_bias()` carries a `BiasCascade` (`direction`, `origin_time`)
+plus `tested_level_times`, and `StructureTracker` carries its own
+sweep/break state. That state is small and already exists; it is just
+thrown away and rebuilt from scratch on every call. The work is to
+expose it, persist it, and resume from it: warm up once from full
+history, checkpoint to disk, then feed one candle at a time.
+
+Staged plan:
+- **Stage 0 (stopgap, do first):** cut both bots' instrument lists
+  down so the box survives. Buys latency, not a fix.
+- **Stage 1 (low risk):** timeframe-gated recompute -- only recompute
+  the Daily cascade on a Daily close, Weekly on Weekly close, H4 every
+  4H. Honestly only ~40-50% of the win, since H1 is the largest array
+  and still recomputes hourly.
+- **Stage 2 (the real fix):** checkpointed incremental state as above.
+  Steady-state cost drops from ~186,000 candle-visits per check to ~1,
+  and stops growing with history.
+- **Stage 3 (optional):** drop the full trade-lifecycle simulation from
+  the live path -- live only needs "did an entry trigger on this
+  candle", not the simulated outcome.
+
+The original design's stated reason for full replay was fear of
+behavioral drift from the validated backtest. That is directly
+testable: assert the incremental path produces bit-identical output to
+a full replay over the same data. Known sharp edge to test carefully:
+swing detection uses lookahead (`is_swing_high` checks i +/- n), so a
+swing is not confirmable until n candles later -- the incremental
+version needs a trailing buffer and must treat the last n candles as
+provisional.
+
+**Backup branch: `backup/full-replay-architecture`** (at commit
+`9e10822`) preserves the entire pre-rewrite state -- the architecture
+described above, as actually deployed and running on 2026-08-26.
+Restore with `git checkout backup/full-replay-architecture` if the
+incremental work needs to be abandoned or compared against.
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live
   tail landing at sane (non-future, correctly-offset) times, and that
   the audit databases start getting real rows (even declines) instead
-  of staying empty.
+  of staying empty. NOTE: as of 2026-08-26 this is still unconfirmed,
+  and is now confounded by the resource-starvation issue above -- the
+  bots never got far enough through an iteration to log anything, so
+  the timestamp fix has not really been given a fair test yet.
 - `USOIL` and `ETHUSD` still unconfirmed on MetaQuotes-Demo (not in
   Market Watch under the names checked) -- excluded from both bots'
   instrument lists until confirmed.
