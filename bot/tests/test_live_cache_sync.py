@@ -31,7 +31,7 @@ def test_sync_recent_from_mt5_appends_candles_readable_via_the_normal_cache_load
     fake.rates_by_symbol_timeframe[("EURUSD", "D1")] = [make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13)]
     fake.rates_by_symbol_timeframe[("EURUSD", "H4")] = [make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13)]
     fake.rates_by_symbol_timeframe[("EURUSD", "W1")] = [make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13)]
-    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
 
     appended = sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
     assert appended["H1"] == 2
@@ -51,7 +51,7 @@ def test_sync_recent_from_mt5_dedupes_on_repeated_calls(tmp_path, monkeypatch):
     fake.rates_by_symbol_timeframe[("EURUSD", "D1")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "H4")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "W1")] = []
-    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
 
     sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
     sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)  # same data again
@@ -76,7 +76,7 @@ def test_sync_recent_from_mt5_merges_onto_existing_bootstrapped_history(tmp_path
     fake.rates_by_symbol_timeframe[("EURUSD", "D1")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "H4")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "W1")] = []
-    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
 
     sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
 
@@ -102,7 +102,7 @@ def test_sync_recent_from_mt5_writes_time_in_the_same_iso_format_as_the_rest_of_
     fake.rates_by_symbol_timeframe[("EURUSD", "D1")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "H4")] = []
     fake.rates_by_symbol_timeframe[("EURUSD", "W1")] = []
-    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
 
     sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
 

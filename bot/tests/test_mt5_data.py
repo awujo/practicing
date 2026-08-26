@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 from .fake_mt5 import FakeMT5, make_rate, make_position, make_symbol_info, make_deal
@@ -7,8 +8,12 @@ DAY = 86400
 
 
 def make_client(fake, suffix="", overrides=None):
+    # Pinned to 0 so these fixtures stay independent of the broker-clock
+    # offset detection (see the dedicated server_utc_offset tests below) --
+    # candle-conversion/sorting behavior shouldn't need an M1 fixture too.
     return MT5Client(fake, login=12345, password="pw", server="Demo-Server",
-                      symbol_suffix=suffix, symbol_overrides=overrides)
+                      symbol_suffix=suffix, symbol_overrides=overrides,
+                      server_utc_offset=pd.Timedelta(0))
 
 
 def test_connect_succeeds_and_marks_healthy():
@@ -105,6 +110,69 @@ def test_fetch_candles_skips_the_still_forming_bar_via_start_offset():
     client = make_client(fake)
     candles = client.fetch_candles("EURUSD", "H1", count=5)
     assert all(c.close != 999 for c in candles)
+
+
+# ---- broker server-clock offset (MT5 reports candle times in the
+# broker's own server clock, e.g. EET/EEST, not true UTC -- confirmed
+# live, MetaQuotes-Demo runs ~3 hours ahead of real UTC) ----
+
+def test_detect_server_utc_offset_rounds_to_the_nearest_hour():
+    fake = FakeMT5()
+    # M1 forming-candle open time reported by the broker: 09:00:00.
+    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(9 * 3600, 1, 1, 1, 1)]
+    client = MT5Client(fake, login=1, password="pw", server="Demo")  # offset NOT pinned
+
+    # 06:14 real UTC -> 2h46m raw gap, which rounds to the nearest hour (3h).
+    real_now = pd.Timestamp(6 * 3600 + 14 * 60, unit="s", tz="UTC")
+    offset = client._detect_server_utc_offset("EURUSD", real_now=real_now)
+    assert offset == pd.Timedelta(hours=3)
+
+
+def test_fetch_candles_auto_detects_and_applies_the_offset_when_not_pinned(monkeypatch):
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(9 * 3600, 1, 1, 1, 1)]
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),  # forming, skipped
+        make_rate(2 * DAY + 9 * 3600, 1.10, 1.12, 1.09, 1.11),  # broker-labeled 09:00 on day 2
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo")  # offset NOT pinned
+    monkeypatch.setattr(pd.Timestamp, "now", classmethod(lambda cls, tz=None: pd.Timestamp(6 * 3600, unit="s", tz=tz)))
+
+    candles = client.fetch_candles("EURUSD", "H1", count=1)
+    assert len(candles) == 1
+    # 3-hour offset subtracted: broker-labeled 09:00 on day 2 -> real 06:00 on day 2.
+    assert candles[0].time == pd.Timestamp(2 * DAY + 6 * 3600, unit="s", tz="UTC")
+
+
+def test_fetch_candles_only_detects_the_offset_once_and_caches_it(monkeypatch):
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(9 * 3600, 1, 1, 1, 1)]
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [make_rate(2 * DAY, 1.1, 1.1, 1.1, 1.1)]
+    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    monkeypatch.setattr(pd.Timestamp, "now", classmethod(lambda cls, tz=None: pd.Timestamp(6 * 3600, unit="s", tz=tz)))
+
+    client.fetch_candles("EURUSD", "H1", count=1)
+    assert client._server_utc_offset == pd.Timedelta(hours=3)
+
+    # Even if the broker's M1 candle changes (as it would minute to minute
+    # in reality), a second fetch must NOT re-detect -- the cached value
+    # from the first call stays in effect.
+    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(0, 1, 1, 1, 1)]
+    client.fetch_candles("EURUSD", "H1", count=1)
+    assert client._server_utc_offset == pd.Timedelta(hours=3)
+
+
+def test_connect_resets_an_auto_detected_offset_but_not_a_pinned_one():
+    fake = FakeMT5()
+
+    auto = MT5Client(fake, login=1, password="pw", server="Demo")
+    auto._server_utc_offset = pd.Timedelta(hours=3)  # simulate a prior detection
+    auto.connect()
+    assert auto._server_utc_offset is None  # re-detects fresh next fetch -- could be a different server/DST now
+
+    pinned = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(hours=2))
+    pinned.connect()
+    assert pinned._server_utc_offset == pd.Timedelta(hours=2)  # caller's explicit value survives reconnect
 
 
 def test_fetch_candles_raises_on_unknown_symbol():

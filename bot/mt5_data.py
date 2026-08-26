@@ -75,7 +75,8 @@ class MT5Client:
     (stop opening new trades) rather than assuming a retry will succeed."""
 
     def __init__(self, mt5_module, login: int, password: str, server: str, symbol_suffix: str = "",
-                 symbol_overrides: dict[str, str] | None = None, terminal_path: str | None = None):
+                 symbol_overrides: dict[str, str] | None = None, terminal_path: str | None = None,
+                 server_utc_offset: "pd.Timedelta | None" = None):
         self._mt5 = mt5_module
         self._login = login
         self._password = password
@@ -94,6 +95,20 @@ class MT5Client:
         # used to detect "a new candle just closed" without re-processing
         # the same bar twice.
         self._last_closed_time: dict[tuple[str, str], pd.Timestamp] = {}
+        # MT5's copy_rates_from_pos() reports candle times in the broker's
+        # OWN server clock (e.g. EET/EEST), not true UTC, despite the raw
+        # value looking like a plain Unix timestamp -- confirmed live:
+        # MetaQuotes-Demo runs ~3 hours ahead of real UTC, and every
+        # live-synced candle was silently getting that server time
+        # relabeled "UTC", splicing onto Dukascopy's genuinely-UTC
+        # historical data with the wrong period boundaries. None (the
+        # default) auto-detects it on the first fetch_candles() call and
+        # re-detects after every reconnect (a reconnect could land on a
+        # different server, or span a DST transition); pass an explicit
+        # value to pin it instead -- also how tests keep candle-conversion
+        # fixtures independent of this detection call.
+        self._server_utc_offset = server_utc_offset
+        self._offset_pinned = server_utc_offset is not None
 
     def broker_symbol(self, internal_symbol: str) -> str:
         return self._symbol_map.broker_symbol(internal_symbol)
@@ -107,6 +122,13 @@ class MT5Client:
             raise MT5ConnectionError(f"mt5.login() failed for login {self._login}@{self._server}: "
                                       f"{self._mt5.last_error()}")
         self._connected = True
+        # Re-detect on every (re)connect rather than trusting a stale
+        # cached value -- a reconnect could land on a different server, or
+        # span a DST transition on the same one. An explicitly pinned
+        # offset (constructor arg) is left alone -- the caller asked for
+        # that exact value regardless of reconnects.
+        if not self._offset_pinned:
+            self._server_utc_offset = None
 
     def disconnect(self) -> None:
         self._mt5.shutdown()
@@ -117,6 +139,21 @@ class MT5Client:
             return False
         info = self._mt5.terminal_info()
         return info is not None and getattr(info, "connected", False)
+
+    def _detect_server_utc_offset(self, symbol: str, real_now: pd.Timestamp | None = None) -> pd.Timedelta:
+        """Compares the currently-forming M1 candle's reported open time
+        (always exactly on the minute) against Python's own real UTC
+        clock, rounded to the nearest hour since every broker offset seen
+        in practice is a whole number of hours. `real_now` is only ever
+        overridden by tests, for a deterministic comparison point."""
+        rates = self._mt5.copy_rates_from_pos(symbol, self._mt5.TIMEFRAME_M1, 0, 1)
+        if not rates:
+            raise MT5ConnectionError(f"copy_rates_from_pos({symbol}, M1) failed while detecting "
+                                      f"server UTC offset: {self._mt5.last_error()}")
+        broker_time = pd.Timestamp(rates[0]["time"], unit="s", tz="UTC")
+        real_now = (real_now if real_now is not None else pd.Timestamp.now(tz="UTC")).floor("min")
+        hours = round((broker_time - real_now).total_seconds() / 3600)
+        return pd.Timedelta(hours=hours)
 
     def fetch_candles(self, internal_symbol: str, granularity: str, count: int = 300) -> list[Candle]:
         """Returns the `count` most recent CLOSED candles, oldest first --
@@ -129,6 +166,8 @@ class MT5Client:
             raise ValueError(f"unsupported granularity {granularity!r}, expected one of {GRANULARITIES}")
         timeframe = getattr(self._mt5, _TIMEFRAME_ATTR[granularity])
         symbol = self.broker_symbol(internal_symbol)
+        if self._server_utc_offset is None:
+            self._server_utc_offset = self._detect_server_utc_offset(symbol)
         # start=1 skips the still-forming bar at index 0 directly, rather
         # than fetching count+1 and slicing -- one fewer thing to get
         # off-by-one wrong.
@@ -137,7 +176,8 @@ class MT5Client:
             raise MT5ConnectionError(f"copy_rates_from_pos({symbol}, {granularity}) failed: "
                                       f"{self._mt5.last_error()}")
         candles = [
-            Candle(pd.Timestamp(r["time"], unit="s", tz="UTC"), float(r["open"]), float(r["high"]),
+            Candle(pd.Timestamp(r["time"], unit="s", tz="UTC") - self._server_utc_offset,
+                   float(r["open"]), float(r["high"]),
                    float(r["low"]), float(r["close"]), float(r["tick_volume"]))
             for r in rates
         ]

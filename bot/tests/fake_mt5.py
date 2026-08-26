@@ -13,6 +13,7 @@ class FakeMT5:
     TIMEFRAME_D1 = "D1"
     TIMEFRAME_H4 = "H4"
     TIMEFRAME_H1 = "H1"
+    TIMEFRAME_M1 = "M1"
 
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = 1

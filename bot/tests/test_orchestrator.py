@@ -26,7 +26,7 @@ def make_profile():
 
 def make_bot(fake, tmp_path, instruments=("EURUSD",)):
     fake.symbols.setdefault("EURUSD", make_symbol_info(point=0.0001))
-    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
     client.connect()
     execu = MT5Execution(fake)
     audit = AuditLog(str(tmp_path / "audit.db"))
