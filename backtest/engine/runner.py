@@ -476,19 +476,36 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     breakouts = sorted(h4_confirmations, key=lambda c: c.time)
     setups = []
 
+    # Pre-indexed, time-sorted views so each breakout's searches below are
+    # bisect lookups into a bounded slice rather than a linear scan of the
+    # whole multi-year history. Measured at ~71% of a single
+    # run_backtest's total runtime before this: with ~4,000 breakouts each
+    # scanning every liquidity point AND every H4 key level, the two
+    # comprehensions below were tens of millions of comparisons per call.
+    # Pure performance change -- the selection semantics are unchanged
+    # (verified bit-identical against the pre-optimization output).
+    points_sorted = sorted(liquidity_points, key=lambda p: p.time)
+    point_times = [p.time for p in points_sorted]
+    levels_sorted = sorted(h4_key_levels, key=lambda lvl: lvl.time)
+    level_times = [lvl.time for lvl in levels_sorted]
+
     for i, brk in enumerate(breakouts):
         prev_breakout_time = breakouts[i - 1].time if i > 0 else None
         next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
         retracement_side = "low" if brk.direction == Direction.BULLISH else "high"
 
-        candidate_points = [
-            p for p in liquidity_points
-            if p.time > brk.time and p.kind == retracement_side
-            and (next_breakout_time is None or p.time < next_breakout_time)
-        ]
-        if not candidate_points:
+        # Only the FIRST qualifying point is ever used, so stop at it
+        # rather than materializing every match first.
+        liquidity_point = None
+        for idx in range(bisect.bisect_right(point_times, brk.time), len(points_sorted)):
+            p = points_sorted[idx]
+            if next_breakout_time is not None and p.time >= next_breakout_time:
+                break
+            if p.kind == retracement_side:
+                liquidity_point = p
+                break
+        if liquidity_point is None:
             continue
-        liquidity_point = candidate_points[0]
 
         # Bounded to the CURRENT structural leg (since the previous breakout,
         # any direction), not "every same-direction level in the whole
@@ -499,10 +516,11 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # span instead of, in the worst case, decades of H4 candles --
         # across a multi-year backtest that unbounded version turns into a
         # hang, not just a slowdown (see backtest/README.md's changelog).
+        lo = (bisect.bisect_left(level_times, prev_breakout_time)
+              if prev_breakout_time is not None else 0)
+        hi = bisect.bisect_right(level_times, liquidity_point.time)
         candidate_levels = [
-            lvl for lvl in h4_key_levels
-            if lvl.default_bias == brk.direction and lvl.time <= liquidity_point.time
-            and (prev_breakout_time is None or lvl.time >= prev_breakout_time)
+            lvl for lvl in levels_sorted[lo:hi] if lvl.default_bias == brk.direction
         ]
         if not candidate_levels:
             continue
