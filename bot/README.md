@@ -8,6 +8,13 @@ risk rules actually hold up against real 2026 trade data, and what
 doesn't (a naive "close everything when floating loss looks bad" rule
 was tested and rejected -- it cost real money by cutting winners short).
 
+**Picking this back up in a new session?** Read
+[`OPERATIONS_LOG.md`](OPERATIONS_LOG.md) first -- it has the actual
+current VPS deployment topology (paths, ports, account numbers, tmux
+session names) and a chronological log of every live incident found and
+fixed so far. This README covers the general design/setup; that file
+covers what's actually running right now and its history.
+
 ## What's here
 
 | Module | Job | MT5 dependency |
