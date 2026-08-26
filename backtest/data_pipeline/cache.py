@@ -8,10 +8,29 @@ Fetches are incremental: each fetcher asks `last_cached_time()` for a
 symbol/granularity and only requests candles after that point, then
 `append()` merges and dedupes rather than re-downloading history that's
 already on disk.
+
+`append()` has a fast path that matters enormously for the live bot.
+Measured on the live VPS, adding 10 candles to EURUSD's H1.csv via the
+original full read-merge-rewrite took **36.4 seconds** -- 15.8s to
+`pd.read_csv` 9.4MB / 155k rows, 2.3s to concat+dedupe+sort, 18.3s to
+write it all back. Per granularity, per instrument, per sync, on two
+bots sharing the same files: roughly 20 minutes of work per pass per
+bot, which is what put the live bots hours behind and made them miss
+real setups (see bot/OPERATIONS_LOG.md, 2026-08-26).
+
+The overwhelmingly common live case is "these candles are all at or
+before the newest one already cached, plus maybe one or two genuinely
+new ones at the end". That needs no merge at all: read just the final
+line to learn the newest cached timestamp, drop everything at or before
+it, and append what's left. Nothing new at all -- the usual outcome --
+costs one short seek and zero writes.
 """
 
+import fcntl
 import os
 import tempfile
+from contextlib import contextmanager
+
 import pandas as pd
 
 DATA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
@@ -21,6 +40,90 @@ COLUMNS = ["time", "open", "high", "low", "close", "volume"]
 
 def cache_path(source: str, symbol: str, granularity: str) -> str:
     return os.path.join(DATA_ROOT, source, symbol, f"{granularity}.csv")
+
+
+@contextmanager
+def _file_lock(path: str, exclusive: bool):
+    """Coordinate readers and writers across processes.
+
+    Two live bot processes (conservative + aggressive) read and write the
+    SAME cache files concurrently, and a reader catching a writer
+    mid-update is not hypothetical -- it crashed a live bot with
+    `pandas.errors.EmptyDataError` on 2026-08-26. The lock is held on a
+    sidecar `.lock` file rather than the CSV itself, because the
+    full-merge path below swaps the CSV's inode via `os.replace()`, which
+    a lock on the old inode would not survive.
+
+    Readers take a shared lock (they don't block each other); writers take
+    an exclusive one. The fast append path holds the write lock for
+    microseconds; only the rare full merge holds it meaningfully long."""
+    lock_file = path + ".lock"
+    os.makedirs(os.path.dirname(lock_file), exist_ok=True)
+    handle = open(lock_file, "a+")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+        yield
+    finally:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+        finally:
+            handle.close()
+
+
+TAIL_BYTES = 65536  # ~1,000 H1 rows: far more than any live sync submits
+
+
+def _tail_index(path: str, nbytes: int = TAIL_BYTES):
+    """`(last_time, times_in_tail)` read from the end of the file rather
+    than by parsing all of it -- the point of the fast path.
+
+    `times_in_tail` matters for correctness, not just speed: a submitted
+    row OLDER than `last_time` might be a genuine gap-fill that isn't on
+    disk, and appending only the newer rows would silently lose it. The
+    caller checks membership here and falls back to the full merge when
+    it can't prove the older rows are already present.
+
+    Returns None for a missing, empty or header-only file, or anything
+    not in the expected ISO-8601 'Z' format -- all of which mean "don't
+    risk the fast path"."""
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return None
+    if size == 0:
+        return None
+    start = max(0, size - nbytes)
+    with open(path, "rb") as f:
+        f.seek(start)
+        tail = f.read().decode("utf-8", errors="replace")
+    lines = [ln for ln in tail.splitlines() if ln.strip()]
+    # A non-zero start almost certainly lands mid-line; that first
+    # fragment isn't a whole row, so it can't be trusted for membership.
+    if start > 0 and lines:
+        lines = lines[1:]
+    if not lines:
+        return None
+    times = {ln.split(",")[0].strip() for ln in lines}
+    last = lines[-1].split(",")[0].strip()
+    if not last.endswith("Z"):
+        return None  # header-only file, or a format we can't order safely
+    return last, times
+
+
+def _append_rows(path: str, rows: list[dict]) -> None:
+    """Append rows as CSV lines in a SINGLE write() call.
+
+    One small write to a file opened O_APPEND is not split by the kernel,
+    so a concurrent reader sees either none of it or all of it -- and
+    readers hold a shared lock against this anyway (see _file_lock).
+    Deliberately not pandas: building a DataFrame to emit a handful of
+    lines is most of the cost this fast path exists to avoid."""
+    payload = "".join(
+        ",".join("" if row.get(col) is None else str(row.get(col)) for col in COLUMNS) + "\n"
+        for row in rows
+    )
+    with open(path, "a", newline="") as f:
+        f.write(payload)
 
 
 def last_cached_time(source: str, symbol: str, granularity: str):
@@ -35,12 +138,46 @@ def last_cached_time(source: str, symbol: str, granularity: str):
 
 
 def append(source: str, symbol: str, granularity: str, rows: list[dict]):
-    """Merge new candle rows into the cache, dedupe by time, keep sorted ascending."""
+    """Merge new candle rows into the cache, dedupe by time, keep sorted ascending.
+
+    Takes the cheap append-only path when every row worth keeping sorts
+    after everything already cached (see the module docstring); otherwise
+    falls back to the full read-merge-rewrite below, which stays correct
+    for out-of-order rows, backfills, and first writes."""
     if not rows:
         return 0
     path = cache_path(source, symbol, granularity)
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
+    with _file_lock(path, exclusive=True):
+        index = _tail_index(path) if os.path.exists(path) else None
+        if index is not None:
+            last_cached, tail_times = index
+            times = [str(row.get("time")) for row in rows]
+            if all(t.endswith("Z") for t in times):
+                fresh = [r for r, t in zip(rows, times) if t > last_cached]
+                older = [t for t in times if t <= last_cached]
+                # Every row we're NOT appending must already be on disk,
+                # or it's a gap-fill that appending would silently lose.
+                # Anything older than the tail window can't be proven
+                # present from here, so it merges -- correct, just slower.
+                if all(t in tail_times for t in older):
+                    if not fresh:
+                        return 0  # nothing new -- the usual live case, and free
+                    fresh_times = [str(r["time"]) for r in fresh]
+                    # Strictly increasing among themselves and all newer
+                    # than disk, so appending preserves sort + uniqueness.
+                    if (len(set(fresh_times)) == len(fresh_times)
+                            and fresh_times == sorted(fresh_times)):
+                        _append_rows(path, fresh)
+                        return len(fresh)
+        return _merge_rewrite(path, rows)
+
+
+def _merge_rewrite(path: str, rows: list[dict]) -> int:
+    """The original full read-merge-rewrite. Correct for any input, but
+    reads and rewrites the entire file -- only for cases the append-only
+    fast path in `append()` can't safely handle. Caller holds the lock."""
     new_df = pd.DataFrame(rows, columns=COLUMNS)
     if os.path.exists(path):
         existing = pd.read_csv(path)
@@ -76,5 +213,9 @@ def load(source: str, symbol: str, granularity: str) -> pd.DataFrame:
         raise FileNotFoundError(
             f"No cached data for {source}/{symbol}/{granularity} -- run the fetcher first."
         )
-    df = pd.read_csv(path, parse_dates=["time"])
+    # Shared lock: every read of the cache goes through here (candles.py's
+    # load_candles(), and therefore run_backtest()), so taking it here is
+    # what makes the writer's lock in append() actually mean something.
+    with _file_lock(path, exclusive=False):
+        df = pd.read_csv(path, parse_dates=["time"])
     return df.sort_values("time").reset_index(drop=True)

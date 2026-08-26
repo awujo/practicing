@@ -49,11 +49,100 @@ def test_append_leaves_the_original_file_untouched_if_the_write_fails(monkeypatc
 
     monkeypatch.setattr(pd.DataFrame, "to_csv", boom)
     with pytest.raises(RuntimeError):
-        cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T02:00:00Z", 1.11, 1.12, 1.10, 1.115)])
+        # An out-of-order row forces the full merge path, which is the
+        # one that rewrites the file and so is the one at risk here.
+        cache_module.append("dukascopy", "EURUSD", "H1", [
+            row("2023-06-01T00:00:00Z", 1.11, 1.12, 1.10, 1.115),
+        ])
 
     assert open(path).read() == original_content  # untouched, not truncated/corrupted
     tmp_leftovers = [f for f in os.listdir(os.path.dirname(path)) if f.endswith(".tmp")]
     assert tmp_leftovers == []  # the failed temp file was cleaned up, not left behind
+
+
+# ---- the append-only fast path ----
+
+def test_appending_newer_rows_does_not_rewrite_the_whole_file(monkeypatch):
+    # The point of the fast path. Measured on the live VPS, the full
+    # read-merge-rewrite cost 36.4s to add 10 candles to a 9.4MB H1 file
+    # -- per granularity, per instrument, per sync, on two bots. Adding
+    # rows that all sort after what's cached must touch neither
+    # pd.read_csv nor to_csv.
+    cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105)])
+
+    def fail(*a, **k):
+        raise AssertionError("fast path must not read or rewrite the whole file")
+
+    monkeypatch.setattr(pd, "read_csv", fail)
+    monkeypatch.setattr(pd.DataFrame, "to_csv", fail)
+    added = cache_module.append("dukascopy", "EURUSD", "H1",
+                                 [row("2024-01-01T01:00:00Z", 1.105, 1.115, 1.10, 1.11)])
+    assert added == 1
+
+
+def test_resubmitting_only_already_cached_rows_does_no_work_at_all(monkeypatch):
+    # The usual live case: sync fetches the last 10 candles, of which
+    # nine are already on disk and none are new. That must be free.
+    rows = [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105),
+            row("2024-01-01T01:00:00Z", 1.105, 1.115, 1.10, 1.11)]
+    cache_module.append("dukascopy", "EURUSD", "H1", rows)
+
+    def fail(*a, **k):
+        raise AssertionError("re-submitting known rows must not touch the file")
+
+    monkeypatch.setattr(pd, "read_csv", fail)
+    monkeypatch.setattr(pd.DataFrame, "to_csv", fail)
+    assert cache_module.append("dukascopy", "EURUSD", "H1", rows) == 0
+
+
+def test_fast_path_and_full_merge_produce_identical_files(tmp_path, monkeypatch):
+    # The property that makes the fast path safe to ship: for input it
+    # accepts, it must leave the file byte-for-byte identical to what the
+    # original full merge would have produced.
+    seed = [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105)]
+    later = [row("2024-01-01T01:00:00Z", 1.105, 1.115, 1.10, 1.11),
+             row("2024-01-01T02:00:00Z", 1.11, 1.12, 1.105, 1.115)]
+
+    cache_module.append("dukascopy", "FAST", "H1", seed)
+    cache_module.append("dukascopy", "FAST", "H1", later)
+    fast = open(cache_module.cache_path("dukascopy", "FAST", "H1")).read()
+
+    cache_module.append("dukascopy", "SLOW", "H1", seed)
+    slow_path = cache_module.cache_path("dukascopy", "SLOW", "H1")
+    cache_module._merge_rewrite(slow_path, later)
+    slow = open(slow_path).read()
+
+    assert fast == slow
+
+
+def test_out_of_order_rows_fall_back_to_the_full_merge():
+    # A backfill that interleaves with cached data can't just be appended
+    # -- it must still come out deduped and sorted.
+    cache_module.append("dukascopy", "EURUSD", "H1", [
+        row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105),
+        row("2024-01-01T05:00:00Z", 1.13, 1.14, 1.12, 1.135),
+    ])
+    cache_module.append("dukascopy", "EURUSD", "H1", [
+        row("2024-01-01T03:00:00Z", 1.11, 1.12, 1.10, 1.115),  # slots in between
+        row("2024-01-01T05:00:00Z", 1.99, 1.99, 1.99, 1.999),  # duplicate time
+    ])
+    df = cache_module.load("dukascopy", "EURUSD", "H1")
+    times = [str(t) for t in df["time"]]
+    assert times == sorted(times)
+    assert len(times) == len(set(times))
+    assert len(df) == 3
+    assert df.iloc[2]["close"] == 1.135  # existing row won the de-dup, as before
+
+
+def test_a_header_only_file_falls_back_rather_than_appending_blindly():
+    path = cache_module.cache_path("dukascopy", "EURUSD", "H1")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    open(path, "w").write(",".join(cache_module.COLUMNS) + "\n")
+
+    cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105)])
+    df = cache_module.load("dukascopy", "EURUSD", "H1")
+    assert len(df) == 1
+    assert df.iloc[0]["close"] == 1.105
 
 
 def test_append_writes_are_never_observed_as_empty_by_a_concurrent_reader(monkeypatch):
@@ -75,7 +164,9 @@ def test_append_writes_are_never_observed_as_empty_by_a_concurrent_reader(monkey
         real_replace(src, dst)
 
     monkeypatch.setattr(os, "replace", spy_replace)
-    cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T01:00:00Z", 1.105, 1.115, 1.10, 1.11)])
+    # Out-of-order, so this takes the full merge path -- the one that
+    # swaps the file and therefore the one this property is about.
+    cache_module.append("dukascopy", "EURUSD", "H1", [row("2023-06-01T00:00:00Z", 1.105, 1.115, 1.10, 1.11)])
 
     assert len(seen_readable_before_swap) == 1
     assert seen_readable_before_swap[0] != {}  # old file was still fully readable, not pre-truncated
