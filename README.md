@@ -2,6 +2,13 @@
 
 Source material and extracted strategy notes from mentor's video course (12 videos), being processed incrementally.
 
+**New to this repo (including a fresh Claude session)?** Read
+[`PROJECT_HISTORY.md`](PROJECT_HISTORY.md) for the full chronological
+build-out -- strategy extraction, backtest engine, live bot, first live
+deployment -- with commit references for every claim. Then
+[`bot/OPERATIONS_LOG.md`](bot/OPERATIONS_LOG.md) for the live VPS
+deployment's current topology and incident history specifically.
+
 ## Structure
 - `knowledge-base/videos/video-XX/` — transcript + strategy notes extracted from each video
 - `knowledge-base/frames/video-XX/` — key chart/setup screenshots extracted from each video

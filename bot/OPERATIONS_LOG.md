@@ -8,7 +8,9 @@ been tried, found, and fixed. `bot/README.md` covers the general
 setup/design; this file covers this specific deployment's state and
 incident history. Keep entries short -- the full reasoning for any fix
 lives in that commit's own message (`git log`), this file just needs to
-say what happened and point at the commit.
+say what happened and point at the commit. For the whole project's
+history before this (strategy extraction, backtest engine build-out,
+the live bot's foundation), see [`../PROJECT_HISTORY.md`](../PROJECT_HISTORY.md).
 
 ## Current deployment topology (as of 2026-08-26)
 
