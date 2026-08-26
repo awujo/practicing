@@ -293,6 +293,52 @@ described above, as actually deployed and running on 2026-08-26.
 Restore with `git checkout backup/full-replay-architecture` if the
 incremental work needs to be abandoned or compared against.
 
+## 2026-08-26 evening -- what the live box actually taught us
+
+Deploying the gate did NOT fix the lag on its own, and chasing that down
+found two further problems plus one self-inflicted one. Recording the
+numbers because every wrong turn came from trusting a dev-sandbox
+timing instead of benchmarking on the VPS, which is **19-40x slower**
+(it is swapping) and therefore has a completely different cost profile.
+
+**The real bottleneck: `cache.append()` rewriting the whole file.**
+Benchmarked on the VPS, adding 10 candles to EURUSD's 9.4MB / 155k-row
+H1.csv took **36.40s** (15.80s `pd.read_csv` + 2.30s concat/dedupe/sort
++ 18.30s `to_csv`) -- per granularity, per instrument, per sync, on two
+bots sharing the files. `sync_recent_from_mt5()` runs BEFORE the gate,
+so no amount of gating could ever have helped. Fixed with a tail-read
+plus append-only fast path (commit `ec8e8cb`): the same call is now
+**0.001s**. Note the same 18-second `to_csv` window is what made last
+night's `EmptyDataError` crash likely in the first place -- the
+concurrency bug was a symptom of this, not a separate issue.
+
+**`replay_bias` was still quadratic after the first fix.** The earlier
+bisect pass bounded the scan by TIME, but levels that never qualify are
+never marked tested, so each candle still re-walked them all. The
+dominant filter is `c.low <= level.price <= c.high`, so the index
+belonged on the PRICE axis. `build_htf_context()` on the VPS:
+**131.61s -> 19.69s** (commit `fb16cc4`), i.e. a rebuild wave across 25
+instruments went from ~55 min to ~8.2 min per bot. Waves happen only on
+W/D/H4 closes (~7/day), so that is roughly 4% of the box's daily
+capacity rather than more than 100%.
+
+**Self-inflicted: root-owned lock files.** Diagnostic commands run as
+`docker exec mt5 ...` (no `-u abc`) created `.lock` files owned by root;
+the bots run as `abc` and then hit `PermissionError` on every EURUSD
+iteration. The per-instrument exception isolation added earlier caught
+it, so the loop survived -- but EURUSD silently stopped syncing all
+evening. `_file_lock` now degrades to running unlocked with a warning
+rather than raising. **Always use `docker exec -u abc` for anything
+touching /config/trading/backtest/data.**
+
+### Standing lesson
+
+Profile on the box that is actually struggling. Three separate
+hypotheses formed from sandbox timings -- "the H1 walk is the cost",
+"this needs an incremental-state rewrite", "these are rebuild storms" --
+were all wrong, and each cost hours. The three fixes that mattered were
+each found within minutes of running a benchmark on the VPS itself.
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live
