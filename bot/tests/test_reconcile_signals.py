@@ -214,3 +214,27 @@ def test_a_broken_feed_is_never_reported_as_a_quiet_healthy_hour(tmp_path, monke
     monkeypatch.setattr(rs.subprocess, "run", fake_run)
     with pytest.raises(rs.FeedUnavailable):
         rs.fetch_feed(str(tmp_path), "signal-feed", "recent-signals.json")
+
+
+def test_the_feed_is_read_from_fetch_head_not_a_remote_tracking_ref(tmp_path, monkeypatch):
+    # Regression guard. The live checkout fetches a single branch
+    # (`+refs/heads/main:refs/remotes/origin/main`), so fetching
+    # signal-feed populates FETCH_HEAD and never creates
+    # refs/remotes/origin/signal-feed. Reading `origin/<branch>` works in
+    # a full clone and fails on the one machine this actually runs on --
+    # the worst kind of bug to reintroduce while tidying.
+    import subprocess
+
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        if "fetch" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout='{"signals": []}', stderr="")
+
+    monkeypatch.setattr(rs.subprocess, "run", fake_run)
+    rs.fetch_feed(str(tmp_path), "signal-feed", "recent-signals.json")
+    show = next(c for c in calls if "show" in c)
+    assert "FETCH_HEAD:recent-signals.json" in show
+    assert not any("origin/signal-feed:" in part for part in show)

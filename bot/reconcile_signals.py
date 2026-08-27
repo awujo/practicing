@@ -89,6 +89,14 @@ def fetch_feed(repo: str, branch: str, feed_file: str) -> dict:
     the working tree -- so this never disturbs the checkout the live bots
     are importing their code from. `git show` reads the fetched object
     directly; nothing is checked out."""
+    # Read back through FETCH_HEAD, NOT `origin/<branch>`. The live
+    # checkout's refspec is `+refs/heads/main:refs/remotes/origin/main`
+    # -- single-branch -- so fetching any other branch populates
+    # FETCH_HEAD and never creates a remote-tracking ref for it.
+    # `git show origin/signal-feed:...` therefore fails with "unknown
+    # revision" on exactly the machine this runs on, while working fine
+    # in a clone that happens to fetch all branches. FETCH_HEAD is
+    # written by the fetch immediately above, so it is unambiguous.
     fetch = subprocess.run(["git", "-C", repo, "fetch", "--quiet", "origin", branch],
                            capture_output=True, text=True)
     if fetch.returncode != 0:
@@ -106,11 +114,11 @@ def fetch_feed(repo: str, branch: str, feed_file: str) -> dict:
             )
         raise FeedUnavailable(f"git fetch {branch} failed: {stderr.strip() or fetch.returncode}")
 
-    show = subprocess.run(["git", "-C", repo, "show", f"origin/{branch}:{feed_file}"],
+    show = subprocess.run(["git", "-C", repo, "show", f"FETCH_HEAD:{feed_file}"],
                           capture_output=True, text=True)
     if show.returncode != 0:
         raise FeedUnavailable(
-            f"'{feed_file}' is not present on origin/{branch}: {show.stderr.strip()}")
+            f"'{feed_file}' is not present on {branch}: {show.stderr.strip()}")
     return json.loads(show.stdout)
 
 
