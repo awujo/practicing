@@ -1105,17 +1105,35 @@ built in phases so each is testable before the next depends on it:
       but the measurement says the honest answer is "take the trade".
 
       **Verification: 2025 and 2026 re-run across all 27 instruments.**
-      Removing origin/continuation was claimed above to change no
-      decisions. That was checked rather than asserted -- the full
-      Dukascopy cache, all 27 instruments, both entry styles, full
-      history, run under this commit and under its parent (4c3aacc):
+      The origin/IRL work was claimed above to change no decisions. That
+      was checked rather than asserted, over the WHOLE block of commits
+      that touched it -- f97ee38 (the last commit before any of it) vs
+      add83b3 (after), spanning c93e3de's introduction of `irl_mode` and
+      this commit's removal of origin/continuation. Full Dukascopy cache,
+      all 27 instruments, both entry styles, full history:
 
-          34,182 trades from each. The two JSON dumps have the same
-          MD5. Every trade's entry time, direction, entry price, stop,
-          status, R multiple, trigger and stop kind is identical.
+      | period | style | before | after |
+      |---|---|---|---|
+      | 2025 | conservative | 367.2 R, 40.1%, 750 trades | identical |
+      | 2025 | aggressive | 1101.4 R, 60.0%, 797 trades | identical |
+      | 2026 | conservative | 452.3 R, 48.1%, 560 trades | identical |
+      | 2026 | aggressive | 884.2 R, 63.1%, 597 trades | identical |
 
-      So the label really was inert, and the 2025/2026 numbers below are
-      unchanged by this commit. What HAS changed since the numbers last
+          34,182 trades from each. The two JSON dumps have the same MD5.
+          Every trade's entry time, direction, entry price, stop, TARGET,
+          status, R multiple, trigger, stop kind and entry pattern is
+          identical.
+
+      Both halves are inert for the reason each was expected to be: the
+      origin label drove no decision, and `irl_mode` defaults to
+      "ignore", which is precisely the pre-existing behavior -- the gate
+      only bites when explicitly passed "skip" or "wait", and the
+      measurement above says not to.
+
+      Worth being precise about what this does NOT cover, because an
+      earlier version of this note compared against the immediate parent
+      (4c3aacc) instead and proved a much weaker thing. What HAS changed
+      since the numbers last
       published to the dashboard (commit e025d37, 2026-08-16) is the two
       strategy fixes that landed in between -- 2482da7 (plain breakouts
       read off the close, not the wick) and f97ee38 (the bias-flip rule
@@ -1129,7 +1147,9 @@ built in phases so each is testable before the next depends on it:
       | same code, today's data | 429 | 38.0% | 175.3 |
       | today's code, today's data | 559 | 48.1% | 452.3 |
 
-      +39.9 R from the extra data, +277.1 R from the two fixes. The same
+      +39.9 R from the extra data, +277.1 R from the two fixes -- none of
+      it from the origin/IRL work, which the table above shows moved
+      nothing at all. The same
       comparison across both years and both styles, on identical data:
 
       | period | style | Aug-16 code | today | delta |
