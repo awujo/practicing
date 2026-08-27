@@ -72,6 +72,16 @@ DEFAULT_BRANCH = "signal-feed"
 DEFAULT_FEED_FILE = "recent-signals.json"
 MATCH_WINDOW = timedelta(hours=2)
 
+# The feed is republished hourly (hourly-signal-check.yml fires on every
+# fetch-data run). If it stops, `generated_at` simply freezes and every
+# subsequent reconciliation reads "0 signals published -- all clear"
+# against a window that stopped moving, forever. That is a broken
+# pipeline wearing the exact costume of a healthy quiet hour, so
+# staleness has to be an explicit alarm rather than something a reader
+# is trusted to notice in the header. Three hours allows a couple of
+# missed or slow runs before crying wolf.
+MAX_FEED_AGE = timedelta(hours=3)
+
 # Where each style's audit database lives, relative to the repo root.
 # Both bots write into the bind-mounted checkout (see
 # bot/OPERATIONS_LOG.md's topology section), so these resolve on the
@@ -182,11 +192,24 @@ def reconcile(feed: dict, repo: str, window: timedelta):
     return results, unmatched
 
 
-def render(feed: dict, results: list, unmatched: list) -> tuple[str, bool]:
+def feed_age(feed: dict, now: datetime | None = None) -> timedelta:
+    return (now or datetime.now(timezone.utc)) - _parse_time(feed["generated_at"])
+
+
+def render(feed: dict, results: list, unmatched: list,
+            max_age: timedelta = MAX_FEED_AGE, now: datetime | None = None) -> tuple[str, bool]:
     """Returns (report, needs_attention). `needs_attention` drives the
     exit code so cron can stay quiet on a clean run."""
-    out = [f"Signal reconciliation -- feed generated {feed['generated_at']}",
+    age = feed_age(feed, now)
+    out = [f"Signal reconciliation -- feed generated {feed['generated_at']} "
+           f"({age.total_seconds() / 3600:.1f}h ago)",
            f"window: since {feed['since']}  ({len(feed['signals'])} published signal(s))"]
+    stale = age > max_age
+    if stale:
+        out.append(f"\n>>> STALE FEED: last published {age.total_seconds() / 3600:.1f}h ago, "
+                   f"expected hourly.\n"
+                   ">>> Nothing below reflects the current hour. Check the 'Fetch backtest data'\n"
+                   ">>> and 'Hourly signal check' workflows on the Actions tab.")
     if feed.get("errored"):
         out.append(f"NOTE: {len(feed['errored'])} instrument/style combo(s) errored upstream -- "
                    "this check cannot speak for them:")
@@ -217,8 +240,8 @@ def render(feed: dict, results: list, unmatched: list) -> tuple[str, bool]:
         for row in unmatched[:10]:
             out.append(f"    {row['timestamp']}  {row['instrument']:7} {row['decision']}  {row['reason']}")
 
-    needs_attention = bool(missing or late)
-    if needs_attention:
+    needs_attention = bool(missing or late or stale)
+    if missing or late:
         out.append("\n>>> Signals the strategy found did not reach the live bots on time.")
         out.append(">>> Check the bots are alive and current: "
                    "docker exec -u abc mt5 pgrep -fa 'bot.run_live'")
@@ -235,6 +258,10 @@ def main():
     parser.add_argument("--feed-path", default=None,
                          help="Read the feed from a local file instead of the git remote. For testing.")
     parser.add_argument("--window-hours", type=float, default=MATCH_WINDOW.total_seconds() / 3600)
+    parser.add_argument("--max-feed-age-hours", type=float,
+                         default=MAX_FEED_AGE.total_seconds() / 3600,
+                         help="Alarm if the feed hasn't been republished within this many hours. "
+                              "A frozen feed otherwise reads as a permanently clean result.")
     parser.add_argument("--quiet-when-clean", action="store_true",
                          help="Print nothing when every signal was seen on time. For cron, so a "
                               "healthy hour generates no mail and an unhealthy one does.")
@@ -251,7 +278,8 @@ def main():
         return 2
 
     results, unmatched = reconcile(feed, args.repo, timedelta(hours=args.window_hours))
-    report, needs_attention = render(feed, results, unmatched)
+    report, needs_attention = render(feed, results, unmatched,
+                                      max_age=timedelta(hours=args.max_feed_age_hours))
     if needs_attention or not args.quiet_when_clean:
         print(report)
     return 1 if needs_attention else 0

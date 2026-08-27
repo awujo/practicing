@@ -52,6 +52,12 @@ def log_entry(repo, style, instrument, when, decision="allow", reason="placed"):
     conn.close()
 
 
+def _fresh(f, now=None):
+    """Feeds in these tests are hand-built with old timestamps, so pass a
+    `now` close to them wherever staleness isn't what's under test."""
+    return now or (rs._parse_time(f["generated_at"]) + timedelta(minutes=5))
+
+
 def run(repo, f, window_hours=2):
     return rs.reconcile(f, str(repo), timedelta(hours=window_hours))
 
@@ -123,8 +129,9 @@ def test_no_signals_published_is_a_clean_result_not_an_alarm(repo):
     # 2026-08-27: Dukascopy produced nothing, so both empty databases are
     # CORRECT. Reporting that as a problem is the false alarm that makes
     # the whole check get ignored.
-    results, unmatched = run(repo, feed([]))
-    report, needs_attention = rs.render(feed([]), results, unmatched)
+    f = feed([])
+    results, unmatched = run(repo, f)
+    report, needs_attention = rs.render(f, results, unmatched, now=_fresh(f))
     assert needs_attention is False
     assert "CORRECT outcome" in report
 
@@ -177,7 +184,11 @@ def test_end_to_end_via_a_local_feed_file(repo, tmp_path, capsys):
     code = rs.main.__wrapped__ if hasattr(rs.main, "__wrapped__") else rs.main
     import sys
     argv = sys.argv
-    sys.argv = ["reconcile_signals", "--repo", str(repo), "--feed-path", str(path)]
+    # These fixtures carry fixed August timestamps, so the staleness check
+    # would (correctly) fire on them; widened here because this test is
+    # about the end-to-end path, not feed freshness.
+    sys.argv = ["reconcile_signals", "--repo", str(repo), "--feed-path", str(path),
+                "--max-feed-age-hours", "1000000"]
     try:
         assert code() == 0
     finally:
@@ -238,3 +249,41 @@ def test_the_feed_is_read_from_fetch_head_not_a_remote_tracking_ref(tmp_path, mo
     show = next(c for c in calls if "show" in c)
     assert "FETCH_HEAD:recent-signals.json" in show
     assert not any("origin/signal-feed:" in part for part in show)
+
+
+def test_a_feed_that_stopped_being_republished_is_an_alarm(repo):
+    # The failure this whole script exists to prevent, one level up: if
+    # the publishing workflow dies, generated_at freezes and every later
+    # run reports "0 signals -- all clear" against a window that stopped
+    # moving. Silence would then mean "broken" and look identical to
+    # "healthy".
+    f = feed([])
+    results, unmatched = run(repo, f)
+    stale_now = rs._parse_time(f["generated_at"]) + timedelta(hours=5)
+    report, needs_attention = rs.render(f, results, unmatched, now=stale_now)
+    assert needs_attention is True
+    assert "STALE FEED" in report
+    assert "5.0h ago" in report
+
+
+def test_a_recently_published_empty_feed_is_still_clean(repo):
+    # The other side: staleness must not turn every quiet hour into an
+    # alarm, or the check gets ignored for the opposite reason.
+    f = feed([])
+    results, unmatched = run(repo, f)
+    report, needs_attention = rs.render(f, results, unmatched, now=_fresh(f))
+    assert needs_attention is False
+    assert "STALE FEED" not in report
+
+
+def test_staleness_is_reported_even_when_every_signal_was_seen(repo):
+    # A stale feed's signals were all matched hours ago. That is not a
+    # current all-clear, and must not be presented as one.
+    log_entry(repo, "conservative", "EURCAD", T(17, 5))
+    f = feed([signal("EURCAD", "conservative", T(17))])
+    results, unmatched = run(repo, f)
+    assert results[0]["state"] == "SEEN"
+    stale_now = rs._parse_time(f["generated_at"]) + timedelta(hours=9)
+    report, needs_attention = rs.render(f, results, unmatched, now=stale_now)
+    assert needs_attention is True
+    assert "STALE FEED" in report

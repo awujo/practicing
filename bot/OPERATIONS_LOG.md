@@ -445,6 +445,14 @@ Reading the output:
   rather than silence, because an empty audit database on an hour when
   Dukascopy also found nothing is not a symptom, and reading it as one
   is how this check would get ignored.
+- **STALE FEED** -- the feed hasn't been republished in over 3 hours
+  (`--max-feed-age-hours`). This is an alarm in its own right, and it
+  fires even when every signal in the stale feed was matched. Without
+  it, a publishing pipeline that quietly died would freeze
+  `generated_at` and every later run would report "0 signals -- all
+  clear" against a window that stopped moving, forever: a dead check
+  wearing the costume of a healthy one. The header always prints the
+  feed's age so the state is visible even below the threshold.
 
 Baseline as of 2026-08-27, run against the real audit state for the
 2026-08-25 to 26 window: **0 seen, 1 late, 8 missing.** The one late is
