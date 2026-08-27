@@ -77,8 +77,6 @@ jobs:
             echo "::error::the check produced no feed file -- not publishing a stale one"
             exit 1
           }
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           rm -rf /tmp/feed && mkdir /tmp/feed && cd /tmp/feed
           git init --quiet -b signal-feed
           cp /tmp/recent-signals.json recent-signals.json
@@ -92,7 +90,14 @@ jobs:
           database. Force-pushed every run; no history is kept here.
           EOF
           git add -A
-          git commit --quiet -m "signal feed $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          # Identity passed per-command rather than via `git config`: the
+          # config would have to be set AFTER `git init` to land in this
+          # throwaway repo, and setting it before (in the checkout) is a
+          # silent no-op here that only surfaces as "empty ident name" at
+          # commit time. -c can't be got wrong by reordering.
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit --quiet -m "signal feed $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           git push --quiet --force \
             "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
             signal-feed
