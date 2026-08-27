@@ -115,8 +115,9 @@ def make_rate(time_unix, o, h, l, c, tick_volume=1000):
     return {"time": time_unix, "open": o, "high": h, "low": l, "close": c, "tick_volume": tick_volume}
 
 
-def make_position(ticket, symbol, price_open, sl, volume):
-    return SimpleNamespace(ticket=ticket, symbol=symbol, price_open=price_open, sl=sl, volume=volume)
+def make_position(ticket, symbol, price_open, sl, volume, magic=20260101):
+    return SimpleNamespace(ticket=ticket, symbol=symbol, price_open=price_open, sl=sl,
+                            volume=volume, magic=magic)
 
 
 def make_deal(entry, price, profit, reason):

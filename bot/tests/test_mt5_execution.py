@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from .fake_mt5 import FakeMT5, make_symbol_info
+from .fake_mt5 import FakeMT5, make_position, make_symbol_info
 from ..mt5_execution import MT5Execution, ValidationError
 
 
@@ -246,3 +246,109 @@ def test_order_falls_back_to_return_when_neither_fok_nor_ioc_is_supported():
     ex = make_exec(fake)
     ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert fake.order_send_calls[-1]["type_filling"] == fake.ORDER_FILLING_RETURN
+
+
+# ---- idempotency: never duplicate an order that actually landed ----
+#
+# Regression tests for the 2026-08-26 live incident. A EURCAD entry hit
+# TRADE_RETCODE_CONNECTION, the retry loop re-sent the identical request,
+# and THREE 10.05-lot positions were opened for one intended trade. They
+# stopped out together for -3,246.27 on a 100k demo account, while the
+# audit log recorded a single "execution_failed" and the bot tracked
+# none of them -- leaving the risk manager blind to the whole position.
+
+def _connection_failure(fake):
+    return SimpleNamespace(retcode=fake.TRADE_RETCODE_CONNECTION, order=0, price=0,
+                            comment="Request rejected due to absence of network connection")
+
+
+def test_a_connection_failure_whose_order_actually_landed_is_not_retried():
+    # The exact live scenario: the broker DID fill it, the confirmation
+    # was lost. Retrying here is what opened the duplicates.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [_connection_failure(fake)]
+
+    def fill_after_send(request):
+        fake.order_send_calls.append(request)
+        # The position exists on the broker despite the failed reply.
+        fake.positions = [make_position(9001, "EURCAD", 1.61707, 1.61562, 10.05)]
+        return fake.order_send_queue.pop(0)
+
+    fake.order_send = fill_after_send
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert len(fake.order_send_calls) == 1, "must NOT re-send an order that already landed"
+    assert result.success is True          # it really did open -- report it as such
+    assert result.ticket == 9001           # so the caller tracks it and risk sees it
+    assert "confirmed open on the broker" in result.reason
+
+
+def test_a_connection_failure_that_truly_failed_is_still_retried():
+    # The other half: if nothing landed, retrying is correct and must
+    # still happen -- the fix must not make the bot give up on real
+    # transient failures.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.positions = []  # nothing ever opens
+    fake.order_send_queue = [
+        _connection_failure(fake),
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_DONE, order=9002, price=1.61707, comment="ok"),
+    ]
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert len(fake.order_send_calls) == 2
+    assert result.success is True
+    assert result.ticket == 9002
+
+
+def test_a_pre_existing_position_on_the_same_symbol_is_not_mistaken_for_our_fill():
+    # We already hold a EURCAD position from an earlier trade. A genuinely
+    # failed send must not "recover" that unrelated ticket and report a
+    # fill that never happened.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.positions = [make_position(7777, "EURCAD", 1.60000, 1.59900, 1.0)]
+    fake.order_send_queue = [_connection_failure(fake)] * 3
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert result.success is False
+    assert result.ticket is None
+    assert "confirmed no position was opened" in result.reason
+
+
+def test_a_position_from_another_bot_is_not_adopted():
+    # Same symbol, different magic number -- someone else's position (or a
+    # manual trade). Never claim it as ours.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [_connection_failure(fake)] * 3
+
+    def foreign_position_appears(request):
+        fake.order_send_calls.append(request)
+        fake.positions = [make_position(8888, "EURCAD", 1.61707, 1.61562, 10.05, magic=99999999)]
+        return fake.order_send_queue.pop(0)
+
+    fake.order_send = foreign_position_appears
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert result.success is False
+    assert result.ticket is None
+
+
+def test_a_definitive_rejection_is_never_probed_or_retried():
+    # NO_MONEY etc. are unambiguous -- the broker refused it, nothing
+    # landed, and it must fail fast without extra queries.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [SimpleNamespace(retcode=fake.TRADE_RETCODE_NO_MONEY, order=0,
+                                              price=0, comment="no money")]
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert result.success is False
+    assert len(fake.order_send_calls) == 1

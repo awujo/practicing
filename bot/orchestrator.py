@@ -67,6 +67,9 @@ class LiveBot:
     # storyline stage logged for it -- see _storyline_says_hunt().
     _htf_contexts: dict[str, HTFContext] = field(init=False, default_factory=dict)
     _storyline_stage: dict[str, str] = field(init=False, default_factory=dict)
+    # Untracked-position tickets already warned about, so the warning
+    # fires on discovery rather than every poll for as long as it's open.
+    _reported_untracked: set = field(init=False, default_factory=set)
 
     def __post_init__(self):
         self.risk_manager = RiskManager(self.profile.active_rules, self.profile.terminates_on_dd)
@@ -228,6 +231,25 @@ class LiveBot:
         shape, which is exactly the kind of thing that needs real-account
         testing before this is trusted."""
         open_tickets = {p.ticket for p in state.open_positions}
+
+        # Positions the account holds that this process didn't record.
+        # The risk manager still counts them (it reads MT5's own position
+        # report, not this bot's memory), so they are NOT invisible to
+        # risk -- but nothing will ever log their outcome, and the bot
+        # can't manage what it doesn't know it owns. Confirmed live on
+        # 2026-08-26: three duplicate EURCAD positions opened by a retried
+        # order_send whose confirmation had been lost, and the bot, having
+        # been told the send failed, tracked none of them. Surfacing this
+        # loudly is the backstop for anything that opens a position
+        # without this loop knowing.
+        untracked = open_tickets - {ticket for _, ticket in self.tracked_positions}
+        if untracked != self._reported_untracked:
+            for ticket in sorted(untracked - self._reported_untracked):
+                logger.warning(
+                    "position %s is open on the account but NOT tracked by this process -- its "
+                    "outcome will not be recorded. Check for a duplicate/orphaned order.", ticket)
+            self._reported_untracked = set(untracked)
+
         closed = [key for key in self.tracked_positions if key[1] not in open_tickets]
         for key in closed:
             tracked = self.tracked_positions.pop(key)

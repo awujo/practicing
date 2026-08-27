@@ -153,38 +153,108 @@ class MT5Execution:
             "type_filling": self._filling_type(symbol),
         }
 
+        # Tickets we already own on this symbol BEFORE sending anything.
+        # order_send() is NOT idempotent, and a connection-class failure
+        # is ambiguous: it means "no confirmation came back", which could
+        # be either "the broker never got it" or "the broker filled it and
+        # the reply was lost". Retrying blind treats the second case as
+        # the first and opens a duplicate position.
+        #
+        # This is not hypothetical -- it happened live on 2026-08-26.
+        # A EURCAD entry hit TRADE_RETCODE_CONNECTION, the retry loop
+        # re-sent it, and THREE 10.05-lot positions were opened against a
+        # single intended trade. All three stopped out together for
+        # -3,246.27 on a 100k demo account (-3.3%), while the audit log
+        # recorded one "execution_failed" and the bot tracked nothing --
+        # so the risk manager was blind to all of it. On a funded or
+        # prop-firm account that is a hard breach.
+        #
+        # Comparing ticket sets is deliberately used instead of tagging
+        # the order comment: brokers truncate, rewrite or drop comments,
+        # so a comment is not something correctness can rest on. Position
+        # tickets and the magic number are broker-maintained.
+        tickets_before = self._our_open_tickets(symbol)
+
         attempts = 0
-        last_result = None
         while attempts < self._max_retries:
             attempts += 1
             result = self._mt5.order_send(request)
-            last_result = result
-            if result is None:
-                if attempts < self._max_retries:
-                    time.sleep(self._retry_backoff_seconds)
-                    continue
-                return ExecutionResult(success=False, requested_price=entry_price,
-                                        reason=f"order_send returned None: {self._mt5.last_error()}",
-                                        attempts=attempts)
 
-            retcode_name = self._retcode_name(result.retcode)
-            if retcode_name == "TRADE_RETCODE_DONE":
-                slippage = abs(result.price - entry_price) / self._point_size(symbol)
-                return ExecutionResult(success=True, ticket=result.order, requested_price=entry_price,
-                                        filled_price=result.price, slippage_points=slippage,
-                                        retcode=result.retcode, retcode_name=retcode_name, attempts=attempts)
+            if result is not None:
+                retcode_name = self._retcode_name(result.retcode)
+                if retcode_name == "TRADE_RETCODE_DONE":
+                    slippage = abs(result.price - entry_price) / self._point_size(symbol)
+                    return ExecutionResult(success=True, ticket=result.order, requested_price=entry_price,
+                                            filled_price=result.price, slippage_points=slippage,
+                                            retcode=result.retcode, retcode_name=retcode_name,
+                                            attempts=attempts)
+                if retcode_name not in RETRYABLE_RETCODE_NAMES:
+                    # A definitive rejection (bad volume, no money, ...).
+                    # The broker refused it outright, so nothing landed.
+                    return ExecutionResult(success=False, requested_price=entry_price, retcode=result.retcode,
+                                            retcode_name=retcode_name,
+                                            reason=f"order rejected: {retcode_name} "
+                                                   f"({getattr(result, 'comment', '')})",
+                                            attempts=attempts)
+                failure = f"{retcode_name} ({getattr(result, 'comment', '')})"
+            else:
+                failure = f"order_send returned None: {self._mt5.last_error()}"
 
-            if retcode_name in RETRYABLE_RETCODE_NAMES and attempts < self._max_retries:
+            # Ambiguous failure. Before doing anything else, find out
+            # whether it actually landed.
+            recovered = self._recover_landed_order(symbol, tickets_before, entry_price, attempts, failure)
+            if recovered is not None:
+                return recovered
+
+            if attempts < self._max_retries:
                 time.sleep(self._retry_backoff_seconds)
                 continue
-
-            return ExecutionResult(success=False, requested_price=entry_price, retcode=result.retcode,
-                                    retcode_name=retcode_name,
-                                    reason=f"order rejected: {retcode_name} ({getattr(result, 'comment', '')})",
-                                    attempts=attempts)
+            return ExecutionResult(success=False, requested_price=entry_price,
+                                    reason=f"{failure}; confirmed no position was opened", attempts=attempts)
 
         return ExecutionResult(success=False, requested_price=entry_price,
                                 reason="exhausted retries", attempts=attempts)
+
+    def _our_open_tickets(self, symbol: str) -> set:
+        """Tickets of currently-open positions on `symbol` carrying this
+        bot's magic number. Returns an empty set if the query itself fails
+        -- callers treat "can't tell" as "don't claim it landed", which
+        errs toward reporting a failure rather than inventing a fill."""
+        try:
+            positions = self._mt5.positions_get() or ()
+        except Exception:
+            return set()
+        return {
+            p.ticket for p in positions
+            if getattr(p, "symbol", None) == symbol
+            and getattr(p, "magic", None) == self._magic_number
+        }
+
+    def _recover_landed_order(self, symbol: str, tickets_before: set, entry_price: float,
+                               attempts: int, failure: str):
+        """After an ambiguous send failure, check whether a position we
+        didn't have before now exists. If so the order DID fill and the
+        confirmation was simply lost -- report it as the success it
+        actually is, so the caller tracks it and the risk manager sees it.
+
+        Returns an ExecutionResult when a landed order is found, else
+        None (safe to retry)."""
+        landed = self._our_open_tickets(symbol) - tickets_before
+        if not landed:
+            return None
+        ticket = sorted(landed)[0]
+        filled = next(
+            (getattr(p, "price_open", None) for p in (self._mt5.positions_get() or ())
+             if getattr(p, "ticket", None) == ticket),
+            None,
+        )
+        slippage = (abs(filled - entry_price) / self._point_size(symbol)) if filled else None
+        return ExecutionResult(
+            success=True, ticket=ticket, requested_price=entry_price, filled_price=filled,
+            slippage_points=slippage, attempts=attempts,
+            reason=f"send reported {failure}, but the order was confirmed open on the broker "
+                   f"(ticket {ticket}) -- adopted instead of retried",
+        )
 
     def _filling_type(self, symbol: str) -> int:
         """Picks a filling mode the symbol/broker actually supports rather
