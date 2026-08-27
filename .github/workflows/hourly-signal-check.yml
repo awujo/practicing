@@ -10,12 +10,24 @@ name: Hourly signal check (Dukascopy reference)
 # something -- even after the broker-clock-offset fix -- rather than the
 # strategy just genuinely not finding a setup that hour.
 #
-# `since` is a 3-hour rolling window on an hourly cadence -- deliberately
-# overlapping, not a tight 1-hour slice, as a safety margin against
-# Dukascopy's own data-publish lag and workflow-timing jitter. That means
-# the same signal will legitimately reprint across a few consecutive
-# runs; that's expected, not a bug -- treat this as "did X show up
-# recently", not a de-duplicated event stream.
+# `since` is a 36-HOUR rolling window, not the 1-3 hours the "hourly"
+# name suggests. Measured 2026-08-27, this workflow's upstream
+# (fetch-data.yml, cron "0 * * * *") actually fired with gaps of 1.4h,
+# 1.8h, 2.8h, 3.8h, 5.5h and 11.8h -- GitHub's `schedule` event is
+# best-effort and gets heavily delayed under load. With the old 3-hour
+# window, every signal inside that 11.8h gap was never published at
+# all: the reference feed silently skipped ~9 hours of history while
+# still presenting itself as ground truth for "did the bots miss
+# anything".
+#
+# Widening costs nothing. check_recent_signals runs the full backtest
+# per instrument regardless and then post-filters on entry_time, so the
+# window is a display bound, not a work bound -- 36h is the same price
+# as 1h and survives any delay we have actually observed.
+#
+# Consequence: the same signal reprints across many consecutive runs.
+# That is expected. Treat this as "everything in the last day and a
+# half", not a de-duplicated event stream.
 
 permissions:
   contents: write # publishes the signal feed to the signal-feed branch
@@ -53,7 +65,7 @@ jobs:
 
       - name: Run check (last 3 hours, both styles, all instruments)
         run: |
-          SINCE=$(date -u -d '-3 hours' '+%Y-%m-%dT%H:%M:%S')
+          SINCE=$(date -u -d '-36 hours' '+%Y-%m-%dT%H:%M:%S')
           {
             echo "## Hourly signal check -- since ${SINCE} UTC"
             echo '```'

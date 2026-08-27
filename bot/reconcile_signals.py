@@ -72,15 +72,22 @@ DEFAULT_BRANCH = "signal-feed"
 DEFAULT_FEED_FILE = "recent-signals.json"
 MATCH_WINDOW = timedelta(hours=2)
 
-# The feed is republished hourly (hourly-signal-check.yml fires on every
-# fetch-data run). If it stops, `generated_at` simply freezes and every
-# subsequent reconciliation reads "0 signals published -- all clear"
-# against a window that stopped moving, forever. That is a broken
-# pipeline wearing the exact costume of a healthy quiet hour, so
-# staleness has to be an explicit alarm rather than something a reader
-# is trusted to notice in the header. Three hours allows a couple of
-# missed or slow runs before crying wolf.
-MAX_FEED_AGE = timedelta(hours=3)
+# If publishing stops, `generated_at` freezes and every subsequent
+# reconciliation reads "0 signals published -- all clear" against a
+# window that stopped moving, forever: a broken pipeline wearing the
+# exact costume of a healthy quiet hour. So staleness is an explicit
+# alarm rather than something a reader is trusted to notice.
+#
+# Eight hours, NOT the one-to-three the "hourly" cadence implies. The
+# first live firing of this check (2026-08-27) was a FALSE alarm at 4.4h
+# -- measuring the upstream schedule then showed real gaps of 1.4h,
+# 1.8h, 2.8h, 3.8h, 5.5h and 11.8h, because GitHub's `schedule` event is
+# best-effort and gets badly delayed under load. A threshold tuned to
+# the nominal cadence would fire most days and train you to ignore it,
+# which is the precise failure this module is written to avoid. Eight
+# hours still catches a pipeline that has actually died while tolerating
+# every delay short of the worst one observed.
+MAX_FEED_AGE = timedelta(hours=8)
 
 # Where each style's audit database lives, relative to the repo root.
 # Both bots write into the bind-mounted checkout (see

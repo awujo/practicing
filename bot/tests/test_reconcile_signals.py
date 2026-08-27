@@ -259,11 +259,13 @@ def test_a_feed_that_stopped_being_republished_is_an_alarm(repo):
     # "healthy".
     f = feed([])
     results, unmatched = run(repo, f)
-    stale_now = rs._parse_time(f["generated_at"]) + timedelta(hours=5)
+    # Well past MAX_FEED_AGE -- see the threshold test below for why that
+    # is 8h and not the nominal hourly cadence.
+    stale_now = rs._parse_time(f["generated_at"]) + timedelta(hours=14)
     report, needs_attention = rs.render(f, results, unmatched, now=stale_now)
     assert needs_attention is True
     assert "STALE FEED" in report
-    assert "5.0h ago" in report
+    assert "14.0h ago" in report
 
 
 def test_a_recently_published_empty_feed_is_still_clean(repo):
@@ -287,3 +289,23 @@ def test_staleness_is_reported_even_when_every_signal_was_seen(repo):
     report, needs_attention = rs.render(f, results, unmatched, now=stale_now)
     assert needs_attention is True
     assert "STALE FEED" in report
+
+
+def test_the_staleness_threshold_tolerates_the_real_upstream_cadence(repo):
+    # The threshold's first live firing was a FALSE alarm at 4.4h.
+    # fetch-data.yml is cron "0 * * * *", but GitHub's schedule event is
+    # best-effort: measured gaps on 2026-08-27 were 1.4, 1.8, 2.8, 3.8,
+    # 5.5 and 11.8 hours. A threshold tuned to the nominal hourly cadence
+    # fires most days and trains the reader to ignore it -- the exact
+    # failure this module exists to avoid. Pinned here so tightening it
+    # back to "hourly" has to be a deliberate act.
+    f = feed([])
+    results, unmatched = run(repo, f)
+    base = rs._parse_time(f["generated_at"])
+    for gap in (1.4, 1.8, 2.8, 3.8, 5.5):
+        _, needs_attention = rs.render(f, results, unmatched,
+                                        now=base + timedelta(hours=gap))
+        assert needs_attention is False, f"{gap}h is a normal delay, not an alarm"
+    # ...but a genuinely dead pipeline still gets caught.
+    _, needs_attention = rs.render(f, results, unmatched, now=base + timedelta(hours=11.8))
+    assert needs_attention is True

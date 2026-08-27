@@ -391,6 +391,50 @@ kugo-backend is somebody's production service and the trading bots are
 the guests on this machine. Raised for the record and for whoever
 decides whether these two workloads should share a box at all.
 
+## GitHub's hourly schedule is not hourly (measured 2026-08-27)
+
+`fetch-data.yml` is `cron: "0 * * * *"`. What it actually did, on the
+day the staleness check first fired:
+
+    08-26 11:34 -> 13:01    1.4h
+          13:01 -> 14:49    1.8h
+          14:49 -> 16:21    1.5h
+          16:21 -> 19:07    2.8h
+          19:07 -> 22:56    3.8h
+          22:56 -> 04:28    5.5h
+    08-27 04:28 -> 16:17   11.8h
+
+GitHub's `schedule` event is best-effort and gets heavily delayed under
+load; there is no way to make it reliable from our side. Two things had
+been quietly built on the assumption that "hourly" meant hourly:
+
+1. **The reference feed had holes.** `hourly-signal-check.yml` looked
+   back only 3 hours. Across that 11.8h gap, every signal in the
+   uncovered ~9 hours was never published -- while the feed still
+   presented itself as ground truth for "did the bots miss anything".
+   Fixed by widening the window to 36 hours, which costs NOTHING:
+   `check_recent_signals` runs the full backtest per instrument anyway
+   and post-filters on entry_time, so the window is a display bound and
+   not a work bound. The 3-hour figure bought no speed and cost
+   coverage.
+
+2. **The staleness alarm was tuned to fiction.** It fired on its first
+   live run at 4.4h -- a false alarm, since 3.8h and 5.5h gaps are
+   routine here. Raised to 8h, which still catches a pipeline that has
+   genuinely died but tolerates every delay short of the worst observed.
+   A test pins the measured gaps so tightening it back to "hourly" has
+   to be deliberate.
+
+The general lesson, and it is the same one this log already records
+about profiling: measure the thing rather than trusting its label. The
+cron expression says hourly, the workflow is named "Hourly signal
+check", and neither is a fact about how often it runs.
+
+Consequence worth knowing: with a 36-hour window the same signal
+reprints in every reconciliation for up to a day and a half, and a
+genuine miss will be re-reported many times. That is noise in a log
+file, not duplicated problems.
+
 ## Signal reconciliation (added 2026-08-27)
 
 The check that answers "did the strategy find something the bots
