@@ -355,6 +355,61 @@ populated for anything before. In practice that boundary is academic --
 the live databases have essentially no rows yet (see the note below
 about the bots never completing an iteration).
 
+## Signal reconciliation (added 2026-08-27)
+
+The check that answers "did the strategy find something the bots
+missed?" without needing the two halves compared by hand.
+
+How it fits together:
+
+1. `hourly-signal-check.yml` already computes the Dukascopy reference
+   signals hourly. It now also writes them as JSON and force-pushes that
+   to the `signal-feed` branch (a few KB, single commit, no history).
+2. On the VPS, `python -m bot.reconcile_signals` fetches that branch,
+   reads both audit databases, and pairs each published signal with the
+   `entry_attempt` row that answered it -- reporting SEEN, LATE (with
+   the lag in minutes) or MISSING.
+
+The feed arrives as a git branch deliberately: the VPS checkout already
+has working credentials for this remote and no API token, so `git fetch`
++ `git show` needs nothing new configured. Computing the signals ON the
+VPS was considered and rejected -- it means a 278MB download plus a
+25-instrument x 2-style sweep on the same two oversubscribed vCPUs the
+bots are already short of (the mistake bot/README.md's VPS section
+already documents).
+
+Run it by hand:
+
+    cd /srv/slk-bot/mt5data/trading && python3 -m bot.reconcile_signals
+
+Or hourly, quiet unless something is actually wrong (cron mails only on
+output, and `--quiet-when-clean` prints nothing on a healthy run, so a
+message in your inbox always means something needs looking at):
+
+    17 * * * * cd /srv/slk-bot/mt5data/trading && /usr/bin/python3 -m bot.reconcile_signals --quiet-when-clean
+
+Reading the output:
+
+- **SEEN** -- the bot logged an entry_attempt for that instrument within
+  the match window. A row that says `decline_*` still counts as SEEN:
+  the bot saw the setup and the risk manager said no, which is a healthy
+  outcome. Whether the decline was correct is a separate question.
+- **LATE** -- logged, but more than 90 minutes after the entry candle.
+  This is the lag symptom, not a data-loss one.
+- **MISSING** -- no row anywhere near it. The bot never saw it.
+- **No signals published** -- reported explicitly as the CORRECT outcome
+  rather than silence, because an empty audit database on an hour when
+  Dukascopy also found nothing is not a symptom, and reading it as one
+  is how this check would get ignored.
+
+Baseline as of 2026-08-27, run against the real audit state for the
+2026-08-25 to 26 window: **0 seen, 1 late, 8 missing.** The one late is
+EURCAD conservative -- Dukascopy's signal is on the 17:00 candle and the
+bot's row landed at 20:01, +182 minutes. The aggressive bot logged none
+of its four. That is the number this is meant to drive to zero, and it
+predates the 2026-08-27 09:18 restart that first put both bots on the
+fully-fixed code with no backlog.
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live

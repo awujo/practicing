@@ -14,6 +14,8 @@ Usage:
 """
 
 import argparse
+import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 
@@ -37,6 +39,11 @@ def main():
                               f"{sorted(DEFAULT_EXCLUDE)}.")
     parser.add_argument("--styles", default="conservative,aggressive",
                          help="Comma-separated entry styles to check.")
+    parser.add_argument("--json", dest="json_path", default=None,
+                         help="Also write the signals to this path as JSON. This is what the live "
+                              "VPS consumes (bot/reconcile_signals.py) to tell whether a signal the "
+                              "strategy produced ever reached an audit database -- the VPS can't "
+                              "compute these itself without stealing CPU from the running bots.")
     args = parser.parse_args()
 
     since = args.since or (datetime.now(timezone.utc) - timedelta(hours=24))
@@ -49,6 +56,7 @@ def main():
     print(f"{len(instruments)} instruments x {len(styles)} style(s) = {len(instruments) * len(styles)} runs\n")
 
     found_any = False
+    signals = []
     errors = []
     for style in styles:
         for instrument in instruments:
@@ -60,6 +68,14 @@ def main():
             for r in records:
                 if r.entry_time >= since:
                     found_any = True
+                    signals.append({
+                        "instrument": instrument, "style": style,
+                        "entry_time": r.entry_time.isoformat(),
+                        "direction": getattr(r.direction, "value", str(r.direction)),
+                        "entry_price": r.entry_price, "stop_loss": r.stop_loss,
+                        "primary_target": r.primary_target,
+                        "trigger_type": r.trigger_type, "entry_pattern": r.entry_pattern,
+                    })
                     print(f"SIGNAL: {instrument} ({style})  entry_time={r.entry_time}  "
                           f"direction={getattr(r.direction, 'value', r.direction)}  "
                           f"entry_price={r.entry_price}  stop_loss={r.stop_loss}  "
@@ -69,6 +85,25 @@ def main():
 
     if not found_any:
         print("No signals found in this window on any instrument/style checked.")
+
+    if args.json_path:
+        # Written even when empty, and even when some combos errored: a
+        # consumer needs to be able to tell "checked, found nothing" from
+        # "never ran", and a stale file would silently look like the
+        # former. `errored` lets it say which instruments it can't speak
+        # for rather than implying they were clean.
+        payload = {
+            "generated_at": now.isoformat(),
+            "since": since.isoformat(),
+            "instruments": instruments,
+            "styles": styles,
+            "signals": sorted(signals, key=lambda s: (s["entry_time"], s["instrument"], s["style"])),
+            "errored": [{"instrument": i, "style": st, "error": m} for i, st, m in errors],
+        }
+        os.makedirs(os.path.dirname(os.path.abspath(args.json_path)), exist_ok=True)
+        with open(args.json_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        print(f"\nWrote {len(signals)} signal(s) to {args.json_path}")
 
     if errors:
         print(f"\n{len(errors)} instrument/style combo(s) errored:", file=sys.stderr)
