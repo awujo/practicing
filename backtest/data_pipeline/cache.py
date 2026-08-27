@@ -27,6 +27,7 @@ costs one short seek and zero writes.
 """
 
 import fcntl
+import hashlib
 import logging
 import os
 import tempfile
@@ -45,6 +46,20 @@ def cache_path(source: str, symbol: str, granularity: str) -> str:
     return os.path.join(DATA_ROOT, source, symbol, f"{granularity}.csv")
 
 
+def _fallback_lock_path(path: str) -> str:
+    """A lock location that doesn't depend on the data directory's
+    ownership: a world-writable shared temp dir, keyed by a hash of the
+    real path so two different caches can't collide.
+
+    Used only when the sidecar next to the CSV can't be opened. Losing
+    the lock entirely would drop the mutual exclusion between the two
+    live bot processes -- the exact thing that crashed one with
+    EmptyDataError -- so falling back to a different location is much
+    better than falling back to no lock at all."""
+    digest = hashlib.sha1(os.path.abspath(path).encode()).hexdigest()[:16]
+    return os.path.join(tempfile.gettempdir(), "slk-cache-locks", digest + ".lock")
+
+
 @contextmanager
 def _file_lock(path: str, exclusive: bool):
     """Coordinate readers and writers across processes.
@@ -60,18 +75,32 @@ def _file_lock(path: str, exclusive: bool):
     Readers take a shared lock (they don't block each other); writers take
     an exclusive one. The fast append path holds the write lock for
     microseconds; only the rare full merge holds it meaningfully long."""
-    lock_file = path + ".lock"
-    try:
-        os.makedirs(os.path.dirname(lock_file), exist_ok=True)
-        handle = open(lock_file, "a+")
-    except OSError as exc:
-        # A lock file we can't open (e.g. left behind root-owned by a
-        # diagnostic run, while the bot runs as a normal user) must not
-        # take an instrument down. Degrade to the pre-locking behavior --
-        # still safe against a torn read, since append() writes in one
-        # call and the merge path swaps atomically via os.replace() --
-        # rather than raising into the caller's loop.
-        logger.warning("cache lock unavailable (%s: %s) -- proceeding without it", lock_file, exc)
+    handle = None
+    for lock_file in (path + ".lock", _fallback_lock_path(path)):
+        try:
+            os.makedirs(os.path.dirname(lock_file), exist_ok=True)
+            # Mode 0o666 (umask permitting) plus an explicit chmod: which
+            # user happens to create the lock first must not decide who
+            # can use it afterwards. Confirmed live -- a diagnostic run as
+            # root left root-owned .lock files next to abc-owned data, and
+            # the bot then couldn't lock its own cache.
+            fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, 0o666)
+            try:
+                os.fchmod(fd, 0o666)
+            except OSError:
+                pass  # not ours to chmod; if we could open it, that's enough
+            handle = os.fdopen(fd, "r+")
+            break
+        except OSError:
+            continue
+
+    if handle is None:
+        # Both the sidecar and the shared fallback are unusable. Degrade
+        # to the pre-locking behavior rather than raising into the
+        # caller's loop -- still safe against a torn read, since append()
+        # writes in one call and the merge path swaps atomically via
+        # os.replace().
+        logger.warning("cache lock unavailable for %s -- proceeding without it", path)
         yield
         return
     try:

@@ -170,3 +170,36 @@ def test_append_writes_are_never_observed_as_empty_by_a_concurrent_reader(monkey
 
     assert len(seen_readable_before_swap) == 1
     assert seen_readable_before_swap[0] != {}  # old file was still fully readable, not pre-truncated
+
+
+def test_a_lock_file_owned_by_another_user_falls_back_rather_than_going_unlocked(monkeypatch):
+    # Confirmed live: a diagnostic run as root left root-owned .lock files
+    # beside abc-owned data, and the bot could no longer lock its own
+    # cache. Silently dropping the lock removes the mutual exclusion
+    # between the two live bot processes -- the exact race that crashed
+    # one with EmptyDataError -- so an unopenable sidecar must fall back
+    # to a usable location, not to no lock.
+    cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105)])
+    path = cache_module.cache_path("dukascopy", "EURUSD", "H1")
+
+    real_open = os.open
+
+    def deny_sidecar(p, *a, **k):
+        if str(p).endswith(f"{os.path.basename(path)}.lock"):
+            raise PermissionError(13, "Permission denied")
+        return real_open(p, *a, **k)
+
+    monkeypatch.setattr(os, "open", deny_sidecar)
+    added = cache_module.append("dukascopy", "EURUSD", "H1",
+                                 [row("2024-01-01T01:00:00Z", 1.105, 1.115, 1.10, 1.11)])
+    assert added == 1
+    assert os.path.exists(cache_module._fallback_lock_path(path))
+    assert len(cache_module.load("dukascopy", "EURUSD", "H1")) == 2
+
+
+def test_the_lock_file_is_left_usable_by_other_users():
+    cache_module.append("dukascopy", "EURUSD", "H1", [row("2024-01-01T00:00:00Z", 1.10, 1.11, 1.09, 1.105)])
+    lock = cache_module.cache_path("dukascopy", "EURUSD", "H1") + ".lock"
+    assert os.path.exists(lock)
+    # Whichever user creates it first must not lock everyone else out.
+    assert oct(os.stat(lock).st_mode)[-3:] == "666"
