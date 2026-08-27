@@ -54,6 +54,19 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 
+
+class FeedUnavailable(Exception):
+    """The feed could not be read. Deliberately distinct from "read it and
+    found no signals": one means the check did not run, the other means it
+    ran and the answer was clean. Conflating them would let a broken
+    pipeline masquerade as a healthy quiet hour."""
+
+
+class FeedNotPublished(FeedUnavailable):
+    """Nothing has ever published the feed branch -- the expected state
+    before the first workflow run, and worth its own message."""
+
+
 DEFAULT_REPO = "/srv/slk-bot/mt5data/trading"
 DEFAULT_BRANCH = "signal-feed"
 DEFAULT_FEED_FILE = "recent-signals.json"
@@ -76,11 +89,29 @@ def fetch_feed(repo: str, branch: str, feed_file: str) -> dict:
     the working tree -- so this never disturbs the checkout the live bots
     are importing their code from. `git show` reads the fetched object
     directly; nothing is checked out."""
-    subprocess.run(["git", "-C", repo, "fetch", "--quiet", "origin", branch],
-                   check=True, capture_output=True)
-    blob = subprocess.run(["git", "-C", repo, "show", f"origin/{branch}:{feed_file}"],
-                          check=True, capture_output=True, text=True).stdout
-    return json.loads(blob)
+    fetch = subprocess.run(["git", "-C", repo, "fetch", "--quiet", "origin", branch],
+                           capture_output=True, text=True)
+    if fetch.returncode != 0:
+        stderr = fetch.stderr or ""
+        if "couldn't find remote ref" in stderr or "not found" in stderr:
+            # The ordinary first-run state, not a fault: the branch only
+            # exists once hourly-signal-check.yml has published to it.
+            # Saying so beats relaying git's wording, which reads like a
+            # misconfiguration and sends you looking in the wrong place.
+            raise FeedNotPublished(
+                f"the '{branch}' branch does not exist yet -- nothing has published to it.\n"
+                "It is created by the 'Hourly signal check' workflow, which runs after every\n"
+                "fetch-data run, or on demand from the Actions tab. Once one has finished,\n"
+                "re-run this."
+            )
+        raise FeedUnavailable(f"git fetch {branch} failed: {stderr.strip() or fetch.returncode}")
+
+    show = subprocess.run(["git", "-C", repo, "show", f"origin/{branch}:{feed_file}"],
+                          capture_output=True, text=True)
+    if show.returncode != 0:
+        raise FeedUnavailable(
+            f"'{feed_file}' is not present on origin/{branch}: {show.stderr.strip()}")
+    return json.loads(show.stdout)
 
 
 def audit_rows(db_path: str, since: datetime) -> list[dict]:
@@ -204,10 +235,10 @@ def main():
     try:
         feed = (json.load(open(args.feed_path)) if args.feed_path
                 else fetch_feed(args.repo, args.branch, args.feed_file))
-    except subprocess.CalledProcessError as exc:
-        print(f"could not read the signal feed: {exc.stderr or exc}", file=sys.stderr)
-        return 2
-    except (OSError, json.JSONDecodeError) as exc:
+    except FeedNotPublished as exc:
+        print(exc, file=sys.stderr)
+        return 3
+    except (FeedUnavailable, OSError, json.JSONDecodeError) as exc:
         print(f"could not read the signal feed: {exc}", file=sys.stderr)
         return 2
 

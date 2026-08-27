@@ -183,3 +183,34 @@ def test_end_to_end_via_a_local_feed_file(repo, tmp_path, capsys):
     finally:
         sys.argv = argv
     assert "[SEEN" in capsys.readouterr().out
+
+
+def test_an_unpublished_feed_branch_says_so_instead_of_relaying_git(tmp_path, monkeypatch):
+    # The first-run state. git's own "couldn't find remote ref" reads like
+    # a misconfigured remote and sends you looking in the wrong place; the
+    # branch simply hasn't been published to yet.
+    import subprocess
+
+    def fake_run(cmd, **kw):
+        return subprocess.CompletedProcess(
+            cmd, 128, stdout="", stderr="fatal: couldn't find remote ref signal-feed\n")
+
+    monkeypatch.setattr(rs.subprocess, "run", fake_run)
+    with pytest.raises(rs.FeedNotPublished) as exc:
+        rs.fetch_feed(str(tmp_path), "signal-feed", "recent-signals.json")
+    assert "does not exist yet" in str(exc.value)
+    assert "Hourly signal check" in str(exc.value)
+
+
+def test_a_broken_feed_is_never_reported_as_a_quiet_healthy_hour(tmp_path, monkeypatch):
+    # The dangerous confusion: "couldn't read the feed" must not come out
+    # looking like "checked, found nothing". A pipeline that silently
+    # stopped publishing would otherwise read as permanent good news.
+    import subprocess
+
+    def fake_run(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, 128, stdout="", stderr="fatal: unable to access\n")
+
+    monkeypatch.setattr(rs.subprocess, "run", fake_run)
+    with pytest.raises(rs.FeedUnavailable):
+        rs.fetch_feed(str(tmp_path), "signal-feed", "recent-signals.json")
