@@ -267,6 +267,50 @@ def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float
     return abs(entry_price - stop_loss) / pip_size > max_pips
 
 
+def _sweep_indices(series: list[Candle], kind: str) -> list:
+    """For each period, the index of the first LATER period that took its
+    high (kind="high") / low (kind="low"), or None if never taken.
+    Monotonic stack, O(n).
+
+    Cached per (series, kind): the result depends only on the series, NOT
+    on any `as_of_time`, but `_unswept_period_extremes()` is called twice
+    per trade and used to rebuild this from scratch every time -- ~7.7s of
+    a single run_backtest, over 1,480 calls against an 8,000-candle daily
+    series. Keyed by id() with the series itself held alongside, so a
+    recycled id can't return another series' answer; scoped to one
+    run_backtest via _reset_sweep_cache()."""
+    key = (id(series), kind)
+    hit = _SWEEP_CACHE.get(key)
+    if hit is not None and hit[0] is series:
+        return hit[1]
+
+    n = len(series)
+    sweep_index: list = [None] * n
+    stack: list[int] = []
+    if kind == "high":
+        for i in range(n):
+            while stack and series[stack[-1]].high <= series[i].high:
+                sweep_index[stack.pop()] = i
+            stack.append(i)
+    else:
+        for i in range(n):
+            while stack and series[stack[-1]].low >= series[i].low:
+                sweep_index[stack.pop()] = i
+            stack.append(i)
+
+    _SWEEP_CACHE[key] = (series, sweep_index)
+    return sweep_index
+
+
+_SWEEP_CACHE: dict = {}
+
+
+def _reset_sweep_cache():
+    """Dropped at the start of every run_backtest so a long-lived live
+    process doesn't retain candle series from previous iterations."""
+    _SWEEP_CACHE.clear()
+
+
 def _unswept_period_extremes(series: list[Candle], as_of_time, kind: str) -> list[float]:
     """Every COMPLETED period's own high (kind="high") or low (kind="low")
     in `series` that hasn't been touched/exceeded by any LATER period in
@@ -283,18 +327,7 @@ def _unswept_period_extremes(series: list[Candle], as_of_time, kind: str) -> lis
     trade, and a Daily series alone is ~8,000+ candles across a full
     multi-year backtest."""
     n = len(series)
-    sweep_index: list[int | None] = [None] * n
-    stack: list[int] = []
-    if kind == "high":
-        for i in range(n):
-            while stack and series[stack[-1]].high <= series[i].high:
-                sweep_index[stack.pop()] = i
-            stack.append(i)
-    else:
-        for i in range(n):
-            while stack and series[stack[-1]].low >= series[i].low:
-                sweep_index[stack.pop()] = i
-            stack.append(i)
+    sweep_index = _sweep_indices(series, kind)
 
     extremes = []
     for i in range(n - 1):
@@ -749,6 +782,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     already work. When False, uses the wick instead (pre-correction
     behavior) -- kept only for comparing the two against each other.
     """
+    _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
         raise ValueError("entry_style must be 'aggressive' or 'conservative'")
     if pip_size is None:
@@ -781,6 +815,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h4_levels = detect_key_levels(h4, n)
     h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout)
     h1_imbalances = detect_imbalances(h1)
+    h1_imbalance_times = [im.time for im in h1_imbalances]
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
@@ -937,9 +972,17 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # The bound below scopes it to "did an imbalance form while THIS
         # level was being made and price coming back to react off it,"
         # which is what "plug and play" actually describes.
+        # Bisect the time bound FIRST, then price-test only that slice.
+        # Testing every imbalance in the whole H1 history and filtering by
+        # time afterwards meant 20.3 MILLION overlaps_level() calls in a
+        # single run_backtest -- the largest single cost in the entry loop.
+        # The window here (key-level formation -> this entry) is a handful
+        # of candles, so the slice is tiny.
+        lo_im = bisect.bisect_left(h1_imbalance_times, new_key_level.time)
+        hi_im = bisect.bisect_right(h1_imbalance_times, curr.time)
         overlapping = [
-            im for im in h1_imbalances
-            if overlaps_level(im, new_key_level.price) and new_key_level.time <= im.time <= curr.time
+            im for im in h1_imbalances[lo_im:hi_im]
+            if overlaps_level(im, new_key_level.price)
         ]
         imbalance_overlap = len(overlapping) > 0
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
