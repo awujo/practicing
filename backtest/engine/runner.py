@@ -191,7 +191,7 @@ from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, origin_time_at, resolve_effective_bias
 from .entries import (
-    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern,
+    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
@@ -235,6 +235,11 @@ ALIGNMENT_LOOKBACK = {
 # valid flips, leaving the daily bias unchanged for years at a time. See
 # replay_bias()'s docstring in bias.py for the measurements.
 BIAS_CONFIRMATION_WINDOW = 1
+
+# How far past the reaction candle an origin trade's fresh IRL may take
+# to be swept before the setup is treated as never having completed
+# (irl_mode="wait"). 24 H1 candles = one trading day.
+IRL_SWEEP_LOOKAHEAD = 24
 
 LIQUIDITY_SWEEP_LOOKAHEAD = 120
 
@@ -639,6 +644,25 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> li
     return sorted(candidates, key=lambda ec: ec.index)
 
 
+def _first_sweep_of(h1, from_idx: int, irl_price: float, direction: Direction) -> int | None:
+    """Index of the first H1 candle after `from_idx` that actually takes
+    the fresh IRL at `irl_price`, or None within IRL_SWEEP_LOOKAHEAD.
+
+    "Swept" is a wick touch, not a close: taking liquidity is price
+    trading through the level, which is what the sweep half of the
+    strategy means everywhere else (structure.py's sweep detection is
+    likewise wick-based -- only the BREAK half is close-based)."""
+    end = min(from_idx + 1 + IRL_SWEEP_LOOKAHEAD, len(h1))
+    for j in range(from_idx + 1, end):
+        c = h1[j]
+        if direction == Direction.BULLISH:
+            if c.low <= irl_price:
+                return j
+        elif c.high >= irl_price:
+            return j
+    return None
+
+
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -695,7 +719,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
                   erl_cap: bool = True, close_based_breakout: bool = True,
-                  confirmation_window: int = BIAS_CONFIRMATION_WINDOW) -> list[TradeRecord]:
+                  confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
+                  irl_mode: str = "ignore") -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -834,12 +859,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if classification is None:
             continue
 
-        entry_price = (
-            aggressive_entry_price(classification.reference_level)
-            if entry_style == "aggressive"
-            else conservative_entry_price(curr)
-        )
-
         # trade_kind by literal position in the move, not a time window:
         # the FIRST entry since the effective bias's own origin event
         # claims "origin" for that (timeframe, direction, origin_time)
@@ -859,6 +878,44 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             origin_time = _last_time_at(h4_lookup, curr.time)
         origin_key = (effective_tf, effective, origin_time)
         trade_kind = "origin" if (origin_time is not None and origin_key not in claimed_origins) else "continuation"
+
+        # Video 12 / entries.py point 4: IRL formation is NECESSARY for an
+        # ORIGIN trade, OPTIONAL for a CONTINUATION one -- "price moves
+        # from IRL to ERL". FRESH_IRL_REQUIRED means price did NOT come
+        # back and tap the level; a fresh internal-range-liquidity candle
+        # formed instead, which per the source "must be swept before
+        # continuing". `irl_required()` encoded the rule but was never
+        # wired into this loop, so the trade was simply taken anyway.
+        #
+        # The source doesn't state operationally what "required" means, so
+        # this is selectable and the modes were compared on real history:
+        #   "ignore" -- take it anyway (the long-standing behavior)
+        #   "skip"   -- an origin trade without a formed IRL isn't valid
+        #   "wait"   -- valid, but only once that IRL is actually swept;
+        #               entry shifts to the sweep candle, bounded by
+        #               IRL_SWEEP_LOOKAHEAD, and is abandoned if it never
+        #               sweeps.
+        if (irl_mode != "ignore"
+                and trade_kind == "origin"
+                and classification.pattern is EntryPattern.FRESH_IRL_REQUIRED
+                and classification.fresh_irl_price is not None):
+            if irl_mode == "skip":
+                continue
+            swept_idx = _first_sweep_of(h1, i, classification.fresh_irl_price, effective)
+            if swept_idx is None:
+                continue  # the IRL never got taken -- the setup never completed
+            # Re-anchor the entry to the sweep candle. Everything
+            # downstream keys off i/curr (stop, target, ERL, imbalance
+            # bounds, outcome resolution), so moving them here moves the
+            # whole trade rather than just its price.
+            i = swept_idx
+            prev, curr = h1[i - 1], h1[i]
+
+        entry_price = (
+            aggressive_entry_price(classification.reference_level)
+            if entry_style == "aggressive"
+            else conservative_entry_price(curr)
+        )
 
         # Computed before the stop-loss selection below (not just for the
         # imbalance_overlap/fill_size stats further down) because "plug and
