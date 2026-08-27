@@ -188,7 +188,7 @@ def resolve_effective_bias(biases: dict[str, Direction | None]) -> tuple[Directi
 
 def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: list[Confirmation],
                  initial_direction: Direction, timeframe_label: str,
-                 confirmation_window: int = 5) -> list[tuple[object, Direction]]:
+                 confirmation_window: int = 1) -> list[tuple[object, Direction]]:
     """
     Backtest driver for BiasCascade: walks `candles` forward, applying
     check_flip() whenever price trades into the next same-direction key
@@ -199,10 +199,34 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
 
     `confirmation_window` bounds how many of the next lower-timeframe
     confirmations after a rejection candle get checked for condition (c)
-    ("no further continuation confirmation"). STRATEGY.md doesn't give
-    that check a time limit -- in principle it's unbounded -- so this is
-    a practical modeling choice for a finite backtest, not a rule from
-    the source material.
+    ("the lower timeframe also stops confirming the old direction").
+
+    DEFAULT IS 1, per a direct user statement of Bishop's actual rule:
+    you look at the lower timeframe's MOST RECENT breakout, and if it
+    points the new way the bias has flipped -- "Bishop himself uses just
+    the most recent breakout". 2 is the stated tolerance when that
+    breakout isn't clean; more than that is not the rule.
+
+    This default was 5, which was never sourced -- an earlier version of
+    this docstring said outright that STRATEGY.md gives no limit and the
+    number was "a practical modeling choice". It turned out to be doing
+    almost all the work in the whole cascade: because the lower timeframe
+    emits confirmations in BOTH directions continuously, requiring five
+    consecutive ones to avoid the old direction vetoed ~98% of otherwise
+    valid flips (measured: EURUSD 854 of 874, GBPJPY 804 of 817). The
+    daily bias then changed roughly once every 14-21 months -- GBPJPY sat
+    bearish from 2003-08 to 2013-12 without a single flip -- which is not
+    a daily bias in any meaningful sense.
+
+    Measured across EURUSD/GBPJPY/GBPNZD x both styles, moving 5 -> 1
+    gives +17.6% trades (3,328 -> 3,912) and +12.4% total R (3,747 ->
+    4,213), at a slightly lower win rate (54.6% -> 53.5%) and avg R
+    (1.126 -> 1.077): more opportunities, marginally lower quality each,
+    more compounding return overall.
+
+    Note this reads breakouts off CLOSES (line chart), not wicks -- see
+    detect_confirmations()'s close_based_breakout, the other half of the
+    same correction from the same source.
     """
     if not candles:
         return []

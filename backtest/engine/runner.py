@@ -224,6 +224,18 @@ ALIGNMENT_LOOKBACK = {
 # precise cutoff (Section 5B: "requires patience... don't force it before
 # inducement forms" is qualitative), so ~5 days of H1 bars is a practical
 # stand-in, not a rule from the source material.
+# How many of the lower timeframe's next confirmations are checked for
+# the bias-flip test's condition (c) -- "the lower timeframe also stops
+# confirming the old direction". 1 = Bishop's actual rule as stated
+# directly by the user: you look at the lower timeframe's MOST RECENT
+# breakout, and if it points the new way, the bias has flipped. 2 is the
+# stated tolerance when that breakout isn't clean.
+#
+# This was 5 -- never sourced, and it silently vetoed ~98% of otherwise
+# valid flips, leaving the daily bias unchanged for years at a time. See
+# replay_bias()'s docstring in bias.py for the measurements.
+BIAS_CONFIRMATION_WINDOW = 1
+
 LIQUIDITY_SWEEP_LOOKAHEAD = 120
 
 # How many H1 candles forward, after the liquidity sweep, to search for a
@@ -682,7 +694,8 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
-                  erl_cap: bool = True, close_based_breakout: bool = True) -> list[TradeRecord]:
+                  erl_cap: bool = True, close_based_breakout: bool = True,
+                  confirmation_window: int = BIAS_CONFIRMATION_WINDOW) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -745,7 +758,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h1_imbalances = detect_imbalances(h1)
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
-                                     first_origin.direction, "Daily")
+                                     first_origin.direction, "Daily",
+                                     confirmation_window=confirmation_window)
 
     weekly_breakpoints = []
     if weekly:
@@ -757,7 +771,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if weekly_first_origin is not None:
             weekly_levels = detect_key_levels(weekly, n)
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
-                                              weekly_first_origin.direction, "Weekly")
+                                              weekly_first_origin.direction, "Weekly",
+                                              confirmation_window=confirmation_window)
 
     h4_lookup = _direction_lookup(h4_confirmations)
     # Built once here, not per entry candidate -- see _aligned_timeframes().

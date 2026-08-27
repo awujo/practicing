@@ -54,7 +54,8 @@ from backtest.engine.bias import (
 )
 from backtest.engine.key_levels import detect_key_levels
 from backtest.engine.runner import (
-    ALIGNMENT_LOOKBACK, _direction_lookup, _last_direction_at, load_candles,
+    ALIGNMENT_LOOKBACK, BIAS_CONFIRMATION_WINDOW, _direction_lookup, _last_direction_at,
+    load_candles,
 )
 from backtest.engine.structure import Direction, StructureTracker
 
@@ -101,7 +102,8 @@ def _latest_time(candles):
 
 
 def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
-                       close_based_breakout: bool = True) -> HTFContext | None:
+                       close_based_breakout: bool = True,
+                       confirmation_window: int = BIAS_CONFIRMATION_WINDOW) -> HTFContext | None:
     """Derive the Weekly/Daily/H4 bias context. Returns None when there
     isn't enough structure to bootstrap a bias from -- the same condition
     that makes `run_backtest()` return no trades at all, so a None here
@@ -134,7 +136,8 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
     h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
-                                     first_origin.direction, "Daily")
+                                     first_origin.direction, "Daily",
+                                     confirmation_window=confirmation_window)
 
     weekly_breakpoints = []
     if weekly:
@@ -143,7 +146,8 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
         if weekly_first_origin is not None:
             weekly_levels = detect_key_levels(weekly, n)
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
-                                              weekly_first_origin.direction, "Weekly")
+                                              weekly_first_origin.direction, "Weekly",
+                                              confirmation_window=confirmation_window)
 
     return HTFContext(
         instrument=instrument,
