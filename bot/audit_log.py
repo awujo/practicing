@@ -45,7 +45,6 @@ class DecisionRecord:
     entry_timeframe: str = ""
     entry_price: float | None = None
     entry_pattern: str = ""
-    trade_kind: str = ""
     trigger_type: str = ""
     bias_monthly: str = ""
     bias_weekly: str = ""

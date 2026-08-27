@@ -40,8 +40,23 @@ Six pieces:
        [branch 4] -- triggers the ~70% "return to the closer level" rule
        (Phase 2's key-level ranking already captures that preference).
 
-4. `irl_required()` -- Video 12: IRL formation is NECESSARY for an ORIGIN
-   trade but OPTIONAL for a CONTINUATION trade.
+4. IRL -> ERL. "Price always moves from IRL to ERL" is the sequence the
+   whole strategy rests on, and FRESH_IRL_REQUIRED is the case where that
+   sequence has NOT started yet: price did not come back and tap the
+   level, a fresh internal-range-liquidity candle formed in front of it
+   instead, and per the source that candle "must be swept before
+   continuing". This module only CLASSIFIES that situation (and reports
+   the IRL's price); what to do about an entry that hasn't seen the sweep
+   yet is runner.py's `irl_mode`.
+
+   An earlier reading had this as "IRL formation is NECESSARY for an
+   ORIGIN trade but OPTIONAL for a CONTINUATION trade", exposed as an
+   `irl_required(trade_kind)` predicate. That predicate is gone, together
+   with the origin/continuation classification it took as input: markets
+   are fractal, so an origin exists inside a continuation and a single
+   global label for a trade cannot be right (direct user correction). The
+   IRL->ERL requirement itself survives that correction unchanged -- it
+   just applies to every trade rather than to a labelled subset.
 
 5. Stop-loss placement (Video 13, direct student Q&A, plus a user-supplied
    Bishop-supplementary chart cross-check -- REVISED by a later, more
@@ -49,10 +64,10 @@ Six pieces:
    ENTRY TRIGGER fired, NOT to origin-vs-continuation. The old framing
    below this point in the file's history -- "origin" as its own
    stop-loss category, anchored to the swept liquidity point and taking
-   priority whenever trade_kind == "origin" -- was a misreading the user
-   directly corrected: origin/continuation is an independent axis (Video
-   12's IRL-requirement question), not a stop-loss selector. The 4
-   TRIGGER-keyed rules, each a distinct mechanized formula:
+   priority for such trades -- was a misreading the user directly
+   corrected, and the classification it depended on has since been
+   removed outright (see point 4). The 4 TRIGGER-keyed rules, each a
+   distinct mechanized formula:
      - plug and play (imbalance overlapping the key level): stop just
        past the FAR edge of that specific imbalance (the side price would
        have to fully clear to invalidate the "came here to sweep
@@ -159,13 +174,6 @@ def classify_entry_pattern(new_key_level: KeyLevel, following: list[Candle]) -> 
 
     fresh_irl_price = first.low if new_key_level.default_bias == Direction.BULLISH else first.high
     return EntryClassification(EntryPattern.FRESH_IRL_REQUIRED, new_key_level, fresh_irl_price)
-
-
-def irl_required(trade_kind: str) -> bool:
-    """Video 12: IRL is necessary to validate an ORIGIN trade, optional for a CONTINUATION trade."""
-    if trade_kind not in ("origin", "continuation"):
-        raise ValueError("trade_kind must be 'origin' or 'continuation'")
-    return trade_kind == "origin"
 
 
 def origin_stop_loss(structural_extreme: float, direction: Direction,

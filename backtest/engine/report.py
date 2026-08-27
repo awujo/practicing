@@ -103,8 +103,8 @@ def _trade_row_html(row: dict) -> str:
     trigger = row.get("trigger_type") or "—"
     aligned = row.get("aligned_timeframes") or "—"
     reasoning = (
-        f"{_escape(row.get('entry_pattern'))} ({_escape(row.get('trade_kind'))}, "
-        f"trigger: {_escape(trigger)}, aligned: {_escape(aligned)}) "
+        f"{_escape(row.get('entry_pattern'))} "
+        f"(trigger: {_escape(trigger)}, aligned: {_escape(aligned)}) "
         f"on {_escape(row.get('key_level_shape'))} @ {_escape(row.get('key_level_price'))} "
         f"&mdash; QMR {_escape(qmr)}, {fvg}, stop: {_escape(row.get('stop_kind'))}"
     )

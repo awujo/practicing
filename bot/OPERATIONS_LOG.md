@@ -339,6 +339,22 @@ hypotheses formed from sandbox timings -- "the H1 walk is the cost",
 were all wrong, and each cost hours. The three fixes that mattered were
 each found within minutes of running a benchmark on the VPS itself.
 
+## 2026-08-27 -- audit-log schema change (no migration needed)
+
+`DecisionRecord.trade_kind` was removed (see backtest/README.md for why
+the whole origin/continuation classification went). The live audit
+databases on the VPS already have a `trade_kind` column, and they keep
+it: `_ensure_schema()` uses `CREATE TABLE IF NOT EXISTS`, so an existing
+table is never altered, and the column is nullable TEXT with no
+constraint. New inserts simply omit it and it lands NULL. Nothing to
+migrate, no rows to rewrite, and old rows keep whatever they had.
+
+The one thing to know when reading the data later: `trade_kind` is
+present-but-NULL for anything logged after this date, and present-and-
+populated for anything before. In practice that boundary is academic --
+the live databases have essentially no rows yet (see the note below
+about the bots never completing an iteration).
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live

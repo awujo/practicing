@@ -54,7 +54,7 @@ def a_trade_record(entry_time, trade_id=1, direction=Direction.BULLISH):
         trade_id=trade_id, instrument="EURUSD", entry_time=entry_time,
         direction=direction, entry_timeframe="H1", entry_price=1.17374,
         stop_loss=1.17290, primary_target=1.17626,
-        trigger_type="engulfing", trade_kind="origin",
+        trigger_type="engulfing",
         bias_weekly=Direction.BULLISH, aligned_timeframes="Weekly,Daily,H4",
         status="open",
     )

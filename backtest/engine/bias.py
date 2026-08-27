@@ -296,16 +296,3 @@ def bias_at(breakpoints: list[tuple[object, Direction]], t) -> Direction | None:
     if not applicable:
         return None
     return max(applicable, key=lambda bp: bp[0])[1]
-
-
-def origin_time_at(breakpoints: list[tuple[object, Direction]], t) -> object | None:
-    """Companion to bias_at(): the TIME of the breakpoint currently in
-    effect at `t`, i.e. when the bias direction active right now actually
-    began. Used to classify origin vs. continuation trades by literal
-    sequence -- "first instance vs. repeated instance" since that origin
-    event -- rather than a fixed time-proximity window (see runner.py's
-    trade_kind logic)."""
-    applicable = [bp for bp in breakpoints if bp[0] <= t]
-    if not applicable:
-        return None
-    return max(applicable, key=lambda bp: bp[0])[0]

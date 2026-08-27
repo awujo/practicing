@@ -5,7 +5,7 @@ from ..candles import Candle
 from ..structure import Direction
 from ..key_levels import KeyLevel
 from ..entries import (
-    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern, irl_required,
+    is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl,
     engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
@@ -100,13 +100,6 @@ def test_nested_disrespect_pattern():
     result = classify_entry_pattern(level, following)
     assert result.pattern == EntryPattern.NESTED_DISRESPECT
     assert result.reference_level.price == pytest.approx(1.1015)
-
-
-def test_irl_required_rule():
-    assert irl_required("origin") is True
-    assert irl_required("continuation") is False
-    with pytest.raises(ValueError):
-        irl_required("something_else")
 
 
 def test_stop_loss_placements():

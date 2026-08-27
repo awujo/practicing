@@ -24,7 +24,6 @@ def make_record(trade_id, status, r_multiple=None, direction=Direction.BULLISH):
         entry_price=1.1000,
         entry_pattern="direct_mitigation",
         entry_style="conservative",
-        trade_kind="continuation",
         trigger_type="engulfing",
         bias_daily=Direction.BULLISH,
         effective_bias_timeframe="Daily",

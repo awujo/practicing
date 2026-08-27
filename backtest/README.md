@@ -1026,11 +1026,11 @@ built in phases so each is testable before the next depends on it:
       change. Deliberately NOT a data-loading window: start_date/end_date
       only gate which finished trades get appended to the returned/
       written records -- ALL cached history still loads and still drives
-      bias-building, alignment, `claimed_origins` origin/continuation
-      bookkeeping, and `concurrent_open_positions_at_entry` stacking
-      context, so a 2020 trade still correctly claims an "origin" slot
-      even when only 2026 is being reported, and pre-2026 open positions
-      still count toward stacking for a 2026 entry. Narrowing the loaded
+      bias-building, alignment, IRL sweep resolution, and
+      `concurrent_open_positions_at_entry` stacking context, so pre-2026
+      open positions still count toward stacking for a 2026 entry, and a
+      trade that survives the filter comes out identical to its
+      counterpart in an unfiltered run. Narrowing the loaded
       data itself would silently break all of that context, not just trim
       the output. The CLI writes filtered/alternate-rr runs to a
       suffixed filename (`EURUSD_conservative_2026.csv`,
@@ -1052,6 +1052,57 @@ built in phases so each is testable before the next depends on it:
       not just "did it win". Capped at the most recent 1,000 trades per
       run to keep the page a sane size; the CSV download link still has
       the full history. Covered by `engine/tests/test_report.py`.
+
+      **origin/continuation removed outright; IRL->ERL kept and
+      re-scoped.** Two related mechanics that had been coupled for the
+      engine's whole history got separated, and only one survived.
+
+      `trade_kind` ("origin" vs "continuation") is gone -- the field, the
+      `claimed_origins` bookkeeping, `bias.py`'s `origin_time_at()`,
+      `runner.py`'s `_last_time_at()`, `entries.py`'s `irl_required()`,
+      and every report/webapp/audit-log column that carried it. This is
+      the third and final attempt at the classification (after
+      `ORIGIN_WINDOW` time-proximity, then literal sequence since the
+      effective bias's origin event), and it was retired on the grounds
+      that no version of it could be right: **markets are fractal, so the
+      same trade is an origin on one timeframe and a continuation on
+      another at the same moment** (direct user correction). The
+      sequence-based version in particular resolved to "first trade since
+      the WEEKLY bias last flipped" for 100% of trades -- `effective_tf`
+      is Weekly essentially always -- which is not what the source
+      material means by either word. It also drove no decision: stop-loss
+      has been keyed to trigger type since part 5, so the label was
+      logged and never read. "Even if it's origin or not it doesn't
+      change the thought process towards a trade."
+
+      `irl_mode` was ALMOST deleted with it, because its only gate had
+      been `trade_kind == "origin"`. That was caught and reversed: "price
+      always moves from IRL to ERL" is a core concept, and unlike
+      origin/continuation it's a claim about SEQUENCE that applies to
+      every trade. So the gate stayed and widened -- it now applies to
+      any `FRESH_IRL_REQUIRED` entry, not just a labelled subset.
+
+      Re-measuring the three modes under that wider scope reversed how
+      decisive the earlier (origin-scoped) comparison looked. Across
+      EURUSD/GBPJPY/GBPNZD, full history, total R:
+
+      | mode | conservative | aggressive |
+      |---|---|---|
+      | `ignore` (default) | **1167.8** (1913 trades, 42.8% WR) | **3045.2** (1998 trades, 63.7% WR) |
+      | `skip` | 287.7 (863, 34.6%) | 412.1 (907, 37.5%) |
+      | `wait` | 703.5 (1912, 37.3%) | 1920.6 (1628, 55.2%) |
+
+      `ignore` stays the default, now by a much wider margin than the
+      origin-scoped run suggested. The reason is visible by subtraction:
+      the FRESH_IRL_REQUIRED trades that `skip` discards are the BEST
+      trades in the book, not the worst -- 1050 of them at 0.838 avg R
+      conservative (vs 0.333 for everything else), 1091 at 2.413 avg R
+      aggressive (vs 0.454). Gating them is straightforwardly
+      destructive, and `wait`'s re-anchoring to the sweep candle gives
+      back most of the edge too. The modes stay selectable because the
+      source doesn't state operationally what "must be swept before
+      continuing" requires of an entry that hasn't seen the sweep yet --
+      but the measurement says the honest answer is "take the trade".
 - [ ] **Not yet built**: Monthly (the one remaining level of the full
       Monthly->Weekly->Daily->4H->lower cascade -- Weekly is now wired,
       see Phase 5 above); performance metrics beyond win rate/total R
@@ -1094,9 +1145,8 @@ Four deliberate design choices worth flagging:
 - `runner.py`'s module docstring lists its own MVP simplifications in
   full (Weekly->Daily->H4->H1 with Weekly optional/Monthly still out of
   scope, bootstrapped initial bias, simplified H4/H1 bias readings,
-  engulf-open as the consumed key level, a proximity-based
-  origin/continuation heuristic, bounded look-ahead windows for QMR/
-  confirmation checks, and the same-candle stop-vs-target tie-break) --
+  engulf-open as the consumed key level, bounded look-ahead windows for
+  QMR/confirmation checks, and the same-candle stop-vs-target tie-break) --
   not repeated here to avoid the two copies drifting out of sync.
 
 Candle processing is a plain forward loop over a `list[Candle]`, not

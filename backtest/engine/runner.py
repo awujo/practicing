@@ -46,8 +46,9 @@ only the SELECTIVITY of which candles get evaluated, and which key level
 they're evaluated against (the Bishop-validated H4 reaction level, not an
 ad-hoc H1-engulf-derived one), changed. Stop-loss selection is keyed to
 WHICH TRIGGER fired -- plug and play / engulfing / 4th-man, plus a
-universal fallback -- not to trade_kind (see entries.py's module
-docstring point 5 and the stop-loss selection block below).
+universal fallback -- not to any origin/continuation classification (see
+entries.py's module docstring point 5 and the stop-loss selection block
+below).
 
 Reaction-level SELECTION among multiple same-direction candidates is NOT
 a ranking/scoring problem -- an earlier version of this gate scored every
@@ -143,32 +144,36 @@ silently assumed:
   adaptation (the "what happens right after price meets this level"
   question is the same regardless of which process identified the
   level), but a judgment call worth flagging.
-- trade_kind ("origin" vs "continuation") is classified by literal
-  sequence, not a fixed time window: the FIRST entry taken since the
-  effective bias's own origin event is "origin", every subsequent entry
-  within that same still-active leg is "continuation" -- "position in the
-  move (first instance vs. repeated instance)", independent of which of
-  the 4 confirmation-entry trigger types actually fired (see the
-  `claimed_origins` bookkeeping in the main loop below; replaces the old
-  `ORIGIN_WINDOW` fixed-day-proximity heuristic, which could misclassify
-  a trade purely because it happened to fall inside/outside an arbitrary
-  window rather than by whether an earlier trade had already been taken
-  in that leg). trade_kind is now PURELY a logged/audit field -- it does
-  NOT affect stop-loss selection (that's keyed to trigger type instead,
-  see the "Stop-loss selection" paragraph above and entries.py's module
-  docstring point 5). It used to: an earlier version of this file gave
-  "origin" trades their own stop-loss rule, anchored to
-  `EntryCandidate.liquidity_price` (the swept H4 liquidity point) and
-  taking priority over the trigger-specific rules -- a direct user
-  correction retired that framing entirely ("keyed to trigger type, not
-  origin/continuation"). That retirement also incidentally fixed a real
+- There is deliberately NO origin/continuation classification. Three
+  successive versions of this file tried one -- an `ORIGIN_WINDOW`
+  fixed-day-proximity heuristic, then a `claimed_origins` "first trade
+  since the effective bias's origin event" rule -- and both were retired
+  by direct user correction. The reason is not that the labels were
+  computed badly but that a single global label cannot be right at all:
+  markets are fractal, so the same trade is an origin on one timeframe
+  and a continuation on another at the same moment. The second version
+  in particular resolved to "first trade since the WEEKLY bias last
+  flipped" for 100% of trades, which is not what the source material
+  means by either word. And operationally it changed nothing -- "even if
+  it's origin or not it doesn't change the thought process towards a
+  trade". Stop-loss selection is keyed to WHICH TRIGGER fired instead
+  (see the "Stop-loss selection" paragraph above and entries.py's module
+  docstring point 5).
+
+  Retiring the origin-specific stop rule also incidentally fixed a real
   bug it had introduced: an aggressive entry AT a reaction key level that
   sits beyond the swept liquidity point (in the trade's own direction)
   could land that old origin stop on the WRONG side of entry --
   `_stop_on_correct_side()` caught it defensively, but the trade was
-  silently dropped. The new engulfing/4th-man stop rules derive from
-  price actually near entry, not a separate liquidity-point reference, so
-  this can no longer happen for those two triggers.
+  silently dropped. The engulfing/4th-man stop rules derive from price
+  actually near entry, not a separate liquidity-point reference, so this
+  can no longer happen for those two triggers.
+- IRL->ERL, on the other hand, IS enforced (optionally): "price always
+  moves from IRL to ERL" is a core concept, and unlike origin/
+  continuation it is a statement about sequence that applies to every
+  trade. `irl_mode` decides what to do with an entry whose internal
+  range liquidity formed but hasn't been swept yet -- see the gate in
+  the main loop below.
 - QMR test-counting and imbalance-overlap for the entry's key level both
   use H1 candles/imbalances (the level's own timeframe), bounded to the
   next QMR_LOOKAHEAD candles rather than an unbounded forward scan.
@@ -189,7 +194,7 @@ from .structure import Direction, StructureTracker
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
 from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
-from .bias import detect_confirmations, replay_bias, bias_at, origin_time_at, resolve_effective_bias
+from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
@@ -428,19 +433,6 @@ def _last_direction_at(lookup, t):
     if idx < 0:
         return None
     return directions[idx]
-
-
-def _last_time_at(lookup, t):
-    """H4/H1's origin-time counterpart to `origin_time_at()` (bias.py):
-    H4 and H1 don't get a full BiasCascade replay (see the module
-    docstring's MVP-simplifications list), so there's no breakpoints list
-    to query -- the most recent confirmation's own time before `t` stands
-    in as that tier's origin event instead."""
-    times, directions = lookup
-    idx = bisect.bisect_left(times, t) - 1
-    if idx < 0:
-        return None
-    return times[idx]
 
 
 def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
@@ -761,12 +753,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     start_date/end_date: optional pd.Timestamp bounds (inclusive) on which
     trades get RECORDED, by entry time -- NOT a data-loading window. All
     cached history still loads and still drives bias-building, alignment,
-    `claimed_origins` origin/continuation bookkeeping, and stacking
-    context (`concurrent_open_positions_at_entry`); a trade from 2020
-    still correctly claims an "origin" slot even when only 2026 is being
-    reported, and open positions from before the window still count
-    toward stacking for a 2026 entry. Narrowing the loaded data itself
-    would silently break all of that context, not just trim the output.
+    and stacking context (`concurrent_open_positions_at_entry`); open
+    positions from before the window still count toward stacking for a
+    2026 entry. Narrowing the loaded data itself would silently break all
+    of that context, not just trim the output.
     rr: the target risk:reward ratio (STRATEGY.md's "3:1 or 4:1" --
     `trade_management.RISK_REWARD_PRIMARY`, 3.0, by default), still
     ERL-capped on top exactly as at the default ratio.
@@ -849,12 +839,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     mgr = PositionManager()
     records: list[TradeRecord] = []
     trade_id = 0
-    # Tracks which (effective_tf, direction, origin_time) legs have
-    # already had a trade taken -- the FIRST entry_candidate to claim a
-    # given leg is "origin", every later one in the same still-active leg
-    # is "continuation". entry_candidates is already time-sorted, so a
-    # plain set membership check is enough.
-    claimed_origins: set[tuple[str, Direction, object]] = set()
 
     for candidate in entry_candidates:
         i = candidate.index
@@ -894,44 +878,33 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if classification is None:
             continue
 
-        # trade_kind by literal position in the move, not a time window:
-        # the FIRST entry since the effective bias's own origin event
-        # claims "origin" for that (timeframe, direction, origin_time)
-        # leg; every subsequent entry in the same still-active leg is
-        # "continuation". H4 has no BiasCascade breakpoints (see the
-        # module docstring), so its own most recent confirmation time
-        # stands in for the origin event there. Only PEEK at
-        # claimed_origins here -- actually claiming it happens below,
-        # after the trade is confirmed to survive the stop-on-correct-side
-        # guard, so a setup that gets rejected there doesn't burn the
-        # "origin" slot for the real first trade in that leg.
-        if effective_tf == "Weekly":
-            origin_time = origin_time_at(weekly_breakpoints, curr.time)
-        elif effective_tf == "Daily":
-            origin_time = origin_time_at(daily_breakpoints, curr.time)
-        else:
-            origin_time = _last_time_at(h4_lookup, curr.time)
-        origin_key = (effective_tf, effective, origin_time)
-        trade_kind = "origin" if (origin_time is not None and origin_key not in claimed_origins) else "continuation"
-
-        # Video 12 / entries.py point 4: IRL formation is NECESSARY for an
-        # ORIGIN trade, OPTIONAL for a CONTINUATION one -- "price moves
-        # from IRL to ERL". FRESH_IRL_REQUIRED means price did NOT come
-        # back and tap the level; a fresh internal-range-liquidity candle
-        # formed instead, which per the source "must be swept before
-        # continuing". `irl_required()` encoded the rule but was never
-        # wired into this loop, so the trade was simply taken anyway.
+        # "Price moves from IRL to ERL" -- the core of the strategy, and
+        # the reason this gate exists at all.
+        # FRESH_IRL_REQUIRED means price did NOT come back and tap the
+        # level; a fresh internal-range-liquidity candle formed in front
+        # of it instead, which per the source "must be swept before
+        # continuing". Until that sweep happens the internal liquidity is
+        # still sitting there unclaimed, so the move to external liquidity
+        # has not actually begun.
         #
-        # The source doesn't state operationally what "required" means, so
-        # this is selectable and the modes were compared on real history:
+        # This used to be gated additionally on an "origin" classification.
+        # That gating is gone (direct user correction): markets are
+        # fractal, an origin exists inside a continuation, and the label
+        # this code computed was really "first trade since the WEEKLY bias
+        # last flipped" -- not what the source means, and not something a
+        # trader consults before taking the setup. The IRL->ERL sequence,
+        # by contrast, applies to EVERY trade, so the gate now does too.
+        #
+        # The source doesn't state operationally what "must be swept"
+        # requires of an entry that hasn't seen it yet, so the response is
+        # selectable and the modes are compared on real history:
         #   "ignore" -- take it anyway (the long-standing behavior)
-        #   "skip"   -- an origin trade without a formed IRL isn't valid
+        #   "skip"   -- no formed IRL, no trade
         #   "wait"   -- valid, but only once that IRL is actually swept;
         #               entry shifts to the sweep candle, bounded by
         #               IRL_SWEEP_LOOKAHEAD, and is abandoned if it never
         #               sweeps.
         if (irl_mode != "ignore"
-                and trade_kind == "origin"
                 and classification.pattern is EntryPattern.FRESH_IRL_REQUIRED
                 and classification.fresh_irl_price is not None):
             if irl_mode == "skip":
@@ -988,11 +961,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
         fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0
 
-        # Stop-loss is keyed to WHICH TRIGGER fired, NOT to trade_kind --
-        # origin/continuation is an independent axis (Video 12's
-        # IRL-requirement question), not a stop-loss selector. See
-        # entries.py's module docstring point 5 for the full rationale
-        # and the direct user correction this replaced.
+        # Stop-loss is keyed to WHICH TRIGGER fired. An earlier version
+        # keyed it to an origin/continuation classification instead; see
+        # entries.py's module docstring point 5 for the full rationale and
+        # the direct user correction this replaced.
         if imbalance_overlap:
             # Plug and play takes priority over the trigger-specific rules
             # below whenever an overlapping imbalance exists, regardless
@@ -1052,9 +1024,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # defensive check for all stop kinds.
         if not _stop_on_correct_side(entry_price, stop_loss, effective):
             continue
-        if trade_kind == "origin":
-            claimed_origins.add(origin_key)
-
         # Target is ERL-capped, not a fixed 3:1 (direct user correction --
         # "price wants to go from internal range liquidity to external",
         # capped by the REAL external range liquidity -- Daily/Weekly's own
@@ -1085,7 +1054,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             mgr.close_position(pos, status)
 
         # Date-range filtering happens HERE, on the finished record, not
-        # earlier -- everything above (bias, alignment, claimed_origins,
+        # earlier -- everything above (bias, alignment, IRL sweeps,
         # stacking) must still see the full history regardless of what's
         # actually being reported (see the start_date/end_date docstring
         # above).
@@ -1105,7 +1074,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             entry_price=entry_price,
             entry_pattern=classification.pattern.value,
             entry_style=entry_style,
-            trade_kind=trade_kind,
             trigger_type=trigger_type,
             bias_weekly=weekly_bias,
             bias_daily=daily_bias,
@@ -1201,12 +1169,18 @@ def main():
     parser.add_argument("--wick-based-breakout", action="store_true",
                          help="Use the swing candle's wick (high/low) as a plain breakout's reference level "
                               "instead of its close (line chart, the default). For comparing against each other.")
+    parser.add_argument("--irl-mode", choices=("ignore", "skip", "wait"), default="ignore",
+                         help="What to do with an entry whose internal range liquidity formed but hasn't been "
+                              "swept yet ('price moves from IRL to ERL'): 'ignore' takes it anyway (default, and "
+                              "by a wide margin the best-performing -- see backtest/README.md), 'skip' drops it, "
+                              "'wait' re-anchors the entry to the candle that finally sweeps that IRL.")
     args = parser.parse_args()
 
     start_date, end_date = _resolve_date_range(args.year, args.start, args.end)
 
     run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date,
-                  "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout}
+                  "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout,
+                  "irl_mode": args.irl_mode}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
     records = run_backtest(args.instrument, args.style, **run_kwargs)
@@ -1222,6 +1196,8 @@ def main():
         suffix += "_noerlcap"
     if args.wick_based_breakout:
         suffix += "_wickbreakout"
+    if args.irl_mode != "ignore":
+        suffix += f"_irl{args.irl_mode}"
     out_path = args.out or f"backtest/results/{args.instrument}_{args.style}{suffix}.csv"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     write_trade_log(records, out_path)

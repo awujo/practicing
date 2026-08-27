@@ -304,7 +304,7 @@ def _audit_fields_from_trade_record(record: TradeRecord) -> dict:
     return dict(
         direction=_s(record.direction), entry_timeframe=record.entry_timeframe,
         entry_price=record.entry_price, entry_pattern=record.entry_pattern,
-        trade_kind=record.trade_kind, trigger_type=record.trigger_type,
+        trigger_type=record.trigger_type,
         bias_monthly=_s(record.bias_monthly), bias_weekly=_s(record.bias_weekly),
         bias_daily=_s(record.bias_daily), bias_h4=_s(record.bias_h4), bias_h1=_s(record.bias_h1),
         effective_bias_timeframe=record.effective_bias_timeframe or "",

@@ -29,10 +29,7 @@ def W(i, o, h, l, c):
 
 
 H1_BASE = pd.Timestamp("2024-01-01") + pd.Timedelta(days=20)  # well past the daily series' own
-# last internal bias flip (day 9) -- comfortably within ALIGNMENT_LOOKBACK, but note that
-# trade_kind is now sequence-based (Task 4), not time-window-based: on its own, an entry
-# built from this base is "origin" (nothing precedes it in the fixture); see
-# _add_earlier_origin_trade() for tests that specifically need a "continuation" trade.
+# last internal bias flip (day 9) -- comfortably within ALIGNMENT_LOOKBACK.
 
 
 def H1(i, o, h, l, c):
@@ -98,10 +95,10 @@ def synthetic_cache(tmp_path, monkeypatch):
         H1(6, 1.1055, 1.1075, 1.1050, 1.1070),
         H1(7, 1.1070, 1.1085, 1.1065, 1.1080),
         # Task 5: stop-loss is keyed to the trigger (engulfing here -- the
-        # more extreme of H1(2)'s/H1(3)'s own lows, 1.1005), not to
-        # trade_kind -- a tighter, closer-to-entry stop than the old
-        # liquidity-point-anchored "origin" rule, which in turn needs one
-        # more candle than before to actually clear the closer-in target.
+        # more extreme of H1(2)'s/H1(3)'s own lows, 1.1005) -- a tighter,
+        # closer-to-entry stop than the old liquidity-point-anchored rule,
+        # which in turn needs one more candle than before to actually
+        # clear the closer-in target.
         H1(8, 1.1080, 1.1115, 1.1075, 1.1110),  # high clears the 1:3 target
     ]
 
@@ -122,13 +119,9 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.bias_daily == Direction.BULLISH
     assert trade.effective_bias_timeframe == "Daily"
     assert trade.entry_pattern == "fresh_irl_required"
-    # This is the ONLY trade in the whole series, so by Task 4's literal
-    # sequence rule ("first instance vs. repeated instance" -- nothing
-    # precedes it) it's "origin" -- but trade_kind no longer determines
-    # the stop-loss rule (Task 5): it's keyed to the trigger instead
-    # (here, engulfing -- the more extreme of H1(2)'s low, 1.1008, and
-    # H1(3)'s own low, 1.1005 -- 1.1005 wins, stop = 1.1005 - 1 pip).
-    assert trade.trade_kind == "origin"
+    # Stop-loss is keyed to the trigger (here, engulfing -- the more
+    # extreme of H1(2)'s low, 1.1008, and H1(3)'s own low, 1.1005 --
+    # 1.1005 wins, stop = 1.1005 - 1 pip).
     assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "engulfing"
     assert trade.stop_loss == pytest.approx(1.1004)
@@ -186,22 +179,26 @@ def test_run_backtest_filters_by_date_range(synthetic_cache):
     assert included[0].trade_id == 1  # reported IDs stay contiguous from 1, not from the full-history count
 
 
-def test_run_backtest_date_filtering_does_not_corrupt_origin_continuation_tracking(synthetic_cache):
-    # The earlier, unrelated cascade (day 10) still claims "origin" for
-    # its leg even when the reporting window excludes it -- the later
-    # (day 20) trade must still come out "continuation", not get
-    # incorrectly promoted to "origin" just because its true predecessor
-    # was filtered out of the OUTPUT. Narrowing the reported window must
-    # never narrow what claimed_origins bookkeeping actually sees.
-    _add_earlier_origin_trade()
+def test_run_backtest_date_filtering_does_not_change_the_trades_themselves(synthetic_cache):
+    # start_date/end_date bound which trades get REPORTED, never which
+    # history gets loaded -- so a trade that survives the filter must come
+    # out byte-identical to its counterpart in the unfiltered run. If the
+    # window were ever allowed to narrow the loaded data, bias-building
+    # and alignment would silently see less history and this would drift.
+    _add_earlier_trade()
 
     full = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
-    assert [r.trade_kind for r in full] == ["origin", "continuation"]
+    assert len(full) == 2
 
     filtered = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
                              start_date=H1_BASE.normalize())
     assert len(filtered) == 1
-    assert filtered[0].trade_kind == "continuation"  # NOT "origin"
+    later = full[1]
+    assert filtered[0].entry_time == later.entry_time
+    assert filtered[0].entry_price == later.entry_price
+    assert filtered[0].stop_loss == later.stop_loss
+    assert filtered[0].trigger_type == later.trigger_type
+    assert filtered[0].raw_target == later.raw_target
 
 
 def test_run_backtest_respects_a_custom_rr(synthetic_cache):
@@ -330,15 +327,11 @@ def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache
     assert records[0].stop_loss == pytest.approx(1.1004)
 
 
-def _add_earlier_origin_trade():
-    """trade_kind is now sequence-based (Task 4: literal "first instance
-    vs. repeated instance" since the effective bias's own origin event --
-    see runner.py's `claimed_origins` bookkeeping), not a fixed time
-    window -- so a fixture with only ONE trade in the whole series is
-    always "origin" by construction (nothing precedes it). Tests that
-    specifically want to exercise "continuation" stop-loss behavior need a
-    genuine EARLIER trade in the same (Daily-effective, BULLISH) leg to
-    claim "origin" first. This appends a second, independent H4
+def _add_earlier_trade():
+    """Give the fixture a SECOND, earlier trade, so tests that care about
+    what happens when a trade has a predecessor (date-range filtering,
+    position stacking) have one to work with instead of a series
+    containing exactly one entry. This appends a second, independent H4
     breakout+liquidity+reaction cascade (H4 idx9-17, a fresh price range
     so it doesn't interact with synthetic_cache's own idx0-8 swing
     points) plus its own H1 sweep+engulf entry at day 10 -- after
@@ -379,7 +372,7 @@ def _add_earlier_origin_trade():
 
 
 def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(synthetic_cache):
-    _add_earlier_origin_trade()
+    _add_earlier_trade()
 
     # Insert 3 H1 candles BETWEEN the sweep (index 1) and the reaction/
     # engulf (indices 2-3), forming a bullish FVG that brackets the H4
@@ -403,10 +396,8 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
 
     records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
     assert len(records) == 2
-    assert records[0].trade_kind == "origin"  # the earlier, unrelated cascade claims it
     trade = records[1]
 
-    assert trade.trade_kind == "continuation"
     assert trade.imbalance_overlap is True
     assert trade.trigger_type == "plug_and_play"
     assert trade.stop_kind == "plug_and_play"
@@ -422,7 +413,7 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
 
 
 def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthetic_cache):
-    _add_earlier_origin_trade()
+    _add_earlier_trade()
 
     # Regression test for a real bug found via the trade-chart viewer: a
     # live trade got an 83-pip "plug and play" stop because h1_imbalances
@@ -445,10 +436,8 @@ def test_run_backtest_ignores_an_overlapping_imbalance_formed_after_entry(synthe
 
     records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
     assert len(records) == 2
-    assert records[0].trade_kind == "origin"  # the earlier, unrelated cascade claims it
     trade = records[1]
 
-    assert trade.trade_kind == "continuation"
     assert trade.imbalance_overlap is False
     assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "engulfing"
@@ -522,15 +511,14 @@ def test_run_backtest_produces_an_origin_trade_close_to_the_bias_bootstrap(tmp_p
     # Same Bishop cascade as `synthetic_cache`, but with H1 candles placed
     # close in time to the Daily bias bootstrap (2024-01-01 for this
     # fixture -- see the daily series below) instead of `synthetic_cache`'s
-    # deliberate 20-day-later placement, so this trade is classified
-    # "origin" (Task 4: it's the first entry since the effective bias's
-    # own origin event). Historically (before an early fix) the origin
-    # stop was anchored to a Daily-timeframe strong-low snapshot that
-    # hadn't been set yet this early (StructureTracker's valid_sweep_break
-    # doesn't fire until day 9) -- `_strong_at()` returned None and the
-    # trade was silently dropped; this regression-tests that an origin
-    # trade this early in the series still gets produced at all. Stop-loss
-    # itself is now keyed to the TRIGGER (Task 5), not trade_kind -- see
+    # deliberate 20-day-later placement. Historically (before an early
+    # fix) the stop was anchored to a Daily-timeframe strong-low snapshot
+    # that hadn't been set yet this early (StructureTracker's
+    # valid_sweep_break doesn't fire until day 9) -- `_strong_at()`
+    # returned None and the trade was silently dropped; this
+    # regression-tests that a trade this early in the series still gets
+    # produced at all. Stop-loss itself is now keyed to the TRIGGER
+    # (Task 5) -- see
     # test_run_backtest_produces_a_winning_trade_end_to_end for the
     # identical engulfing-stop derivation (this fixture reuses the exact
     # same H4/H1 cascade, just time-shifted).
@@ -593,7 +581,6 @@ def test_run_backtest_produces_an_origin_trade_close_to_the_bias_bootstrap(tmp_p
     assert len(records) == 1
     trade = records[0]
 
-    assert trade.trade_kind == "origin"
     assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "engulfing"
     # More extreme of H1(2)'s low (1.1008) and H1(3)'s own low (1.1005) --

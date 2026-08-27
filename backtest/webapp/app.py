@@ -260,12 +260,12 @@ def results(name):
         body_rows.append(
             f'<tr><td><a href="/trade/{_escape(name)}/{_escape(r["trade_id"])}">#{_escape(r["trade_id"])}</a></td>'
             f'<td>{_escape(r.get("entry_time"))}</td><td>{_escape(r.get("direction"))}</td>'
-            f'<td>{_escape(r.get("trade_kind"))}</td><td>{_escape(r.get("stop_kind"))}</td>'
+            f'<td>{_escape(r.get("stop_kind"))}</td>'
             f'<td>{_escape(status)}</td><td class="{cls}">{r_display}</td></tr>'
         )
     table = (
         '<table><thead><tr><th>Trade</th><th>Entry time</th><th>Dir</th>'
-        '<th>Kind</th><th>Stop kind</th><th>Status</th><th>R</th></tr></thead>'
+        '<th>Stop kind</th><th>Status</th><th>R</th></tr></thead>'
         f'<tbody>{"".join(body_rows)}</tbody></table>'
     )
     return _page(f'<p><a href="/">&larr; all results</a></p><h1>{_escape(name)}</h1>{table}', title=name)
@@ -301,7 +301,7 @@ def trade_detail(name, trade_id):
     r_display = f' ({_escape(row["r_multiple"])}R)' if row.get("r_multiple") else ""
     meta = (
         '<div class="meta">'
-        f'{_escape(row.get("direction"))} &middot; {_escape(row.get("trade_kind"))} &middot; '
+        f'{_escape(row.get("direction"))} &middot; '
         f'entry {entry_price:g} &middot; stop {stop_loss:g} ({_escape(row.get("stop_kind"))}) &middot; '
         f'target {target:g} &middot; key level '
         f'{key_level if key_level is not None else "—"} ({_escape(row.get("key_level_shape"))}) &middot; '
