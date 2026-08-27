@@ -355,6 +355,42 @@ populated for anything before. In practice that boundary is academic --
 the live databases have essentially no rows yet (see the note below
 about the bots never completing an iteration).
 
+## The VPS is NOT dedicated to the bots (found 2026-08-27)
+
+`crontab -l` on the host shows a full production PHP application
+(`kugo-backend`) sharing this box, with jobs on aggressive schedules:
+
+    */1  broadcast_riders.php          every minute
+    */2  release_stuck_deliveries.php
+    */5  retry_stuck_payouts.php
+    */15 auto_confirm.php
+    plus several hourly/daily pushes
+
+This reframes the resource starvation diagnosed on 2026-08-26. The
+working assumption then was "two bots contending for 2 vCPUs". The real
+picture is two bots contending with another live application that wakes
+up at least once a minute, forever. It is very likely the direct cause
+of the swapping that made a `pd.read_csv` 19x slower here than the same
+read in a dev sandbox -- the measurement that made no sense at the time
+and got written off as "the box is contended".
+
+Nothing about the fixes changes: the cache append, the bisects and the
+storyline gate were all real wins and the 7.3x on a full 27-instrument
+sweep is measured. But two consequences are worth holding onto:
+
+- **Headroom is thinner than "2 vCPUs" implies.** Any future estimate of
+  what this box can carry (more instruments, shorter poll intervals, a
+  third style) has to account for kugo-backend, not just the bots.
+- **Benchmarks here are noisy by construction.** A timing taken while
+  the `*/1` job happens to be running is not comparable to one taken
+  between. Repeat measurements before concluding anything from a single
+  number -- which is a sharper version of the standing lesson below.
+
+NOT acted on, deliberately: nothing here has been changed or moved.
+kugo-backend is somebody's production service and the trading bots are
+the guests on this machine. Raised for the record and for whoever
+decides whether these two workloads should share a box at all.
+
 ## Signal reconciliation (added 2026-08-27)
 
 The check that answers "did the strategy find something the bots
@@ -386,7 +422,15 @@ Or hourly, quiet unless something is actually wrong (cron mails only on
 output, and `--quiet-when-clean` prints nothing on a healthy run, so a
 message in your inbox always means something needs looking at):
 
-    17 * * * * cd /srv/slk-bot/mt5data/trading && /usr/bin/python3 -m bot.reconcile_signals --quiet-when-clean
+    17 * * * * cd /srv/slk-bot/mt5data/trading && /usr/bin/python3 -m bot.reconcile_signals --quiet-when-clean >> /var/log/slk_reconcile.log 2>&1
+
+Redirected to a log file rather than relying on cron mail: every other
+job on this host does the same, which is good evidence mail isn't
+configured here. Without the redirect a healthy run and a broken feed
+would both be silent -- the exact confusion the separate exit codes (0
+clean / 2 feed broken / 3 feed never published) exist to prevent. Check
+it with `tail /var/log/slk_reconcile.log`; empty means every signal was
+seen on time.
 
 Reading the output:
 
