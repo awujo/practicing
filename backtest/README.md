@@ -1103,6 +1103,54 @@ built in phases so each is testable before the next depends on it:
       source doesn't state operationally what "must be swept before
       continuing" requires of an entry that hasn't seen the sweep yet --
       but the measurement says the honest answer is "take the trade".
+
+      **Verification: 2025 and 2026 re-run across all 27 instruments.**
+      Removing origin/continuation was claimed above to change no
+      decisions. That was checked rather than asserted -- the full
+      Dukascopy cache, all 27 instruments, both entry styles, full
+      history, run under this commit and under its parent (4c3aacc):
+
+          34,182 trades from each. The two JSON dumps have the same
+          MD5. Every trade's entry time, direction, entry price, stop,
+          status, R multiple, trigger and stop kind is identical.
+
+      So the label really was inert, and the 2025/2026 numbers below are
+      unchanged by this commit. What HAS changed since the numbers last
+      published to the dashboard (commit e025d37, 2026-08-16) is the two
+      strategy fixes that landed in between -- 2482da7 (plain breakouts
+      read off the close, not the wick) and f97ee38 (the bias-flip rule
+      checks the most recent lower-timeframe breakout, not the last 5).
+      Running e025d37 against today's data separates that from the extra
+      ten days of candles:
+
+      | 2026, conservative | closed | win% | total R |
+      |---|---|---|---|
+      | published dashboard (e025d37 code, Aug-16 data) | 387 | 36.4% | 135.4 |
+      | same code, today's data | 429 | 38.0% | 175.3 |
+      | today's code, today's data | 559 | 48.1% | 452.3 |
+
+      +39.9 R from the extra data, +277.1 R from the two fixes. The same
+      comparison across both years and both styles, on identical data:
+
+      | period | style | Aug-16 code | today | delta |
+      |---|---|---|---|---|
+      | 2025 | conservative | 241.5 R @ 35.8% | 367.2 R @ 40.1% | +125.6 R, +4.4pp |
+      | 2025 | aggressive | 929.6 R @ 56.4% | 1101.4 R @ 60.0% | +171.8 R, +3.6pp |
+      | 2026 | conservative | 175.3 R @ 38.0% | 452.3 R @ 48.1% | +277.1 R, +10.1pp |
+      | 2026 | aggressive | 564.6 R @ 56.0% | 884.2 R @ 63.1% | +319.6 R, +7.1pp |
+
+      Both fixes improve win rate AND trade count in both years, which is
+      the shape you want -- a change that only raised total R by taking
+      more trades, or only raised win rate by taking fewer, would be much
+      easier to explain away as noise.
+
+      The dashboard's published CSVs are now stale relative to this. They
+      get refreshed the next time run-backtest.yml runs per instrument.
+
+      Incidentally measured on the same runs: a full 27-instrument, both-
+      styles sweep takes 298s today against 2173s at e025d37 -- the 7.3x
+      the performance work was aiming for, confirmed on real data rather
+      than a benchmark.
 - [ ] **Not yet built**: Monthly (the one remaining level of the full
       Monthly->Weekly->Daily->4H->lower cascade -- Weekly is now wired,
       see Phase 5 above); performance metrics beyond win rate/total R
