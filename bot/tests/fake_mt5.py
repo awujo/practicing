@@ -49,6 +49,7 @@ class FakeMT5:
         self._fail_init = False
         self._fail_login = False
         self.initialize_path = None  # last `path=` value initialize() was called with, for assertions
+        self.initialize_calls = 0
 
         # order_send scripting: a queue of results to return in sequence
         # (lets tests simulate "requote then success", etc.); if empty,
@@ -65,6 +66,7 @@ class FakeMT5:
                                 price=request["price"], comment="ok")
 
     def initialize(self, path=None):
+        self.initialize_calls += 1
         self.initialize_path = path
         if self._fail_init:
             self._last_error = (1, "init failed")

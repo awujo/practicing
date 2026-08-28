@@ -573,11 +573,53 @@ the gate closed between the skipped candle and the recovery.
 **Separately, still open**: WHY the MT5 sessions keep losing
 authorization on both independent terminals is not diagnosed here. This
 fix stops a dropped connection from also silently dropping trades, but
-it doesn't stop the connection from dropping. Worth watching whether the
-reconnect-storm frequency itself correlates with the VPS contention
-documented above (kugo-backend's cron load / swapping) -- not confirmed,
-just the obvious next hypothesis given everything else this VPS's
-resource picture has explained so far.
+it doesn't stop the connection from dropping.
+
+One thing IS confirmed by reading `mt5_data.py`'s `connect()`, though:
+the failure is `mt5.initialize() failed`, not `mt5.login() failed`.
+`initialize()` is called with no credentials at all -- it only attaches
+to the already-running `terminal64.exe`. So this rules out a stored
+password/typo on our side: the already-running terminal itself is
+reporting it isn't authorized, before our code ever gets a chance to
+attempt a fresh login. Whatever is wrong is happening between the GUI
+terminal and MetaQuotes-Demo's servers, outside anything this repo
+controls -- and there's no way from these symptoms alone to tell "the
+VPS is starving the terminal of CPU/network responsiveness closely
+enough that the broker's session keepalive times out" from "MetaQuotes-
+Demo's free public pool is just flaky." Both are consistent with what's
+been observed; nothing here distinguishes them.
+
+## 2026-08-28 -- reconnect backoff (doesn't fix the cause, stops compounding it)
+
+`_try_reconnect()` had no backoff: `run_live.py`'s POLL_SECONDS=5 poll
+loop meant a real `mt5.initialize()` attempt fired every flat 5 seconds
+for as long as the account stayed unhealthy, forever. The two storms
+that produced the missing-signals incident above were 150 and 158
+consecutive failures -- 12+ minutes of IPC/network calls thrown at an
+already-failing terminal, on a VPS with already-documented resource
+contention, during precisely the window it needed that load least.
+
+Added exponential backoff between actual reconnect attempts (not
+between `run_once()` polls -- `is_healthy()` is still checked every
+cycle; `_try_reconnect()` itself now just returns immediately, without
+attempting `connect()`, while inside its own backoff window).  First
+retry after going unhealthy is still immediate, matching the old
+behavior for the common one-off blip; the delay only grows on repeated
+failure -- 5s, 10s, 20s, 40s, capped at 60s -- and resets the moment a
+reconnect actually succeeds, so a later, independent outage starts from
+5s again rather than continuing wherever the last one left off.
+
+This is explicitly NOT a fix for the auth failures themselves -- it's
+confirmed to only reduce load during an outage that's already
+happening, and is offered as that: a safe, root-cause-agnostic
+mitigation, not a diagnosis. If the failures are broker-side, this
+changes nothing about their frequency, only how hard the bot hammers the
+terminal while they're occurring. Covered by 5 new tests: immediate
+first retry, no wasted attempts inside the backoff window, the delay
+sequence itself, reset-on-success (and that a later failure restarts
+from the base delay, not from where the prior outage left off), and that
+`run_once()`'s own per-poll health check is unaffected by the backoff
+living inside `_try_reconnect()`.
 
 ## Open / worth re-checking
 

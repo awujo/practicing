@@ -23,7 +23,7 @@ rather say that plainly than paper over it with untested precision.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from backtest.engine.runner import run_backtest
 from backtest.engine.trade_log import TradeRecord
@@ -37,6 +37,13 @@ from .mt5_execution import MT5Execution
 from .risk_manager import Decision, RiskManager
 
 logger = logging.getLogger("bot.orchestrator")
+
+# Exponential backoff between actual reconnect attempts -- see
+# _try_reconnect()'s docstring for why this exists. First retry is
+# immediate (matches the old fixed-5s-forever behavior for a one-off
+# blip); the delay only grows for a genuinely sustained outage.
+RECONNECT_BACKOFF_BASE_SECONDS = 5
+RECONNECT_BACKOFF_MAX_SECONDS = 60
 
 
 @dataclass
@@ -78,6 +85,9 @@ class LiveBot:
     # replays history (only a full process restart resets it; an
     # in-process reconnect does not).
     _last_entry_time: dict[str, object] = field(init=False, default_factory=dict)
+    # Reconnect backoff state -- see _try_reconnect().
+    _reconnect_attempts: int = field(init=False, default=0)
+    _next_reconnect_at: object = field(init=False, default=None)
 
     def __post_init__(self):
         self.risk_manager = RiskManager(self.profile.active_rules, self.profile.terminates_on_dd)
@@ -325,11 +335,40 @@ class LiveBot:
                              f"balance {state.balance:,.2f} reached the phase target", state)
 
     def _try_reconnect(self):
+        """Backs off between actual reconnect attempts rather than firing
+        one on every single poll (previously every flat POLL_SECONDS,
+        forever). Confirmed live 2026-08-27/28: a real outage produced
+        150 and 158 consecutive `mt5.initialize()` failures across the
+        two bots, each fired every 5 seconds with no backoff -- 12+
+        minutes of IPC/network calls thrown at an already-failing
+        terminal on a VPS with documented resource contention
+        (OPERATIONS_LOG.md), during precisely the window it needed that
+        load least.
+
+        This does NOT fix the underlying cause of the auth failures --
+        that's still undiagnosed, and might be broker-side (a free demo
+        pool), might be VPS-side (the terminal missing the broker's
+        keepalive under load), and nothing here can tell those apart.
+        It only stops adding load during the outage. First retry after
+        going unhealthy is still immediate; the delay only grows on
+        repeated failure, doubling from RECONNECT_BACKOFF_BASE_SECONDS
+        up to RECONNECT_BACKOFF_MAX_SECONDS, and resets the moment a
+        reconnect actually succeeds."""
+        now = datetime.now(timezone.utc)
+        if self._next_reconnect_at is not None and now < self._next_reconnect_at:
+            return
         try:
             self.mt5_client.connect()
             logger.info("reconnected to MT5")
+            self._reconnect_attempts = 0
+            self._next_reconnect_at = None
         except MT5ConnectionError as exc:
-            logger.warning("reconnect failed: %s", exc)
+            self._reconnect_attempts += 1
+            delay = min(RECONNECT_BACKOFF_BASE_SECONDS * (2 ** (self._reconnect_attempts - 1)),
+                        RECONNECT_BACKOFF_MAX_SECONDS)
+            self._next_reconnect_at = now + timedelta(seconds=delay)
+            logger.warning("reconnect failed (attempt %d, next retry in %ds): %s",
+                            self._reconnect_attempts, delay, exc)
 
     def _log_event(self, event_type, decision, reason, state, instrument="", trade_id="", risk=0.0,
                     requested_price=None, filled_price=None, slippage_points=None, **kwargs) -> int:

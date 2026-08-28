@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pandas as pd
@@ -12,7 +13,7 @@ from ..audit_log import AuditLog, DecisionRecord
 from ..config import AccountProfile, MT5Credentials, PhaseConfig, PhaseRules
 from ..mt5_data import MT5Client
 from ..mt5_execution import MT5Execution
-from ..orchestrator import LiveBot, TrackedPosition
+from ..orchestrator import RECONNECT_BACKOFF_BASE_SECONDS, LiveBot, TrackedPosition
 
 RULES = PhaseRules(daily_dd_limit_pct=0.04, overall_dd_limit_pct=0.10,
                     risk_normal=1000.0, risk_reduced=500.0, de_risk_at_pct=0.05,
@@ -70,6 +71,115 @@ def test_run_once_does_nothing_when_mt5_is_unhealthy(tmp_path):
 
     bot.run_once()
     assert audit.recent(10) == []
+
+
+# ---- reconnect backoff ----
+
+def test_the_first_reconnect_attempt_after_going_unhealthy_is_immediate(tmp_path):
+    # No regression for the common case: a one-off blip must still
+    # recover on the very next poll, exactly as before backoff existed.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)  # make_bot's own setup already did one connect()
+    client.disconnect()
+    fake.initialize_calls = 0
+
+    bot._try_reconnect()
+
+    assert fake.initialize_calls == 1
+    assert client.is_healthy()
+
+
+def test_repeated_failures_are_not_retried_on_every_single_poll(tmp_path):
+    # Confirmed live 2026-08-27/28: 150 and 158 consecutive
+    # mt5.initialize() failures, one every flat 5 seconds, no backoff --
+    # 12+ minutes of IPC calls against an already-failing terminal on a
+    # resource-contended VPS. A second call made immediately after a
+    # failure (well inside the backoff window) must not attempt another
+    # real connect() at all.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    client.disconnect()
+    fake._fail_init = True
+    fake.initialize_calls = 0
+
+    bot._try_reconnect()  # attempt 1: fails, starts the backoff window
+    assert fake.initialize_calls == 1
+
+    bot._try_reconnect()  # called again immediately -- still inside the window
+    assert fake.initialize_calls == 1  # no second attempt yet
+
+
+def test_the_backoff_delay_grows_and_is_capped(tmp_path):
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    client.disconnect()
+    fake._fail_init = True
+    fake.initialize_calls = 0
+
+    delays = []
+    for _ in range(7):
+        bot._try_reconnect()
+        # Force the next call past the just-set backoff window, as if
+        # that much wall-clock time had actually elapsed.
+        delays.append((bot._next_reconnect_at - datetime.now(timezone.utc)).total_seconds())
+        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+
+    assert fake.initialize_calls == 7
+    # 5, 10, 20, 40, 60, 60, 60 -- doubles from the base, capped at max.
+    rounded = [round(d) for d in delays]
+    assert rounded[:5] == [5, 10, 20, 40, 60]
+    assert rounded[5] == 60 and rounded[6] == 60
+
+
+def test_a_successful_reconnect_resets_the_backoff(tmp_path):
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    client.disconnect()
+    fake._fail_init = True
+
+    bot._try_reconnect()
+    bot._try_reconnect()  # still failing -- attempt count and delay have grown
+    assert bot._reconnect_attempts == 1  # second call was inside the window, didn't even try
+
+    bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    fake._fail_init = False  # the terminal recovers
+    bot._try_reconnect()
+
+    assert bot._reconnect_attempts == 0
+    assert bot._next_reconnect_at is None
+
+    # A LATER failure must start the backoff over from the base delay,
+    # not continue from wherever the previous outage left off.
+    client.disconnect()
+    fake._fail_init = True
+    bot._try_reconnect()
+    delay = (bot._next_reconnect_at - datetime.now(timezone.utc)).total_seconds()
+    assert round(delay) == RECONNECT_BACKOFF_BASE_SECONDS
+
+
+def test_run_once_still_polls_health_every_cycle_even_while_backing_off(tmp_path):
+    # The backoff lives entirely inside _try_reconnect() -- run_once()'s
+    # own per-poll health check is untouched, so a reconnect that
+    # succeeds between polls (e.g. because the underlying terminal came
+    # back on its own) is still noticed on the very next run_once() call
+    # rather than only once the backoff window happens to elapse.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    client.disconnect()
+    fake._fail_init = True
+    fake.initialize_calls = 0
+
+    bot.run_once()
+    assert fake.initialize_calls == 1
+
+    bot.run_once()  # still inside the backoff window
+    assert fake.initialize_calls == 1  # no wasted attempt
+
+    fake._fail_init = False
+    bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    bot.run_once()
+    assert fake.initialize_calls == 2
+    assert client.is_healthy()
 
 
 def test_run_once_skips_iteration_when_account_state_fetch_fails(tmp_path):
