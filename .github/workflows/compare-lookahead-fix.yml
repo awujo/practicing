@@ -70,7 +70,11 @@ jobs:
 
       - name: Swap in the OLD (pre-fix) engine files
         run: |
-          git fetch origin "${{ inputs.old_ref }}" --depth 1
+          # fetch-depth: 0 on the initial checkout already pulled full
+          # history, so old_ref is already present locally -- no extra
+          # fetch needed (and `git fetch origin <bare SHA>` fails here
+          # regardless: GitHub's smart-HTTP fetch doesn't resolve a bare
+          # SHA as a shorthand ref the way a branch/tag name works).
           git checkout "${{ inputs.old_ref }}" -- \
             backtest/engine/bias.py backtest/engine/structure.py \
             backtest/engine/key_levels.py backtest/engine/liquidity.py \
