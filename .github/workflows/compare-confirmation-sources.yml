@@ -1,0 +1,69 @@
+name: Compare confirmation sources (A/B)
+
+# One-off A/B test, entirely on GitHub's infrastructure: the current
+# "breakout" definition (detect_confirmations()'s fractal swing-high/low,
+# aimed at the prior major extreme) vs. an alternate "most recent
+# breakout" definition (detect_confirmations_recent_key_level(), the
+# nearest A/V-shape key level's disrespect instead) -- direct 2026-08-28
+# user request following a live JP225 Daily disagreement. See
+# backtest/engine/compare_confirmation_sources.py's module docstring and
+# OPEN_QUESTIONS.md for the full context. Does not touch the live bots --
+# this only calls run_backtest() with an opt-in flag.
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Only trades entered on/after this date count (YYYY-MM-DD)"
+        required: true
+        default: "2025-01-01"
+      instruments:
+        description: "Optional comma-separated internal symbols. Leave blank for all (minus USOIL/ETHUSD)."
+        required: false
+        default: ""
+      styles:
+        description: "Comma-separated entry styles to run."
+        required: true
+        default: "conservative,aggressive"
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp || {
+            echo "::error::No 'data-latest' release found -- run the fetch-data workflow first."
+            exit 1
+          }
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+
+      - name: Run comparison
+        run: |
+          args=(--start "${{ inputs.start }}" --styles "${{ inputs.styles }}")
+          if [ -n "${{ inputs.instruments }}" ]; then args+=(--instruments "${{ inputs.instruments }}"); fi
+          {
+            echo "## Confirmation-source comparison -- swing vs key_level, since ${{ inputs.start }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python -m backtest.engine.compare_confirmation_sources "${args[@]}" \
+            --json /tmp/comparison.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full breakdown
+        uses: actions/upload-artifact@v4
+        with:
+          name: confirmation-source-comparison
+          path: /tmp/comparison.json

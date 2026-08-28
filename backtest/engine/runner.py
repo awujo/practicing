@@ -194,7 +194,9 @@ from .structure import Direction, StructureTracker
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
 from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
-from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
+from .bias import (
+    detect_confirmations, detect_confirmations_recent_key_level, replay_bias, bias_at, resolve_effective_bias,
+)
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
@@ -745,11 +747,23 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
                   erl_cap: bool = True, close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
-                  irl_mode: str = "ignore") -> list[TradeRecord]:
+                  irl_mode: str = "ignore",
+                  confirmation_source: str = "swing") -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
     pip_size: defaults to `default_pip_size(instrument)` when not given.
+    confirmation_source: "swing" (default) -- detect_confirmations()'s
+    fractal swing-high/low "breakout" definition, applied uniformly to
+    every timeframe's confirmation stream (Weekly/Daily/H4/H1). "key_level"
+    swaps in detect_confirmations_recent_key_level() instead -- the most
+    recent A/V-shape key level's disrespect, not the prior major swing
+    extreme. A/B flag only, added 2026-08-28 to test the user's own
+    "most recent breakout, not the apex" reading against the current
+    definition; see bias.py's detect_confirmations_recent_key_level()
+    docstring and OPEN_QUESTIONS.md. Does not change live bot behavior --
+    live_strategy.py/orchestrator.py always call detect_confirmations()
+    directly, untouched by this flag.
     start_date/end_date: optional pd.Timestamp bounds (inclusive) on which
     trades get RECORDED, by entry time -- NOT a data-loading window. All
     cached history still loads and still drives bias-building, alignment,
@@ -775,6 +789,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
         raise ValueError("entry_style must be 'aggressive' or 'conservative'")
+    if confirmation_source not in ("swing", "key_level"):
+        raise ValueError("confirmation_source must be 'swing' or 'key_level'")
     if pip_size is None:
         pip_size = default_pip_size(instrument)
 
@@ -798,12 +814,17 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     if first_origin is None:
         return []  # no confirmed structure to bootstrap a bias from
 
+    def _confirmations(candles):
+        if confirmation_source == "swing":
+            return detect_confirmations(candles, n, close_based_breakout=close_based_breakout)
+        return detect_confirmations_recent_key_level(candles, n)
+
     daily_levels = detect_key_levels(daily, n)
-    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
-    weekly_confirmations = detect_confirmations(weekly, n, close_based_breakout=close_based_breakout) if weekly else []
-    h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
+    daily_confirmations = _confirmations(daily)
+    weekly_confirmations = _confirmations(weekly) if weekly else []
+    h4_confirmations = _confirmations(h4)
     h4_levels = detect_key_levels(h4, n)
-    h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout)
+    h1_confirmations = _confirmations(h1)
     h1_imbalances = detect_imbalances(h1)
     h1_imbalance_times = [im.time for im in h1_imbalances]
 
