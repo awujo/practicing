@@ -225,6 +225,46 @@ python -m bot.run_live --account-type prop_firm --phase phase1 \
     --bridge-port 18813 --terminal-path 'C:\MT5-Second\terminal64.exe' ...
 ```
 
+## Telegram notifications (optional)
+
+Pushes the live bot's important events -- entries, declines, exits (with
+R multiple and $ P&L), health halts, phase transitions, reconnect
+issues, and per-instrument errors -- to a Telegram chat, so checking on
+the bots doesn't require SSHing into the VPS. Entirely opt-in and off by
+default; see `bot/telegram_notify.py`'s module docstring for exactly
+what it does and doesn't send, and why (it is deliberately NOT the full
+DEBUG/INFO poll-loop stream -- that would be useless on a phone and
+would risk tripping Telegram's own rate limit).
+
+**Setup**:
+1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
+   (`/newbot`) if you don't already have one -- this gives you a bot
+   token. **Treat it as a secret from the moment it's generated**: never
+   paste it into a chat, commit it, or put it in a script that gets
+   committed. If a token is ever pasted somewhere it shouldn't be
+   (including to an AI assistant, a chat log, a support ticket), treat
+   it as compromised and regenerate it via BotFather's `/revoke`
+   immediately -- there is no way to know a leaked token wasn't seen or
+   won't be reused.
+2. Message your bot once (anything) so Telegram has a chat to send to.
+3. Find your numeric chat ID: `curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates"`
+   and look for `"chat":{"id":...}` in the response.
+4. Set both as environment variables wherever `run_live.py` launches
+   (e.g. the VPS launch scripts) -- credentials come from the
+   environment only, matching every other secret in this project
+   (`config.py`'s module docstring), never a committed file:
+   ```bash
+   export TELEGRAM_BOT_TOKEN=...
+   export TELEGRAM_CHAT_ID=...
+   ```
+5. Optionally add `--telegram-level INFO` to `run_live.py`'s args for
+   entries/exits/declines/phase-transitions too, not just
+   warnings/errors (the default, `WARNING`).
+
+If either variable is unset, the bot runs exactly as it did before this
+existed -- no behavior change, no dependency added (uses only the
+standard library's `urllib`).
+
 ## Testing
 
 `bot/tests/` -- 95 tests, all runnable without any MT5 connection

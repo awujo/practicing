@@ -57,6 +57,7 @@ from .audit_log import AuditLog
 from .mt5_data import MT5Client
 from .mt5_execution import MT5Execution
 from .orchestrator import LiveBot
+from .telegram_notify import attach_if_configured
 
 POLL_SECONDS = 5  # how often run_once() checks for a new candle close -- cheap when nothing's happened
 
@@ -114,10 +115,23 @@ def main():
                               "when only one terminal is installed.")
     parser.add_argument("--audit-db", default="bot_audit_log.db")
     parser.add_argument("--log-level", default="INFO")
+    parser.add_argument("--telegram-level", default="WARNING", choices=("INFO", "WARNING", "ERROR"),
+                         help="Minimum level forwarded to Telegram when TELEGRAM_BOT_TOKEN/"
+                              "TELEGRAM_CHAT_ID are set (see telegram_notify.py). WARNING (default) "
+                              "covers reconnect issues, health halts and errors without every entry/"
+                              "exit; INFO also includes every entry, exit, decline and phase "
+                              "transition -- the closest thing to \"everything,\" and noisier.")
     args = parser.parse_args()
 
     logging.basicConfig(level=args.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logger = logging.getLogger("bot.run_live")
+
+    # Opt-in: no-op unless TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are
+    # both set (see telegram_notify.py's module docstring for why
+    # WARNING is the default level and what it does and doesn't cover).
+    telegram_handler = attach_if_configured(level=getattr(logging, args.telegram_level))
+    if telegram_handler is not None:
+        logger.info("Telegram notifications enabled")
 
     if args.account_type == "prop_firm":
         if not args.phase:
@@ -151,6 +165,13 @@ def main():
     try:
         while True:
             bot.run_once()
+            if telegram_handler is not None:
+                # Guarantees a batch queued during a burst still goes out
+                # promptly once things quiet down, rather than waiting on
+                # some future record to naturally trigger the next send
+                # -- see TelegramHandler's docstring. Cheap: a no-op when
+                # nothing is pending.
+                telegram_handler.flush()
             time.sleep(POLL_SECONDS)
     except KeyboardInterrupt:
         logger.info("shutting down")

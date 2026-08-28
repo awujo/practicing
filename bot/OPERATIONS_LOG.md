@@ -621,6 +621,32 @@ from the base delay, not from where the prior outage left off), and that
 `run_once()`'s own per-poll health check is unaffected by the backoff
 living inside `_try_reconnect()`.
 
+## 2026-08-28 -- Telegram notifications added
+
+`bot/telegram_notify.py`: a `logging.Handler` on the `"bot"` logger,
+rate-limited (MIN_SEND_INTERVAL=3s, batches anything queued in that
+window into one message rather than one HTTP call per line), stdlib
+`urllib` only -- no new dependency. Opt-in via `TELEGRAM_BOT_TOKEN` +
+`TELEGRAM_CHAT_ID` env vars; a no-op with neither set.
+
+Two gaps had to be closed for "log everything going on" to actually mean
+that, not just "whatever already happened to call logger.warning()":
+entry decisions/declines/halts/phase-transitions all funnel through
+`_log_event()` already, so one `logger.info()` call added there covers
+all of them for free -- but trade EXITS (wins/losses) only ever reached
+`audit_log.update_outcome()` directly, never the standard logger at all,
+so a closed trade would have been invisible to this no matter what the
+handler did. `_record_closed_trade()` now also logs the outcome
+(instrument, exit reason, R multiple, $ P&L).
+
+**A live secret was pasted directly into this session's chat during
+setup.** Treated as compromised on the spot -- never used as-is, no
+committed file, README instructs regenerating via BotFather `/revoke`
+before use. Worth restating for whoever reads this later: any credential
+that has ever been pasted into a chat (with an AI assistant or anyone
+else) should be rotated, not reused, regardless of whether it "looks
+like" it leaked anywhere -- there's no way to confirm it didn't.
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live

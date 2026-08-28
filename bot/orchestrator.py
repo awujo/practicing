@@ -329,6 +329,14 @@ class LiveBot:
         self.audit_log.update_outcome(tracked.row_id, exit_price=deal.price,
                                        exit_reason=deal.reason, r_multiple=r_multiple,
                                        realized_pnl=deal.profit)
+        # The one event type that does NOT go through _log_event() (this
+        # updates an existing row rather than creating one), so it needs
+        # its own line -- without it, a trade CLOSING (the win/loss, not
+        # just the entry) would never reach the standard logger, and
+        # therefore never reach a TelegramHandler either.
+        r_text = f"{r_multiple:+.2f}R" if r_multiple is not None else "R n/a"
+        logger.info("%s: closed ticket %s -- %s, %s, $%+.2f", tracked.instrument, tracked.ticket,
+                    deal.reason, r_text, deal.profit)
         if self.risk_manager.check_target_hit(state):
             self.risk_manager.accepting_entries = False
             self._log_event("phase_transition", "phase_target_hit",
@@ -372,6 +380,16 @@ class LiveBot:
 
     def _log_event(self, event_type, decision, reason, state, instrument="", trade_id="", risk=0.0,
                     requested_price=None, filled_price=None, slippage_points=None, **kwargs) -> int:
+        # Every entry decision, decline, health halt and phase transition
+        # funnels through here -- one logger.info() call covers all of
+        # them, rather than adding one at each of the several call
+        # sites. This is what a TelegramHandler (telegram_notify.py)
+        # actually receives; without it, the only things visible outside
+        # the audit database would be reconnects, storyline transitions
+        # and per-instrument exceptions, missing every real trade
+        # decision entirely.
+        logger.info("%s: %s%s -- %s", instrument or event_type, event_type,
+                    f" ({decision})" if decision else "", reason)
         open_risk = sum(p.risk_amount for p in state.open_positions)
         record = DecisionRecord(
             event_type=event_type, decision=decision, reason=reason,
