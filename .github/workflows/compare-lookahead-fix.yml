@@ -1,0 +1,116 @@
+name: Compare lookahead fix (before/after)
+
+# Quantifies the 2026-08-28 lookahead-bias fix (OPEN_QUESTIONS.md's
+# Technical entry): runs performance_summary.py twice against the SAME
+# data snapshot in the SAME job -- once with the OLD engine files
+# (swing/key-level activation at the pivot's own bar), once with the
+# CURRENT (fixed) ones (activation delayed n bars, matching what a live,
+# candle-by-candle process could actually know) -- by swapping just the
+# five engine files in and out of the working tree between runs, rather
+# than checking out two separate refs. Also doubles as "the current live
+# bot version's performance over the window" on its own (the "new" pass).
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Only trades entered on/after this date count (YYYY-MM-DD)"
+        required: true
+        default: "2025-01-01"
+      old_ref:
+        description: "Commit/ref to pull the PRE-FIX engine files from"
+        required: true
+        default: "b9b55ff"
+      instruments:
+        description: "Optional comma-separated internal symbols. Leave blank for all (minus USOIL/ETHUSD)."
+        required: false
+        default: ""
+      styles:
+        description: "Comma-separated entry styles to run."
+        required: true
+        default: "conservative,aggressive"
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp || {
+            echo "::error::No 'data-latest' release found -- run the fetch-data workflow first."
+            exit 1
+          }
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+
+      - name: Run NEW (fixed) engine
+        run: |
+          args=(--start "${{ inputs.start }}" --styles "${{ inputs.styles }}")
+          if [ -n "${{ inputs.instruments }}" ]; then args+=(--instruments "${{ inputs.instruments }}"); fi
+          {
+            echo "## NEW (fixed) engine -- since ${{ inputs.start }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python -m backtest.engine.performance_summary "${args[@]}" \
+            --json /tmp/new.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Swap in the OLD (pre-fix) engine files
+        run: |
+          git fetch origin "${{ inputs.old_ref }}" --depth 1
+          git checkout "${{ inputs.old_ref }}" -- \
+            backtest/engine/bias.py backtest/engine/structure.py \
+            backtest/engine/key_levels.py backtest/engine/liquidity.py \
+            backtest/engine/runner.py
+          echo "Swapped engine files to ${{ inputs.old_ref }}:"
+          git diff --stat HEAD -- backtest/engine/
+
+      - name: Run OLD (pre-fix) engine
+        run: |
+          args=(--start "${{ inputs.start }}" --styles "${{ inputs.styles }}")
+          if [ -n "${{ inputs.instruments }}" ]; then args+=(--instruments "${{ inputs.instruments }}"); fi
+          {
+            echo "## OLD (pre-fix) engine -- since ${{ inputs.start }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python -m backtest.engine.performance_summary "${args[@]}" \
+            --json /tmp/old.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diff old vs new
+        run: |
+          {
+            echo "## Delta (new - old)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python -c "
+          import json
+          old = json.load(open('/tmp/old.json'))
+          new = json.load(open('/tmp/new.json'))
+          ot, nt = old['totals'], new['totals']
+          print(f\"trades:    old={ot['trades']:5d}  new={nt['trades']:5d}  delta={nt['trades']-ot['trades']:+d}\")
+          print(f\"win_rate:  old={old['win_rate']*100:.1f}%  new={new['win_rate']*100:.1f}%\")
+          print(f\"total_R:   old={ot['total_r']:+.1f}  new={nt['total_r']:+.1f}  delta={nt['total_r']-ot['total_r']:+.1f}\")
+          " | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full breakdown
+        uses: actions/upload-artifact@v4
+        with:
+          name: lookahead-fix-comparison
+          path: |
+            /tmp/old.json
+            /tmp/new.json
