@@ -506,6 +506,79 @@ of its four. That is the number this is meant to drive to zero, and it
 predates the 2026-08-27 09:18 restart that first put both bots on the
 fully-fixed code with no backlog.
 
+## 2026-08-28 -- root cause found: missed signals had no audit trail at all
+
+The 36-hour signal-feed window (see above) surfaced the real test case:
+6 genuine setups across 2026-08-26/27, both entry styles (12 published
+signals), and reconcile_signals reported ALL TWELVE `MISSING` -- not
+late, not declined, nothing. Given the bots' own H1 cache was current to
+within the hour when checked, that ruled out "the bots are just behind"
+and pointed at something dropping specific candles outright.
+
+Full tmux scrollback for both bots showed the real state: 150 and 158
+`reconnect failed: mt5.initialize() ... Terminal: Authorization failed`
+lines against only 14 and 13 successful `reconnected to MT5` recoveries,
+independently on both terminals/accounts (different Wine paths, ports,
+logins) -- something upstream of this repo is periodically revoking or
+refusing the MT5 session, and `run_once()`'s fail-closed design correctly
+does nothing while that's happening: `is_healthy()` false means the
+per-instrument loop never runs at all that iteration, on either bot.
+
+The actual bug was in what happens on the NEXT successful poll.
+`MT5Client.new_candle_closed()` reports only the single most-recently
+seen H1 bar (own docstring: "then None on every subsequent call until
+another one closes") -- it is a one-slot watermark, not a queue. If two
+H1 candles close during a reconnect storm, only the newer is ever
+reported. `_check_instrument()` then matched entries with
+`r.entry_time == new_candle.time` -- exact equality against that one
+candle only. `run_backtest()` still had the earlier signal (it replays
+full deterministic history on every call), but nothing ever asked for
+it: the older candle's trade was silently dropped, no exception, no log
+line, no audit row, forever. AUDCAD and EURUSD both missing on the exact
+same 13:00 candle is consistent with one storm spanning that hour on
+both bots.
+
+A second thing found in the same code and worth recording precisely
+because it looked alarming and wasn't: `r.status != "still_open"`
+alongside the entry_time check. `TradeRecord.status` is only ever
+`"open"` / `"closed_win"` / `"closed_loss"` / `"closed_breakeven"` --
+`"still_open"` is a completely different field (`exit_reason`). The
+comparison was therefore always `True` and filtered nothing. Removed as
+dead/misleading code, not because it caused anything.
+
+**The fix**: `LiveBot` now tracks `_last_entry_time` per instrument --
+the newest candle actually evaluated last time. Once set, a check widens
+its match from "exactly the candle that just closed" to "everything with
+`entry_time` after the watermark, up to and including this candle" --
+so any candle skipped by a reconnect storm gets picked up on the next
+successful poll instead of vanishing. The FIRST check for an instrument
+in a process's lifetime (no watermark yet) still uses exact-match only,
+deliberately: matching "everything run_backtest() has ever produced"
+on a cold start would replay every historical trade back to whenever
+the cache begins. A full process restart resets the watermark and
+re-enters that cold-start behavior; an in-process reconnect does not,
+which is exactly the gap this closes.
+
+**Known residual gap, not fixed here**: the storyline gate
+(`_storyline_says_hunt`) is still evaluated only at `new_candle.time`,
+not at every candle in a skipped stretch. A signal whose own candle
+would have passed the gate, but whose bias has since moved on by the
+time polling resumes, could still be missed. The live evidence for this
+incident doesn't implicate it -- the gate logged "hunting" on both sides
+of every gap involved -- and fixing it properly means replaying the gate
+hour-by-hour across the gap, a bigger change than this evidence
+currently justifies. Worth revisiting if a future MISSING signal shows
+the gate closed between the skipped candle and the recovery.
+
+**Separately, still open**: WHY the MT5 sessions keep losing
+authorization on both independent terminals is not diagnosed here. This
+fix stops a dropped connection from also silently dropping trades, but
+it doesn't stop the connection from dropping. Worth watching whether the
+reconnect-storm frequency itself correlates with the VPS contention
+documented above (kugo-backend's cron load / swapping) -- not confirmed,
+just the obvious next hypothesis given everything else this VPS's
+resource picture has explained so far.
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live

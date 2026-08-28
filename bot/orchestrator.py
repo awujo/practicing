@@ -2,8 +2,9 @@
 The live loop. Ties together everything else in bot/: on every new H1
 candle close for a tracked instrument, refresh that instrument's cache
 from MT5, call run_backtest() (unmodified -- see live_cache_sync.py for
-why), and if it produced a fresh signal at that exact candle, run it
-through the risk manager and, if allowed, place it.
+why), and act on whatever it produced since the last candle this
+instrument was actually checked on -- see _check_instrument's own
+docstring for why "since last checked" and not "at this exact candle."
 
 Every method that touches MT5 (via the injected mt5_client/mt5_exec) can
 fail -- this loop is written to fail CLOSED throughout: a health check
@@ -70,6 +71,13 @@ class LiveBot:
     # Untracked-position tickets already warned about, so the warning
     # fires on discovery rather than every poll for as long as it's open.
     _reported_untracked: set = field(init=False, default_factory=set)
+    # The entry_time of the newest candle actually evaluated for entries,
+    # per instrument -- see _check_instrument's docstring for why this
+    # exists and what it fixes. Unset until the first real check for that
+    # instrument in this process's lifetime, so a fresh process never
+    # replays history (only a full process restart resets it; an
+    # in-process reconnect does not).
+    _last_entry_time: dict[str, object] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self.risk_manager = RiskManager(self.profile.active_rules, self.profile.terminates_on_dd)
@@ -127,6 +135,47 @@ class LiveBot:
                                   instrument)
 
     def _check_instrument(self, instrument: str, state):
+        """`mt5_client.new_candle_closed()` reports only the SINGLE most
+        recently seen H1 bar -- see its own docstring -- not every bar
+        that closed since the last successful call. If this instrument
+        wasn't checked for a stretch (an MT5 reconnect storm, an
+        unhealthy iteration, anything that makes run_once() return
+        early), and TWO OR MORE H1 candles close in that stretch, only
+        the newest is ever reported here. Matching entries against ONLY
+        that one candle's time -- as this used to do -- means a real
+        signal on any earlier candle in the gap is silently and
+        permanently lost: no exception, no log line, no audit row,
+        because _consider_entry() is never even called for it.
+
+        Confirmed live 2026-08-27/28: 6 real signals across both bots (12
+        rows in the reference feed, both entry styles), 0 reached either
+        audit database -- coinciding with MT5 reconnect storms of
+        150/158 failed re-authorizations in that window
+        (bot/OPERATIONS_LOG.md has the detail). run_backtest() had them
+        the whole time; every one of those calls just filtered on the
+        wrong candle.
+
+        So instead of matching the one candle that just closed, this
+        matches everything since `_last_entry_time[instrument]` -- the
+        newest candle actually evaluated last time -- up to and including
+        this one. The single exception is the very first check for an
+        instrument in this process's lifetime (`_last_entry_time` has no
+        entry yet): there it stays exact-match-only, because matching
+        "everything run_backtest() has ever produced" on a cold start
+        would replay every historical trade back to whenever the cache
+        begins. A full process restart resets `_last_entry_time` and so
+        re-enters that cold-start behavior; an in-process reconnect does
+        not, which is the gap this exists to close.
+
+        Known remaining gap: the storyline gate below is still evaluated
+        only at `new_candle.time`, not at every candle in a skipped
+        stretch. A signal whose OWN candle would have passed the gate but
+        whose bias has since moved on by the time of the next successful
+        check could still be missed. Not fixed here -- the live evidence
+        for this incident doesn't implicate it (the gate logged "hunting"
+        on both sides of every gap involved), and doing it properly means
+        replaying the gate hour-by-hour across the gap, a bigger change
+        than this evidence currently justifies."""
         try:
             new_candle = self.mt5_client.new_candle_closed(instrument, "H1")
         except MT5ConnectionError as exc:
@@ -152,9 +201,14 @@ class LiveBot:
             return
 
         records = run_backtest(instrument, self.entry_style, source=self.source)
-        fresh = [r for r in records if r.entry_time == new_candle.time and r.status != "still_open"]
+        watermark = self._last_entry_time.get(instrument)
+        if watermark is None:
+            fresh = [r for r in records if r.entry_time == new_candle.time]
+        else:
+            fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
         for record in fresh:
             self._consider_entry(instrument, record, state)
+        self._last_entry_time[instrument] = new_candle.time
 
     def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
         """Is this instrument in the hunting stage (Daily and H4 aligned,

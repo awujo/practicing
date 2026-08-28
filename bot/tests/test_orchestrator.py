@@ -265,7 +265,15 @@ def test_fresh_signal_with_invalid_sizing_is_declined_before_any_order(tmp_path)
     assert bot.tracked_positions == {}
 
 
-def test_only_the_record_matching_the_new_candles_time_is_considered(tmp_path):
+def test_cold_start_only_matches_the_exact_candle_that_just_closed(tmp_path):
+    # The FIRST check for an instrument in this process's lifetime has no
+    # watermark yet (_last_entry_time is empty). run_backtest() returns
+    # its full deterministic history on every call, so matching anything
+    # other than the exact new candle here would replay every historical
+    # trade back to whenever the cache begins -- a real trade from three
+    # days ago is correctly NOT re-entered just because it's still in
+    # that list. See the catch-up test below for the case this does NOT
+    # cover: a signal missed between two checks of the SAME process.
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
 
@@ -282,6 +290,85 @@ def test_only_the_record_matching_the_new_candles_time_is_considered(tmp_path):
     rows = audit.recent(10)
     assert len(rows) == 1
     assert rows[0]["trade_id"] == "2"
+
+
+def test_a_signal_missed_between_two_checks_of_the_same_process_is_still_caught(tmp_path):
+    # The real bug, confirmed live 2026-08-27/28: mt5_client.new_candle_
+    # closed() reports only the single most-recently-seen bar (see its
+    # own docstring), never a queue of every bar that closed while this
+    # instrument wasn't checked. During an MT5 reconnect storm, run_once()
+    # returns before _check_instrument() is ever called for anything --
+    # so if TWO H1 candles close in that stretch, the OLD exact-match
+    # logic would see only the newer one on the next successful poll and
+    # silently, permanently lose the earlier signal: no exception, no log
+    # line, no audit row. 6 real signals across both live bots vanished
+    # exactly this way in one 36-hour window.
+    #
+    # First check establishes the watermark at T1 (a quiet candle, no
+    # signal). Then TWO more H1 candles close before the bot manages
+    # another successful check -- new_candle_closed() can only ever
+    # report the LATEST one, T3 -- but run_backtest() (deterministic,
+    # full history) shows a real trade sitting on the skipped T2. Both
+    # T2's trade and any genuine T3 trade must be considered, not just
+    # whichever one happens to be "the new candle" this cycle.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    t1 = pd.Timestamp("2026-01-13T12:00:00+00:00")
+    t2 = pd.Timestamp("2026-01-13T13:00:00+00:00")  # closed during the outage -- no poll saw it directly
+    t3 = pd.Timestamp("2026-01-13T14:00:00+00:00")  # the first candle a poll actually observes again
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": t1})()
+        bot.run_once()  # establishes the watermark at t1; no signal, no audit row
+
+    assert audit.recent(10) == []
+
+    # The outage: two candles (t2, t3) close, but new_candle_closed() can
+    # only ever report the newest -- exactly what the real MT5 client
+    # does when polling resumes after a gap.
+    missed_during_outage = a_trade_record(t2, trade_id=1)
+    just_closed = a_trade_record(t3, trade_id=2, direction=Direction.BEARISH)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[missed_during_outage, just_closed]):
+        mock_new_candle.return_value = type("C", (), {"time": t3})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert {r["trade_id"] for r in rows} == {"1", "2"}  # BOTH -- the skipped one and the current one
+
+
+def test_a_signal_from_before_the_watermark_is_not_reconsidered(tmp_path):
+    # Symmetric to the catch-up test: once t2 has been evaluated (whether
+    # or not it produced a trade), a LATER poll must not re-examine
+    # anything at or before it -- run_backtest()'s history is
+    # deterministic, so without this a resolved trade would be reported
+    # again on every subsequent candle close.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    t1 = pd.Timestamp("2026-01-13T12:00:00+00:00")
+    t2 = pd.Timestamp("2026-01-13T13:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[a_trade_record(t1, trade_id=1)]):
+        mock_new_candle.return_value = type("C", (), {"time": t1})()
+        bot.run_once()
+    assert len(audit.recent(10)) == 1
+
+    # t2 closes with no NEW trade of its own, but the old t1 trade is
+    # still sitting in run_backtest()'s full (deterministic) result set.
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[a_trade_record(t1, trade_id=1)]):
+        mock_new_candle.return_value = type("C", (), {"time": t2})()
+        bot.run_once()
+
+    assert len(audit.recent(10)) == 1  # still just the one row -- t1 was not re-logged
 
 
 # ---- reconciliation ----
