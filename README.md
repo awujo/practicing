@@ -7,7 +7,9 @@ Source material and extracted strategy notes from mentor's video course (12 vide
 build-out -- strategy extraction, backtest engine, live bot, first live
 deployment -- with commit references for every claim. Then
 [`bot/OPERATIONS_LOG.md`](bot/OPERATIONS_LOG.md) for the live VPS
-deployment's current topology and incident history specifically.
+deployment's current topology and incident history specifically. See
+[`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md) for strategy and technical
+questions that came up but aren't resolved yet.
 
 ## Structure
 - `knowledge-base/videos/video-XX/` — transcript + strategy notes extracted from each video
