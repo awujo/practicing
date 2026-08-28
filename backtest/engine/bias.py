@@ -43,7 +43,7 @@ from enum import Enum
 
 from .candles import Candle
 from .structure import Direction, StructureTracker, body_closes_beyond, is_swing_high, is_swing_low
-from .key_levels import KeyLevel, is_disrespected
+from .key_levels import KeyLevel, is_disrespected, known_at as level_known_at
 
 
 class ConfirmationKind(Enum):
@@ -88,11 +88,16 @@ def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout
     claimed_low = False
 
     for i, c in enumerate(candles):
-        if i in swing_high_idxs:
-            last_swing_high = candles[i]
+        # A pivot at (i - n) only becomes fractally confirmable HERE, at
+        # index i -- not at (i - n) itself, which is what `i in
+        # swing_high_idxs` did before (2026-08-28 fix; a real ~n-bar
+        # lookahead, see OPEN_QUESTIONS.md). The reference level is still
+        # the pivot candle's own price; only when it becomes usable moves.
+        if i - n in swing_high_idxs:
+            last_swing_high = candles[i - n]
             claimed_high = False
-        if i in swing_low_idxs:
-            last_swing_low = candles[i]
+        if i - n in swing_low_idxs:
+            last_swing_low = candles[i - n]
             claimed_low = False
 
         # Direct user correction: SLK reads breakouts off the LINE CHART
@@ -273,11 +278,15 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
         eligible = None
         for idx in range(lo, hi):
             level = by_price[idx]
-            if level.time >= c.time or level.time in tested_level_times:
+            # known_at, not .time -- an A/V-shape level isn't actually
+            # usable until n bars after it forms (2026-08-28 fix; see
+            # OPEN_QUESTIONS.md's lookahead-bias entry). Dedup key stays
+            # on .time -- that's the level's identity, not its usability.
+            if level_known_at(level) >= c.time or level.time in tested_level_times:
                 continue
             if level.default_bias != cascade.direction:
                 continue
-            if eligible is None or level.time < eligible.time:
+            if eligible is None or level_known_at(level) < level_known_at(eligible):
                 eligible = level
         if eligible is None:
             continue

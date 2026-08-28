@@ -37,9 +37,27 @@ class Direction(Enum):
 
 @dataclass(frozen=True)
 class SwingPoint:
+    """`confirmed_at`: when this point first becomes knowable in a live,
+    candle-by-candle replay. None means "same as `time`" (no fractal lag --
+    a sweep/reaction point read directly off one already-closed candle). A
+    point built from a fractal swing test (is_swing_high/is_swing_low)
+    genuinely cannot be known until `n` bars after `time` -- see those
+    functions' own docstrings ("only decidable n bars after idx") -- so a
+    caller that filters/bisects candidates by time for ELIGIBILITY (not
+    just identity/display) must use `known_at()` below, not `.time`
+    directly. Added 2026-08-28 -- see OPEN_QUESTIONS.md's "Backtest replay
+    may have a small (~n-bar) lookahead bias" entry for the incident this
+    fixes."""
     time: object
     price: float
     kind: str  # "high" | "low"
+    confirmed_at: object = None
+
+
+def known_at(point: SwingPoint) -> object:
+    """The time a SwingPoint's existence is actually usable in a
+    candle-by-candle replay -- see `SwingPoint`'s own docstring."""
+    return point.confirmed_at if point.confirmed_at is not None else point.time
 
 
 @dataclass(frozen=True)
@@ -116,10 +134,18 @@ class StructureTracker:
         structural_low_at_sweep: SwingPoint | None = None
 
         for i, c in enumerate(candles):
-            if i in swing_high_idxs:
-                last_swing_high = SwingPoint(c.time, c.high, "high")
-            if i in swing_low_idxs:
-                last_swing_low = SwingPoint(c.time, c.low, "low")
+            # A pivot at index (i - n) only becomes fractally confirmable
+            # here, at index i -- NOT at index (i - n) itself, which is
+            # what checking `i in swing_high_idxs` did before (2026-08-28
+            # fix; see OPEN_QUESTIONS.md's lookahead-bias entry). The
+            # point's own `.time` still correctly reports where it formed;
+            # only WHEN this loop starts treating it as known moves.
+            if i - self.n in swing_high_idxs:
+                p = candles[i - self.n]
+                last_swing_high = SwingPoint(p.time, p.high, "high")
+            if i - self.n in swing_low_idxs:
+                p = candles[i - self.n]
+                last_swing_low = SwingPoint(p.time, p.low, "low")
 
             # --- Bullish sequence: sweep a prior low, then close back above the
             # structural high that was in place when the sweep happened. ---

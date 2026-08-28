@@ -35,10 +35,26 @@ from .structure import Direction, body_closes_beyond
 
 @dataclass(frozen=True)
 class KeyLevel:
+    """`confirmed_at`: when this level first becomes knowable in a live,
+    candle-by-candle replay. None means "same as `time`" (open_close and
+    4th-man levels -- known immediately at their own last candle's close).
+    An A/V-shape level is a fractal test (is_close_peak/is_close_trough)
+    and genuinely cannot be known until `n` bars after `time` -- see
+    `known_at()` below. Added 2026-08-28, see OPEN_QUESTIONS.md's
+    "Backtest replay may have a small (~n-bar) lookahead bias" entry."""
     time: object
     price: float
     shape: str  # "A" | "V" | "open_close"
     default_bias: Direction  # expected reaction direction: BEARISH (sell) or BULLISH (buy)
+    confirmed_at: object = None
+
+
+def known_at(level: KeyLevel) -> object:
+    """The time a KeyLevel's existence is actually usable in a
+    candle-by-candle replay -- see `KeyLevel`'s own docstring. Any caller
+    that filters/bisects levels by time for ELIGIBILITY (not just
+    identity/display) must use this, not `.time` directly."""
+    return level.confirmed_at if level.confirmed_at is not None else level.time
 
 
 def _opposite(direction: Direction) -> Direction:
@@ -93,13 +109,19 @@ def detect_open_close_level(c1: Candle, c2: Candle) -> KeyLevel | None:
 
 
 def detect_key_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]:
-    """Scan a candle series for all three key-level shapes."""
+    """Scan a candle series for all three key-level shapes. A/V shapes get
+    `confirmed_at` set to `n` bars after their own pivot (`candles[i + n]`,
+    always in range since is_close_peak/is_close_trough already required
+    `idx + n < len(candles)` to return True here) -- see KeyLevel's
+    docstring for why."""
     levels = []
     for i in range(len(candles)):
         if is_close_peak(candles, i, n):
-            levels.append(KeyLevel(candles[i].time, candles[i].close, "A", Direction.BEARISH))
+            levels.append(KeyLevel(candles[i].time, candles[i].close, "A", Direction.BEARISH,
+                                    confirmed_at=candles[i + n].time))
         if is_close_trough(candles, i, n):
-            levels.append(KeyLevel(candles[i].time, candles[i].close, "V", Direction.BULLISH))
+            levels.append(KeyLevel(candles[i].time, candles[i].close, "V", Direction.BULLISH,
+                                    confirmed_at=candles[i + n].time))
     for i in range(len(candles) - 1):
         oc = detect_open_close_level(candles[i], candles[i + 1])
         if oc is not None:

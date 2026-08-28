@@ -57,9 +57,11 @@ def structural_liquidity_points(candles: list[Candle], n: int = 2) -> list[Swing
     points = []
     for i in range(len(candles)):
         if is_swing_high(candles, i, n):
-            points.append(SwingPoint(candles[i].time, candles[i].high, "high"))
+            points.append(SwingPoint(candles[i].time, candles[i].high, "high",
+                                      confirmed_at=candles[i + n].time))
         if is_swing_low(candles, i, n):
-            points.append(SwingPoint(candles[i].time, candles[i].low, "low"))
+            points.append(SwingPoint(candles[i].time, candles[i].low, "low",
+                                      confirmed_at=candles[i + n].time))
     return sorted(points, key=lambda p: p.time)
 
 

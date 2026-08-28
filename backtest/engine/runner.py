@@ -190,8 +190,8 @@ from dataclasses import dataclass
 import pandas as pd
 
 from .candles import Candle, load_candles
-from .structure import Direction, StructureTracker
-from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect
+from .structure import Direction, StructureTracker, known_at as point_known_at
+from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
 from .liquidity import structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
@@ -549,10 +549,17 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     # comprehensions below were tens of millions of comparisons per call.
     # Pure performance change -- the selection semantics are unchanged
     # (verified bit-identical against the pre-optimization output).
-    points_sorted = sorted(liquidity_points, key=lambda p: p.time)
-    point_times = [p.time for p in points_sorted]
-    levels_sorted = sorted(h4_key_levels, key=lambda lvl: lvl.time)
-    level_times = [lvl.time for lvl in levels_sorted]
+    #
+    # Sorted/bisected on known_at, not .time -- a liquidity point or H4
+    # key level isn't actually usable until n bars after it forms
+    # (2026-08-28 fix; see OPEN_QUESTIONS.md's lookahead-bias entry).
+    # known_at == time + a constant n-bar offset within each of these two
+    # lists (one n per structural_liquidity_points/detect_key_levels
+    # call), so sorting by it preserves the same relative order as .time.
+    points_sorted = sorted(liquidity_points, key=lambda p: point_known_at(p))
+    point_known_ats = [point_known_at(p) for p in points_sorted]
+    levels_sorted = sorted(h4_key_levels, key=lambda lvl: level_known_at(lvl))
+    level_known_ats = [level_known_at(lvl) for lvl in levels_sorted]
 
     for i, brk in enumerate(breakouts):
         prev_breakout_time = breakouts[i - 1].time if i > 0 else None
@@ -562,9 +569,9 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # Only the FIRST qualifying point is ever used, so stop at it
         # rather than materializing every match first.
         liquidity_point = None
-        for idx in range(bisect.bisect_right(point_times, brk.time), len(points_sorted)):
+        for idx in range(bisect.bisect_right(point_known_ats, brk.time), len(points_sorted)):
             p = points_sorted[idx]
-            if next_breakout_time is not None and p.time >= next_breakout_time:
+            if next_breakout_time is not None and point_known_at(p) >= next_breakout_time:
                 break
             if p.kind == retracement_side:
                 liquidity_point = p
@@ -581,9 +588,9 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # span instead of, in the worst case, decades of H4 candles --
         # across a multi-year backtest that unbounded version turns into a
         # hang, not just a slowdown (see backtest/README.md's changelog).
-        lo = (bisect.bisect_left(level_times, prev_breakout_time)
+        lo = (bisect.bisect_left(level_known_ats, prev_breakout_time)
               if prev_breakout_time is not None else 0)
-        hi = bisect.bisect_right(level_times, liquidity_point.time)
+        hi = bisect.bisect_right(level_known_ats, point_known_at(liquidity_point))
         candidate_levels = [
             lvl for lvl in levels_sorted[lo:hi] if lvl.default_bias == brk.direction
         ]
