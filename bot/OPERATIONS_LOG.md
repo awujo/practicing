@@ -647,6 +647,42 @@ that has ever been pasted into a chat (with an AI assistant or anyone
 else) should be rotated, not reused, regardless of whether it "looks
 like" it leaked anywhere -- there's no way to confirm it didn't.
 
+## 2026-08-28 -- Telegram messages enriched to the full "thought process"
+
+Direct follow-up to the notification setup above: "everything going on
+... thought process, structure alignment, storyline change, storyline
+alignment, confirmation, entry, exit stop loss, any errors, any problem
+logging in." The event-level coverage (via `_log_event`'s single funnel
+and `_record_closed_trade`'s new line, previous entry) already covered
+WHICH events reach Telegram; this covers WHAT each one says.
+
+Every entry_attempt already carries the strategy's full read of the
+setup as DecisionRecord fields -- bias per timeframe, the effective
+timeframe, which timeframes aligned, the confirmation trigger, the key
+level, stop, target -- populated via `_audit_fields_from_trade_record()`
+and written to SQLite, but the log LINE only ever said e.g. "EURUSD:
+entry_attempt (allow) -- placed". `_describe_event()` now builds the
+full multi-line message from that same data for entry_attempt events --
+present whether the entry was allowed, declined, or failed to place,
+since the risk manager's decision is a separate question from what the
+strategy actually saw. The closed-trade line also gained entry/exit
+price side by side, not just the outcome, so a message reads as a full
+round-trip rather than a bare number.
+
+Confirmed as a genuinely separate axis from "which events get sent":
+`--telegram-level` (the previous entry's addition) controls WHICH lines
+reach Telegram at all; this controls how much each one says once it's
+selected. Both are required together for "everything" -- INFO level
+with the terse messages would still show every entry/exit, just without
+the reasoning; the rich messages at WARNING level would never fire at
+all, since entry_attempt is logged at INFO.
+
+3 new tests assert the actual rendered text (bias breakdown, confirmation
+trigger, aligned timeframes, stop/target, entry->exit price pair), not
+just that a log call happened. 320 tests pass total.
+
+## Open / worth re-checking
+
 ## Open / worth re-checking
 
 - Confirm the MT5 timestamp fix actually results in the cache's live

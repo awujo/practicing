@@ -335,8 +335,12 @@ class LiveBot:
         # just the entry) would never reach the standard logger, and
         # therefore never reach a TelegramHandler either.
         r_text = f"{r_multiple:+.2f}R" if r_multiple is not None else "R n/a"
-        logger.info("%s: closed ticket %s -- %s, %s, $%+.2f", tracked.instrument, tracked.ticket,
-                    deal.reason, r_text, deal.profit)
+        # deal.reason is already "stop_hit" | "target_hit" | "manual_or_other"
+        # (MT5Client._deal_reason_name -- not a raw MT5 enum), so this
+        # reads unambiguously as a stop or a target without translation.
+        logger.info("%s: closed ticket %s -- %s | entry %s -> exit %s | %s, $%+.2f",
+                    tracked.instrument, tracked.ticket, deal.reason,
+                    tracked.entry_price, deal.price, r_text, deal.profit)
         if self.risk_manager.check_target_hit(state):
             self.risk_manager.accepting_entries = False
             self._log_event("phase_transition", "phase_target_hit",
@@ -388,8 +392,7 @@ class LiveBot:
         # the audit database would be reconnects, storyline transitions
         # and per-instrument exceptions, missing every real trade
         # decision entirely.
-        logger.info("%s: %s%s -- %s", instrument or event_type, event_type,
-                    f" ({decision})" if decision else "", reason)
+        logger.info(_describe_event(event_type, decision, reason, instrument, risk, kwargs))
         open_risk = sum(p.risk_amount for p in state.open_positions)
         record = DecisionRecord(
             event_type=event_type, decision=decision, reason=reason,
@@ -402,6 +405,38 @@ class LiveBot:
             **kwargs,
         )
         return self.audit_log.append(record)
+
+
+def _describe_event(event_type, decision, reason, instrument, risk, kwargs) -> str:
+    """The human-readable line every entry decision, decline, health
+    halt and phase transition gets logged as -- written to answer WHY,
+    not just what. For an entry_attempt, `kwargs` already carries the
+    strategy's full read of the setup (_audit_fields_from_trade_record):
+    bias per timeframe, which one is effective, which timeframes
+    aligned, the confirmation trigger that fired, the key level, and the
+    stop/target -- present whether the entry was ultimately allowed,
+    declined, or failed to place, since the risk manager's decision is a
+    separate question from what the strategy saw. Direct request: "log
+    everything ... thought process, structure alignment, confirmation,
+    entry, exit stop loss" -- this is that, one event at a time."""
+    head = f"{instrument or event_type}: {event_type}" + (f" ({decision})" if decision else "")
+    lines = [f"{head} -- {reason}"]
+    if event_type == "entry_attempt" and kwargs.get("trigger_type"):
+        bias = ", ".join(f"{tf}={kwargs[field]}" for tf, field in
+                          (("Weekly", "bias_weekly"), ("Daily", "bias_daily"), ("H4", "bias_h4"))
+                          if kwargs.get(field))
+        lines.append(f"  {kwargs.get('direction', '?')} | confirmation: {kwargs['trigger_type']} "
+                    f"({kwargs.get('entry_pattern', '?')}) | effective bias: "
+                    f"{kwargs.get('effective_bias_timeframe', '?')} | aligned: "
+                    f"{kwargs.get('aligned_timeframes', '?')}")
+        if bias:
+            lines.append(f"  bias by timeframe: {bias}")
+        lines.append(f"  entry {kwargs.get('entry_price', '?')} | stop {kwargs.get('stop_loss', '?')} "
+                    f"({kwargs.get('stop_kind', '?')}) | target {kwargs.get('primary_target', '?')} "
+                    f"| key level {kwargs.get('key_level_price', '?')} ({kwargs.get('key_level_shape', '?')})")
+        if risk:
+            lines.append(f"  risking ${risk:,.2f}")
+    return "\n".join(lines)
 
 
 def _audit_fields_from_trade_record(record: TradeRecord) -> dict:

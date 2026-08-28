@@ -236,6 +236,28 @@ what it does and doesn't send, and why (it is deliberately NOT the full
 DEBUG/INFO poll-loop stream -- that would be useless on a phone and
 would risk tripping Telegram's own rate limit).
 
+An entry_attempt message carries the strategy's full reasoning, not just
+the decision -- direct request was "everything ... thought process,
+structure alignment, confirmation, entry, exit stop loss":
+
+```
+EURUSD: entry_attempt (allow) -- placed
+  bullish | confirmation: engulfing (direct_mitigation) | effective bias: Weekly | aligned: Weekly,Daily,H4
+  bias by timeframe: Weekly=bullish, Daily=bullish, H4=bullish
+  entry 1.17374 | stop 1.1729 (engulfing) | target 1.17626 | key level 1.17374 (V)
+  risking $1000.00
+```
+
+and a closed trade:
+
+```
+EURUSD: closed ticket 55 -- stop_hit | entry 1.17374 -> exit 1.1729 | -1.00R, $-1000.00
+```
+
+This still costs nothing when nothing is happening -- the storyline gate
+only logs on a STAGE CHANGE, not every poll, and a declined/placed entry
+only happens when a real setup fired.
+
 **Setup**:
 1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
    (`/newbot`) if you don't already have one -- this gives you a bot
@@ -257,9 +279,14 @@ would risk tripping Telegram's own rate limit).
    export TELEGRAM_BOT_TOKEN=...
    export TELEGRAM_CHAT_ID=...
    ```
-5. Optionally add `--telegram-level INFO` to `run_live.py`'s args for
-   entries/exits/declines/phase-transitions too, not just
-   warnings/errors (the default, `WARNING`).
+5. **Add `--telegram-level INFO`** to `run_live.py`'s args if you want
+   entries, exits, declines, phase transitions, storyline changes and
+   reconnect recoveries -- i.e. "everything," not just problems. The
+   default, `WARNING`, sends ONLY reconnect failures, health halts,
+   untracked positions and errors -- no trade activity at all, and
+   notably not even the "reconnected to MT5" recovery line, so a run at
+   the default level can look like a reconnect never resolved. `INFO` is
+   what most people asking for "everything going on" actually want.
 
 If either variable is unset, the bot runs exactly as it did before this
 existed -- no behavior change, no dependency added (uses only the

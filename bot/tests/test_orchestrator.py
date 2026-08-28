@@ -157,6 +157,76 @@ def test_a_successful_reconnect_resets_the_backoff(tmp_path):
     assert round(delay) == RECONNECT_BACKOFF_BASE_SECONDS
 
 
+# ---- rich event descriptions for the Telegram feed ----
+
+def test_a_placed_entry_logs_the_strategys_full_reasoning(tmp_path, caplog):
+    # Direct request: "everything ... thought process, structure
+    # alignment, confirmation, entry" -- not just "allow"/"placed". The
+    # bias/alignment/trigger/key-level/stop/target context already
+    # exists on every TradeRecord; this is what actually surfaces it
+    # outside the audit database.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]), \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    text = caplog.text
+    assert "EURUSD: entry_attempt (allow) -- placed" in text
+    assert "confirmation: engulfing" in text
+    assert "aligned: Weekly,Daily,H4" in text
+    assert "bias by timeframe: Weekly=bullish" in text
+    assert "stop 1.1729" in text and "target 1.17626" in text
+    assert "risking $" in text
+
+
+def test_a_declined_entry_still_logs_the_full_reasoning(tmp_path, caplog):
+    # A decline is a separate axis from what the strategy saw -- the
+    # setup's own reasoning must show even when the risk manager says no,
+    # otherwise a stream of declines with no context ("why does it keep
+    # saying no?") is exactly the kind of thing this exists to answer.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    bot.risk_manager.accepting_entries = False
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]), \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    assert "confirmation: engulfing" in caplog.text
+    assert "decline_phase_not_accepting" in caplog.text
+
+
+def test_a_closed_trade_logs_entry_and_exit_price_together(tmp_path, caplog):
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    row_id = audit.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok",
+                                          instrument="EURUSD", trade_id="1"))
+    bot.tracked_positions[("EURUSD", 55)] = TrackedPosition(
+        row_id=row_id, instrument="EURUSD", ticket=55, risk_amount=1000.0, entry_price=1.17374)
+    fake.deals_by_position[55] = (
+        make_deal(entry=fake.DEAL_ENTRY_OUT, price=1.17290, profit=-1000.0, reason=fake.DEAL_REASON_SL),
+    )
+
+    with caplog.at_level("INFO", logger="bot.orchestrator"):
+        bot._record_closed_trade(bot.tracked_positions.pop(("EURUSD", 55)), bot._account_state())
+
+    assert "stop_hit" in caplog.text
+    assert "entry 1.17374 -> exit 1.1729" in caplog.text
+    assert "-1.00R" in caplog.text and "$-1000.00" in caplog.text
+
+
 def test_run_once_still_polls_health_every_cycle_even_while_backing_off(tmp_path):
     # The backoff lives entirely inside _try_reconnect() -- run_once()'s
     # own per-poll health check is untouched, so a reconnect that
