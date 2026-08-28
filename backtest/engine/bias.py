@@ -43,7 +43,7 @@ from enum import Enum
 
 from .candles import Candle
 from .structure import Direction, StructureTracker, body_closes_beyond, is_swing_high, is_swing_low
-from .key_levels import KeyLevel, detect_key_levels, is_disrespected
+from .key_levels import KeyLevel, is_disrespected
 
 
 class ConfirmationKind(Enum):
@@ -112,60 +112,6 @@ def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout
             if (c.time, Direction.BULLISH) not in sweep_break_keys:
                 confirmations.append(Confirmation(c.time, Direction.BULLISH, ConfirmationKind.BREAKOUT, c.close))
             claimed_high = True
-
-    return sorted(confirmations, key=lambda x: x.time)
-
-
-def detect_confirmations_recent_key_level(candles: list[Candle], n: int = 2) -> list[Confirmation]:
-    """Alternate "breakout" definition, built to A/B against
-    detect_confirmations() -- NOT a replacement, not independently
-    sourced to a specific Bishop video/timestamp. Direct 2026-08-28 user
-    request: "in SLK we use the most recent breakout, not waiting for
-    the apex breakout" -- their read of a live JP225 Daily case where
-    detect_confirmations()'s reference level (the last n=2 fractal swing
-    high, a prior MAJOR extreme) sat far above price and hadn't been
-    touched, while a much nearer A-shape key level had already been
-    disrespected. That prior investigation found the code and STRATEGY.md
-    currently agree that key-level disrespects are Section 5 ENTRY
-    triggers, not Section 2 breakout/bias-flip signals (Video 17) -- see
-    OPEN_QUESTIONS.md. This function exists to settle the disagreement
-    empirically instead of by further reading: same Confirmation shape
-    as detect_confirmations(), so it's a drop-in alternate source for
-    _recent_direction()/_aligned_timeframes() and replay_bias()'s
-    condition (c) -- swap it in, run both, compare.
-
-    Reference level is the most recent A/V-shape KEY LEVEL (key_levels.py,
-    close-price peaks/troughs) instead of the most recent fractal swing
-    high/low. A disrespect of an A-shape (default bias SELL) is read as a
-    bullish breakout; a disrespect of a V-shape (default bias BUY) is read
-    as a bearish breakout -- same "one confirmation per level, then move
-    to the next" bookkeeping detect_confirmations() uses, just sourced
-    from the nearer, more frequently-forming level shape."""
-    levels = detect_key_levels(candles, n)
-    a_by_time = {lvl.time: lvl for lvl in levels if lvl.shape == "A"}
-    v_by_time = {lvl.time: lvl for lvl in levels if lvl.shape == "V"}
-
-    confirmations = []
-    last_a = None
-    last_v = None
-    claimed_a = False
-    claimed_v = False
-
-    for c in candles:
-        if c.time in a_by_time:
-            last_a = a_by_time[c.time]
-            claimed_a = False
-        if c.time in v_by_time:
-            last_v = v_by_time[c.time]
-            claimed_v = False
-
-        if last_v is not None and not claimed_v and body_closes_beyond(c, last_v.price, Direction.BEARISH):
-            confirmations.append(Confirmation(c.time, Direction.BEARISH, ConfirmationKind.BREAKOUT, c.close))
-            claimed_v = True
-
-        if last_a is not None and not claimed_a and body_closes_beyond(c, last_a.price, Direction.BULLISH):
-            confirmations.append(Confirmation(c.time, Direction.BULLISH, ConfirmationKind.BREAKOUT, c.close))
-            claimed_a = True
 
     return sorted(confirmations, key=lambda x: x.time)
 
