@@ -151,6 +151,40 @@ incident-by-incident account, this is just the summary:
 - `2820480` `bot/OPERATIONS_LOG.md` added -- the deployment topology and
   incident log going forward lives there, not in this file.
 
+## Phase 6: Backtest lookahead-bias fix (Aug 28)
+
+Direct question: does `run_backtest()` follow the same decision flow as
+the live bot candle-by-candle, given the whole candle array already
+exists in memory during a backtest? Mostly yes, with one real exception,
+found by checking rather than assuming: `is_swing_high()`/`is_swing_low()`
+(`structure.py`) and `is_close_peak()`/`is_close_trough()`
+(`key_levels.py`) are fractal tests that genuinely can't be known until
+`n` bars after the pivot forms -- their own docstrings already said so
+-- but `detect_confirmations()`, `StructureTracker.run()`, and
+`structural_liquidity_points()` all activated the resulting swing
+point/key level starting at the pivot's OWN bar, not `n` bars later when
+a live process would actually have that information.
+
+`1617afb` fixed it: `SwingPoint` and `KeyLevel` both gained a
+`confirmed_at` field (None = no lag, for open-close/4th-man levels which
+really are known immediately) and a `known_at()` helper; the activation
+loops shifted by `n`; every consumer that filters/bisects by time for
+ELIGIBILITY (`replay_bias()`, `_find_liquidity_setups()`) switched from
+raw `.time` to `known_at()`. `.time` itself is untouched everywhere --
+still correctly reports when a point actually formed, only when it
+becomes USABLE changed. All 111 existing tests passed unmodified.
+
+Measured, not assumed (`.github/workflows/compare-lookahead-fix.yml`,
+old_ref `b9b55ff` vs the fix, same data snapshot, all 25 instruments,
+both styles, 2025-2026): the fix was real but small in practice --
+2,528 trades/53.4% win/+2,688.7R (buggy) vs 2,684 trades/51.9% win/
++2,665.3R (fixed), a 23.4R (0.9%) difference. Delaying a level's
+activation doesn't suppress signals, it changes which level is briefly
+in play, which can go either way -- confirmed here rather than guessed.
+Current (fixed) engine's own standalone total is now the reference
+figure for "the live bot's 2-year performance": **+2,665.3R, 51.9% win
+rate, 2,684 trades**, all 25 instruments/both styles combined.
+
 ## Where things stand
 
 Both bots (conservative + aggressive style, prop-firm phase1, 25

@@ -66,52 +66,6 @@ possible one.
 
 ## Technical
 
-### Backtest replay may have a small (~n-bar) lookahead bias in swing/key-level activation timing
-
-**Raised**: 2026-08-28, direct question: does `run_backtest()` follow
-the same decision flow as the live bot candle-by-candle, given the
-whole candle array already exists in memory during a backtest?
-
-Mostly yes, with one real exception. `is_swing_high()`/`is_swing_low()`
-(`structure.py`) and `is_close_peak()`/`is_close_trough()`
-(`key_levels.py`) are fractal tests requiring `n` bars on BOTH sides of
-the pivot — each function's own docstring says so: "Only decidable n
-bars after idx." That's correct and unavoidable; a swing point genuinely
-can't be known until the bars after it have printed.
-
-The problem is what happens to that fact once it's been detected.
-`detect_confirmations()` and `StructureTracker.run()` both precompute
-the full set of swing-point indices for the whole array up front, then
-walk the candles in a single forward loop that sets
-`last_swing_high = candles[i]` the moment the loop reaches index `i` —
-not index `i + n`, which is when a live, candle-by-candle process would
-actually have that information. So for the `n` candles immediately
-after a pivot forms, the backtest already "knows" about a swing
-point/key level that a live bot polling candle-by-candle would not yet
-be able to compute. `replay_bias()`'s key-level matching has a
-`level.time >= c.time` guard, which stops a level from being used
-before its OWN pivot bar happened — but doesn't add the further `n`-bar
-lag before that pivot is actually fractally confirmable, so the same
-gap exists there too (Daily/Weekly bias flips, and the H4 key levels
-the liquidity cascade reacts off).
-
-**Materiality — not measured, don't assume it's negligible just because
-n=2 is small.** It's partially self-limiting (a pivot's definition
-already requires the following `n` bars not to exceed its `.high`/`.low`,
-which rules out some cheating), but the breakout/disrespect tests
-compare against `.close`, a different value from the `.high`/`.low` the
-swing test itself uses — so a close-based "breakout" firing inside that
-n-bar window, before the pivot would be live-confirmable, is a real
-possible case, not just a theoretical one. No measurement exists yet of
-how often this actually happens or how much R it accounts for across
-the instrument set.
-
-**To close this out**: either (1) measure it — rerun a sweep with
-swing/key-level activation shifted to `i + n` instead of `i` and diff
-against current results the same way the confirmation-source A/B just
-did, or (2) reason it away with an argument for why the gap can't
-matter (e.g. "no trigger candle can fall inside that window because
-X") backed by a check against real cases, not just intuition. Until
-one of those happens, treat every backtest total-R figure in this repo
-(including the 2,688.7R above) as having this small, unquantified
-optimism built in.
+*(none open right now — the lookahead-bias item that lived here is
+fixed, measured, and moved to `PROJECT_HISTORY.md`'s "Phase 6" entry.
+Add new ones here as they come up.)*
