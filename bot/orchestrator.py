@@ -31,6 +31,7 @@ from backtest.engine.trade_log import TradeRecord
 
 from .audit_log import AuditLog, DecisionRecord
 from .config import AccountProfile
+from .diagnostics import resource_snapshot
 from .live_cache_sync import sync_recent_from_mt5
 from .live_strategy import HUNTING, HTFContext, build_htf_context, storyline_at
 from .mt5_data import MT5Client, MT5ConnectionError
@@ -53,6 +54,24 @@ RECONNECT_BACKOFF_MAX_SECONDS = 60
 # is a defensive cap against a pathologically stale watermark, not a
 # number the codebase has ever actually needed. 72 H1 candles = 3 days.
 STORYLINE_GAP_LOOKBACK_CANDLES = 72
+
+# How old a caught-up signal's own entry candle is allowed to be, versus
+# the candle that just closed, before it's declined instead of traded.
+# Confirmed live 2026-08-29: EURJPY's 16:00/17:00 UTC candles from the
+# PREVIOUS day were still attempted as live market orders at 07:17 the
+# NEXT day -- 14-15 hours after their entry/stop/target math was
+# computed, against a materially different current price. The watermark-
+# widening (2026-08-28) and storyline-gap-replay (2026-08-29) fixes both
+# exist specifically so a missed signal is never silently dropped -- but
+# "still report it" and "still trade it" are different things once
+# enough time has passed that the setup's own thesis (the levels it was
+# reacting to) may no longer hold. 3 hours = generous room for a real
+# reconnect storm's recovery (the worst measured one resolved in
+# minutes) while reliably excluding "yesterday afternoon." Direct
+# 2026-08-29 request: "leave the trade if it have passed" -- declined,
+# not silently dropped: still logged with the full reasoning, just
+# tagged decline_stale_signal instead of executed.
+STALE_ENTRY_CUTOFF = timedelta(hours=3)
 
 
 @dataclass
@@ -231,6 +250,19 @@ class LiveBot:
         else:
             fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
         for record in fresh:
+            staleness = new_candle.time - record.entry_time
+            if staleness > STALE_ENTRY_CUTOFF:
+                # See STALE_ENTRY_CUTOFF's own comment. Declined, not
+                # silently dropped -- full reasoning still logged/audited,
+                # just never reaches the risk manager or MT5.
+                self._log_event(
+                    "entry_attempt", "decline_stale_signal",
+                    f"signal candle is {staleness} old (cutoff {STALE_ENTRY_CUTOFF}) -- "
+                    f"market has likely moved past this level, not attempting it late",
+                    state, instrument=instrument, trade_id=str(record.trade_id),
+                    **_audit_fields_from_trade_record(record),
+                )
+                continue
             self._consider_entry(instrument, record, state)
         self._last_entry_time[instrument] = new_candle.time
 
@@ -412,16 +444,30 @@ class LiveBot:
         going unhealthy is still immediate; the delay only grows on
         repeated failure, doubling from RECONNECT_BACKOFF_BASE_SECONDS
         up to RECONNECT_BACKOFF_MAX_SECONDS, and resets the moment a
-        reconnect actually succeeds."""
+        reconnect actually succeeds.
+
+        A resource_snapshot() (bot/diagnostics.py) is logged on the FIRST
+        failure of a new outage, and again on recovery -- not on every
+        attempt, since a real storm can be 150+ of them and that would
+        just be noise. This is the actual diagnostic for the paragraph
+        above: high load/swap at failure time points at the VPS: clean
+        numbers at failure time point at the broker. Direct 2026-08-29
+        request -- settle which one it is with data instead of leaving
+        both as standing guesses forever."""
         now = datetime.now(timezone.utc)
         if self._next_reconnect_at is not None and now < self._next_reconnect_at:
             return
+        was_mid_outage = self._reconnect_attempts > 0
         try:
             self.mt5_client.connect()
             logger.info("reconnected to MT5")
+            if was_mid_outage:
+                logger.info("resources at recovery: %s", resource_snapshot())
             self._reconnect_attempts = 0
             self._next_reconnect_at = None
         except MT5ConnectionError as exc:
+            if not was_mid_outage:
+                logger.warning("resources at first failure of this outage: %s", resource_snapshot())
             self._reconnect_attempts += 1
             delay = min(RECONNECT_BACKOFF_BASE_SECONDS * (2 ** (self._reconnect_attempts - 1)),
                         RECONNECT_BACKOFF_MAX_SECONDS)

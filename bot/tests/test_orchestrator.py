@@ -157,6 +157,38 @@ def test_a_successful_reconnect_resets_the_backoff(tmp_path):
     assert round(delay) == RECONNECT_BACKOFF_BASE_SECONDS
 
 
+def test_resource_snapshot_is_logged_once_per_outage_not_per_attempt(tmp_path, caplog):
+    # Direct 2026-08-29 request: settle whether the recurring "Terminal:
+    # Authorization failed" outages are VPS-side (resource contention) or
+    # broker-side, instead of leaving both as standing guesses. A real
+    # storm can be 150+ failed attempts -- logging a full resource
+    # snapshot on every one would just be noise, so it's captured once at
+    # the start of an outage and once at recovery, not on every retry in
+    # between.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    client.disconnect()
+    fake._fail_init = True
+
+    with patch("bot.orchestrator.resource_snapshot", return_value="load=7.2,4.1,3.8 mem=1.8/2.0GB") as mock_snap, \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        bot._try_reconnect()  # attempt 1 -- first failure of this outage
+        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._try_reconnect()  # attempt 2 -- same outage, no new snapshot
+        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._try_reconnect()  # attempt 3 -- still no new snapshot
+
+        assert mock_snap.call_count == 1
+        assert "load=7.2,4.1,3.8" in caplog.text
+
+        fake._fail_init = False
+        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._try_reconnect()  # recovers -- one more snapshot, at recovery
+
+    assert mock_snap.call_count == 2
+    assert "resources at recovery" in caplog.text
+
+
 # ---- rich event descriptions for the Telegram feed ----
 
 def test_a_placed_entry_logs_the_strategys_full_reasoning(tmp_path, caplog):
@@ -573,6 +605,76 @@ def test_a_signal_from_before_the_watermark_is_not_reconsidered(tmp_path):
         bot.run_once()
 
     assert len(audit.recent(10)) == 1  # still just the one row -- t1 was not re-logged
+
+
+def test_a_caught_up_signal_past_the_staleness_cutoff_is_declined_not_traded(tmp_path):
+    # Confirmed live 2026-08-29: EURJPY's 16:00/17:00 UTC candles from the
+    # PREVIOUS day were still attempted as live market orders 14-15 hours
+    # later. The watermark-widening catch-up (2026-08-28) exists so a
+    # missed signal is never silently dropped -- but trading it that
+    # stale, against a materially different current price, is a separate
+    # and much worse problem than just reporting it. Direct request:
+    # "leave the trade if it have passed" -- still logged with full
+    # reasoning (declined, not silently dropped), just never reaches
+    # _consider_entry/the risk manager/MT5.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    # Watermark established BEFORE the stale signal's own candle, then
+    # recovery lands 16h after it -- inside the watermark-widening catch-up
+    # window, but well past the 3-hour staleness cutoff.
+    watermark_time = pd.Timestamp("2026-01-12T20:00:00+00:00")
+    stale_signal = pd.Timestamp("2026-01-12T22:00:00+00:00")
+    recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": watermark_time})()
+        bot.run_once()  # establishes the watermark; no signal
+    assert audit.recent(10) == []
+
+    stale_record = a_trade_record(stale_signal, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[stale_record]):
+        mock_new_candle.return_value = type("C", (), {"time": recovery_time})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["decision"] == "decline_stale_signal"
+    assert fake.order_send_calls == []  # never reached execution
+
+
+def test_a_caught_up_signal_still_within_the_cutoff_is_traded_normally(tmp_path):
+    # Symmetric to the staleness-decline test: a signal caught up quickly
+    # (well within the cutoff) must be traded exactly as before -- the
+    # cutoff isn't a general brake on the watermark-widening catch-up,
+    # only on genuinely stale ones.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    watermark_time = pd.Timestamp("2026-01-13T12:00:00+00:00")
+    recent_signal = pd.Timestamp("2026-01-13T13:00:00+00:00")   # 1h old -- well inside the cutoff
+    recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": watermark_time})()
+        bot.run_once()
+
+    record = a_trade_record(recent_signal, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        mock_new_candle.return_value = type("C", (), {"time": recovery_time})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["decision"] == "allow"
 
 
 def test_a_signal_whose_gate_closed_before_the_recovery_poll_is_still_caught(tmp_path):

@@ -729,6 +729,48 @@ GBPJPY (08-27 22:00) and USDJPY (08-28 07:00) predate Telegram logging,
 so there's no direct evidence for those two specifically -- plausible
 same cause, not confirmed the same way.
 
+## 2026-08-29 -- root-caused the EURJPY invalid-stops incident: 14-15h-stale catch-up, not a fresh signal
+
+Following on from the two fixes above: checked whether the rejected
+EURJPY/USDCHF/AUDCAD orders were fresh signals or old ones caught up
+late. An offline check against a GitHub Actions Dukascopy pull first
+suggested USDCHF/AUDCAD were WEEKS old -- wrong conclusion, because that
+dataset has diverged from the VPS's real cache (`sync_recent_from_mt5`
+merges live MT5 candles into the same `dukascopy`-named cache files, so
+the two are no longer identical). Re-run directly on the VPS against the
+real cache: EURJPY's two rejected orders exactly match the 16:00 and
+17:00 UTC candles from the PREVIOUS day (stop-loss values 185.483 and
+185.467 matched exactly) -- attempted live at 07:17 UTC the next day,
+14-15 hours after their entry/stop/target math was computed.
+
+Root cause: the watermark-widening (08-28) and storyline-gap-replay
+(08-29) fixes both correctly stop a missed signal from being silently
+dropped, but neither had any concept of "too old to still be worth
+trading" -- a caught-up signal was executed at whatever price/stop it
+was computed at, regardless of how much the market had moved since.
+Today it happened to get rejected by MT5's own invalid-stops check;
+that's luck, not a safeguard.
+
+**Fixed**: `STALE_ENTRY_CUTOFF` (3 hours) in `orchestrator.py` -- a
+caught-up signal older than this is declined (`decline_stale_signal`,
+full reasoning still logged/audited) rather than passed to
+`_consider_entry`/the risk manager/MT5. 3 hours is generous room for a
+real reconnect storm's recovery (the worst measured one resolved in
+minutes) while reliably excluding "yesterday afternoon." Direct
+request: "leave the trade if it have passed."
+
+Also added `bot/diagnostics.py`'s `resource_snapshot()` (pure /proc
+reads, no new dependency) -- logged once at the start of an outage and
+once at recovery (not per attempt, since a real storm is 150+ of them).
+This is aimed at finally settling the still-open question of whether
+the recurring auth failures are VPS-side (resource contention with
+kugo-backend) or broker-side: high load/swap at failure time points at
+the VPS, clean numbers point at the broker. Nothing conclusive yet --
+needs a few more live incidents to accumulate data.
+
+**Both need `git pull` + bot restart on the VPS to take effect,** same
+as the two fixes above.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
