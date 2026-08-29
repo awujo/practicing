@@ -469,6 +469,14 @@ def _describe_event(event_type, decision, reason, instrument, risk, kwargs) -> s
     head = f"{instrument or event_type}: {event_type}" + (f" ({decision})" if decision else "")
     lines = [f"{head} -- {reason}"]
     if event_type == "entry_attempt" and kwargs.get("trigger_type"):
+        if kwargs.get("entry_time"):
+            # Distinct from this log line's own timestamp on purpose: a
+            # signal caught up after an outage (watermark-widening,
+            # storyline-gap-replay) is legitimately acted on well after
+            # its own candle closed. Without this line there was no way
+            # to tell "fresh" from "stale catch-up" from Telegram alone --
+            # directly raised 2026-08-29.
+            lines.append(f"  signal candle: {kwargs['entry_time']}")
         bias = ", ".join(f"{tf}={kwargs[field]}" for tf, field in
                           (("Weekly", "bias_weekly"), ("Daily", "bias_daily"), ("H4", "bias_h4"))
                           if kwargs.get(field))
@@ -495,6 +503,7 @@ def _audit_fields_from_trade_record(record: TradeRecord) -> dict:
         return value.value if hasattr(value, "value") else (value or "")
 
     return dict(
+        entry_time=str(record.entry_time),
         direction=_s(record.direction), entry_timeframe=record.entry_timeframe,
         entry_price=record.entry_price, entry_pattern=record.entry_pattern,
         trigger_type=record.trigger_type,

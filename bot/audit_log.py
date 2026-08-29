@@ -41,6 +41,18 @@ class DecisionRecord:
 
     # Strategy feature context -- mirrors backtest/engine/trade_log.py's
     # TradeRecord field-for-field on purpose (see module docstring).
+    #
+    # entry_time (added 2026-08-29) is the SIGNAL's own candle close time
+    # -- NOT the same thing as `timestamp` above, which is when this row
+    # was written. They can differ by hours: the watermark-widening fix
+    # (2026-08-28) and the storyline-gap-replay fix (2026-08-29) both
+    # legitimately let a poll evaluate and act on an OLDER candle than
+    # the one that just closed, after catching up from an outage. Without
+    # this field there was no way to tell "a fresh signal that happened
+    # to fail" from "a stale catch-up of an old one" after the fact --
+    # exactly the question raised, and un-answerable from the rows
+    # written before this field existed.
+    entry_time: str = ""
     direction: str = ""
     entry_timeframe: str = ""
     entry_price: float | None = None

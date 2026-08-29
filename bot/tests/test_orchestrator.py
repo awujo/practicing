@@ -186,6 +186,30 @@ def test_a_placed_entry_logs_the_strategys_full_reasoning(tmp_path, caplog):
     assert "risking $" in text
 
 
+def test_entry_attempt_logs_the_signals_own_candle_time(tmp_path, caplog):
+    # Direct question raised 2026-08-29: is a logged entry_attempt for a
+    # fresh signal, or a stale one caught up late after an outage (the
+    # watermark-widening and storyline-gap-replay fixes both legitimately
+    # act on an older candle than the one that just closed)? Before this,
+    # nothing distinguished the two -- not the audit db (no entry_time
+    # column existed) and not Telegram (only the log line's OWN
+    # timestamp, i.e. when it was written, was visible).
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    signal_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(signal_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]), \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        mock_new_candle.return_value = type("C", (), {"time": signal_time})()
+        bot.run_once()
+
+    assert f"signal candle: {signal_time}" in caplog.text
+    assert audit.recent(1)[0]["entry_time"] == str(signal_time)
+
+
 def test_a_declined_entry_still_logs_the_full_reasoning(tmp_path, caplog):
     # A decline is a separate axis from what the strategy saw -- the
     # setup's own reasoning must show even when the risk manager says no,
