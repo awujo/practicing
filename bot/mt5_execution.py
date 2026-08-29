@@ -138,6 +138,20 @@ class MT5Execution:
         symbol = self.broker_symbol(internal_symbol)
         order_type = self._mt5.ORDER_TYPE_BUY if direction == "bullish" else self._mt5.ORDER_TYPE_SELL
 
+        # entry_price/stop_loss/target_price come straight from the
+        # strategy's own pip-padding arithmetic (entries.py), which
+        # routinely produces float noise (e.g. 159.44850000000002 instead
+        # of 159.4485 -- ordinary binary-float behavior, not a bug in that
+        # math). MT5 order_send() rejects a sl/tp that doesn't land exactly
+        # on the symbol's tick grid with TRADE_RETCODE_INVALID_STOPS --
+        # confirmed live 2026-08-29 (USDCHF/EURJPY/AUDCAD, all rejected
+        # this way) -- so every price must be snapped to the broker's own
+        # grid before it's ever sent, not just computed to "close enough."
+        info = self._mt5.symbol_info(symbol)
+        entry_price = self._round_price(entry_price, info)
+        stop_loss = self._round_price(stop_loss, info)
+        target_price = self._round_price(target_price, info)
+
         request = {
             "action": self._mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
@@ -271,6 +285,22 @@ class MT5Execution:
         if mode & 1:
             return self._mt5.ORDER_FILLING_FOK
         return self._mt5.ORDER_FILLING_RETURN
+
+    def _round_price(self, price: float, info) -> float:
+        """Snaps `price` to the symbol's actual tick grid. Prefers
+        `info.digits` (the real MT5 API's own decimal-place count for this
+        symbol -- always present live); falls back to deriving a grid
+        from `info.point` if `digits` isn't available. Returns `price`
+        unchanged if neither is (can't validate a symbol we know nothing
+        about; the broker will reject it if it's genuinely bad, same as
+        before this method existed)."""
+        digits = getattr(info, "digits", None) if info else None
+        if digits is not None:
+            return round(price, digits)
+        point = getattr(info, "point", None) if info else None
+        if point:
+            return round(round(price / point) * point, 10)
+        return price
 
     def _point_size(self, symbol: str) -> float:
         info = self._mt5.symbol_info(symbol)

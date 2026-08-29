@@ -124,14 +124,41 @@ def test_place_market_order_succeeds_on_first_attempt():
 
 def test_place_market_order_computes_slippage_from_the_actual_fill_price():
     fake = FakeMT5()
-    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
+    # 5-digit broker convention (point=0.00001), matching this test's own
+    # price literals below -- point=0.0001 would round entry_price's 5th
+    # decimal away before computing slippage, which is what this test is
+    # actually checking.
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.00001, digits=5)
     fake.order_send_queue = [SimpleNamespace(retcode=fake.TRADE_RETCODE_DONE, order=2002,
-                                              price=1.17384, comment="ok")]  # filled 1 pip worse
+                                              price=1.17384, comment="ok")]  # filled 1 pip (10 points) worse
     ex = make_exec(fake)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, entry_price=1.17374,
                                     stop_loss=1.17290, target_price=1.17626)
     assert result.success is True
-    assert result.slippage_points == pytest.approx(1.0, abs=0.01)
+    # 1 pip = 0.0001 = 10 points on a 5-digit (point=0.00001) broker.
+    assert result.slippage_points == pytest.approx(10.0, abs=0.01)
+
+
+def test_place_market_order_snaps_prices_to_the_symbols_tick_grid():
+    # Confirmed live 2026-08-29: USDCHF/EURJPY/AUDCAD orders all rejected
+    # with TRADE_RETCODE_INVALID_STOPS. entry_price/stop_loss/target_price
+    # come from the strategy's own pip-padding arithmetic, which routinely
+    # produces float noise (e.g. 159.44850000000002) that doesn't land
+    # exactly on the broker's tick grid -- MT5 rejects that outright.
+    fake = FakeMT5()
+    fake.symbols["USDJPY"] = make_symbol_info(point=0.001, digits=3)
+    fake.order_send_queue = [SimpleNamespace(retcode=fake.TRADE_RETCODE_DONE, order=3001,
+                                              price=159.449, comment="ok")]
+    ex = make_exec(fake)
+    result = ex.place_market_order(
+        "USDJPY", "bullish", 1.0,
+        entry_price=159.44850000000002, stop_loss=159.39800000000002, target_price=159.601,
+    )
+    assert result.success is True
+    sent = fake.order_send_calls[-1]
+    assert sent["price"] == 159.449
+    assert sent["sl"] == 159.398
+    assert sent["tp"] == 159.601
 
 
 def test_place_market_order_fails_immediately_on_a_non_retryable_retcode():
