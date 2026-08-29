@@ -25,6 +25,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from backtest.engine.candles import load_candles
 from backtest.engine.runner import run_backtest
 from backtest.engine.trade_log import TradeRecord
 
@@ -44,6 +45,14 @@ logger = logging.getLogger("bot.orchestrator")
 # blip); the delay only grows for a genuinely sustained outage.
 RECONNECT_BACKOFF_BASE_SECONDS = 5
 RECONNECT_BACKOFF_MAX_SECONDS = 60
+
+# How far back _storyline_hunted_anywhere_in_gap() will replay the
+# storyline gate when catching up after a skipped stretch. A real outage
+# skips a handful of H1 candles at most (the worst measured one, 150/158
+# failed reconnects, spanned under 15 minutes -- OPERATIONS_LOG.md); this
+# is a defensive cap against a pathologically stale watermark, not a
+# number the codebase has ever actually needed. 72 H1 candles = 3 days.
+STORYLINE_GAP_LOOKBACK_CANDLES = 72
 
 
 @dataclass
@@ -177,15 +186,18 @@ class LiveBot:
         re-enters that cold-start behavior; an in-process reconnect does
         not, which is the gap this exists to close.
 
-        Known remaining gap: the storyline gate below is still evaluated
-        only at `new_candle.time`, not at every candle in a skipped
-        stretch. A signal whose OWN candle would have passed the gate but
-        whose bias has since moved on by the time of the next successful
-        check could still be missed. Not fixed here -- the live evidence
-        for this incident doesn't implicate it (the gate logged "hunting"
-        on both sides of every gap involved), and doing it properly means
-        replaying the gate hour-by-hour across the gap, a bigger change
-        than this evidence currently justifies."""
+        The storyline gate itself has the same "only checked at the
+        recovery candle" problem this method fixes for entries -- and it
+        WAS confirmed live 2026-08-29: NZDUSD's 13:00 UTC candle passed
+        the gate at the time, but the recovery poll after a reconnect
+        storm (spanning that exact window) landed on a later candle where
+        the gate had moved back to WAITING, so the whole entry search was
+        skipped and the signal never had a chance to be found -- unlike
+        the entry-matching bug above, there was no watermark to widen
+        because run_backtest() was never even called.
+        `_storyline_hunted_anywhere_in_gap()` closes this the same way:
+        replay the (cheap) gate at every H1 candle since the watermark,
+        not just the newest one."""
         try:
             new_candle = self.mt5_client.new_candle_closed(instrument, "H1")
         except MT5ConnectionError as exc:
@@ -206,12 +218,14 @@ class LiveBot:
         # re-analyse a pair whose Daily and 4H haven't aligned yet, and
         # neither should this. Costs well under a millisecond, versus
         # tens of seconds for the run_backtest() below, and is tested to
-        # never suppress a signal run_backtest() would have produced.
-        if not self._storyline_says_hunt(instrument, new_candle.time):
+        # never suppress a signal run_backtest() would have produced --
+        # AT the single instant it's asked about. See this method's own
+        # docstring for why that's not the same as "since we last checked."
+        watermark = self._last_entry_time.get(instrument)
+        if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
             return
 
         records = run_backtest(instrument, self.entry_style, source=self.source)
-        watermark = self._last_entry_time.get(instrument)
         if watermark is None:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:
@@ -255,6 +269,39 @@ class LiveBot:
             logger.info("%s: %s -- %s", instrument, storyline.stage, storyline.reason)
             self._storyline_stage[instrument] = storyline.stage
         return storyline.stage == HUNTING
+
+    def _storyline_hunted_anywhere_in_gap(self, instrument: str, watermark, new_candle_time) -> bool:
+        """True if the storyline gate says HUNT at `new_candle_time`, OR
+        said HUNT at any H1 candle strictly between `watermark` and
+        `new_candle_time`. The gate is only ever cheap to check at a
+        single instant; a gap wider than one candle means a poll was
+        skipped (reconnect storm, unhealthy iteration -- same cause as
+        _check_instrument's own watermark gap), and a signal whose OWN
+        candle passed the gate can still be missed if the bias has since
+        moved on by the time polling resumes. Confirmed live 2026-08-29:
+        NZDUSD's 13:00 UTC candle passed the gate; the recovery poll
+        landed on a later candle where it no longer did, so the whole
+        entry search for that hour was skipped -- run_backtest() was
+        never even called, so there was no watermark-widening left to
+        catch it (unlike the bug _check_instrument's docstring covers).
+
+        Checks `new_candle_time` FIRST -- the fast, common-case path,
+        identical cost to before this existed. The gap replay below only
+        runs when that single check comes back False AND there's an
+        actual gap to replay, so steady-state polling pays nothing extra."""
+        if self._storyline_says_hunt(instrument, new_candle_time):
+            return True
+        if watermark is None:
+            return False
+        try:
+            h1 = load_candles(self.source, instrument, "H1")
+        except FileNotFoundError:
+            return False
+        gap_candles = [c for c in h1 if watermark < c.time < new_candle_time]
+        for c in gap_candles[-STORYLINE_GAP_LOOKBACK_CANDLES:]:
+            if self._storyline_says_hunt(instrument, c.time):
+                return True
+        return False
 
     def _consider_entry(self, instrument: str, record: TradeRecord, state):
         risk = self.risk_manager.risk_for_next_trade(state)

@@ -551,6 +551,65 @@ def test_a_signal_from_before_the_watermark_is_not_reconsidered(tmp_path):
     assert len(audit.recent(10)) == 1  # still just the one row -- t1 was not re-logged
 
 
+def test_a_signal_whose_gate_closed_before_the_recovery_poll_is_still_caught(tmp_path):
+    # Confirmed live 2026-08-29: NZDUSD's 13:00 UTC candle passed the
+    # storyline gate (Daily/H4 aligned) at the time. A reconnect storm
+    # spanned that exact hour; by the time polling recovered, the bias
+    # had moved on and the gate said WAITING at the recovery candle. The
+    # OLD code checked the gate only there, saw WAITING, and returned
+    # before run_backtest() was ever called -- so unlike the entry-
+    # matching bug the watermark-widening fix already covers, there was
+    # no watermark to widen: the signal was never even searched for.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    t1 = pd.Timestamp("2026-01-13T12:00:00+00:00")  # establishes the watermark
+    t2 = pd.Timestamp("2026-01-13T13:00:00+00:00")  # gate said HUNT here (the storm's window)
+    t3 = pd.Timestamp("2026-01-13T14:00:00+00:00")  # recovery poll -- gate now says WAITING
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": t1})()
+        bot.run_once()  # establishes the watermark at t1; no signal
+    assert audit.recent(10) == []
+
+    missed_during_the_gap = a_trade_record(t2, trade_id=1)
+    gate_by_time = {t2: True, t3: False}
+    h1_candles = [type("C", (), {"time": t})() for t in (t1, t2, t3)]
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch.object(LiveBot, "_storyline_says_hunt", side_effect=lambda instrument, t: gate_by_time[t]), \
+         patch("bot.orchestrator.load_candles", return_value=h1_candles), \
+         patch("bot.orchestrator.run_backtest", return_value=[missed_during_the_gap]):
+        mock_new_candle.return_value = type("C", (), {"time": t3})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["trade_id"] == "1"
+
+
+def test_the_gap_replay_is_skipped_entirely_on_the_common_no_gap_path(tmp_path):
+    # Steady-state polling (gate says HUNT right at the new candle) must
+    # never even look at load_candles() -- the whole point of checking
+    # new_candle_time first is that this stays exactly as cheap as before
+    # the gap-replay fix existed.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.load_candles") as mock_load, \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    mock_load.assert_not_called()
+
+
 # ---- reconciliation ----
 
 def test_reconcile_closed_positions_records_outcome_and_untracks(tmp_path):

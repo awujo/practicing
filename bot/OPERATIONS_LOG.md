@@ -681,6 +681,54 @@ all, since entry_attempt is logged at INFO.
 trigger, aligned timeframes, stop/target, entry->exit price pair), not
 just that a log call happened. 320 tests pass total.
 
+## 2026-08-29 -- order rejections: prices weren't snapped to the broker's tick grid
+
+USDCHF, EURJPY (x2), and AUDCAD orders all rejected with
+`TRADE_RETCODE_INVALID_STOPS` between 07:11 and 07:22 UTC. `entry_price`/
+`stop_loss`/`target_price` come straight from the strategy's own
+pip-padding arithmetic (`entries.py`), which routinely produces ordinary
+binary-float noise -- e.g. `159.44850000000002` instead of `159.4485`,
+confirmed directly in one of the rejected orders' own Telegram log line
+(`target 185.85499999999996`). Nothing before this rounded those prices
+to the symbol's actual tick grid before `order_send()` -- MT5 rejects a
+sl/tp that doesn't land exactly on it, outright.
+
+**Fixed**, `13e2d23`: `MT5Execution.place_market_order()` now snaps all
+three prices via a new `_round_price()` helper (prefers `symbol_info().
+digits`, falls back to deriving a grid from `.point`) before building the
+order request. New regression test reproduces the exact USDJPY-shaped
+float-noise case. **Needs `git pull` + bot restart on the VPS to take
+effect** -- not live until then.
+
+## 2026-08-29 -- a second, live-confirmed instance of the storyline gate's documented residual gap
+
+`bot/reconcile_signals.py` showed 6 signals (GBPJPY 08-27 22:00, USDJPY
+08-28 07:00, NZDUSD 08-28 13:00, both styles) MISSING with **zero**
+audit trail -- not even a decline. Different from the watermark bug
+fixed 2026-08-28: these postdate that fix, and Telegram (logging since
+08-28 10:45 UTC) shows why for the one case inside its window: a
+reconnect storm spanned NZDUSD's 13:00 candle (warnings from 13:11
+through at least 14:05 UTC, several back-to-back cycles). The storyline
+gate passed at 13:00 -- but the recovery poll landed on a later candle
+where the gate had moved back to `waiting_htf`, so `_check_instrument`
+returned before `run_backtest()` was ever called. No watermark was ever
+set for that hour, so the existing watermark-widening fix had nothing to
+widen -- this is exactly the "known remaining gap" that fix's own
+docstring flagged and deliberately left unfixed, pending live evidence.
+This is that evidence.
+
+**Fixed**, see commit following this entry: new
+`_storyline_hunted_anywhere_in_gap()` replays the (cheap, sub-millisecond)
+gate at every H1 candle between the watermark and the recovery candle,
+not just the recovery candle itself -- checking the recovery candle
+first so the common no-gap case pays nothing extra (a dedicated test
+asserts `load_candles()` is never even called on that path). **Needs
+`git pull` + bot restart on the VPS to take effect.**
+
+GBPJPY (08-27 22:00) and USDJPY (08-28 07:00) predate Telegram logging,
+so there's no direct evidence for those two specifically -- plausible
+same cause, not confirmed the same way.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
