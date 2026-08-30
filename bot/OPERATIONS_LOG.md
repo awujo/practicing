@@ -37,12 +37,19 @@ the live bot's foundation), see [`../PROJECT_HISTORY.md`](../PROJECT_HISTORY.md)
   bot.run_live ...`, both currently track ALL 25 supported instruments
   (`DUKASCOPY_INSTRUMENTS` minus `USOIL`/`ETHUSD`, which are unconfirmed
   on this broker).
-- **Persistence**: both bots run inside tmux sessions named `bot1` and
-  `bot2` on the VPS host (`tmux attach -t bot1` / `capture-pane -t bot1
-  -p` to inspect). Launching via a plain SSH foreground command instead
-  of through these sessions means the bot dies the moment the SSH
-  connection drops -- always relaunch via `tmux send-keys -t bot1
-  "bash /srv/slk-bot/launch_bot1.sh" Enter`, not directly.
+- **Persistence** (updated 2026-08-30): both bots run under systemd
+  units `slk-bot1.service` / `slk-bot2.service` at
+  `/etc/systemd/system/`, each calling the existing
+  `launch_bot1.sh`/`launch_bot2.sh` scripts, `Restart=always`,
+  `RestartSec=10`. Deploy/restart with `systemctl restart slk-bot1
+  slk-bot2` (add `systemctl daemon-reload` first if the unit files
+  themselves changed); inspect with `systemctl status slk-bot1` /
+  `journalctl -u slk-bot1 -f`. Replaces the tmux sessions (`bot1`/`bot2`)
+  this section used to describe -- the tmux server itself was found
+  dead (not just the bot processes) with no clear trigger, taking both
+  bots down silently and with no crash trace; systemd now restarts a
+  crashed bot automatically instead of relying on a manual
+  `tmux send-keys` relaunch.
 - **Audit logs**: `conservative_audit.db` / `aggressive_audit.db`,
   SQLite, at `/config/trading/<name>.db` inside the container (same
   bind-mounted host path as above). Untracked in git on purpose (real
@@ -835,6 +842,60 @@ reopens) is the right behavior, not a gap to paper over. Two new tests
 reproduce the exact scenario (a stale Friday-close M1 candle read on
 Saturday) at both the detection function and the fetch_candles() call
 path. 185 tests pass. **Needs `git pull` + bot restart on the VPS.**
+
+## 2026-08-30 -- tmux server died silently, taking both bots down; migrated to systemd
+
+Follow-on from the weekend-offset investigation above: while checking
+why a Sunday-morning signal looked wrong, found both bots simply not
+running, with no crash trace visible via the usual `tmux attach`/
+`capture-pane` -- `tmux send-keys -t bot1 ...` failed with "no server
+running on /tmp/tmux-0/default". Not just the bot processes but the
+whole tmux server had exited; root cause of that specific death is
+undetermined.
+
+Checked `uptime` (53 days, no reboot) and `dmesg` (no OOM-kill entries)
+-- ruled out a VPS crash/reboot as the cause. `free -h` at the time
+showed memory healthy (not chronically maxed), though a later outage
+(see the IPC-failure entry above) did show real load/swap pressure from
+another process on the box (`kugo-backend`, cron `*/1`, and possibly a
+studifypro compression script -- unconfirmed) -- a separate, real
+finding, but not what killed tmux itself.
+
+**Fixed** by replacing tmux-based supervision with systemd:
+`slk-bot1.service` / `slk-bot2.service` created at
+`/etc/systemd/system/`, `Restart=always`, `RestartSec=10`, calling the
+existing `launch_bot1.sh`/`launch_bot2.sh` unchanged. Deployed and
+confirmed running by the user. **All future deploys/restarts use
+`systemctl restart slk-bot1 slk-bot2`** (or `systemctl daemon-reload`
+first if the unit files change) -- not the old `tmux send-keys`
+pattern, which no longer applies.
+
+## 2026-08-30 -- storyline log line now shows each timeframe's own confirmation date/time
+
+Direct request: the "hunting"/"waiting" Telegram log line (e.g.
+`NZDUSD: hunting -- Weekly/Daily/H4 aligned bullish -- watching H1 for
+the entry`) gave no way to tell whether each timeframe's alignment had
+just happened or was sitting near the stale edge of its
+`ALIGNMENT_LOOKBACK` window -- i.e. whether the log was reporting the
+current candle or an old one.
+
+`Storyline` (live_strategy.py) gained `weekly_confirmed_at` /
+`daily_confirmed_at` / `h4_confirmed_at` fields, populated from the
+`.time` of each timeframe's own most recent `Confirmation` --
+`_recent_direction()` now returns the whole `Confirmation` object
+instead of just `.direction`, so this is free: no extra data fetch or
+computation, only exposing timestamps that were already being read to
+decide alignment. Negligible load impact.
+
+`_storyline_says_hunt()` (orchestrator.py) appends these as a suffix on
+stage-transition log lines only, e.g. `(Weekly@2026-01-05
+00:00:00+00:00, Daily@2026-01-12 00:00:00+00:00, H4@2026-01-13
+12:00:00+00:00)`. New test
+`test_storyline_transition_is_logged_with_each_timeframes_own_confirmation_time`
+asserts all three appear in the logged message. 186 tests pass.
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS**
+(tmux is no longer how these are supervised -- see the systemd
+migration above).
 
 ## Open / worth re-checking
 

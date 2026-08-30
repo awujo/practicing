@@ -298,7 +298,21 @@ class LiveBot:
         if storyline.stage != previous:
             # Only log the transition, not every hour it stays put --
             # this is the "red flag" list becoming visible in the log.
-            logger.info("%s: %s -- %s", instrument, storyline.stage, storyline.reason)
+            # Direct 2026-08-30 request: "let me know if what's logged is
+            # current candle and not some past candle" -- the line used to
+            # say e.g. "Weekly/Daily/H4 aligned bullish" with no way to
+            # tell whether each one was actually recent. Each timeframe's
+            # OWN confirmation date is free here (already fetched by
+            # storyline_at() to decide alignment in the first place).
+            confirmed = [
+                f"{tf}@{t}" for tf, t in (
+                    ("Weekly", getattr(storyline, "weekly_confirmed_at", None)),
+                    ("Daily", getattr(storyline, "daily_confirmed_at", None)),
+                    ("H4", getattr(storyline, "h4_confirmed_at", None)),
+                ) if t is not None
+            ]
+            suffix = f" ({', '.join(confirmed)})" if confirmed else ""
+            logger.info("%s: %s -- %s%s", instrument, storyline.stage, storyline.reason, suffix)
             self._storyline_stage[instrument] = storyline.stage
         return storyline.stage == HUNTING
 

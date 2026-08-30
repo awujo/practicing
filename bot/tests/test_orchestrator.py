@@ -401,11 +401,48 @@ def test_the_gate_rebuilds_its_context_only_when_a_higher_timeframe_closes(tmp_p
     with patch.object(bot.mt5_client, "new_candle_closed", side_effect=only_h1_closes), \
          patch("bot.orchestrator.build_htf_context", return_value=fake_ctx) as mock_build, \
          patch("bot.orchestrator.storyline_at") as mock_story:
-        mock_story.return_value = type("S", (), {"stage": "waiting_htf", "reason": "x"})()
+        mock_story.return_value = type("S", (), {
+            "stage": "waiting_htf", "reason": "x",
+            "weekly_confirmed_at": None, "daily_confirmed_at": None, "h4_confirmed_at": None,
+        })()
         bot._storyline_says_hunt("EURUSD", entry_time)   # first time -- must build
         bot._storyline_says_hunt("EURUSD", entry_time)   # no HTF close since -- must reuse
 
     assert mock_build.call_count == 1
+
+
+def test_storyline_transition_is_logged_with_each_timeframes_own_confirmation_time(tmp_path, caplog):
+    # Confirmed live: the "hunting"/"waiting" log line used to say e.g.
+    # "Weekly/Daily/H4 aligned bullish" with no way to tell whether each
+    # of those actually just happened or was sitting near the edge of
+    # ALIGNMENT_LOOKBACK. Direct 2026-08-30 request: show each
+    # timeframe's own confirmation date/time so that's verifiable from
+    # the Telegram log alone.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    candle = type("C", (), {"time": entry_time})()
+
+    weekly_time = pd.Timestamp("2026-01-05T00:00:00+00:00")
+    daily_time = pd.Timestamp("2026-01-12T00:00:00+00:00")
+    h4_time = pd.Timestamp("2026-01-13T12:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed", return_value=candle), \
+         patch("bot.orchestrator.build_htf_context", return_value=object()), \
+         patch("bot.orchestrator.storyline_at") as mock_story, \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        mock_story.return_value = type("S", (), {
+            "stage": "hunting", "reason": "Weekly/Daily/H4 aligned bullish -- watching H1 for the entry",
+            "weekly_confirmed_at": weekly_time, "daily_confirmed_at": daily_time,
+            "h4_confirmed_at": h4_time,
+        })()
+        bot._storyline_says_hunt("EURUSD", entry_time)
+
+    [record] = [r for r in caplog.records if "aligned bullish" in r.getMessage()]
+    message = record.getMessage()
+    assert f"Weekly@{weekly_time}" in message
+    assert f"Daily@{daily_time}" in message
+    assert f"H4@{h4_time}" in message
 
 
 # ---- resilience: one instrument's unexpected error shouldn't kill the loop ----

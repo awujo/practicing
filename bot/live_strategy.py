@@ -95,6 +95,17 @@ class Storyline:
     effective_tf: str | None
     aligned: tuple[str, ...]
     reason: str
+    # When each timeframe's OWN most recent confirmation actually closed --
+    # None if that timeframe never reached its own alignment check (e.g.
+    # Daily/H4 disagreed, so Weekly was never even looked at). Added
+    # 2026-08-30, direct request: "let me know if what's logged in is
+    # current candle and not some past candle" -- the storyline log line
+    # said e.g. "Weekly/Daily/H4 aligned bullish" with no way to tell
+    # whether each of those was actually recent or was sitting near the
+    # edge of ALIGNMENT_LOOKBACK.
+    daily_confirmed_at: object = None
+    h4_confirmed_at: object = None
+    weekly_confirmed_at: object = None
 
 
 def _latest_time(candles):
@@ -164,11 +175,13 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
 
 
 def _recent_direction(confirmations: list[Confirmation], label: str, as_of_time):
-    """The direction of the most recent confirmation on this timeframe at
-    `as_of_time`, or None if there isn't one inside that timeframe's
-    ALIGNMENT_LOOKBACK window. Mirrors `_aligned_timeframes()`'s rule for
-    a single timeframe, but bisects the sorted confirmation times instead
-    of scanning the whole list."""
+    """The most recent confirmation on this timeframe at `as_of_time` (the
+    whole Confirmation -- `.direction` and `.time` both, so callers get
+    the confirmation's own date for free instead of a second lookup), or
+    None if there isn't one inside that timeframe's ALIGNMENT_LOOKBACK
+    window. Mirrors `_aligned_timeframes()`'s rule for a single timeframe,
+    but bisects the sorted confirmation times instead of scanning the
+    whole list."""
     if not confirmations:
         return None
     times = [c.time for c in confirmations]
@@ -178,7 +191,7 @@ def _recent_direction(confirmations: list[Confirmation], label: str, as_of_time)
     latest = confirmations[idx]
     if as_of_time - latest.time > ALIGNMENT_LOOKBACK[label]:
         return None
-    return latest.direction
+    return latest
 
 
 def storyline_at(ctx: HTFContext, as_of_time) -> Storyline:
@@ -192,17 +205,21 @@ def storyline_at(ctx: HTFContext, as_of_time) -> Storyline:
     with that direction. Weekly is recorded when it also aligns -- a
     probability booster there, not a gate -- exactly as in the entry
     loop."""
-    daily_dir = _recent_direction(ctx.daily_confirmations, "Daily", as_of_time)
-    h4_dir = _recent_direction(ctx.h4_confirmations, "H4", as_of_time)
+    daily_conf = _recent_direction(ctx.daily_confirmations, "Daily", as_of_time)
+    h4_conf = _recent_direction(ctx.h4_confirmations, "H4", as_of_time)
 
-    if daily_dir is None or h4_dir is None:
-        missing = "Daily" if daily_dir is None else "H4"
+    if daily_conf is None or h4_conf is None:
+        missing = "Daily" if daily_conf is None else "H4"
         return Storyline(WAITING, None, None, (),
-                          f"no recent {missing} confirmation -- nothing to align to yet")
+                          f"no recent {missing} confirmation -- nothing to align to yet",
+                          daily_confirmed_at=daily_conf.time if daily_conf else None,
+                          h4_confirmed_at=h4_conf.time if h4_conf else None)
+    daily_dir, h4_dir = daily_conf.direction, h4_conf.direction
     if daily_dir != h4_dir:
         return Storyline(WAITING, None, None, (),
                           f"Daily ({daily_dir.value}) and H4 ({h4_dir.value}) disagree -- "
-                          "waiting for the 4H to come round to the Daily")
+                          "waiting for the 4H to come round to the Daily",
+                          daily_confirmed_at=daily_conf.time, h4_confirmed_at=h4_conf.time)
 
     direction = daily_dir
     weekly_bias = bias_at(ctx.weekly_breakpoints, as_of_time) if ctx.weekly_breakpoints else None
@@ -212,19 +229,25 @@ def storyline_at(ctx: HTFContext, as_of_time) -> Storyline:
         {"Weekly": weekly_bias, "Daily": daily_bias, "H4": h4_bias}
     )
     if effective is None:
-        return Storyline(WAITING, None, None, (), "no active bias on any higher timeframe")
+        return Storyline(WAITING, None, None, (), "no active bias on any higher timeframe",
+                          daily_confirmed_at=daily_conf.time, h4_confirmed_at=h4_conf.time)
     if effective != direction:
         return Storyline(WAITING, None, effective_tf, (),
                           f"{effective_tf} bias ({effective.value}) opposes the aligned "
-                          f"Daily/H4 direction ({direction.value}) -- induced-move trap, not a setup")
+                          f"Daily/H4 direction ({direction.value}) -- induced-move trap, not a setup",
+                          daily_confirmed_at=daily_conf.time, h4_confirmed_at=h4_conf.time)
 
     aligned = ["Daily", "H4"]
-    weekly_dir = _recent_direction(ctx.weekly_confirmations, "Weekly", as_of_time)
-    if weekly_dir == direction:
+    weekly_conf = _recent_direction(ctx.weekly_confirmations, "Weekly", as_of_time)
+    weekly_confirmed_at = None
+    if weekly_conf is not None and weekly_conf.direction == direction:
         aligned.insert(0, "Weekly")
+        weekly_confirmed_at = weekly_conf.time
 
     return Storyline(HUNTING, direction, effective_tf, tuple(aligned),
-                      f"{'/'.join(aligned)} aligned {direction.value} -- watching H1 for the entry")
+                      f"{'/'.join(aligned)} aligned {direction.value} -- watching H1 for the entry",
+                      daily_confirmed_at=daily_conf.time, h4_confirmed_at=h4_conf.time,
+                      weekly_confirmed_at=weekly_confirmed_at)
 
 
 def needs_rebuild(ctx: HTFContext | None, latest_weekly_time, latest_daily_time,
