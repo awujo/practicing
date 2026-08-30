@@ -771,6 +771,39 @@ needs a few more live incidents to accumulate data.
 **Both need `git pull` + bot restart on the VPS to take effect,** same
 as the two fixes above.
 
+## 2026-08-29 evening -- self-inflicted outage: every entry decision crashed on deploy
+
+The `entry_time` field added earlier the same day broke logging
+entirely once deployed. `CREATE TABLE IF NOT EXISTS` is a no-op against
+`decisions`, which already existed on both bots from before that field
+was added -- so every single `append()` call (allow, decline,
+execution_failed, ALL of them) started raising `sqlite3.OperationalError:
+table decisions has no column named entry_time`, confirmed live from
+~19:21 UTC. Uncaught up through `_check_instrument`'s per-instrument
+exception isolation, which also meant `_last_entry_time` never advanced
+for whatever instrument hit it -- so the same signal would have kept
+getting retried and crashing again on every subsequent poll.
+
+**Fixed**: `AuditLog._ensure_schema()` now checks `PRAGMA table_info` and
+`ALTER TABLE ADD COLUMN`s anything `DecisionRecord` declares that the
+live table doesn't have. Self-healing by construction -- any future
+field addition is now safe without a hand-written migration. New test
+reproduces the exact scenario (a db file with an older schema, opened
+by current code). **Needs `git pull` + bot restart immediately** --
+every entry decision has been failing to log since the previous deploy.
+
+Also worth noting from the Telegram log while diagnosing this: one
+outage's resource_snapshot showed `load=41.2,53.1,30.7 mem=7.4/7.8GB`
+-- a load average of 41-53 on a 2-vCPU box, memory nearly maxed. Several
+`new_candle_closed` calls in the same window failed with
+`copy_rates_from_pos ... IPC recv failed` / `No IPC connection`, and one
+reconnect failed with `IPC timeout` -- different failure text than the
+usual `Terminal: Authorization failed`. This is the first real evidence
+pointing at VPS-side resource contention specifically (severe enough to
+break IPC between the Python bridge and the Wine-hosted terminal, not
+just an auth handshake) rather than the broker. Not conclusive on its
+own -- one data point -- but the diagnostic is doing its job.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
