@@ -128,7 +128,27 @@ class AuditLog:
         self._conn.execute(f"CREATE TABLE IF NOT EXISTS decisions (id INTEGER PRIMARY KEY AUTOINCREMENT, {columns_sql})")
         self._conn.execute("CREATE INDEX IF NOT EXISTS idx_decisions_instrument_trade ON decisions (instrument, trade_id)")
         self._conn.execute("CREATE INDEX IF NOT EXISTS idx_decisions_timestamp ON decisions (timestamp)")
+        self._migrate_missing_columns()
         self._conn.commit()
+
+    def _migrate_missing_columns(self):
+        """CREATE TABLE IF NOT EXISTS is a no-op against a table that
+        already exists -- confirmed live 2026-08-29: adding entry_time to
+        DecisionRecord did nothing for any already-running bot's existing
+        audit.db, and every single append() (allow, decline, execution_
+        failed -- ALL of them) started raising `sqlite3.OperationalError:
+        table decisions has no column named entry_time`, uncaught up
+        through _check_instrument's per-instrument exception isolation --
+        which ALSO meant _last_entry_time never advanced, so the same
+        signal would have been retried and crashed again every single
+        poll, forever, until this was fixed. A schema field can be added
+        again in the future; this makes that safe by construction instead
+        of relying on remembering to write a migration each time."""
+        existing = {row[1] for row in self._conn.execute("PRAGMA table_info(decisions)")}
+        for name in _FIELD_NAMES:
+            if name not in existing:
+                col_type = _COLUMN_TYPES.get(name, "TEXT")
+                self._conn.execute(f'ALTER TABLE decisions ADD COLUMN "{name}" {col_type}')
 
     def append(self, record: DecisionRecord) -> int:
         if not record.timestamp:

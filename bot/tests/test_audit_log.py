@@ -1,5 +1,6 @@
 import csv
 import os
+import sqlite3
 
 import pytest
 
@@ -119,3 +120,33 @@ def test_audit_log_survives_reopening_the_same_db_file(tmp_path):
     al2.close()
     assert len(rows) == 1
     assert rows[0]["instrument"] == "EURUSD"
+
+
+def test_opening_a_db_with_an_older_schema_adds_the_missing_columns(tmp_path):
+    # Confirmed live 2026-08-29: CREATE TABLE IF NOT EXISTS is a no-op
+    # against a table that already exists. Adding entry_time to
+    # DecisionRecord did nothing for a bot process already running
+    # against an existing audit.db from before that field existed -- every
+    # single append() (allow, decline, execution_failed, all of them)
+    # started raising sqlite3.OperationalError, uncaught up through
+    # _check_instrument's exception isolation, which ALSO meant
+    # _last_entry_time never advanced -- so the exact same signal would
+    # have been retried and crashed again on every subsequent poll,
+    # forever. This reproduces the exact scenario: a real db file created
+    # with an OLDER schema (missing a column current code expects), then
+    # opened by current code -- must self-heal, not crash.
+    db_path = str(tmp_path / "old_schema.db")
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE decisions (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                  'event_type TEXT, decision TEXT, reason TEXT, timestamp TEXT, '
+                  'instrument TEXT, trade_id TEXT, risk_amount REAL)')
+    conn.commit()
+    conn.close()
+
+    al = AuditLog(db_path)  # must not raise
+    row_id = al.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok",
+                                       instrument="EURUSD", entry_time="2026-08-29T14:00:00+00:00"))
+    row = al.recent(1)[0]
+    al.close()
+    assert row["id"] == row_id
+    assert row["entry_time"] == "2026-08-29T14:00:00+00:00"
