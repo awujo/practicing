@@ -11,7 +11,7 @@ from backtest.engine.trade_log import TradeRecord
 from .fake_mt5 import FakeMT5, make_position, make_symbol_info, make_deal
 from ..audit_log import AuditLog, DecisionRecord
 from ..config import AccountProfile, MT5Credentials, PhaseConfig, PhaseRules
-from ..mt5_data import MT5Client
+from ..mt5_data import MT5Client, MT5ConnectionError
 from ..mt5_execution import MT5Execution
 from ..orchestrator import RECONNECT_BACKOFF_BASE_SECONDS, LiveBot, TrackedPosition
 
@@ -443,6 +443,48 @@ def test_storyline_transition_is_logged_with_each_timeframes_own_confirmation_ti
     assert f"Weekly@{weekly_time}" in message
     assert f"Daily@{daily_time}" in message
     assert f"H4@{h4_time}" in message
+
+
+def test_a_sustained_new_candle_closed_failure_is_logged_once_not_every_poll(tmp_path, caplog):
+    # Confirmed live 2026-08-30: a weekend market closure made
+    # new_candle_closed(H1) fail with the same server-offset-detection
+    # error on EVERY 5-second poll, for every instrument, with no dedup
+    # -- ~2,800 Telegram messages in 3 hours. The failure is real and
+    # must still be logged (it's WARNING-level for a reason), just once
+    # per distinct message rather than once per poll.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       side_effect=MT5ConnectionError("market closed, stale candle")), \
+         caplog.at_level("WARNING", logger="bot.orchestrator"):
+        state = object()
+        bot._check_instrument("EURUSD", state)
+        bot._check_instrument("EURUSD", state)
+        bot._check_instrument("EURUSD", state)
+
+    warnings = [r for r in caplog.records if "new_candle_closed(EURUSD) failed" in r.getMessage()]
+    assert len(warnings) == 1
+
+
+def test_a_new_candle_closed_failure_is_logged_again_once_the_message_changes(tmp_path, caplog):
+    # The offset-detection error text itself drifts roughly hourly (it's
+    # derived from real time), so dedup-on-unchanged-message still shows
+    # the condition is ongoing -- it just isn't a wall of identical lines.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         caplog.at_level("WARNING", logger="bot.orchestrator"):
+        state = object()
+        mock_new_candle.side_effect = MT5ConnectionError("offset -39h")
+        bot._check_instrument("EURUSD", state)
+        bot._check_instrument("EURUSD", state)
+        mock_new_candle.side_effect = MT5ConnectionError("offset -40h")
+        bot._check_instrument("EURUSD", state)
+
+    warnings = [r for r in caplog.records if "new_candle_closed(EURUSD) failed" in r.getMessage()]
+    assert len(warnings) == 2
 
 
 # ---- resilience: one instrument's unexpected error shouldn't kill the loop ----

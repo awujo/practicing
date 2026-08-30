@@ -897,6 +897,29 @@ asserts all three appear in the logged message. 186 tests pass.
 (tmux is no longer how these are supervised -- see the systemd
 migration above).
 
+## 2026-08-30 -- self-inflicted Telegram spam from the weekend offset fail-closed fix
+
+Direct report: ~2,800 Telegram messages in 3 hours. Caused by the
+fail-closed weekend-offset fix above: `_server_utc_offset` never gets
+set to a real value while detection keeps failing (correctly, market's
+closed), so every single 5-second poll for every instrument re-attempts
+detection, fails the same way, and `_check_instrument`/
+`_storyline_says_hunt` logged a fresh WARNING (-> Telegram) every time
+with no dedup. A real, correct condition (market closed) turned into an
+unbounded log storm because nothing suppressed the repeat.
+
+**Fixed**: both call sites now log a `new_candle_closed(...)` failure
+only when the message differs from the last one logged for that
+instrument/granularity (`LiveBot._last_candle_error`,
+`_log_candle_error_if_changed()`), clearing on the next success. The
+offset-detection error text drifts roughly hourly on its own (it's
+derived from real UTC "now" vs. a fixed stale candle time), so this
+still surfaces that the condition is ongoing -- just once an hour per
+instrument instead of once every 5 seconds. Two new tests reproduce the
+exact scenario (identical repeated failure vs. a changed message). 188
+tests pass. **Needs `git pull` + `systemctl restart slk-bot1 slk-bot2`
+on the VPS.**
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
