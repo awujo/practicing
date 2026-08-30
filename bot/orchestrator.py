@@ -113,16 +113,24 @@ class LiveBot:
     # replays history (only a full process restart resets it; an
     # in-process reconnect does not).
     _last_entry_time: dict[str, object] = field(init=False, default_factory=dict)
-    # Last logged new_candle_closed() failure message per instrument (H1)
-    # or "instrument:granularity" (storyline's W/D/H4 checks) -- so a
-    # SUSTAINED failure (e.g. weekend market closure hitting the
-    # server-offset plausibility check) logs once per distinct message
-    # instead of once per 5-second poll. Confirmed live 2026-08-30: ~2,800
-    # Telegram messages in 3 hours from this exact path with no dedup --
-    # the offset-detection error message does change roughly hourly (it's
-    # derived from real-time "now", see mt5_data.py), so dedup-on-change
-    # still surfaces that the condition persists, just not every poll.
-    _last_candle_error: dict[str, str] = field(init=False, default_factory=dict)
+    # instrument (H1) or "instrument:granularity" (storyline's W/D/H4
+    # checks) keys currently in a new_candle_closed() failure state --
+    # so a SUSTAINED failure (e.g. weekend market closure hitting the
+    # server-offset plausibility check) logs ONCE for the whole outage,
+    # not once per poll. Confirmed live 2026-08-30: ~2,800 Telegram
+    # messages in 3 hours from this exact path with no dedup at all.
+    # An earlier version of this dedup compared the failure MESSAGE
+    # text instead of tracking failing/recovered state -- wrong, because
+    # the offset-detection error text drifts roughly hourly (it's
+    # derived from real-time "now", see mt5_data.py's docstring), and
+    # since ~25 instruments' stale candles cluster within the same few
+    # minutes of each other, that drift crossed all of their thresholds
+    # within the same ~15-second window once an hour: still a 25-message
+    # burst, still confirmed live as "still spamming." Tracking failing
+    # vs. recovered state instead means one message per instrument per
+    # OUTAGE (logged again only after a real recovery), regardless of
+    # how the message text itself drifts while it's ongoing.
+    _candle_error_active: set = field(init=False, default_factory=set)
     # Reconnect backoff state -- see _try_reconnect().
     _reconnect_attempts: int = field(init=False, default=0)
     _next_reconnect_at: object = field(init=False, default=None)
@@ -182,17 +190,19 @@ class LiveBot:
                 logger.exception("unexpected error checking %s -- skipping this instrument this iteration",
                                   instrument)
 
-    def _log_candle_error_if_changed(self, key: str, message: str):
+    def _log_candle_error_if_new(self, key: str, message: str):
         """Logs `message` at WARNING (and so to Telegram, see
-        telegram_notify.py) only when it differs from the last message
-        logged for this `key` -- see `_last_candle_error`'s comment for
-        why."""
-        if self._last_candle_error.get(key) != message:
+        telegram_notify.py) only the FIRST time `key` enters a failure
+        state -- not on every repeat of an ongoing one, and not again
+        just because the message text drifted. See
+        `_candle_error_active`'s comment for why text-based dedup
+        wasn't enough."""
+        if key not in self._candle_error_active:
             logger.warning(message)
-            self._last_candle_error[key] = message
+            self._candle_error_active.add(key)
 
     def _clear_candle_error(self, key: str):
-        self._last_candle_error.pop(key, None)
+        self._candle_error_active.discard(key)
 
     def _check_instrument(self, instrument: str, state):
         """`mt5_client.new_candle_closed()` reports only the SINGLE most
@@ -242,7 +252,7 @@ class LiveBot:
         try:
             new_candle = self.mt5_client.new_candle_closed(instrument, "H1")
         except MT5ConnectionError as exc:
-            self._log_candle_error_if_changed(instrument, f"new_candle_closed({instrument}) failed: {exc}")
+            self._log_candle_error_if_new(instrument, f"new_candle_closed({instrument}) failed: {exc}")
             return
         self._clear_candle_error(instrument)
         if new_candle is None:
@@ -306,7 +316,7 @@ class LiveBot:
                 closed[granularity] = self.mt5_client.new_candle_closed(instrument, granularity)
                 self._clear_candle_error(key)
             except MT5ConnectionError as exc:
-                self._log_candle_error_if_changed(
+                self._log_candle_error_if_new(
                     key, f"new_candle_closed({instrument}, {granularity}) failed: {exc}")
                 closed[granularity] = None
 

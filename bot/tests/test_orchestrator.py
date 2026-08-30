@@ -447,30 +447,12 @@ def test_storyline_transition_is_logged_with_each_timeframes_own_confirmation_ti
 
 def test_a_sustained_new_candle_closed_failure_is_logged_once_not_every_poll(tmp_path, caplog):
     # Confirmed live 2026-08-30: a weekend market closure made
-    # new_candle_closed(H1) fail with the same server-offset-detection
-    # error on EVERY 5-second poll, for every instrument, with no dedup
-    # -- ~2,800 Telegram messages in 3 hours. The failure is real and
-    # must still be logged (it's WARNING-level for a reason), just once
-    # per distinct message rather than once per poll.
-    fake = FakeMT5()
-    bot, audit, client = make_bot(fake, tmp_path)
-
-    with patch.object(bot.mt5_client, "new_candle_closed",
-                       side_effect=MT5ConnectionError("market closed, stale candle")), \
-         caplog.at_level("WARNING", logger="bot.orchestrator"):
-        state = object()
-        bot._check_instrument("EURUSD", state)
-        bot._check_instrument("EURUSD", state)
-        bot._check_instrument("EURUSD", state)
-
-    warnings = [r for r in caplog.records if "new_candle_closed(EURUSD) failed" in r.getMessage()]
-    assert len(warnings) == 1
-
-
-def test_a_new_candle_closed_failure_is_logged_again_once_the_message_changes(tmp_path, caplog):
-    # The offset-detection error text itself drifts roughly hourly (it's
-    # derived from real time), so dedup-on-unchanged-message still shows
-    # the condition is ongoing -- it just isn't a wall of identical lines.
+    # new_candle_closed(H1) fail on EVERY 5-second poll, for every
+    # instrument, with no dedup at all -- ~2,800 Telegram messages in 3
+    # hours. The failure is real and must still be logged (it's
+    # WARNING-level for a reason), just once per OUTAGE, not once per
+    # poll -- even though the exact error text drifts over time (see the
+    # next test): a still-ongoing failure is not a new outage.
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
 
@@ -480,8 +462,42 @@ def test_a_new_candle_closed_failure_is_logged_again_once_the_message_changes(tm
         mock_new_candle.side_effect = MT5ConnectionError("offset -39h")
         bot._check_instrument("EURUSD", state)
         bot._check_instrument("EURUSD", state)
+        # The offset-detection error text drifts roughly hourly (it's
+        # derived from real time) -- a changed message during an
+        # UNINTERRUPTED failure must still not re-trigger the alert.
+        # Confirmed live 2026-08-30: an earlier version of this fix
+        # deduped on message equality instead of failure state, and the
+        # ~25 tracked instruments' stale candles cluster close enough
+        # together that they all crossed that hourly drift boundary
+        # within the same ~15-second window -- still a 25-message burst,
+        # still reported as "still spamming."
         mock_new_candle.side_effect = MT5ConnectionError("offset -40h")
         bot._check_instrument("EURUSD", state)
+
+    warnings = [r for r in caplog.records if "new_candle_closed(EURUSD) failed" in r.getMessage()]
+    assert len(warnings) == 1
+
+
+def test_a_new_candle_closed_failure_is_logged_again_after_a_real_recovery(tmp_path, caplog):
+    # A silenced failure must not stay silenced forever -- once it
+    # recovers (e.g. the market reopens) and then fails again later
+    # (a genuinely new outage), that's worth a fresh alert.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         gate_open(), patch("bot.orchestrator.run_backtest", return_value=[]), \
+         caplog.at_level("WARNING", logger="bot.orchestrator"):
+        state = object()
+        mock_new_candle.side_effect = MT5ConnectionError("offset -39h")
+        bot._check_instrument("EURUSD", state)  # first failure -- logs
+        mock_new_candle.side_effect = None
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot._check_instrument("EURUSD", state)  # recovers -- clears the failure state
+        mock_new_candle.side_effect = MT5ConnectionError("offset -40h")
+        mock_new_candle.return_value = None
+        bot._check_instrument("EURUSD", state)  # a new outage -- logs again
 
     warnings = [r for r in caplog.records if "new_candle_closed(EURUSD) failed" in r.getMessage()]
     assert len(warnings) == 2

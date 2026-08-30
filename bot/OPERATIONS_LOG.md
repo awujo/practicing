@@ -920,6 +920,32 @@ exact scenario (identical repeated failure vs. a changed message). 188
 tests pass. **Needs `git pull` + `systemctl restart slk-bot1 slk-bot2`
 on the VPS.**
 
+## 2026-08-30 -- correction: the first spam fix wasn't enough, dedup needed to be state-based not text-based
+
+The first attempt (previous entry) deduped on exact message text, which
+seemed right (the resource_snapshot precedent logs "once per outage,
+not per attempt") but wasn't: the offset-detection error text embeds a
+computed hour count that drifts roughly once an hour on its own (see
+mt5_data.py's `_detect_server_utc_offset` docstring), and the ~25
+tracked instruments' stale Friday-close candles are all within a few
+minutes of each other -- so all 25 crossed that hourly drift boundary
+within the same ~15-second window, each counting as a "new" message
+under text-based dedup. Confirmed live: still a ~25-message burst every
+hour, correctly reported back as "still spamming."
+
+**Actually fixed**: `_candle_error_active` now tracks failing/recovered
+STATE per instrument (H1) / instrument:granularity (storyline W/D/H4),
+not message text. A key logs once when it FIRST enters a failure state
+and stays silent for the rest of that outage regardless of how the
+message text drifts; it only logs again after a genuine recovery
+(offset detection succeeds again) followed by a new failure. During a
+full weekend closure this means one message per instrument, period --
+not one per instrument per hour. New test
+`test_a_new_candle_closed_failure_is_logged_again_after_a_real_recovery`
+covers the recover-then-fail-again case the first fix's tests didn't
+have. 188 tests pass. **Needs `git pull` + `systemctl restart slk-bot1
+slk-bot2` on the VPS.**
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
