@@ -66,9 +66,26 @@ class TelegramHandler(logging.Handler):
     Call flush() periodically (run_live.py does this once per poll loop)
     to guarantee a queued batch still goes out promptly even if nothing
     else triggers it -- e.g. right after a storm ends and no further
-    records arrive to naturally trigger the next send."""
+    records arrive to naturally trigger the next send.
+
+    Confirmed live 2026-08-30: Telegram's OWN flood control (HTTP 429)
+    blocked this bot's messages for 1h45m+ after an earlier spam
+    incident (see bot/OPERATIONS_LOG.md), across every single WARNING
+    and INFO event that whole time -- real trading decisions, not just
+    noise, silently never reaching the chat. The 429 response's body
+    carries a `retry_after` seconds value; this handler used to ignore
+    it completely and just retry on the very next event, getting another
+    429 every time. Retrying INSIDE an active flood-control window is
+    exactly what keeps renewing it, which is almost certainly why a
+    normal transient block ran for that long instead of clearing on its
+    own. `_blocked_until` now makes both emit() and flush() skip
+    attempting a send entirely until Telegram's own stated cooldown (or
+    a default/doubling fallback if it didn't say) has actually passed --
+    still queuing so nothing is lost, just not hammering a block."""
 
     MIN_SEND_INTERVAL = 3.0
+    DEFAULT_BACKOFF_SECONDS = 60.0
+    MAX_BACKOFF_SECONDS = 1800.0  # 30 min cap -- a malformed response must not wedge delivery forever
 
     def __init__(self, token: str, chat_id: str, level=logging.WARNING, clock=time.monotonic):
         super().__init__(level=level)
@@ -77,6 +94,8 @@ class TelegramHandler(logging.Handler):
         self._clock = clock
         self._pending: list[str] = []
         self._last_sent_at: float | None = None
+        self._blocked_until: float | None = None
+        self._backoff_seconds = self.DEFAULT_BACKOFF_SECONDS
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -85,15 +104,21 @@ class TelegramHandler(logging.Handler):
             return  # formatting itself failing must not cascade or crash the bot
         self._pending.append(text)
         now = self._clock()
+        if self._blocked_until is not None and now < self._blocked_until:
+            return  # still inside Telegram's own flood-control window -- stay queued, don't retry yet
         if self._last_sent_at is not None and now - self._last_sent_at < self.MIN_SEND_INTERVAL:
             return  # queued -- goes out with whichever record next clears the interval
         self._do_flush(now)
 
     def flush(self) -> None:
         """Send whatever is queued right now, bypassing the interval --
-        for "make sure nothing is left stranded," not normal operation."""
-        if self._pending:
-            self._do_flush(self._clock())
+        for "make sure nothing is left stranded," not normal operation.
+        Still respects an active flood-control block: called once per
+        poll loop by run_live.py, so without this check it would retry
+        into a live block every few seconds, same as emit() would."""
+        now = self._clock()
+        if self._pending and (self._blocked_until is None or now >= self._blocked_until):
+            self._do_flush(now)
 
     def _do_flush(self, now: float) -> None:
         batch, self._pending = self._pending, []
@@ -110,8 +135,30 @@ class TelegramHandler(logging.Handler):
             headers={"Content-Type": "application/json"}, method="POST")
         try:
             urllib.request.urlopen(req, timeout=10).read()
+            self._blocked_until = None
+            self._backoff_seconds = self.DEFAULT_BACKOFF_SECONDS
+        except urllib.error.HTTPError as exc:
+            retry_after = self._retry_after_seconds(exc)
+            wait = retry_after if retry_after is not None else self._backoff_seconds
+            self._blocked_until = self._clock() + wait
+            self._backoff_seconds = min(self._backoff_seconds * 2, self.MAX_BACKOFF_SECONDS)
+            _internal_logger.warning(
+                "failed to deliver Telegram notification: %s -- backing off %.0fs before retrying",
+                exc, wait)
         except (urllib.error.URLError, OSError, ValueError) as exc:
             _internal_logger.warning("failed to deliver Telegram notification: %s", exc)
+
+    @staticmethod
+    def _retry_after_seconds(exc: urllib.error.HTTPError) -> float | None:
+        """Telegram's 429 body is {"parameters": {"retry_after": N}, ...}
+        per the Bot API spec. None if the body doesn't have it (a
+        different HTTP error, or a malformed/unexpected response) --
+        callers fall back to the default/doubling backoff in that case."""
+        try:
+            body = json.loads(exc.read())
+            return float(body["parameters"]["retry_after"])
+        except Exception:
+            return None
 
     def close(self) -> None:
         self.flush()

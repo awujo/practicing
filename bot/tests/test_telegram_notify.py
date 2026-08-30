@@ -189,3 +189,136 @@ def test_the_internal_failure_logger_does_not_feed_back_into_bot():
     # If this were ever True, a sustained Telegram outage would have the
     # handler try to report its own delivery failure to itself, forever.
     assert tn._internal_logger.propagate is False
+
+
+def _http_429(retry_after=None):
+    body = {"ok": False, "error_code": 429, "description": "Too Many Requests"}
+    if retry_after is not None:
+        body["parameters"] = {"retry_after": retry_after}
+    import io
+    return urllib.error.HTTPError(
+        "https://api.telegram.org/x", 429, "Too Many Requests", {},
+        io.BytesIO(json.dumps(body).encode()))
+
+
+def test_a_429_with_retry_after_blocks_further_sends_until_it_elapses(monkeypatch):
+    # Confirmed live 2026-08-30: without this, every subsequent event
+    # retried immediately, got another 429, and (per Telegram's own
+    # flood-control behavior) kept renewing the block -- 1h45m+ of real
+    # trading decisions never reaching the chat.
+    clock = FakeClock()
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(1)
+        raise _http_429(retry_after=30)
+
+    monkeypatch.setattr(tn.urllib.request, "urlopen", fake_urlopen)
+    h = tn.TelegramHandler("tok", "chat", clock=clock)
+
+    h.emit(make_record("first"))          # attempts, gets 429, blocked_until = 30
+    assert len(calls) == 1
+
+    clock.advance(tn.TelegramHandler.MIN_SEND_INTERVAL + 1)
+    h.emit(make_record("second"))         # still well inside the 30s block -- must NOT retry
+    assert len(calls) == 1
+
+    clock.advance(29)                     # now at t=~33, past the 30s block
+    h.emit(make_record("third"))
+    assert len(calls) == 2                # retried only once the block actually elapsed
+
+
+def test_flush_also_respects_an_active_block(monkeypatch):
+    # run_live.py calls flush() once per poll loop (every few seconds) --
+    # without this, THAT alone would hammer an active block just as badly
+    # as emit() retrying on every new event. A failed send's own batch is
+    # dropped (pre-existing best-effort behavior -- module docstring: "a
+    # failure to reach Telegram must never... block a trading decision"),
+    # so this checks that a NEW event queued during the block stays
+    # queued rather than being attempted, and only goes out once the
+    # block actually clears.
+    clock = FakeClock()
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(1)
+        raise _http_429(retry_after=30)
+
+    monkeypatch.setattr(tn.urllib.request, "urlopen", fake_urlopen)
+    h = tn.TelegramHandler("tok", "chat", clock=clock)
+    h.emit(make_record("first"))  # attempts, fails, now blocked for 30s
+    assert len(calls) == 1
+
+    h.emit(make_record("second"))  # queued only -- still blocked, must not attempt
+    assert len(calls) == 1
+    h.flush()  # still blocked -- must not attempt either
+    h.flush()
+    assert len(calls) == 1
+
+    clock.advance(31)
+    h.flush()  # block cleared -- "second" finally goes out
+    assert len(calls) == 2
+
+
+def test_a_429_without_retry_after_falls_back_to_a_default_backoff(monkeypatch):
+    clock = FakeClock()
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(1)
+        raise _http_429(retry_after=None)
+
+    monkeypatch.setattr(tn.urllib.request, "urlopen", fake_urlopen)
+    h = tn.TelegramHandler("tok", "chat", clock=clock)
+    h.emit(make_record("first"))
+    assert len(calls) == 1
+
+    clock.advance(tn.TelegramHandler.DEFAULT_BACKOFF_SECONDS - 1)
+    h.emit(make_record("too soon"))
+    assert len(calls) == 1
+
+    clock.advance(2)
+    h.emit(make_record("now"))
+    assert len(calls) == 2
+
+
+def test_a_successful_send_after_a_block_clears_it_and_resets_the_backoff(monkeypatch):
+    clock = FakeClock()
+    state = {"fail": True}
+
+    def fake_urlopen(req, timeout=None):
+        if state["fail"]:
+            raise _http_429(retry_after=10)
+
+        class R:
+            def read(self):
+                return b"ok"
+        return R()
+
+    monkeypatch.setattr(tn.urllib.request, "urlopen", fake_urlopen)
+    h = tn.TelegramHandler("tok", "chat", clock=clock)
+    h.emit(make_record("first"))  # blocked for 10s
+    assert h._blocked_until is not None
+
+    clock.advance(11)
+    state["fail"] = False
+    h.emit(make_record("recovers"))
+    assert h._blocked_until is None
+    assert h._backoff_seconds == tn.TelegramHandler.DEFAULT_BACKOFF_SECONDS
+
+
+def test_repeated_429s_without_retry_after_double_the_backoff_up_to_a_cap(monkeypatch):
+    clock = FakeClock()
+
+    def fake_urlopen(req, timeout=None):
+        raise _http_429(retry_after=None)
+
+    monkeypatch.setattr(tn.urllib.request, "urlopen", fake_urlopen)
+    h = tn.TelegramHandler("tok", "chat", clock=clock)
+
+    h.emit(make_record("1"))
+    assert h._backoff_seconds == tn.TelegramHandler.DEFAULT_BACKOFF_SECONDS * 2
+
+    clock.advance(tn.TelegramHandler.DEFAULT_BACKOFF_SECONDS + 1)
+    h.emit(make_record("2"))
+    assert h._backoff_seconds == tn.TelegramHandler.DEFAULT_BACKOFF_SECONDS * 4

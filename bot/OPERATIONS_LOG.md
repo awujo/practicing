@@ -946,6 +946,41 @@ covers the recover-then-fail-again case the first fix's tests didn't
 have. 188 tests pass. **Needs `git pull` + `systemctl restart slk-bot1
 slk-bot2` on the VPS.**
 
+## 2026-08-30 -- Telegram itself flood-blocked the bot for 1h45m+ after the earlier spam incident
+
+Direct report: no Telegram messages since 21:53 WAT despite the market
+reopening and the bot clearly working (audit DB being written, real
+storyline transitions in the journal). Root cause, confirmed via
+journalctl: every single delivery attempt from 21:01:20 UTC onward
+returned `HTTP Error 429: Too Many Requests` from Telegram's own API --
+not a bug in the trading logic, Telegram's own flood control reacting
+to the earlier spam storm (see the two entries above). `TelegramHandler`
+had no concept of backoff: every new event just retried immediately,
+got another 429, and (matching Telegram's documented flood-control
+behavior) retrying INSIDE an active block is exactly what keeps
+renewing it -- almost certainly why this ran for well over an hour
+instead of clearing in the usual 30-60s.
+
+**Fixed**: `_send()` now parses the 429 response body's
+`parameters.retry_after` (Telegram's own stated cooldown in seconds)
+and sets `_blocked_until`; both `emit()` and `flush()` (the latter is
+called once per poll loop by run_live.py, so it needed the same guard)
+now skip attempting a send entirely while still inside that window --
+new events stay queued, nothing is attempted, nothing renews the block.
+Falls back to a doubling default backoff (60s, capped at 30 min) if a
+429 doesn't carry `retry_after`. A successful send clears the block and
+resets the backoff. Five new tests cover: respecting `retry_after`,
+`flush()` also respecting it, the no-`retry_after` fallback, recovery
+clearing state, and repeated failures doubling the backoff. 193 tests
+pass.
+
+Note for next deploy: `_blocked_until` is in-memory, so restarting the
+process resets it -- if Telegram's OWN block is still active
+server-side at restart time, the very next send attempt will hit
+another 429, but the new code will correctly back off on THAT one
+rather than hammering it, so this is self-correcting either way.
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS.**
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
