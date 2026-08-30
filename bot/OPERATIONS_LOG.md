@@ -804,6 +804,38 @@ break IPC between the Python bridge and the Wine-hosted terminal, not
 just an auth handshake) rather than the broker. Not conclusive on its
 own -- one data point -- but the diagnostic is doing its job.
 
+## 2026-08-30 -- root cause of a "signal candle from Saturday" report: weekend-stale offset detection
+
+Direct question: XAUUSD declined a signal whose candle was timestamped
+2026-08-29 10:00 UTC -- a Saturday, when gold/FX markets are closed.
+Checked the offline Dukascopy release first: it ends cleanly at Friday
+2026-08-28T20:00:00Z, nothing for the weekend -- ruling out the data
+source. The candle came from the live VPS side.
+
+Root cause: `MT5Client._detect_server_utc_offset()` compares the
+currently-forming M1 candle's reported time against Python's real UTC
+"now" to work out the broker's clock offset -- correct only while the
+market is open. Called during a weekend closure, `rates[0]` isn't
+forming right now at all; it's the last bar from before Friday's close,
+many hours stale. The raw comparison then produces a wildly wrong
+delta, which got silently cached and applied (as a fixed subtraction)
+to EVERY candle timestamp fetched until the next reconnect -- corrupting
+them all, not just the weekend read itself. `_server_utc_offset` resets
+to `None` on every reconnect (by design, to catch a real DST/server
+change), so every reconnect during the weekend re-triggers this.
+
+**Fixed**: the detected offset is now sanity-checked against a
+plausible range (+/-6h of UTC -- this broker's confirmed at +3). An
+implausible result raises `MT5ConnectionError` instead of being
+adopted, which `fetch_candles`/`sync_recent_from_mt5`'s existing
+try/except already handles by skipping that cycle -- and is simply
+correct: there's nothing to trade while the market is shut, so failing
+to fetch until a genuinely fresh candle exists again (the market
+reopens) is the right behavior, not a gap to paper over. Two new tests
+reproduce the exact scenario (a stale Friday-close M1 candle read on
+Saturday) at both the detection function and the fetch_candles() call
+path. 185 tests pass. **Needs `git pull` + bot restart on the VPS.**
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking

@@ -128,6 +128,43 @@ def test_detect_server_utc_offset_rounds_to_the_nearest_hour():
     assert offset == pd.Timedelta(hours=3)
 
 
+def test_detect_server_utc_offset_rejects_a_stale_weekend_candle(monkeypatch):
+    # Confirmed live 2026-08-30: called during a weekend closure,
+    # rates[0] isn't genuinely forming -- it's the last bar before
+    # Friday's close, many hours stale. The raw comparison against real
+    # "now" then produces a wildly wrong delta, which used to get
+    # silently applied to every subsequent candle timestamp. Real broker
+    # offsets are always within a couple hours of UTC; this must reject
+    # anything implausible rather than adopt it.
+    fake = FakeMT5()
+    # Friday 20:00 UTC "forming" candle (really just the last one before close).
+    fake.rates_by_symbol_timeframe[("XAUUSD", "M1")] = [make_rate(4 * DAY + 20 * 3600, 1, 1, 1, 1)]
+    client = MT5Client(fake, login=1, password="pw", server="Demo")  # offset NOT pinned
+
+    # Saturday 10:00 UTC real time -- 14h after that stale candle.
+    real_now = pd.Timestamp(5 * DAY + 10 * 3600, unit="s", tz="UTC")
+    with pytest.raises(MT5ConnectionError, match="outside the plausible"):
+        client._detect_server_utc_offset("XAUUSD", real_now=real_now)
+
+
+def test_fetch_candles_fails_closed_rather_than_apply_an_implausible_offset(monkeypatch):
+    # Same scenario, exercised through fetch_candles() -- the real call
+    # path. Must raise, not silently return candles timestamped with a
+    # garbage offset.
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("XAUUSD", "M1")] = [make_rate(4 * DAY + 20 * 3600, 1, 1, 1, 1)]
+    fake.rates_by_symbol_timeframe[("XAUUSD", "H1")] = [
+        make_rate(4 * DAY + 20 * 3600, 1, 1, 1, 1),  # forming, skipped
+        make_rate(4 * DAY + 19 * 3600, 1, 1, 1, 1),
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo")
+    monkeypatch.setattr(pd.Timestamp, "now",
+                         classmethod(lambda cls, tz=None: pd.Timestamp(5 * DAY + 10 * 3600, unit="s", tz=tz)))
+
+    with pytest.raises(MT5ConnectionError, match="outside the plausible"):
+        client.fetch_candles("XAUUSD", "H1", count=1)
+
+
 def test_fetch_candles_auto_detects_and_applies_the_offset_when_not_pinned(monkeypatch):
     fake = FakeMT5()
     fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(9 * 3600, 1, 1, 1, 1)]

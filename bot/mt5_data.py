@@ -51,6 +51,17 @@ class MT5ConnectionError(RuntimeError):
     pass
 
 
+# Bounds a detected server UTC offset must fall within to be trusted --
+# see _detect_server_utc_offset()'s docstring for why this exists. Real
+# broker server clocks seen in practice sit within a couple hours of UTC
+# (this one's confirmed +3, EEST); +/-6h leaves generous room for any
+# broker actually encountered while still rejecting the wildly-wrong
+# values a stale (market-closed) candle produces -- confirmed live
+# 2026-08-30, a weekend-closed XAUUSD read produced an offset far
+# outside any real timezone.
+_PLAUSIBLE_OFFSET_HOURS = 6
+
+
 @dataclass(frozen=True)
 class ClosedDeal:
     ticket: int
@@ -145,7 +156,29 @@ class MT5Client:
         (always exactly on the minute) against Python's own real UTC
         clock, rounded to the nearest hour since every broker offset seen
         in practice is a whole number of hours. `real_now` is only ever
-        overridden by tests, for a deterministic comparison point."""
+        overridden by tests, for a deterministic comparison point.
+
+        This assumes `rates[0]` (index 0 of copy_rates_from_pos) is
+        GENUINELY forming right now -- true only while the market is
+        actually open. Confirmed live 2026-08-30: called during a weekend
+        closure, `rates[0]` is really the LAST bar before Friday's close,
+        many hours stale, and the raw comparison against real UTC "now"
+        produces a wildly wrong delta -- which then got silently cached
+        and applied (as a fixed subtraction) to every candle timestamp
+        fetched until the next reconnect, corrupting them all. There's no
+        direct "give me the broker's wall-clock time" MT5 call this
+        client has found a use for elsewhere, so instead of detecting
+        market-closed directly, the RESULT is sanity-checked: a real
+        broker offset is always within _PLAUSIBLE_OFFSET_HOURS of UTC
+        (this one's confirmed +3); a stale weekend read produces
+        something far outside that. Raises rather than returning garbage
+        -- fits this client's existing fail-closed pattern exactly
+        (fetch_candles/sync_recent_from_mt5 already catch
+        MT5ConnectionError and skip that cycle), and is also simply
+        correct: there's nothing to trade while the market is shut, so
+        failing to fetch until a genuinely fresh candle exists again
+        (the market reopens) is the right behavior, not a gap to paper
+        over."""
         rates = self._mt5.copy_rates_from_pos(symbol, self._mt5.TIMEFRAME_M1, 0, 1)
         if not rates:
             raise MT5ConnectionError(f"copy_rates_from_pos({symbol}, M1) failed while detecting "
@@ -153,6 +186,14 @@ class MT5Client:
         broker_time = pd.Timestamp(rates[0]["time"], unit="s", tz="UTC")
         real_now = (real_now if real_now is not None else pd.Timestamp.now(tz="UTC")).floor("min")
         hours = round((broker_time - real_now).total_seconds() / 3600)
+        if abs(hours) > _PLAUSIBLE_OFFSET_HOURS:
+            raise MT5ConnectionError(
+                f"detected server UTC offset of {hours}h for {symbol} is outside the plausible "
+                f"+/-{_PLAUSIBLE_OFFSET_HOURS}h range -- the M1 candle used to detect it (broker "
+                f"time {broker_time}) is likely stale rather than genuinely forming right now "
+                f"(e.g. the market for {symbol} may be closed), so it doesn't represent \"now\" the "
+                f"way this detection assumes. Not adopting a bad offset that would otherwise corrupt "
+                f"every candle timestamp fetched until the next reconnect.")
         return pd.Timedelta(hours=hours)
 
     def fetch_candles(self, internal_symbol: str, granularity: str, count: int = 300) -> list[Candle]:
