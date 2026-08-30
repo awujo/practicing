@@ -26,6 +26,7 @@ no Monthly, despite STRATEGY.md discussing it -- so that's the exact set
 fetched here too, to keep live and backtest behaviorally identical.
 """
 
+import logging
 from dataclasses import dataclass
 
 import pandas as pd
@@ -33,6 +34,8 @@ import pandas as pd
 from backtest.engine.candles import Candle
 from .config import SymbolMap
 from .risk_manager import AccountState, OpenPosition
+
+logger = logging.getLogger("bot.mt5_data")
 
 GRANULARITIES = ("D", "H4", "H1", "W")
 
@@ -60,6 +63,23 @@ class MT5ConnectionError(RuntimeError):
 # 2026-08-30, a weekend-closed XAUUSD read produced an offset far
 # outside any real timezone.
 _PLAUSIBLE_OFFSET_HOURS = 6
+
+# fetch_candles() only ever asks MT5 for CLOSED bars (start=1 explicitly
+# skips the still-forming one) -- a genuinely closed candle can never be
+# timestamped after "now", full stop. Confirmed live 2026-08-30: the
+# weekend-offset bug fixed above (before this specific guard existed)
+# had already written candles ~42h into the future into the on-disk
+# cache for 20 of 25 instruments before the offset-detection fix landed
+# -- silently corrupting new_candle_closed()'s "is this fresh" check
+# from then on, since nothing ever compares as newer than a fake future
+# timestamp. This is deliberately a SEPARATE check from the offset
+# plausibility bound above: that one guards against adopting a bad
+# OFFSET before it's applied; this one guards the RESULT regardless of
+# which bug produced it, so a future path that corrupts timestamps a
+# different way still can't get a future-dated candle into the cache.
+# A few minutes of slack for ordinary clock skew between this host and
+# the broker's server, not for anything larger.
+_MAX_FUTURE_CANDLE_SLACK = pd.Timedelta(minutes=5)
 
 
 @dataclass(frozen=True)
@@ -223,7 +243,22 @@ class MT5Client:
             for r in rates
         ]
         candles.sort(key=lambda c: c.time)
-        return candles
+        # See _MAX_FUTURE_CANDLE_SLACK's comment -- a CLOSED candle can
+        # never genuinely be timestamped after "now". Filtering rather
+        # than raising: one bad bar in a batch of otherwise-good ones
+        # shouldn't cost the rest, and the caller (sync_recent_from_mt5)
+        # would otherwise persist it into the on-disk cache forever
+        # (cache.append() dedupes by exact timestamp, so a bad row with
+        # a unique bogus time is never naturally overwritten).
+        cutoff = pd.Timestamp.now(tz="UTC") + _MAX_FUTURE_CANDLE_SLACK
+        plausible = [c for c in candles if c.time <= cutoff]
+        if len(plausible) != len(candles):
+            dropped = [c for c in candles if c.time > cutoff]
+            logger.warning(
+                "dropped %d future-dated candle(s) for %s/%s that MT5 returned as CLOSED -- "
+                "e.g. %s (now is %s); not caching or acting on data that can't be real",
+                len(dropped), internal_symbol, granularity, dropped[0].time, pd.Timestamp.now(tz="UTC"))
+        return plausible
 
     def new_candle_closed(self, internal_symbol: str, granularity: str) -> Candle | None:
         """Call this on a polling loop (fast enough to not miss a close,

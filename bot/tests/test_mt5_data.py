@@ -167,18 +167,60 @@ def test_fetch_candles_fails_closed_rather_than_apply_an_implausible_offset(monk
 
 def test_fetch_candles_auto_detects_and_applies_the_offset_when_not_pinned(monkeypatch):
     fake = FakeMT5()
-    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(9 * 3600, 1, 1, 1, 1)]
+    # M1 (offset detection) and H1 candle both dated on day 2, matching
+    # the mocked "now" below -- a real MT5 connection fetches both from
+    # the same broker at the same real moment, so a self-consistent
+    # timeline here is what actually reflects production, not a gap
+    # across days. (A previous version of this test had the M1 read on
+    # day 0 while the H1 candle it offset-corrected landed on day 2 --
+    # harmless before fetch_candles() started rejecting future-dated
+    # candles against real "now", but that same day of the H1 candle
+    # jump made it look like a future candle once fetch_candles() has
+    # its own real-now to compare against.)
+    fake.rates_by_symbol_timeframe[("EURUSD", "M1")] = [make_rate(2 * DAY + 9 * 3600, 1, 1, 1, 1)]
     fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
         make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),  # forming, skipped
         make_rate(2 * DAY + 9 * 3600, 1.10, 1.12, 1.09, 1.11),  # broker-labeled 09:00 on day 2
     ]
     client = MT5Client(fake, login=1, password="pw", server="Demo")  # offset NOT pinned
-    monkeypatch.setattr(pd.Timestamp, "now", classmethod(lambda cls, tz=None: pd.Timestamp(6 * 3600, unit="s", tz=tz)))
+    monkeypatch.setattr(pd.Timestamp, "now",
+                         classmethod(lambda cls, tz=None: pd.Timestamp(2 * DAY + 6 * 3600, unit="s", tz=tz)))
 
     candles = client.fetch_candles("EURUSD", "H1", count=1)
     assert len(candles) == 1
     # 3-hour offset subtracted: broker-labeled 09:00 on day 2 -> real 06:00 on day 2.
     assert candles[0].time == pd.Timestamp(2 * DAY + 6 * 3600, unit="s", tz="UTC")
+
+
+def test_fetch_candles_drops_a_future_dated_candle_mt5_reports_as_closed(monkeypatch, caplog):
+    # Confirmed live 2026-08-30: leftover corruption from the (now
+    # separately fixed) weekend server-clock-offset bug had already
+    # written candles ~42h into the future into the on-disk cache for 20
+    # of 25 instruments before that fix landed -- and once one exists
+    # there, cache.append()'s dedupe-by-exact-timestamp means it's never
+    # naturally overwritten, so new_candle_closed() never sees anything
+    # as "newer" again. A CLOSED candle (this method explicitly skips
+    # the still-forming one) can never legitimately be timestamped after
+    # "now", regardless of which bug produced one -- this is deliberately
+    # independent of the offset-plausibility check above, so it also
+    # catches a future timestamp from any OTHER source.
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(2 * DAY - 3600, 1.10, 1.12, 1.09, 1.11),          # forming, skipped (start=1)
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),                 # real
+        make_rate(2 * DAY + 42 * 3600, 1.10, 1.12, 1.09, 1.11),     # bogus, ~42h in the future
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo",
+                        server_utc_offset=pd.Timedelta(0))  # offset pinned -- isolate this check
+    monkeypatch.setattr(pd.Timestamp, "now",
+                         classmethod(lambda cls, tz=None: pd.Timestamp(2 * DAY, unit="s", tz=tz)))
+
+    with caplog.at_level("WARNING", logger="bot.mt5_data"):
+        candles = client.fetch_candles("EURUSD", "H1", count=2)
+
+    assert len(candles) == 1
+    assert candles[0].time == pd.Timestamp(2 * DAY, unit="s", tz="UTC")
+    assert any("dropped 1 future-dated candle" in r.getMessage() for r in caplog.records)
 
 
 def test_fetch_candles_only_detects_the_offset_once_and_caches_it(monkeypatch):

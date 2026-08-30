@@ -981,6 +981,61 @@ another 429, but the new code will correctly back off on THAT one
 rather than hammering it, so this is self-correcting either way.
 **Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS.**
 
+## 2026-08-30 -- leftover corruption from the weekend-offset bug: future-dated candles frozen 20 of 25 instruments' live detection
+
+Follow-on from investigating why bot2's audit DB was 5+ hours stale
+while bot1's wasn't. Direct evidence: `AUDCAD` was repeatedly declining
+the exact same stale-signal staleness values 18 minutes apart --
+staleness that should have GROWN between polls if real time were
+advancing normally, so something wasn't. Read the raw cache file
+(`backtest/data/dukascopy/AUDCAD/H1.csv`) directly: it contained two
+rows timestamped `2026-09-01T15:00:00Z` / `2026-09-01T17:00:00Z` --
+tomorrow -- with OHLCV values that exactly duplicate the real
+`2026-08-30T21:00:00Z` row. A scan across every instrument's cache
+found the same pattern in 20 of 25: AUDCAD, AUDJPY, CHFJPY, EURCAD,
+EURCHF, EURNZD, EURUSD, GBPAUD, GBPCAD, GBPCHF, GBPJPY, GBPNZD, GBPUSD,
+JP225, NAS100, NZDUSD, US30, USDCAD, USDCHF, USDJPY.
+
+Root cause: leftover damage from the weekend server-clock-offset bug
+(see the entry above, fixed earlier the same day) -- BEFORE that fix
+landed, `sync_recent_from_mt5` had already written the same real candle
+out a second time under a wildly wrong (~+42h) offset, for nearly every
+instrument being synced during that window. The offset-detection fix
+stops NEW corruption but does nothing about rows already written:
+`cache.append()`'s dedupe is by exact timestamp, so a bogus row with a
+timestamp nothing else will ever collide with sits there permanently.
+Consequence, not just cosmetic: since a CLOSED candle timestamped in
+2026-09-01 sorts after everything real, `new_candle_closed()` would
+never again recognize any genuinely new candle as "newer" for that
+instrument until real calendar time actually reached the bogus date --
+live entry detection for those 20 instruments was effectively frozen,
+silently, for both bots.
+
+**Fixed two ways**:
+1. Immediate data cleanup: a one-off script (not committed --
+   deliberately temporary tooling, see the pattern elsewhere in this
+   log) stripped every future-dated row from all affected cache files,
+   using `cache._file_lock(path, exclusive=True)` so it was safe to run
+   without stopping either live bot.
+2. Root fix: `MT5Client.fetch_candles()` (mt5_data.py) now drops any
+   candle MT5 reports as CLOSED whose time is after "now" (5-minute
+   slack for ordinary clock skew) -- a closed candle can never
+   legitimately be future-dated, regardless of which bug produces one,
+   so this is a second, independent line of defense from the offset-
+   plausibility check, not a replacement for it. New test
+   `test_fetch_candles_drops_a_future_dated_candle_mt5_reports_as_closed`
+   reproduces the exact ~42h-future scenario. One pre-existing test
+   (`test_fetch_candles_auto_detects_and_applies_the_offset_when_not_pinned`)
+   had a self-inconsistent mocked "now" that only became a problem once
+   this check existed -- fixed to use a self-consistent timeline. 194
+   tests pass.
+
+**Needs, in this order, on the VPS**: (1) run the future-candle cleanup
+across all cache files -- ask for the script if it wasn't kept from
+this session; (2) `git pull` + `systemctl restart slk-bot1 slk-bot2`.
+Worth re-scanning the cache after deploy to confirm no instrument still
+carries a future-dated row.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
