@@ -1036,6 +1036,67 @@ this session; (2) `git pull` + `systemctl restart slk-bot1 slk-bot2`.
 Worth re-scanning the cache after deploy to confirm no instrument still
 carries a future-dated row.
 
+## 2026-08-31 -- every restart today had been leaking the containerized process: up to 14 live bots running at once
+
+Discovered while chasing a "how long will Telegram be down" question
+after a `systemctl restart` that was taking unusually long. `docker exec
+mt5 ps aux | grep run_live` showed **14** `python3 -m bot.run_live`
+processes alive simultaneously -- 7 conservative, 7 aggressive -- most
+dated `Aug30` (surviving from earlier restarts done that same day) plus
+the 2 newest from the most recent restart.
+
+Root cause: `slk-bot1.service`/`slk-bot2.service` (see the systemd
+migration entry above) has `ExecStart=/bin/bash launch_bot1.sh`, whose
+last line is a plain (non-`exec`'d) `docker exec ... python3 -m
+bot.run_live ...`, and NO `ExecStop=` was ever defined. Systemd's
+default stop behavior only signals what's in ITS OWN cgroup on the
+host -- the local `bash` wrapper and the local `docker exec` CLIENT.
+The actual `python3 -m bot.run_live` process, though, runs inside the
+CONTAINER's own process namespace, managed by dockerd/containerd, not
+by systemd at all. Killing the local `docker exec` client does not
+kill the remote process it started; the remote process simply keeps
+running, permanently orphaned, invisible to `systemctl status` (which
+only ever showed ONE Active line per service, because it only ever
+knew about its own current wrapper PID). Every `systemctl restart`
+done this entire session -- and there were many, one per fix deployed
+today -- silently doubled the count.
+
+**This was not just noise.** Each leaked process is a fully independent
+live copy of the bot, polling MT5 and capable of independently deciding
+to place a trade -- multiple copies of "conservative" all seeing the
+same signal could each have sent their own `order_send()`, opening
+duplicate positions with duplicate risk. It's also very likely a real
+contributor to the chronic VPS load (38-41 average, tracked in several
+entries above) this whole session blamed mostly on other processes
+(kugo-backend, studifypro) -- 14 python processes each burning
+8-13% CPU is a substantial chunk of that on its own.
+
+**Fixed**: killed every orphaned process
+(`docker exec mt5 pkill -f "python3 -m bot.run_live"`), confirmed via
+`ps` that exactly 2 remained after a clean restart. Then added an
+explicit `ExecStop=` to each unit via a systemd drop-in
+(`/etc/systemd/system/slk-bot{1,2}.service.d/override.conf`) that
+reaches directly into the container:
+
+```
+[Service]
+ExecStop=/usr/bin/docker exec mt5 pkill -f "run_live.*--audit-db conservative_audit.db"
+```
+
+(and the `aggressive_audit.db` equivalent for bot2 -- matched on the
+`--audit-db` flag specifically so each unit's ExecStop can only ever
+kill ITS OWN process, never the other bot's). Verified live: restarted
+both services twice in a row and confirmed the process count stayed at
+exactly 2 both times, not 4.
+
+**Not yet done**: verify neither bot actually opened a duplicate
+position while multiple copies were running today -- worth a manual
+check of both MT5 accounts' open positions against `tracked_positions`
+expectations next time either account is checked. Not in the git repo
+(systemd unit + drop-in are VPS-only, like the base unit files
+themselves) -- if this VPS is ever rebuilt, the drop-in override.conf
+files above need to be recreated, not just the base .service files.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
