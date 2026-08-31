@@ -1097,6 +1097,54 @@ expectations next time either account is checked. Not in the git repo
 themselves) -- if this VPS is ever rebuilt, the drop-in override.conf
 files above need to be recreated, not just the base .service files.
 
+## 2026-08-31 -- self-inflicted: the future-candle cleanup script broke EURUSD/USDCHF's timestamp format
+
+Direct report: EURUSD and USDCHF started throwing
+`TypeError: '<' not supported between instances of 'str' and
+'Timestamp'` in `_find_entry_candidates` (runner.py), caught by the
+per-instrument exception handler so the bot kept running but silently
+skipped those two instruments every cycle.
+
+Root cause: my own fault, introduced by the future-dated-candle cleanup
+script (see the entry above) run earlier the same day. That script read
+each cache file with `pd.read_csv(path, parse_dates=["time"])` and
+wrote it back with `cleaned.to_csv(...)`, which serializes a tz-aware
+datetime column using pandas' default string format
+(`2026-08-30 21:00:00+00:00` -- space separator, `+00:00` suffix).
+EVERY other writer in this codebase (`sync_recent_from_mt5`,
+`dukascopy_client.py`, `fetch_crypto.py`, `resample.py`) uses a
+DIFFERENT convention: `isoformat().replace("+00:00", "Z")` ->
+`2026-08-30T21:00:00Z`. This exact failure mode is already documented
+in `live_cache_sync.py`'s own module docstring from an earlier
+incident: mixing the two formats in the same CSV column makes pandas
+silently fail to parse SOME rows into real Timestamps while leaving
+others as raw strings, and any downstream comparison between them
+(here, `bisect.bisect_left` inside `_find_entry_candidates`) blows up.
+Once my cleanup rewrote a file's existing rows in the wrong format,
+the very next live append (in the correct "Z" format, from
+`sync_recent_from_mt5`) mixed the two conventions in the same file --
+which is why only SOME instruments broke and not immediately all 25:
+it needed a live append to actually happen after the rewrite.
+
+**Fixed**: a second one-off script (not committed, same pattern) read
+every dukascopy cache file's `time` column as raw strings, parsed with
+`pd.to_datetime(..., utc=True, format="mixed")` (robust to the mixed
+formats already on disk), sorted, deduped, and re-wrote every row using
+the correct `isoformat().replace("+00:00", "Z")` convention -- run
+across ALL 25 instruments x ALL granularities (D/H1/H2/H3/H4/M/M15/
+M30/M45/M5/W, not just the H1/H4/D/W the bot actually reads, for
+consistency), using the same `cache._file_lock(exclusive=True)` as
+before. No restart needed -- `run_backtest()` reads the cache fresh
+from disk on every call, so this took effect on the very next poll
+cycle. Confirmed via journalctl: no further errors for EURUSD/USDCHF.
+
+**Lesson for next time a cache file needs rewriting by an ad-hoc
+script**: never round-trip through `pd.read_csv(parse_dates=...)` +
+`df.to_csv()` -- always serialize the `time` column explicitly with
+`.isoformat().replace("+00:00", "Z")` to match every other writer, or
+reuse `cache.py`'s own row-building convention directly instead of
+letting pandas pick a default format.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
