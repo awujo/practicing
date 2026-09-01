@@ -1581,6 +1581,21 @@ harmless at the default (`False`), so there's no reason to rip it out,
 just don't build on top of it without addressing why win rate collapsed
 first.
 
+**2026-09-01, later -- reverted.** Direct instruction: pull the code
+back out of `runner.py`/`test_runner.py` entirely (`git revert` of
+c662961 and 3e10422, clean, no conflicts -- 358 tests passing again,
+same count as before this feature ever existed) and leave only this
+written record for anyone who wants to look into it later. The idea
+itself -- SLK entries as resting limit orders with a retest, not market
+orders -- is NOT disproven in principle; what's disproven is THIS
+mechanized version of it (aggressive_entry_price()'s existing key-level
+price, waited on via `_first_retest_fill()`'s wick-touch + 80%-target-
+erosion rule) on THIS strategy, by real backtest evidence, twice. A
+future attempt should start from the still-open per-trigger
+definitional questions above (particularly whether "engulfing" should
+retest a different level than what `aggressive_entry_price()` computes
+today), not from re-adding this exact implementation.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
