@@ -61,7 +61,19 @@ def main():
     for style in styles:
         for instrument in instruments:
             try:
-                records = run_backtest(instrument, style)
+                # Must match orchestrator.py's _check_instrument() call
+                # exactly (avoid_rollover_entries=True, min_reward_r=1.0,
+                # both enabled 2026-09-01) -- otherwise this reference
+                # feed includes signals the live bots now deliberately
+                # skip BEFORE run_backtest() even returns them as
+                # candidates, meaning no audit row (not even a decline)
+                # is ever logged for them. reconcile_signals.py would
+                # then report every one of those as MISSING -- identical
+                # in appearance to the real "the bot never saw it" bug
+                # this whole feed exists to catch, permanently drowning
+                # out genuine misses in predictable, non-actionable noise.
+                records = run_backtest(instrument, style,
+                                        avoid_rollover_entries=True, min_reward_r=1.0)
             except Exception as exc:
                 errors.append((instrument, style, str(exc)))
                 continue

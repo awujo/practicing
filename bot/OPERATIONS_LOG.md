@@ -1314,6 +1314,47 @@ workflow removed now that results are captured, same pattern as
 
 **Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS.**
 
+## 2026-09-01 -- fixed a live cause of "GitHub Action found more trades than executed": the reference feed didn't know about today's two new live-only filters
+
+Direct question: why does `hourly-signal-check.yml`'s Dukascopy
+reference keep finding more signals than the live bots actually
+traded? Root-caused at least one concrete, current cause:
+`check_recent_signals.py` (the reference generator behind that
+workflow and `bot/reconcile_signals.py`) called
+`run_backtest(instrument, style)` with no flags -- but `orchestrator.py`'s
+`_check_instrument()`, as of the two entries just above, now
+unconditionally calls `run_backtest(..., avoid_rollover_entries=True,
+min_reward_r=1.0)`. Every rollover-window signal and every sub-1R
+signal the reference feed picked up would never even reach
+`_consider_entry()` live -- filtered out before `run_backtest()`
+returns them as candidates, so no audit row (not even a decline) is
+ever logged. `reconcile_signals.py` would report every one of those as
+`MISSING`, indistinguishable from the real "the bot never saw it" bug
+this whole reconciliation mechanism exists to catch -- permanently
+drowning out genuine misses in predictable, non-actionable noise.
+
+**Fixed**: `check_recent_signals.py` now calls `run_backtest()` with
+the identical flags the live orchestrator uses, so the reference feed
+represents what the live bots are actually SUPPOSED to trade, not a
+strictly broader raw-signal set. New test asserts both flags are
+passed. 352 tests pass.
+
+Note: this explains signals from TODAY's two new filters specifically.
+The user's original report of this mismatch predates both filters, so
+other causes (reconnect-storm outages, MT5-vs-Dukascopy candle
+differences noted in `reconcile_signals.py`'s own docstring, the
+STALE_ENTRY_CUTOFF declining old catch-up signals) likely still
+contribute too -- this fix removes one confirmed source, not
+necessarily the only one. Worth re-checking the reconciliation report
+after this deploys to see how much of the gap remains.
+
+No VPS deploy needed for this one -- `check_recent_signals.py` only
+ever runs inside `hourly-signal-check.yml` on GitHub Actions, which
+checks out `main` fresh on every run, so the very next scheduled or
+manually-triggered run already publishes a feed generated with this
+fix. `bot/reconcile_signals.py` (the VPS-side reader) needed no
+changes -- it just reads whatever feed gets published.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
