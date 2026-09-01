@@ -1,0 +1,105 @@
+name: Compare retest-fill entries vs market-order entries
+
+# TEMPORARY, one-off A/B comparison -- not meant to stay in the repo long
+# term (matches this project's established pattern: comparison tooling
+# gets removed once results are captured, see OPERATIONS_LOG.md for
+# prior examples: compare-rollover-filter.yml, compare-min-reward-filter.yml).
+#
+# Re-run of the 2026-09-01 comparison after fixing a real gap in the
+# first version: a retest-fill candle that ALSO crossed stop_loss within
+# the same bar it filled on was silently treated as still open instead
+# of an immediate loss (the outcome scan started one candle too late to
+# see it). First run: total R 1923.0 -> 336.1, win rate 60.1% -> 37.0%.
+# This re-run checks whether that fix changes the magnitude of the
+# result -- direct 2026-09-01 correction ("me personally and even
+# bishops hardly use market order").
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+          echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."
+
+      - name: Run the A/B comparison
+        run: |
+          python3 - <<'PYEOF'
+          import pandas as pd
+          from backtest.engine.runner import run_backtest
+          from backtest.engine.trade_log import summarize
+
+          INSTRUMENTS = [
+              "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD",
+              "EURGBP", "EURJPY", "EURCHF", "EURCAD", "EURNZD", "GBPJPY", "GBPCHF",
+              "GBPCAD", "GBPNZD", "GBPAUD", "AUDCAD", "AUDJPY", "CHFJPY",
+              "XAUUSD", "XAGUSD", "US30", "NAS100", "JP225",
+          ]
+          STYLE = "aggressive"  # retest_fill_entries is a no-op for conservative
+          START = pd.Timestamp("2025-01-01", tz="UTC")
+          END = pd.Timestamp("2026-12-31T23:59:59", tz="UTC")
+
+          def run_all(retest_fill):
+              all_records = []
+              for instrument in INSTRUMENTS:
+                  try:
+                      records = run_backtest(
+                          instrument, STYLE, source="dukascopy",
+                          start_date=START, end_date=END,
+                          retest_fill_entries=retest_fill,
+                      )
+                  except Exception as exc:
+                      print(f"  [skip] {instrument}: {exc}")
+                      continue
+                  all_records.extend(records)
+              return all_records
+
+          print("Running WITHOUT retest_fill_entries (today's live behavior: instant fill at trigger)...")
+          baseline = run_all(False)
+          print("Running WITH retest_fill_entries=True (resting limit order, waits for a retest)...")
+          filtered = run_all(True)
+
+          base_stats = summarize(baseline)
+          filt_stats = summarize(filtered)
+
+          print()
+          print("=" * 78)
+          print(f"{'':30s} {'market order (today)':>22s} {'retest-fill limit':>22s}")
+          print(f"{'total trades':30s} {base_stats['total_trades']:>22d} {filt_stats['total_trades']:>22d}")
+          print(f"{'closed trades':30s} {base_stats['closed_trades']:>22d} {filt_stats['closed_trades']:>22d}")
+          print(f"{'wins':30s} {base_stats['wins']:>22d} {filt_stats['wins']:>22d}")
+          wr_b = f"{base_stats['win_rate']*100:.1f}%" if base_stats['win_rate'] is not None else "n/a"
+          wr_f = f"{filt_stats['win_rate']*100:.1f}%" if filt_stats['win_rate'] is not None else "n/a"
+          print(f"{'win rate':30s} {wr_b:>22s} {wr_f:>22s}")
+          print(f"{'total R':30s} {base_stats['total_r']:>22.1f} {filt_stats['total_r']:>22.1f}")
+          avg_b = f"{base_stats['avg_r']:.3f}" if base_stats['avg_r'] is not None else "n/a"
+          avg_f = f"{filt_stats['avg_r']:.3f}" if filt_stats['avg_r'] is not None else "n/a"
+          print(f"{'avg R per trade':30s} {avg_b:>22s} {avg_f:>22s}")
+          print("=" * 78)
+          print()
+          never_filled_pct = (
+              100 * (base_stats['total_trades'] - filt_stats['total_trades']) / base_stats['total_trades']
+              if base_stats['total_trades'] else 0
+          )
+          print(f"{base_stats['total_trades'] - filt_stats['total_trades']} of {base_stats['total_trades']} "
+                f"market-order trades ({never_filled_pct:.1f}%) would NEVER have filled as a resting "
+                f"limit order -- either price ran to the erosion threshold first, or the retest "
+                f"lookahead ran out.")
+          PYEOF
