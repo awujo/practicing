@@ -65,7 +65,8 @@ class ExecutionResult:
 class MT5Execution:
     def __init__(self, mt5_module, symbol_suffix: str = "", symbol_overrides: dict[str, str] | None = None,
                  max_slippage_points: float = 10, max_spread_points: float | None = None,
-                 max_retries: int = 3, retry_backoff_seconds: float = 1.0, magic_number: int = 20260101):
+                 max_retries: int = 3, retry_backoff_seconds: float = 1.0, magic_number: int = 20260101,
+                 recovery_check_settle_seconds: float = 2.0):
         self._mt5 = mt5_module
         self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
         self._max_slippage_points = max_slippage_points
@@ -73,6 +74,11 @@ class MT5Execution:
         self._max_retries = max_retries
         self._retry_backoff_seconds = retry_backoff_seconds
         self._magic_number = magic_number
+        # See _recover_landed_order()'s docstring -- confirmed live
+        # 2026-08-31, a duplicate EURCAD fill (x2) and EURNZD fill (x3)
+        # both slipped through partly because the "did it land?" check
+        # ran with no settle time at all.
+        self._recovery_check_settle_seconds = recovery_check_settle_seconds
 
     def broker_symbol(self, internal_symbol: str) -> str:
         return self._symbol_map.broker_symbol(internal_symbol)
@@ -229,15 +235,27 @@ class MT5Execution:
         return ExecutionResult(success=False, requested_price=entry_price,
                                 reason="exhausted retries", attempts=attempts)
 
-    def _our_open_tickets(self, symbol: str) -> set:
+    def _our_open_tickets(self, symbol: str) -> set | None:
         """Tickets of currently-open positions on `symbol` carrying this
-        bot's magic number. Returns an empty set if the query itself fails
-        -- callers treat "can't tell" as "don't claim it landed", which
-        errs toward reporting a failure rather than inventing a fill."""
+        bot's magic number. Returns None (NOT an empty set) if the query
+        itself fails.
+
+        Confirmed live 2026-08-31: this used to return an empty set on
+        failure, which made "the verification query broke" and "verified:
+        nothing landed" produce the identical signal to
+        _recover_landed_order() below. That's backwards for what this
+        exists to prevent -- the exact connectivity trouble that produces
+        an ambiguous TIMEOUT on order_send() is often ALSO what makes
+        positions_get() unreliable at that same moment, so the one check
+        meant to stop a duplicate went blind precisely when it mattered
+        and let the retry loop send a genuinely-duplicate order (an
+        EURCAD position filled twice, an EURNZD position filled three
+        times, both untracked and unmanaged by the risk manager). "Can't
+        tell" must mean "can't tell" to the caller, not "assume empty"."""
         try:
             positions = self._mt5.positions_get() or ()
         except Exception:
-            return set()
+            return None
         return {
             p.ticket for p in positions
             if getattr(p, "symbol", None) == symbol
@@ -251,9 +269,31 @@ class MT5Execution:
         confirmation was simply lost -- report it as the success it
         actually is, so the caller tracks it and the risk manager sees it.
 
-        Returns an ExecutionResult when a landed order is found, else
-        None (safe to retry)."""
-        landed = self._our_open_tickets(symbol) - tickets_before
+        Sleeps _recovery_check_settle_seconds before checking: a fill can
+        be real but not yet reflected in positions_get() immediately
+        after an ambiguous failure, and checking too fast is itself part
+        of what let a duplicate order through live (see this module's
+        2026-08-31 comments).
+
+        Returns an ExecutionResult (terminal -- caller must NOT retry
+        further) in two cases: a landed order was found, or the
+        verification query itself failed and returning None here would
+        wrongly be read as "confirmed nothing landed, safe to retry" --
+        see _our_open_tickets()'s docstring for why that particular
+        conflation is exactly what caused the live duplicates. Returns
+        None only when verification genuinely succeeded and found
+        nothing -- the one case where a retry is actually safe."""
+        time.sleep(self._recovery_check_settle_seconds)
+        current = self._our_open_tickets(symbol)
+        if current is None:
+            return ExecutionResult(
+                success=False, requested_price=entry_price,
+                reason=f"{failure}; could NOT verify whether a position landed (positions_get() itself "
+                       f"failed) -- refusing to retry blind, since that is exactly how a real duplicate "
+                       f"fill happens. MANUAL RECONCILIATION REQUIRED: check the account for an "
+                       f"unexpected {symbol} position before this signal is attempted again.",
+                attempts=attempts)
+        landed = current - tickets_before
         if not landed:
             return None
         ticket = sorted(landed)[0]

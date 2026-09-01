@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from .fake_mt5 import FakeMT5, make_position, make_symbol_info
+from .. import mt5_execution as mt5_execution_module
 from ..mt5_execution import MT5Execution, ValidationError
 
 
@@ -166,7 +167,7 @@ def test_place_market_order_fails_immediately_on_a_non_retryable_retcode():
     fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
     fake.order_send_queue = [SimpleNamespace(retcode=fake.TRADE_RETCODE_NO_MONEY, order=0,
                                               price=0, comment="not enough money")]
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert result.success is False
     assert result.retcode_name == "TRADE_RETCODE_NO_MONEY"
@@ -180,7 +181,7 @@ def test_place_market_order_retries_a_requote_and_then_succeeds():
         SimpleNamespace(retcode=fake.TRADE_RETCODE_REQUOTE, order=0, price=0, comment="requote"),
         SimpleNamespace(retcode=fake.TRADE_RETCODE_DONE, order=3003, price=1.17374, comment="ok"),
     ]
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert result.success is True
     assert result.attempts == 2
@@ -195,7 +196,7 @@ def test_place_market_order_gives_up_after_max_retries_of_transient_failures():
         SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0, comment="timeout"),
         SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0, comment="timeout"),
     ]
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert result.success is False
     assert result.attempts == 3
@@ -215,7 +216,7 @@ def test_place_market_order_retries_when_order_send_returns_none():
         return real_send(request)
 
     fake.order_send = flaky_send
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
     assert result.success is True
     assert result.attempts == 2
@@ -303,7 +304,7 @@ def test_a_connection_failure_whose_order_actually_landed_is_not_retried():
         return fake.order_send_queue.pop(0)
 
     fake.order_send = fill_after_send
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
     assert len(fake.order_send_calls) == 1, "must NOT re-send an order that already landed"
@@ -323,7 +324,7 @@ def test_a_connection_failure_that_truly_failed_is_still_retried():
         _connection_failure(fake),
         SimpleNamespace(retcode=fake.TRADE_RETCODE_DONE, order=9002, price=1.61707, comment="ok"),
     ]
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
     assert len(fake.order_send_calls) == 2
@@ -339,7 +340,7 @@ def test_a_pre_existing_position_on_the_same_symbol_is_not_mistaken_for_our_fill
     fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
     fake.positions = [make_position(7777, "EURCAD", 1.60000, 1.59900, 1.0)]
     fake.order_send_queue = [_connection_failure(fake)] * 3
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
     assert result.success is False
@@ -360,7 +361,7 @@ def test_a_position_from_another_bot_is_not_adopted():
         return fake.order_send_queue.pop(0)
 
     fake.order_send = foreign_position_appears
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
     assert result.success is False
@@ -374,8 +375,67 @@ def test_a_definitive_rejection_is_never_probed_or_retried():
     fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
     fake.order_send_queue = [SimpleNamespace(retcode=fake.TRADE_RETCODE_NO_MONEY, order=0,
                                               price=0, comment="no money")]
-    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
     assert result.success is False
     assert len(fake.order_send_calls) == 1
+
+
+# ---- confirmed live 2026-08-31: a duplicate EURCAD fill (x2) and an
+# EURNZD fill (x3, all within the same second) both slipped through this
+# retry loop after an ambiguous TIMEOUT. Root cause: _our_open_tickets()
+# returned an empty set both when it genuinely found nothing AND when
+# positions_get() itself failed -- the exact connectivity trouble that
+# produces a TIMEOUT often also makes positions_get() unreliable at that
+# same moment, so the "did it land?" check went blind precisely when it
+# mattered and let the loop retry (and re-fill) a request that had
+# already gone through.
+
+def test_when_positions_get_itself_fails_the_order_is_not_retried_blind():
+    # Retrying here is exactly how the live duplicates happened: the
+    # order may well have landed, we just couldn't verify it -- the only
+    # safe thing to do is stop and demand a human look, not guess again.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [_connection_failure(fake)]
+
+    def positions_get_broken():
+        raise RuntimeError("terminal unreachable")
+
+    fake.positions_get = positions_get_broken
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert result.success is False
+    assert len(fake.order_send_calls) == 1, "must NOT retry when it cannot verify whether the first attempt landed"
+    assert "could NOT verify" in result.reason
+    assert "MANUAL RECONCILIATION" in result.reason
+
+
+def test_a_fill_that_only_appears_after_the_settle_delay_is_recovered_not_retried(monkeypatch):
+    # Confirmed live: a fill can be real but not yet reflected in
+    # positions_get() the instant an ambiguous failure comes back --
+    # checking too fast is itself part of what let a duplicate through.
+    # Simulates the broker's position list catching up DURING the settle
+    # sleep, so the check right after it must see the real fill instead
+    # of concluding nothing landed and retrying into a duplicate.
+    fake = FakeMT5()
+    fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [_connection_failure(fake)]
+    fake.positions = []  # nothing visible yet the instant the ambiguous failure returns
+
+    slept = []
+
+    def fake_sleep(seconds):
+        slept.append(seconds)
+        fake.positions = [make_position(9009, "EURCAD", 1.61707, 1.61562, 10.05)]
+
+    monkeypatch.setattr(mt5_execution_module.time, "sleep", fake_sleep)
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=5)
+    result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
+
+    assert slept == [5], "the settle delay must actually be waited out, not skipped"
+    assert len(fake.order_send_calls) == 1, "must NOT retry -- the settle delay is what revealed the real fill"
+    assert result.success is True
+    assert result.ticket == 9009

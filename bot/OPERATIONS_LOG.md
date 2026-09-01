@@ -1145,6 +1145,75 @@ script**: never round-trip through `pd.read_csv(parse_dates=...)` +
 reuse `cache.py`'s own row-building convention directly instead of
 letting pandas pick a default format.
 
+## 2026-09-01 -- CRITICAL: confirmed live duplicate order fills, root-caused and fixed
+
+Direct report with MT5 mobile screenshots as evidence: EURCAD filled
+TWICE (tickets #10279010232, #10279098481 -- same direction, same
+13.48 lots, same SL 1.61140/TP 1.60728, opened 3 minutes apart on
+2026-08-31) and EURNZD filled THREE times (same 5.79 lots, all at
+2026-09-01 11:33:01 -- the same second). Both this codebase's own
+comments from an earlier 2026-08-26 incident (three duplicate EURCAD
+fills after a TRADE_RETCODE_CONNECTION) and this one share the same
+shape: an ambiguous send failure (CONNECTION or TIMEOUT), a retry that
+should have been blocked by `_recover_landed_order()`'s "did it
+already land?" check, and a real duplicate fill anyway. None of these
+positions were ever in `tracked_positions`, so the risk manager was
+blind to roughly double-to-triple the intended $1,000 risk on each.
+
+Root cause, in `mt5_execution.py`: `_our_open_tickets()` returned an
+EMPTY SET both when `positions_get()` genuinely found nothing AND when
+the query itself raised an exception. The exact connectivity trouble
+that produces an ambiguous TIMEOUT on `order_send()` is often ALSO
+what makes `positions_get()` unreliable at that same moment (this
+session's logs show repeated "Terminal: Authorization failed"
+reconnect storms right around these incidents) -- so the one check
+meant to prevent a duplicate went blind precisely when it was needed
+most, and the retry loop proceeded as if "confirmed nothing landed"
+when the truth was "couldn't tell." A second, independent gap: the
+check ran with NO settle delay at all immediately after the ambiguous
+failure, racing a fill that can be real but not yet reflected in
+`positions_get()`.
+
+**Fixed**: `_our_open_tickets()` now returns `None` (not an empty set)
+when the query fails, and `_recover_landed_order()` treats that as a
+TERMINAL failure -- stop immediately, do not retry, and say so loudly:
+"could NOT verify whether a position landed ... MANUAL RECONCILIATION
+REQUIRED". A retry is only ever attempted when verification genuinely
+succeeded and found nothing. Also added a 2-second settle delay
+(`recovery_check_settle_seconds`, configurable) before the check runs,
+so a fill that's real but momentarily invisible gets a fair chance to
+show up before the code concludes otherwise. Three new tests: a
+`positions_get()` failure refuses to retry, a fill that only appears
+after the settle delay is recovered (not duplicated), and the existing
+idempotency tests updated to keep running instantly (settle delay set
+to 0 in tests, same pattern as `retry_backoff_seconds`). 196 tests
+pass.
+
+**NOT yet done, and important**: this fix prevents FUTURE duplicates.
+It does NOT retroactively fix the two EURCAD positions already open
+and untracked on the conservative account (#10279010232,
+#10279098481) -- those still need a human decision (close one,
+manually reconcile both into the audit log, or leave them and just
+make sure the risk manager's live exposure math accounts for them).
+The EURNZD triplicate has already closed (profitably, by luck --
++$1,895 combined) so nothing to reconcile there beyond noting it in
+the account's history.
+
+Also reported alongside this: (1) risk sometimes appearing to exceed
+$1,000 per trade -- largely explained by this exact bug (the "same"
+$1,000-risk trade landing 2-3 times looks like 2-3x risk because it
+IS), worth re-checking after this fix whether any TRUE single-trade
+oversizing remains; (2) the GitHub Action backtest finding more
+signals than were executed live -- plausible given how many reconnect
+storms are visible in the same logs (a real-time signal missed or
+correctly declined-as-stale during an outage has no backtest
+equivalent, since the offline run never experiences an outage). Both
+lower priority than the duplicate-fill fix; worth a dedicated look
+later if they persist once this deploys.
+
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the
+VPS** -- this is the highest-priority deploy of the day.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
