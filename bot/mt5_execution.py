@@ -74,6 +74,8 @@ class ValidationError(Enum):
     LOT_BELOW_MINIMUM = "lot_below_minimum"
     STOP_TOO_CLOSE = "stop_too_close"
     SPREAD_TOO_WIDE = "spread_too_wide"
+    ENTRY_PRICE_DRIFTED = "entry_price_drifted"
+    PRICE_UNAVAILABLE = "price_unavailable"
 
 
 @dataclass(frozen=True)
@@ -101,7 +103,8 @@ class MT5Execution:
     def __init__(self, mt5_module, symbol_suffix: str = "", symbol_overrides: dict[str, str] | None = None,
                  max_slippage_points: float = 10, max_spread_points: float | None = None,
                  max_retries: int = 3, retry_backoff_seconds: float = 1.0, magic_number: int = 20260101,
-                 recovery_check_settle_seconds: float = 2.0):
+                 recovery_check_settle_seconds: float = 2.0,
+                 max_entry_drift_fraction: float | None = None):
         self._mt5 = mt5_module
         self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
         self._max_slippage_points = max_slippage_points
@@ -114,6 +117,33 @@ class MT5Execution:
         # both slipped through partly because the "did it land?" check
         # ran with no settle time at all.
         self._recovery_check_settle_seconds = recovery_check_settle_seconds
+        # How far the live market may sit from the entry price this trade's
+        # stop/target were computed against, as a fraction of the intended
+        # stop distance, before the trade is declined instead of sent.
+        #
+        # Confirmed live 2026-09-01 (CHFJPY): a 17:00 signal computed
+        # entry 197.8515 / stop 198.101 (a 0.25 stop distance) and was
+        # still sent at 18:58, by which time price had moved ~50 pips to
+        # ~197.34. Under Market Execution the `price` field is ignored and
+        # the order fills at market, but sl/tp go to the broker exactly as
+        # computed -- so it filled 2x the whole stop distance away from
+        # its own entry, leaving risk ~0.76 against reward ~0.23: an
+        # inverted R:R the strategy never intended and the backtest never
+        # modelled. STALE_ENTRY_CUTOFF (3h, orchestrator.py) is far too
+        # loose to catch this on its own, and time is the wrong unit
+        # anyway -- what actually matters is whether price has moved
+        # enough to invalidate the stop that was sized for it.
+        #
+        # None (default) disables the check entirely, matching
+        # max_spread_points above: opt-in at the wiring site
+        # (run_live.py), so every existing caller and test keeps its
+        # previous behavior rather than silently gaining a new decline
+        # path. It is deliberately FAIL-CLOSED once enabled -- if the
+        # live price can't be read at all the trade is declined, since
+        # "couldn't check" must not read as "checked, all clear" (this
+        # codebase already has one scar from exactly that conflation --
+        # see _our_open_tickets()'s docstring).
+        self._max_entry_drift_fraction = max_entry_drift_fraction
 
     def broker_symbol(self, internal_symbol: str) -> str:
         return self._symbol_map.broker_symbol(internal_symbol)
@@ -170,7 +200,65 @@ class MT5Execution:
                            f"-- likely news/thin liquidity, skipping rather than paying it",
                 )
 
+        # Entry-drift guard -- see _max_entry_drift_fraction's comment for
+        # the live incident this exists to prevent.
+        if self._max_entry_drift_fraction is not None:
+            current = self._current_mid_price(symbol, info)
+            if current is None:
+                # Fail CLOSED. Not being able to see the market is exactly
+                # when sending a market order with a precomputed stop is
+                # least safe, and this codebase already has one scar from
+                # treating "couldn't check" as "checked, all clear" (see
+                # _our_open_tickets()'s docstring).
+                return ValidationResult(
+                    ok=False, error=ValidationError.PRICE_UNAVAILABLE,
+                    reason=f"no current bid/ask available for {symbol} (symbol_info_tick and symbol_info "
+                           f"both gave nothing usable) -- cannot confirm the market is still near the "
+                           f"{entry_price:g} this trade's stop was sized against, so declining rather "
+                           f"than sending blind",
+                )
+            drift = abs(current - entry_price)
+            limit = points * self._max_entry_drift_fraction
+            if drift > limit:
+                return ValidationResult(
+                    ok=False, error=ValidationError.ENTRY_PRICE_DRIFTED,
+                    reason=f"{symbol} is at {current:g}, {drift:g} away from this signal's {entry_price:g} "
+                           f"entry -- more than {self._max_entry_drift_fraction:.0%} of its {points:g} stop "
+                           f"distance (limit {limit:g}). A market order would fill here while the "
+                           f"stop/target still go out sized for {entry_price:g}, so the trade would carry "
+                           f"a risk:reward it was never validated at. Declining instead.",
+                )
+
         return ValidationResult(ok=True, lot_size=lots)
+
+    def _current_mid_price(self, symbol: str, info) -> float | None:
+        """Live mid price, or None if the broker gives nothing usable.
+
+        Mid rather than the side-specific bid/ask because the drift this
+        guards against is measured in fractions of a stop distance --
+        orders of magnitude wider than any spread -- and the caller
+        (`compute_lot_size`) doesn't take a direction. `symbol_info_tick`
+        is the canonical source; `symbol_info`'s own bid/ask is the
+        fallback for bridges that don't expose the tick call."""
+        for bid, ask in self._price_sources(symbol, info):
+            if bid and ask and bid > 0 and ask > 0:
+                return (bid + ask) / 2
+            for single in (bid, ask):
+                if single and single > 0:
+                    return single
+        return None
+
+    def _price_sources(self, symbol: str, info):
+        tick = None
+        getter = getattr(self._mt5, "symbol_info_tick", None)
+        if getter is not None:
+            try:
+                tick = getter(symbol)
+            except Exception:
+                tick = None
+        if tick is not None:
+            yield getattr(tick, "bid", None), getattr(tick, "ask", None)
+        yield getattr(info, "bid", None), getattr(info, "ask", None)
 
     def place_market_order(self, internal_symbol: str, direction: str, lot_size: float,
                             entry_price: float, stop_loss: float, target_price: float) -> ExecutionResult:

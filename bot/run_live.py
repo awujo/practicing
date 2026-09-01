@@ -154,7 +154,21 @@ def main():
     mt5_client.connect()
     logger.info("connected to MT5 (%s @ %s)", creds.login, creds.server)
 
-    mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides)
+    # max_entry_drift_fraction: decline a signal whose entry price the
+    # market has already moved more than 25% of the stop distance away
+    # from -- see MT5Execution.__init__'s comment for the 2026-09-01
+    # CHFJPY fill that motivated it (filled ~2x its own stop distance
+    # from the entry its stop was sized against, giving an inverted
+    # risk:reward the strategy never intended).
+    #
+    # FAIL-CLOSED: if the live bid/ask can't be read the trade is
+    # declined, logged as decline_sizing_price_unavailable. If that
+    # reason starts appearing for EVERY instrument right after a deploy,
+    # this broker/bridge isn't exposing prices the way expected -- pass
+    # max_entry_drift_fraction=None here to turn the guard back off
+    # rather than letting the bot sit idle.
+    mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides,
+                             max_entry_drift_fraction=0.25)
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 

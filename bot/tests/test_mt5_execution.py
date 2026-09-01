@@ -488,3 +488,98 @@ def test_a_fill_that_only_appears_after_the_settle_delay_is_recovered_not_retrie
     assert len(fake.order_send_calls) == 1, "must NOT retry -- the settle delay is what revealed the real fill"
     assert result.success is True
     assert result.ticket == 9009
+
+
+# ---- entry-drift guard (max_entry_drift_fraction) ----
+#
+# Confirmed live 2026-09-01 (CHFJPY): a 17:00 signal computing entry
+# 197.8515 / stop 198.101 was still sent at 18:58, filling ~197.34 --
+# about 2x its own stop distance away -- while sl/tp went to the broker
+# sized for 197.8515. Result: risk ~0.76 vs reward ~0.23, an inverted
+# R:R the strategy never intended. Opt-in (None by default), matching
+# max_spread_points; wired on at 0.25 in run_live.py.
+
+def _info_with_price(bid, ask, **kwargs):
+    info = make_symbol_info(**kwargs)
+    info.bid = bid
+    info.ask = ask
+    return info
+
+
+def test_entry_drift_guard_is_off_unless_configured():
+    # Default None must not introduce a new decline path for callers that
+    # never asked for it -- the market here is miles from the entry.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.20000, 1.20002)
+    ex = make_exec(fake)
+    assert ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290).ok is True
+
+
+def test_entry_drift_guard_allows_a_market_still_near_the_computed_entry():
+    # Stop distance 0.00084; drift limit at 25% is 0.00021. Market is
+    # 0.00010 away -- comfortably inside.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.17383, 1.17385)
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    assert ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290).ok is True
+
+
+def test_entry_drift_guard_declines_once_price_has_moved_too_far():
+    # Same 0.00084 stop distance, but the market has moved 0.00050 away --
+    # past the 0.00021 limit. A market order would fill here carrying a
+    # stop sized for 1.17374.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.17423, 1.17425)
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290)
+    assert result.ok is False
+    assert result.error is ValidationError.ENTRY_PRICE_DRIFTED
+
+
+def test_entry_drift_guard_reproduces_the_chfjpy_incident():
+    # The real numbers: entry 197.8515, stop 198.101 (distance 0.2495),
+    # market already down at ~197.34 by send time (drift ~0.51, over 2x
+    # the whole stop distance). This must never be sent.
+    fake = FakeMT5()
+    fake.symbols["CHFJPY"] = _info_with_price(197.336, 197.340,
+                                               trade_tick_size=0.001, point=0.001, digits=3)
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    result = ex.compute_lot_size("CHFJPY", 1000.0, 197.8515, 198.101)
+    assert result.ok is False
+    assert result.error is ValidationError.ENTRY_PRICE_DRIFTED
+
+
+def test_entry_drift_guard_prefers_symbol_info_tick_over_symbol_info():
+    # symbol_info carries a stale price; the tick call is the live one and
+    # must win. Here the tick says we're still near the entry.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.19000, 1.19002)  # stale/wrong
+    fake.symbol_info_tick = lambda symbol: SimpleNamespace(bid=1.17373, ask=1.17375)
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    assert ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290).ok is True
+
+
+def test_entry_drift_guard_fails_closed_when_no_price_is_available():
+    # "Couldn't check" must not read as "checked, all clear" -- the same
+    # conflation that caused the live duplicate fills via
+    # _our_open_tickets(). No bid/ask anywhere => decline.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()  # no bid/ask attributes at all
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290)
+    assert result.ok is False
+    assert result.error is ValidationError.PRICE_UNAVAILABLE
+
+
+def test_entry_drift_guard_survives_a_throwing_symbol_info_tick():
+    # A bridge that raises on symbol_info_tick must fall back to
+    # symbol_info rather than taking the whole entry path down.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.17373, 1.17375)
+
+    def boom(symbol):
+        raise RuntimeError("bridge lost the connection")
+
+    fake.symbol_info_tick = boom
+    ex = make_exec(fake, max_entry_drift_fraction=0.25)
+    assert ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290).ok is True
