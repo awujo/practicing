@@ -1413,6 +1413,94 @@ VPS.** Worth watching `bot/reconcile_signals.py`'s next few runs to see
 how much of the original gap is now closed vs. still attributable to
 cause 2.
 
+## 2026-09-01 -- queued for after exams: rework entries as limit orders with a retest fill, not market orders at signal time
+
+Direct user correction: SLK entries are conceptually limit orders resting
+at a specific level, waiting for a retest -- not market orders fired the
+instant a trigger confirms. User's own trading, and "bishops"
+(mentors/community this strategy is transcribed from), hardly use market
+orders at all. This matches something already half-true in the code:
+`entries.py`'s `aggressive_entry_price()` already returns the KEY
+LEVEL's price, not the trigger candle's close -- but nothing anywhere
+(backtest OR live) ever treats that as a real resting order. The
+backtest assumes an instant fill at `entry_price` the moment the trigger
+fires, with no check that price ever actually revisits it and no concept
+of the setup expiring unfilled. Live, both entry styles go through
+`place_market_order()` (`TRADE_ACTION_DEAL`) regardless -- there is zero
+limit-order code anywhere in `bot/mt5_execution.py`.
+
+**Per-trigger definitions, as given directly by the user (2026-09-01
+voice message) and cross-checked against the existing code:**
+
+- **Break-and-retake (breakout)** -- not currently a distinct trigger.
+  `entries.py`'s own module docstring already flags this gap:
+  "breakout-as-entry (NOT YET WIRED as its own detected trigger in
+  runner.py)", with a stop-loss formula already drafted and unused
+  (`breakout_leg_stop_loss()` -- anchored to the low/high of the WHOLE
+  LEG that produced the breakout, not just the breakout candle). The
+  trigger: an A/V-shape key level exists; a candle CLOSES beyond it
+  (the break, on a close/line-chart basis, matching this engine's
+  existing close-based-breakout convention); then wait for price to
+  come back and retest THAT SAME A/V level; enter there via a resting
+  limit order. Two-stage: confirmation = the close-based break, fill =
+  the later retest of the original level.
+- **Engulfing** -- entry is NOT at the engulfing candle's own close
+  (which is what `conservative_entry_price()` currently uses, and
+  roughly what aggressive's `classification.reference_level` also
+  tends to track for this trigger). Two consecutive same-direction
+  candles (e.g. both bearish) form an "open_close" key level between
+  the first candle's close and the second candle's open -- exactly
+  `key_levels.py`'s existing `detect_open_close_level()` (two
+  consecutive same-direction candles' overlapping open/close range,
+  level = the overlap midpoint). A third candle then closes back
+  through both of them, engulfing them -- that's the confirmation. The
+  entry itself is a limit order resting at that open_close level,
+  filled whenever a later candle (4th, 5th, "depending on the case")
+  actually retests it.
+- **4th-man confirmation** -- tentatively already correct as-is.
+  `fourth_man_confirmation_level()`'s V/A-shape price is already the
+  reclaim candle's (`curr`'s) own close -- so `aggressive_entry_price()`
+  for this trigger already computes the right number. What's still
+  missing is treating it as an actual resting limit order rather than
+  an instant fill assumption. Needs a direct "yes that's right" from
+  the user before assuming it, same as the other two.
+
+**Cancellation rule -- NOT a simple time/candle-count expiry.** Direct
+instruction: cancel the resting limit order once price has moved,
+without ever filling it, roughly 80% of the way toward what the
+trade's own target would have been. Reasoning given directly: once
+that much of the move has already happened without a fill, the reward
+left even if it retraces and fills late is too small relative to the
+risk to be worth taking -- continuing to leave the order resting past
+that point risks a genuinely bad late entry instead of protecting a
+good one. This needs to be measured against the SAME target computation
+`run_backtest()` already produces (`primary_target()`, ERL-capped) for
+the setup, not a separate number.
+
+**Requested validation, once built:** an A/B backtest of this
+retest-based limit-order model against the existing instant-fill
+market-order model, using the same GitHub Actions workflow-dispatch
+pattern used today for `avoid_rollover_entries` and `min_reward_r`
+(temporary `.github/workflows/compare-*.yml`, deleted after results are
+captured) -- compare before trusting either as the new normal, exact
+same bar as every other change made this session.
+
+**Why this is queued, not built now:** this is not a small change. It
+needs (a) new fill-simulation logic inside `run_backtest()` that scans
+forward from each trigger for either a genuine retest touch or the
+80%-of-target cancellation condition, and treats "never filled" as its
+own outcome (not a loss -- no trade happened at all), (b) real pending-
+order lifecycle in live execution (`TRADE_ACTION_PENDING` +
+`ORDER_TYPE_BUY_LIMIT`/`SELL_LIMIT` to place, a poll loop to detect a
+fill vs. the cancellation condition, `TRADE_ACTION_REMOVE` to cancel),
+and (c) full A/B validation before it should ever touch live money --
+realistically hours of work plus a monitored deploy. Direct instruction
+2026-09-01: queue it here fully scoped rather than build and deploy it
+unvalidated right as the user goes offline for several weeks (exams,
+Claude subscription lapsing) with no one able to catch a subtle bug in
+core entry/execution logic. The live bot keeps running today's
+validated market-order approach unchanged until this is picked back up.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
