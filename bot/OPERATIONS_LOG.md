@@ -1511,23 +1511,44 @@ style this is meaningful for -- conservative's entry_price is already
 the confirmation candle's own close, no level to retest), market-order
 instant-fill (today's live behavior) vs. resting-limit retest-fill.
 
+First run surfaced a real gap: `_resolve_trade_outcome`'s scan started
+at `entry_idx + 1`, so a retest-fill candle that ALSO crossed
+`stop_loss` within the SAME bar it filled on (a wide pullback candle
+that fills the resting order and keeps falling through the stop before
+closing) was silently treated as still open instead of an immediate
+loss. Direct instruction 2026-09-01 to fix this and re-run rather than
+leave it as a disclosed caveat. Fixed by including the fill candle
+itself in the outcome scan whenever the fill happened on a genuinely
+later candle than the trigger -- `_resolve_trade_outcome`'s existing
+"stop wins same-candle ties" rule handles the rest, no new tie-break
+logic needed; unchanged for the default instant-fill path, which must
+not be touched.
+
+**The fix made the result WORSE, not better** -- it was hiding real
+losses, so the first run's numbers were actually flattering this model.
+Corrected numbers (2nd run, after the fix):
+
 ```
                                  market order (today)      retest-fill limit
 total trades                                     1398                    767
 closed trades                                    1398                    767
-wins                                              840                    284
-win rate                                        60.1%                  37.0%
-total R                                        1923.0                  336.1
-avg R per trade                                 1.376                  0.438
+wins                                              840                    222
+win rate                                        60.1%                  28.9%
+total R                                        1923.0                   88.1
+avg R per trade                                 1.376                  0.115
 ```
+
+(First run, before the fix, for reference: wins 284, win rate 37.0%,
+total R 336.1, avg R 0.438 -- all overstated because same-candle
+stop-outs on the fill candle were going uncounted.)
 
 631 of 1398 (45.1%) of today's trades would NEVER have filled as a
 resting limit order at all -- either price ran 80% of the way to target
 first (RETEST_TARGET_EROSION_PCT) or the retest never came within
 RETEST_FILL_LOOKAHEAD (120 H1 candles). Of the 767 that DID fill, the
-average quality is ALSO much worse (0.438R vs. 1.376R) -- this isn't
-just "fewer trades of the same quality," both the quantity AND the
-per-trade quality collapsed.
+average quality is now barely above breakeven (0.115R vs. 1.376R) --
+both the quantity AND the per-trade quality collapsed, and the fix
+removed what little cushion the first run showed.
 
 **Why, most likely:** waiting for a retest doesn't just get a better
 price on the same set of trades -- it changes WHICH trades qualify at
@@ -1537,26 +1558,17 @@ level, so it's excluded from this sample entirely, even though it would
 have been a live winner today. A trade that DOES come back and retest
 is, by that same fact, showing hesitation/weakness right after its own
 trigger -- and that hesitation correlates with going on to fail more
-often, not less. The entry-price improvement from waiting for the
+often, not less (including, per the fix above, failing WITHIN the same
+candle that fills it). The entry-price improvement from waiting for the
 retest is real but small next to the sample-composition effect: this
 selects AWAY from the strongest movers and TOWARD the shakier ones.
-
-**One disclosed limitation, not fixed:** `_first_retest_fill()` doesn't
-check whether the SAME candle that fills the entry also blows through
-`stop_loss` in the same bar (both can happen intrabar; this is a
-bar-close backtest with no intrabar ordering, same caveat as other
-same-candle ambiguities already accepted elsewhere in this engine --
-see the function's own docstring). Narrow case (needs one bar's range
-to span from above entry down past stop), and the outcome scan starting
-at `entry_idx + 1` means such a candle's own stop-touch wouldn't be
-counted either way -- doesn't change the overall magnitude of the
-result above.
 
 **Recommendation: don't build the live pending-order mechanics
 (TRADE_ACTION_PENDING placement, fill/cancel polling) queued in the
 entry above.** The premise driving that request -- that resting limit
 orders would perform better than market orders -- is directly
-contradicted by this backtest, by a wide margin on every metric. Worth
+contradicted by this backtest, by a wide margin on every metric, and
+the margin only got wider once the implementation was corrected. Worth
 revisiting only if the per-trigger price definitions turn out to be
 wrong in a way that specifically explains the win-rate collapse (e.g.
 if "engulfing" should retest a different level than
@@ -1566,8 +1578,8 @@ by tuning RETEST_TARGET_EROSION_PCT/RETEST_FILL_LOOKAHEAD in isolation.
 The code (`retest_fill_entries` flag, `_first_retest_fill()`, full test
 coverage) stays in `runner.py` either way -- it's backtest-only and
 harmless at the default (`False`), so there's no reason to rip it out,
-just don't build on top of it without addressing why win rate more than
-halved first.
+just don't build on top of it without addressing why win rate collapsed
+first.
 
 ## Open / worth re-checking
 
