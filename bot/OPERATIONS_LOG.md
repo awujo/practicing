@@ -1859,6 +1859,78 @@ this up:
 3. A/B both changes together -- they interact, and moving one without
    the other is what makes this look like a threshold problem.
 
+### CORRECTION, same night -- the framing above is wrong, and so were two of its numbers
+
+Direct user correction, and it supersedes the framing of everything
+above it. Recorded rather than edited away, because the wrong version is
+the more instructive one.
+
+**"CHFJPY was more than 30 pips."** Correct, and the reason it looked
+otherwise is itself a defect. CHFJPY's pip is 0.01 (`DEFAULT_PIP_SIZES`),
+so:
+- computed entry 197.8515 -> stop 198.101 = 0.2495 = **24.95 pips**
+- ACTUAL fill ~197.336 -> stop 198.101 = 0.765 = **76.5 pips**
+
+The trade never opened at 197.8515. `_natural_stop_too_wide(entry_price,
+natural, pip_size)` is evaluated against the COMPUTED entry, so it
+measured 24.95, passed it under the 30 gate, and the live position then
+carried 76.5. **The width check is measured against a price the position
+may never open at** -- a third defect, distinct from the two fixed
+tonight. (The entry-drift guard shipped tonight, `9049e57`, now declines
+fills that land that far from the computed entry, so this specific gap is
+incidentally closed on the live path -- but the check itself is still
+measuring the wrong reference and would mislead again the moment the
+drift guard is loosened or bypassed.)
+
+**"All pairs don't have the same volatility rate."** Also correct.
+`MAX_NATURAL_STOP_PIPS = 30` is one constant applied across every
+instrument. Against the real pip table that is 0.0030 on EURUSD (~0.26%
+of price), 0.30 on CHFJPY (~0.15%), 3.0 on XAUUSD (~0.07%), 30 points on
+US30 (~0.07%) -- a ~4x spread in relative terms before differing
+volatility is even considered. It is not a meaningful limit on any of
+them, and normalising it (by ATR, by percent-of-price) would still be
+the wrong fix -- see below.
+
+**The core correction -- "in SLK it isn't about the pips on the SL."**
+Direct quote: *"if you really understand SLK and where your immediate
+invalidation point is your SL will not even be wide, that's the truth.
+So if the bot is using wide SL it means it hasn't understood the
+process."*
+
+That invalidates the whole direction the entry above was heading in.
+Points 1-3 treat this as "pick a better fallback, then retune the
+threshold." But a stop is not a number to be capped -- it FOLLOWS from
+correctly identifying the immediate invalidation point. A stop that
+comes out wide is a SYMPTOM that the anchor is wrong, not a value to be
+clamped. `_natural_stop_too_wide()` -> substitute-a-different-rule is
+precisely a band-aid over a misidentified invalidation point: it makes
+a bad anchor produce a plausible-looking number instead of surfacing
+that the anchor was bad.
+
+The unexplained detail from the entry above now has a likely
+explanation: the CHFJPY stop anchored at **198.101** while all of 1 Sep
+traded in the 197.1-197.7 band. That is not a tight stop gone slightly
+wide. That is an anchor pointing at something with no relationship to
+the setup -- `engulfing_stop_loss()` takes the more extreme of the
+engulfing/engulfed candle wicks, so the engine believes one of those two
+candles has a high near 198.09. Either the candle pair being matched is
+not the one the setup is actually about, or the reaction level driving
+it is stale/distant.
+
+**So the real question is not "what should MAX_NATURAL_STOP_PIPS be" but
+"why is the anchor landing 40+ pips away from the price action the setup
+is built on."** Threshold work, fallback work, and ATR-normalisation are
+all downstream of that and should not be attempted first -- any of them
+would make the numbers look more reasonable while leaving a
+misidentified invalidation point in place, which is a worse failure than
+an obviously-wrong stop, because it stops being obvious.
+
+Start here instead: take the CHFJPY 17:00 signal, pull the actual H1
+candles the engine matched as the engulfing pair (and the H4 reaction
+level it used), and check them against where price genuinely was. That
+tells you whether this is bad cached data, wrong candle pairing, or a
+stale reaction level -- and only then is it worth touching any rule.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
