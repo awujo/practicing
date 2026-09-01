@@ -1713,6 +1713,89 @@ supposed to decline a signal this old outright rather than let it
 execute -- worth checking directly whether it was bypassed, not just
 whether it exists.
 
+## 2026-09-01, later -- CHFJPY incident ROOT-CAUSED and fixed (two defects, both in mt5_execution.py)
+
+Resolves the two entries above. The breakthrough was a detail in the
+user's own screenshot that earlier passes had skimmed past: **all three
+positions were 6.42 lots.** Identical. Three independent evaluations
+would have produced three different lot sizes (the Telegram logs show
+$500 and $1,000 risk on different attempts -- neither can yield the same
+volume as the other). Identical volume means ONE computation sent
+repeatedly. That killed the "multiple processes" theory (independently
+disproven: `docker exec mt5 ps aux | grep run_live | wc -l` returned
+exactly 2, the correct count) and pointed straight at the retry loop.
+
+**Defect A -- ambiguous sends were blind-retried (fixed, `df55dc3`).**
+`RETRYABLE_RETCODE_NAMES` conflated two categorically different
+failures:
+- REJECTED (`REQUOTE`/`PRICE_CHANGED`/`PRICE_OFF`) -- the broker
+  answered and refused. Nothing landed; re-sending is safe.
+- AMBIGUOUS (`TIMEOUT`/`CONNECTION`, or `order_send()` returning None)
+  -- no answer came back at all. The order may have filled with the
+  confirmation lost.
+
+`_recover_landed_order()` was supposed to make retrying the ambiguous
+case safe by asking the broker whether a position appeared -- but it
+queries over the SAME link whose failure caused the ambiguity, so under
+exactly the conditions that matter it under-reads. Live trace: three
+`order_send` calls each timed out, each actually filled (197.336 /
+197.360 / 197.328), each recovery check came back empty inside its 2.0s
+settle window, the loop ran to `max_retries=3` (three retries, three
+positions -- the numbers match exactly) and returned "confirmed no
+position was opened," which is verbatim what the 18:58 Telegram message
+said. The bot tracked none of them, so the risk manager was blind to all
+three and nothing managed their exits.
+
+Fix: ambiguity is now terminal. Verify once (still adopting the position
+when the check DOES find it), then stop either way; only REJECTED sends
+loop. This deliberately gives up genuinely-transient failures where
+nothing landed -- `test_a_connection_failure_that_truly_failed_is_still_
+retried` was renamed and its assertion inverted on purpose, with the
+reasoning recorded in the test. One missed entry out of ~1400 trades is a
+rounding error against a silently tripled position.
+
+**Defect B -- stop/target never re-derived from the actual fill (fixed,
+`9049e57`).** Even with A fixed, the surviving single position was still
+wrong: the chart showed SL 198.101 / TP 197.103 on a position filled at
+~197.34. Those are the values computed for entry 197.8515 at 17:00,
+still sent verbatim at 18:58 after price had moved ~50 pips -- roughly
+2x the trade's whole 0.2495 stop distance. Under Market Execution the
+request's `price` field is ignored (fills at market) while `sl`/`tp` go
+through exactly as computed, so the position carried risk ~0.76 against
+reward ~0.23. Inverted R:R, never validated at that shape by any
+backtest. Same root mechanism as the GBPAUD incident that opened this
+whole session, just far more extreme.
+
+Fix: `max_entry_drift_fraction` on `MT5Execution` -- decline when the
+live mid price sits further from `entry_price` than that fraction of the
+stop distance. Checked inside `compute_lot_size()` (the existing
+pre-send validation gate) so declines surface as `decline_sizing_entry_
+price_drifted` through the normal audit/Telegram path with the full
+reason. None by default, matching `max_spread_points`; wired on at 0.25
+in `run_live.py`. A test replays the exact CHFJPY numbers and asserts the
+decline.
+
+**Deliberately fail-closed, with a tripwire:** unreadable bid/ask
+declines the trade (`decline_sizing_price_unavailable`) rather than
+sending blind -- "couldn't check" must not read as "checked, all clear,"
+which is the precise conflation that caused the earlier duplicate fills
+(see `_our_open_tickets()`'s docstring). The risk this creates is real
+and is called out in `run_live.py`: if that reason appears for EVERY
+instrument right after a deploy, this broker/bridge isn't exposing
+prices as expected and `max_entry_drift_fraction=None` should be passed
+to turn the guard off, rather than leaving the bot silently idle.
+
+**Still NOT fixed, deliberately:** `STALE_ENTRY_CUTOFF` remains 3h. The
+drift guard makes it much less dangerous (a stale signal whose price has
+moved now gets declined on price rather than executed on time), so
+tightening it was left alone rather than changing two things at once
+before an unmonitored stretch.
+
+**Not addressed by either fix:** the three positions from this incident
+were already open and untracked when these fixes landed. Nothing here
+retroactively adopts or manages them -- they need manual closing or
+manual reconciliation.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
