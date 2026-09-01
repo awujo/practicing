@@ -1680,6 +1680,39 @@ still the ultimate backstop (see the conservative-account halt earlier
 today) but do not prevent duplicate ENTRIES into the same setup the way
 `find_open_entry_row`-style per-trade dedup is supposed to.
 
+**2026-09-01, 22:32 -- sharper evidence, still user-reported, still not
+independently verified:** MT5 chart screenshot of one of the three open
+positions shows its actual SL/TP lines: SL 198.101, TP 197.103. Those
+are the EXACT sl/tp from the 18:58:35 attempt that computed entry
+197.8515 and then failed with `TRADE_RETCODE_TIMEOUT` ("confirmed no
+position was opened" -- per that attempt's own log line). But this
+position's real entry is ~197.34 (one of the three fills logged in the
+entry above) -- roughly 50 pips away from 197.8515, far beyond ordinary
+market-order slippage (the GBPAUD incident that started this whole
+session's slippage investigation was 54 POINTS, i.e. ~0.5 pip on a
+5-digit pair; this is ~500 points on CHFJPY). Measured from where it
+ACTUALLY sits: risk to that stop is ~0.76, reward to that target is
+~0.23 -- worse than 1:3 IN THE WRONG DIRECTION, nothing like the
+strategy's intended ~3:1.
+
+This makes "ordinary slippage on the reported price" implausible as the
+sole explanation and makes a THIRD candidate mechanism the most likely
+one to check first, ahead of the two already listed above: a stale or
+duplicate order carrying an OLD computation's `sl`/`tp` (from the
+197.8515 attempt, or another attempt not visible in this scrollback) got
+sent and filled much later, after price had already moved far past
+where that stop/target made sense -- i.e. `place_market_order()`
+sending the ORIGINAL computed `stop_loss`/`target_price` regardless of
+how far the eventual fill lands from the ORIGINAL computed
+`entry_price`, the same root mechanism as the GBPAUD incident
+(entry_execution.py's request builds `sl`/`tp` from values computed
+once, never re-derived from the actual fill), just far more extreme
+here and compounded by whatever caused multiple attempts at the same
+signal in the first place. `STALE_ENTRY_CUTOFF` (orchestrator.py) is
+supposed to decline a signal this old outright rather than let it
+execute -- worth checking directly whether it was bypassed, not just
+whether it exists.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
