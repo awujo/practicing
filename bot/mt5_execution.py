@@ -240,13 +240,32 @@ class MT5Execution:
         (`compute_lot_size`) doesn't take a direction. `symbol_info_tick`
         is the canonical source; `symbol_info`'s own bid/ask is the
         fallback for bridges that don't expose the tick call."""
-        for bid, ask in self._price_sources(symbol, info):
-            if bid and ask and bid > 0 and ask > 0:
+        for raw_bid, raw_ask in self._price_sources(symbol, info):
+            bid, ask = self._as_price(raw_bid), self._as_price(raw_ask)
+            if bid is not None and ask is not None:
                 return (bid + ask) / 2
             for single in (bid, ask):
-                if single and single > 0:
+                if single is not None:
                     return single
         return None
+
+    @staticmethod
+    def _as_price(value) -> float | None:
+        """A positive float, or None for anything unusable (missing, zero,
+        negative, or a type that isn't a number at all).
+
+        Coerced rather than compared directly because a bridge returning
+        something unexpected -- a string, a Decimal-like proxy object --
+        would otherwise raise straight out of `compute_lot_size()`. That
+        exception would be caught by `_check_instrument()`'s per-instrument
+        isolation and skip the WHOLE instrument for that poll, which is a
+        worse outcome than the clean PRICE_UNAVAILABLE decline this
+        guard is supposed to produce when it can't read a price."""
+        try:
+            price = float(value)
+        except (TypeError, ValueError):
+            return None
+        return price if price > 0 else None
 
     def _price_sources(self, symbol: str, info):
         tick = None

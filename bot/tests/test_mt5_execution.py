@@ -583,3 +583,53 @@ def test_entry_drift_guard_survives_a_throwing_symbol_info_tick():
     fake.symbol_info_tick = boom
     ex = make_exec(fake, max_entry_drift_fraction=0.25)
     assert ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290).ok is True
+
+
+def test_entry_drift_guard_at_the_production_setting_still_blocks_the_chfjpy_fill():
+    # run_live.py wires 1.0 -- a FULL stop distance. The live CHFJPY fill
+    # drifted ~2x its stop distance, so it must still be refused at the
+    # value actually shipped, not just at the tighter one used above.
+    fake = FakeMT5()
+    fake.symbols["CHFJPY"] = _info_with_price(197.336, 197.340,
+                                               trade_tick_size=0.001, point=0.001, digits=3)
+    ex = make_exec(fake, max_entry_drift_fraction=1.0)
+    result = ex.compute_lot_size("CHFJPY", 1000.0, 197.8515, 198.101)
+    assert result.ok is False
+    assert result.error is ValidationError.ENTRY_PRICE_DRIFTED
+
+
+def test_entry_drift_guard_at_production_tolerates_ordinary_execution_latency():
+    # The failure mode of setting this too tight: declining good trades in
+    # bulk and looking identical to "found no setups". A 10-pip SLK stop
+    # with the market 4 pips off entry -- well within normal drift between
+    # candle close and send -- must still trade at 1.0.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(1.17414, 1.17416)  # 4 pips above entry
+    ex = make_exec(fake, max_entry_drift_fraction=1.0)
+    result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17274)  # 10 pip stop
+    assert result.ok is True
+
+
+def test_entry_drift_guard_treats_an_unusable_price_type_as_unavailable_not_a_crash():
+    # A bridge handing back a string (or anything non-numeric) must produce
+    # the clean PRICE_UNAVAILABLE decline, NOT an exception -- an exception
+    # here escapes compute_lot_size and gets swallowed by _check_instrument's
+    # per-instrument isolation, skipping the whole instrument for that poll.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price("not-a-price", None)
+    ex = make_exec(fake, max_entry_drift_fraction=1.0)
+    result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290)
+    assert result.ok is False
+    assert result.error is ValidationError.PRICE_UNAVAILABLE
+
+
+def test_entry_drift_guard_ignores_zero_and_negative_quotes():
+    # MT5 can report 0.0 bid/ask for a symbol with no live quote. That is
+    # "no price", not "price is zero" -- treating it numerically would make
+    # every entry look infinitely drifted.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = _info_with_price(0.0, -1.0)
+    ex = make_exec(fake, max_entry_drift_fraction=1.0)
+    result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290)
+    assert result.ok is False
+    assert result.error is ValidationError.PRICE_UNAVAILABLE

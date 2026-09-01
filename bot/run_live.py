@@ -154,12 +154,24 @@ def main():
     mt5_client.connect()
     logger.info("connected to MT5 (%s @ %s)", creds.login, creds.server)
 
-    # max_entry_drift_fraction: decline a signal whose entry price the
-    # market has already moved more than 25% of the stop distance away
-    # from -- see MT5Execution.__init__'s comment for the 2026-09-01
-    # CHFJPY fill that motivated it (filled ~2x its own stop distance
-    # from the entry its stop was sized against, giving an inverted
-    # risk:reward the strategy never intended).
+    # max_entry_drift_fraction=1.0: decline a signal once the market has
+    # travelled a FULL stop distance away from the entry price this
+    # trade's stop was sized against -- see MT5Execution.__init__'s
+    # comment for the 2026-09-01 CHFJPY fill that motivated it (filled
+    # ~2x its own stop distance away, giving an inverted risk:reward the
+    # strategy never intended).
+    #
+    # 1.0 rather than a tighter tuned number on purpose. It is the one
+    # non-arbitrary line available: past a full stop distance the setup
+    # is invalidated on its own terms, so declining needs no calibration
+    # to justify. A tighter value (0.25 was tried first) allows only ~2.5
+    # pips of drift on a 10-pip SLK stop, which ordinary latency between
+    # candle close and order send -- run_backtest takes tens of seconds
+    # per instrument, across 25 of them -- would exceed routinely,
+    # declining good trades in bulk. Blocking the catastrophic case while
+    # almost never firing otherwise is the right trade for a stretch
+    # nobody is watching; erring tight would quietly stop the bot
+    # trading and look identical to it simply not finding setups.
     #
     # FAIL-CLOSED: if the live bid/ask can't be read the trade is
     # declined, logged as decline_sizing_price_unavailable. If that
@@ -168,7 +180,7 @@ def main():
     # max_entry_drift_fraction=None here to turn the guard back off
     # rather than letting the bot sit idle.
     mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides,
-                             max_entry_drift_fraction=0.25)
+                             max_entry_drift_fraction=1.0)
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 
