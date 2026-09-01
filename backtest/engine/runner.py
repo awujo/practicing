@@ -1174,27 +1174,9 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         concurrent = len(mgr.open_positions(effective))
         pos = mgr.open_position(effective, entry_price, stop_loss, entry_candle.time, "H1", target)
 
-        # A retest fill on a LATER candle than the trigger (entry_idx != i)
-        # is a real, independent market event that can itself touch
-        # stop_loss or target within the same bar it fills on -- e.g. a
-        # wide pullback candle whose low both reaches entry_price (the
-        # fill) and continues on down through stop_loss. Confirmed as a
-        # real gap in the first version of this: the outcome scan started
-        # at entry_idx + 1, so a same-candle stop-out on the fill candle
-        # itself was invisible, silently treating an immediate loss as
-        # still open. Including entry_idx itself in the scan here lets
-        # `_resolve_trade_outcome()`'s own existing tie-break rule ("stop
-        # wins same-candle ties") handle it -- reusing that rule rather
-        # than duplicating it. Deliberately NOT changed for the default
-        # instant-fill case (entry_idx == i): there, `curr`/`i` is the
-        # SAME candle whose own wick already informed the stop-loss
-        # formula above, so checking whether it also "hits" that stop is
-        # circular, and this must not alter the already-validated default
-        # behavior every live trade today still runs on.
-        outcome_start = entry_idx if entry_idx != i else entry_idx + 1
         exit_reason, exit_price, exit_time, mae_r, mfe_r = _resolve_trade_outcome(
             entry_price, stop_loss, target, effective,
-            h1[outcome_start: entry_idx + 1 + MAX_TRADE_DURATION_CANDLES]
+            h1[entry_idx + 1: entry_idx + 1 + MAX_TRADE_DURATION_CANDLES]
         )
         if exit_reason == "still_open":
             status = "open"

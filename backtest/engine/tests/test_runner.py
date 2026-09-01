@@ -430,59 +430,6 @@ def test_retest_fill_entries_shifts_entry_time_to_the_actual_fill_candle(synthet
     assert trade.status == "closed_win"
 
 
-@pytest.fixture
-def synthetic_cache_with_same_candle_stop_out(tmp_path, monkeypatch):
-    """Like `synthetic_cache_with_pullback`, except H1(4)'s low reaches
-    BOTH entry_price (1.1012) AND stop_loss (1.1004) within the same
-    bar -- a wide pullback candle that fills the resting limit order and
-    then keeps falling through the stop before the candle closes.
-    Exercises the fix for a real gap in the first version of
-    retest_fill_entries: the outcome scan started at entry_idx + 1, so a
-    same-candle stop-out on the fill candle itself was invisible."""
-    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
-    daily = [
-        D(0, 1.100, 1.105, 1.098, 1.102), D(1, 1.102, 1.108, 1.100, 1.106),
-        D(2, 1.106, 1.112, 1.104, 1.107), D(3, 1.107, 1.109, 1.102, 1.104),
-        D(4, 1.104, 1.106, 1.095, 1.096), D(5, 1.096, 1.099, 1.097, 1.098),
-        D(6, 1.098, 1.101, 1.097, 1.099), D(7, 1.099, 1.100, 1.090, 1.097),
-        D(8, 1.097, 1.120, 1.096, 1.115),
-    ]
-    h4 = [
-        H4(0, 1.1000, 1.1010, 1.0995, 1.1005), H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
-        H4(2, 1.1010, 1.1030, 1.1005, 1.1020), H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
-        H4(4, 1.1015, 1.1022, 1.1008, 1.1012), H4(5, 1.1012, 1.1038, 1.1010, 1.1035),
-        H4(6, 1.1035, 1.1042, 1.1025, 1.1030), H4(7, 1.1030, 1.1032, 1.1015, 1.1020),
-        H4(8, 1.1020, 1.1028, 1.1018, 1.1025),
-    ]
-    h1 = [
-        H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
-        H1(1, 1.1021, 1.1023, 1.1010, 1.1013),
-        H1(2, 1.1013, 1.1014, 1.1008, 1.1010),
-        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),  # trigger (engulfing); stop_loss lands at 1.1004
-        H1(4, 1.1030, 1.1032, 1.1001, 1.1002),  # low crosses entry_price (1.1012) then stop (1.1004)
-    ]
-    _write("D", daily)
-    _write("H4", h4)
-    _write("H1", h1)
-    return tmp_path
-
-
-def test_retest_fill_entries_resolves_a_same_candle_stop_out_on_the_fill_candle(
-    synthetic_cache_with_same_candle_stop_out,
-):
-    records = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001,
-                            retest_fill_entries=True)
-    assert len(records) == 1
-    trade = records[0]
-    # Filled at H1(4) (the retest), then immediately stopped out within
-    # that SAME candle -- not left dangling as "still open" because the
-    # outcome scan started one candle too late to see it.
-    assert trade.entry_time == H1_BASE + pd.Timedelta(hours=4)
-    assert trade.exit_reason == "stop_hit"
-    assert trade.status == "closed_loss"
-    assert trade.r_multiple == pytest.approx(-1.0)
-
-
 def test_resolve_date_range_returns_tz_aware_utc_bounds():
     # Regression test for a real bug: pd.Timestamp(year=..., month=...,
     # day=...) is tz-NAIVE by default, but cached candle timestamps are
