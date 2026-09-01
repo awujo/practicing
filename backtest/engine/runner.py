@@ -766,7 +766,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   erl_cap: bool = True, close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
-                  avoid_rollover_entries: bool = False) -> list[TradeRecord]:
+                  avoid_rollover_entries: bool = False,
+                  min_reward_r: float | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -794,6 +795,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     not yet validated against history; compare against the default
     before trusting it as the new normal, same as irl_mode's other
     experimental variants.
+    min_reward_r: when set, skips any entry whose ERL-capped target is
+    less than this many R away from entry (reward:risk ratio below the
+    threshold) -- direct 2026-09-01 question: "a trade of less than 1R
+    doesn't make sense to hold." None (default) applies no minimum,
+    matching every trade this engine has ever produced; compare against
+    the default before trusting a given threshold as the new normal,
+    same as avoid_rollover_entries above.
     close_based_breakout: when True (default), a plain breakout's
     reference level is the swing candle's own CLOSE (line chart), not its
     wick -- direct user correction, matching how A/V-shape key levels
@@ -1066,6 +1074,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly) if erl_cap else None
         target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price)
         erl_capped = target != raw_target
+
+        if min_reward_r is not None:
+            risk_distance = abs(entry_price - stop_loss)
+            reward_distance = abs(target - entry_price)
+            reward_r = (reward_distance / risk_distance) if risk_distance else 0.0
+            if reward_r < min_reward_r:
+                continue
 
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 

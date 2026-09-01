@@ -280,6 +280,33 @@ def test_avoid_rollover_entries_does_not_affect_an_entry_outside_the_window(synt
     assert len(without_filter) == len(with_filter) == 1
 
 
+# ---- min_reward_r: direct 2026-09-01 question, "a trade of less than
+# 1R doesn't make sense to hold" -- skip entries whose (ERL-capped)
+# target is too close to entry to justify the risk.
+
+def test_min_reward_r_skips_an_entry_whose_target_is_too_close(synthetic_cache):
+    # rr=0.5 with no ERL candidate in this fixture (see the end-to-end
+    # test's own comment -- no ERL candidate qualifies here, so the
+    # raw rr-based target applies uncapped) makes the target only 0.5R
+    # away -- below the 1.0 threshold.
+    without_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, rr=0.5)
+    assert len(without_filter) == 1
+    entry, stop, target = without_filter[0].entry_price, without_filter[0].stop_loss, without_filter[0].primary_target
+    assert abs(target - entry) / abs(entry - stop) == pytest.approx(0.5)
+
+    with_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                                rr=0.5, min_reward_r=1.0)
+    assert with_filter == []
+
+
+def test_min_reward_r_does_not_affect_an_entry_that_already_clears_it(synthetic_cache):
+    # The fixture's default 3:1 target comfortably clears a 1R minimum --
+    # the filter must be a no-op here, not accidentally block everything.
+    without_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    with_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, min_reward_r=1.0)
+    assert len(without_filter) == len(with_filter) == 1
+
+
 def test_resolve_date_range_returns_tz_aware_utc_bounds():
     # Regression test for a real bug: pd.Timestamp(year=..., month=...,
     # day=...) is tz-NAIVE by default, but cached candle timestamps are
