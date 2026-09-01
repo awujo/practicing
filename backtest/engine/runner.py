@@ -219,27 +219,6 @@ FOLLOWING_LOOKAHEAD = 3
 ROLLOVER_WINDOW_START_HOUR_UTC = 21
 ROLLOVER_WINDOW_END_HOUR_UTC = 23  # exclusive -- blocks the 21:00 and 22:00 H1 candles
 
-# retest_fill_entries (2026-09-01, direct user correction): SLK entries
-# are conceptually LIMIT orders resting at a key level waiting for a
-# retest, not market orders filled the instant a trigger confirms --
-# "me personally and even bishops hardly use market order." How far
-# forward, in H1 candles, to keep a pending entry open waiting for that
-# retest before giving up -- no number was given for this specifically
-# (unlike the 80% target-erosion rule below, which was), so this
-# mirrors LIQUIDITY_SWEEP_LOOKAHEAD's order of magnitude as the closest
-# existing precedent for "how long is a setup still live" rather than
-# inventing an unrelated figure.
-RETEST_FILL_LOOKAHEAD = 120
-
-# Direct user rule, 2026-09-01: cancel a still-unfilled resting limit
-# order once price has run this fraction of the way from entry toward
-# the trade's own target WITHOUT ever filling it -- "once eighty percent
-# of our target has been achieved... there's no need keeping the order
-# again... price has missed [it]... good to protect [the] take profit
-# level [reasoning]." Not time-based -- a fill that late would carry too
-# little reward left relative to the risk to be worth taking.
-RETEST_TARGET_EROSION_PCT = 0.8
-
 # How far back a tier's OWN breakout/sweep+break can be and still count as
 # "aligned" with the current H1 entry candidate. Bounded for the same
 # reason candidate_levels/imbalance matching got bounded elsewhere in this
@@ -729,39 +708,6 @@ def _first_sweep_of(h1, from_idx: int, irl_price: float, direction: Direction) -
     return None
 
 
-def _first_retest_fill(h1, from_idx: int, entry_price: float, target: float,
-                        direction: Direction) -> int | None:
-    """Index of the first H1 candle after `from_idx` where a resting limit
-    order at `entry_price` would actually fill -- a wick touch, same
-    convention as `_first_sweep_of()` (taking a level is a wick trading
-    through it, not a close). Returns None if the order is never filled:
-    either RETEST_FILL_LOOKAHEAD runs out, or price runs
-    RETEST_TARGET_EROSION_PCT of the way from `entry_price` toward
-    `target` first -- "once eighty percent of our target has been
-    achieved... there's no need keeping the order" (direct 2026-09-01
-    rule; see RETEST_TARGET_EROSION_PCT's own comment). Checked in that
-    order per candle: a candle whose wick reaches both `entry_price` and
-    past the erosion threshold in the same bar counts as a fill, not a
-    cancellation -- this is a bar-close backtest with no intrabar
-    ordering, same limitation as every other same-candle ambiguity
-    elsewhere in this engine."""
-    erosion_price = entry_price + RETEST_TARGET_EROSION_PCT * (target - entry_price)
-    end = min(from_idx + 1 + RETEST_FILL_LOOKAHEAD, len(h1))
-    for j in range(from_idx + 1, end):
-        c = h1[j]
-        if direction == Direction.BULLISH:
-            if c.low <= entry_price:
-                return j
-            if c.high >= erosion_price:
-                return None
-        else:
-            if c.high >= entry_price:
-                return j
-            if c.low <= erosion_price:
-                return None
-    return None
-
-
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -821,8 +767,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
                   avoid_rollover_entries: bool = False,
-                  min_reward_r: float | None = None,
-                  retest_fill_entries: bool = False) -> list[TradeRecord]:
+                  min_reward_r: float | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -862,23 +807,6 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     wick -- direct user correction, matching how A/V-shape key levels
     already work. When False, uses the wick instead (pre-correction
     behavior) -- kept only for comparing the two against each other.
-    retest_fill_entries: when True, an entry is no longer an instant fill
-    at `entry_price` the moment its trigger confirms -- it becomes a
-    resting limit order, only counted as a real trade once a LATER candle
-    actually trades back through `entry_price` (see `_first_retest_fill()`).
-    If price never comes back -- either RETEST_FILL_LOOKAHEAD runs out, or
-    it runs RETEST_TARGET_EROSION_PCT of the way to target first -- no
-    trade is recorded at all for that setup. `stop_loss`/`target` still
-    anchor to the ORIGINAL trigger candle's geometry unchanged; only the
-    entry's FILL TIME (and so `TradeRecord.entry_time`, and where the
-    stop/target-hit simulation starts) shifts to the retest candle. Only
-    meaningful for entry_style="aggressive" -- conservative's entry_price
-    is already the confirmation candle's own close, so there's no level
-    gap to retest and this is a silent no-op there. Direct 2026-09-01
-    correction ("me personally and even bishops hardly use market
-    order"): compare against the default (instant fill, i.e. today's
-    live market-order behavior) before trusting this as the new normal,
-    same as every other experimental variant above.
     """
     _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
@@ -1154,29 +1082,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             if reward_r < min_reward_r:
                 continue
 
-        # retest_fill_entries: stop_loss/target above are still anchored to
-        # the ORIGINAL trigger candle's geometry (curr/prev/new_key_level)
-        # unchanged -- only WHEN the trade actually opens moves. Only
-        # meaningful for aggressive style; conservative's entry_price is
-        # already the confirmation candle's own close, so there's nothing
-        # to retest and entry_idx just stays `i` (today's instant-fill
-        # behavior) unconditionally there.
-        entry_idx = i
-        if retest_fill_entries and entry_style == "aggressive":
-            fill_idx = _first_retest_fill(h1, i, entry_price, target, effective)
-            if fill_idx is None:
-                continue  # never filled -- no trade, not a loss
-            entry_idx = fill_idx
-        entry_candle = h1[entry_idx]
-
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 
         concurrent = len(mgr.open_positions(effective))
-        pos = mgr.open_position(effective, entry_price, stop_loss, entry_candle.time, "H1", target)
+        pos = mgr.open_position(effective, entry_price, stop_loss, curr.time, "H1", target)
 
         exit_reason, exit_price, exit_time, mae_r, mfe_r = _resolve_trade_outcome(
-            entry_price, stop_loss, target, effective,
-            h1[entry_idx + 1: entry_idx + 1 + MAX_TRADE_DURATION_CANDLES]
+            entry_price, stop_loss, target, effective, h1[i + 1: i + 1 + MAX_TRADE_DURATION_CANDLES]
         )
         if exit_reason == "still_open":
             status = "open"
@@ -1192,20 +1104,17 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # earlier -- everything above (bias, alignment, IRL sweeps,
         # stacking) must still see the full history regardless of what's
         # actually being reported (see the start_date/end_date docstring
-        # above). Filtered by entry_candle.time (the actual fill), not
-        # curr.time (the trigger) -- a retest_fill_entries trade that
-        # triggered just before the window but filled just after it (or
-        # vice versa) is filtered by when it actually opened.
-        if start_date is not None and entry_candle.time < start_date:
+        # above).
+        if start_date is not None and curr.time < start_date:
             continue
-        if end_date is not None and entry_candle.time > end_date:
+        if end_date is not None and curr.time > end_date:
             continue
 
         trade_id += 1
         records.append(TradeRecord(
             trade_id=trade_id,
             instrument=instrument,
-            entry_time=entry_candle.time,
+            entry_time=curr.time,
             exit_time=exit_time,
             direction=effective,
             entry_timeframe="H1",
