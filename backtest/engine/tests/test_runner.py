@@ -9,7 +9,7 @@ from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
-    _resolve_date_range, _parse_rr, _resolve_trade_outcome,
+    _resolve_date_range, _parse_rr, _resolve_trade_outcome, _first_retest_fill,
 )
 
 SOURCE = "test"
@@ -305,6 +305,129 @@ def test_min_reward_r_does_not_affect_an_entry_that_already_clears_it(synthetic_
     without_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
     with_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, min_reward_r=1.0)
     assert len(without_filter) == len(with_filter) == 1
+
+
+# ---- retest_fill_entries: direct 2026-09-01 correction ("me personally
+# and even bishops hardly use market order") -- an entry becomes a
+# resting limit order, only counted once a LATER candle actually
+# retests entry_price; cancelled if RETEST_TARGET_EROSION_PCT of the
+# way to target is reached first.
+
+def test_first_retest_fill_finds_the_first_candle_whose_wick_touches_entry_price_bullish():
+    entry_price, target = 1.1012, 1.1036
+    h1 = [
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),   # trigger candle itself -- not scanned
+        H1(4, 1.1030, 1.1031, 1.1020, 1.1025),   # doesn't reach down to 1.1012
+        H1(5, 1.1025, 1.1026, 1.1010, 1.1020),   # low 1.1010 <= 1.1012 -- fills here
+        H1(6, 1.1020, 1.1040, 1.1015, 1.1038),
+    ]
+    assert _first_retest_fill(h1, 0, entry_price, target, Direction.BULLISH) == 2
+
+
+def test_first_retest_fill_cancels_once_the_erosion_threshold_is_reached_first():
+    # erosion_price = 1.1012 + 0.8*(1.1036-1.1012) = 1.10312 -- reached at
+    # index 1 (high 1.1035) with entry_price never having been touched.
+    entry_price, target = 1.1012, 1.1036
+    h1 = [
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),
+        H1(4, 1.1020, 1.1035, 1.1018, 1.1033),   # never dips to 1.1012, but clears 1.10312
+        H1(5, 1.1033, 1.1040, 1.1030, 1.1038),
+    ]
+    assert _first_retest_fill(h1, 0, entry_price, target, Direction.BULLISH) is None
+
+
+def test_first_retest_fill_returns_none_when_lookahead_runs_out():
+    entry_price, target = 1.1012, 1.1200  # erosion far away -- lookahead is the limiter here
+    h1 = [H1(3, 1.1010, 1.1035, 1.1005, 1.1030)] + [
+        H1(4 + j, 1.1030, 1.1031, 1.1029, 1.1030) for j in range(150)  # flat, never touches 1.1012
+    ]
+    assert _first_retest_fill(h1, 0, entry_price, target, Direction.BULLISH) is None
+
+
+def test_first_retest_fill_works_for_bearish_direction():
+    entry_price, target = 1.1030, 1.1006
+    h1 = [
+        H1(3, 1.1035, 1.1040, 1.1010, 1.1015),
+        H1(4, 1.1015, 1.1020, 1.1012, 1.1018),   # high 1.1020 doesn't reach up to 1.1030
+        H1(5, 1.1018, 1.1032, 1.1015, 1.1025),   # high 1.1032 >= 1.1030 -- fills here
+    ]
+    assert _first_retest_fill(h1, 0, entry_price, target, Direction.BEARISH) == 2
+
+
+def test_retest_fill_entries_produces_no_trade_when_price_never_comes_back(synthetic_cache):
+    # This fixture's aggressive entry (1.1012, the H4 reaction level) is
+    # never revisited -- H1(4) onward runs straight up to target without
+    # ever dipping back down to it. Market-order style (the default)
+    # takes the trade instantly; a genuine resting limit order would
+    # never have filled at all.
+    instant_fill = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001)
+    assert len(instant_fill) == 1
+
+    with_retest = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001,
+                                retest_fill_entries=True)
+    assert with_retest == []
+
+
+def test_retest_fill_entries_is_a_no_op_for_conservative_style(synthetic_cache):
+    # Conservative's entry_price is already the confirmation candle's own
+    # close -- there's no level gap to retest, so the flag must not
+    # change anything for it.
+    without_flag = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    with_flag = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                              retest_fill_entries=True)
+    assert len(without_flag) == len(with_flag) == 1
+    assert without_flag[0].entry_time == with_flag[0].entry_time
+
+
+@pytest.fixture
+def synthetic_cache_with_pullback(tmp_path, monkeypatch):
+    """Identical to `synthetic_cache` through the trigger candle (index
+    3), except H1(4) pulls back down to retest the aggressive entry
+    level (1.1012) before H1(5) runs on to clear the target -- exercises
+    the "does fill" path, `synthetic_cache` itself only exercises "never
+    fills" (see the comment on the no-trade test above)."""
+    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
+    daily = [
+        D(0, 1.100, 1.105, 1.098, 1.102), D(1, 1.102, 1.108, 1.100, 1.106),
+        D(2, 1.106, 1.112, 1.104, 1.107), D(3, 1.107, 1.109, 1.102, 1.104),
+        D(4, 1.104, 1.106, 1.095, 1.096), D(5, 1.096, 1.099, 1.097, 1.098),
+        D(6, 1.098, 1.101, 1.097, 1.099), D(7, 1.099, 1.100, 1.090, 1.097),
+        D(8, 1.097, 1.120, 1.096, 1.115),
+    ]
+    h4 = [
+        H4(0, 1.1000, 1.1010, 1.0995, 1.1005), H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
+        H4(2, 1.1010, 1.1030, 1.1005, 1.1020), H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
+        H4(4, 1.1015, 1.1022, 1.1008, 1.1012), H4(5, 1.1012, 1.1038, 1.1010, 1.1035),
+        H4(6, 1.1035, 1.1042, 1.1025, 1.1030), H4(7, 1.1030, 1.1032, 1.1015, 1.1020),
+        H4(8, 1.1020, 1.1028, 1.1018, 1.1025),
+    ]
+    h1 = [
+        H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
+        H1(1, 1.1021, 1.1023, 1.1010, 1.1013),
+        H1(2, 1.1013, 1.1014, 1.1008, 1.1010),
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),  # trigger (engulfing)
+        H1(4, 1.1030, 1.1031, 1.1010, 1.1020),  # pulls back to retest entry_price (1.1012)
+        H1(5, 1.1020, 1.1040, 1.1015, 1.1038),  # clears the (ERL-capped) target, 1.1036
+    ]
+    _write("D", daily)
+    _write("H4", h4)
+    _write("H1", h1)
+    return tmp_path
+
+
+def test_retest_fill_entries_shifts_entry_time_to_the_actual_fill_candle(synthetic_cache_with_pullback):
+    records = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001,
+                            retest_fill_entries=True)
+    assert len(records) == 1
+    trade = records[0]
+    assert trade.entry_price == pytest.approx(1.1012)
+    # The trigger fired on H1(3) (03:00); the fill -- and so the recorded
+    # entry_time -- is H1(4) (04:00), the candle that actually retested
+    # entry_price. stop_loss/target still come from the original trigger
+    # candle's geometry, unaffected.
+    assert trade.entry_time == H1_BASE + pd.Timedelta(hours=4)
+    assert trade.exit_reason == "target_hit"
+    assert trade.status == "closed_win"
 
 
 def test_resolve_date_range_returns_tz_aware_utc_bounds():
