@@ -285,6 +285,42 @@ def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float
     return abs(entry_price - stop_loss) / pip_size > max_pips
 
 
+def _reaction_leg_extreme(h1, entry_idx: int, direction: Direction, key_level_time,
+                           max_lookback: int = REACTION_LOOKAHEAD) -> float | None:
+    """The extreme price THIS setup's own reaction leg actually reached --
+    the highest high (bearish) / lowest low (bullish) between the key
+    level forming and the entry candle inclusive.
+
+    This is the mentor's "the strong high that was actually created"
+    (video-13's stop-placement Q&A) expressed as something computable:
+    the last structural point holding the idea up. For a short taken on
+    a retracement, price closing back above the high that retracement
+    made means the "impulsive move continues" thesis is dead; anywhere
+    below it, nothing has gone wrong yet.
+
+    Deliberately NOT a pip budget, and deliberately not compared against
+    one -- see OPERATIONS_LOG.md 2026-09-01/02. The stop's WIDTH is an
+    output of picking this point correctly, never an input: a genuine
+    invalidation point is further away on a volatile instrument and
+    closer on a quiet one, and both are correct. What is validated
+    instead is that the anchor belongs to THIS setup (bounded to the
+    key level's own formation, and to `max_lookback` candles) rather
+    than to older, unrelated structure -- which is exactly how CHFJPY's
+    stop ended up at 198.101 on 2026-09-01, up at the 28 Aug highs,
+    while the entire session traded 197.1-197.7."""
+    start = max(0, entry_idx - max_lookback)
+    window = h1[start: entry_idx + 1]
+    if key_level_time is not None:
+        scoped = [c for c in window if c.time >= key_level_time]
+        if scoped:
+            window = scoped
+    if not window:
+        return None
+    if direction == Direction.BULLISH:
+        return min(c.low for c in window)
+    return max(c.high for c in window)
+
+
 def _sweep_indices(series: list[Candle], kind: str) -> list:
     """For each period, the index of the first LATER period that took its
     high (kind="high") / low (kind="low"), or None if never taken.
@@ -767,7 +803,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
                   avoid_rollover_entries: bool = False,
-                  min_reward_r: float | None = None) -> list[TradeRecord]:
+                  min_reward_r: float | None = None,
+                  stop_anchor: str = "trigger_wick") -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -802,6 +839,25 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     matching every trade this engine has ever produced; compare against
     the default before trusting a given threshold as the new normal,
     same as avoid_rollover_entries above.
+    stop_anchor: which structural point the stop-loss is anchored to.
+    "trigger_wick" (default) is the long-standing per-trigger behavior --
+    engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
+    with `_natural_stop_too_wide()` swapping in a key-level fallback when
+    the result looks wide. "structural" instead anchors every trigger to
+    the setup's OWN reaction-leg extreme (`_reaction_leg_extreme()`) and
+    applies no width test at all.
+    Direct 2026-09-01/02 correction, from studying the source material
+    (see OPERATIONS_LOG.md): SLK stops are not small because small is the
+    goal, they are small because a correctly-read invalidation point is
+    genuinely close -- the pip count is an OUTPUT, never a target or a
+    cap. The default's wick anchors have no structural meaning, and its
+    fallback anchors to the level being entered at (on aggressive style,
+    the entry price itself -- a 1-pip stop). Live evidence for both:
+    CHFJPY stopped at 198.101 while the session traded 197.1-197.7, and
+    EURGBP rejected with INVALID_STOPS at a 1-pip stop, same day.
+    Compare against the default before trusting it -- and note this
+    changes the unit R is measured in, so trade count, win rate and
+    average R all move together and none can be read alone.
     close_based_breakout: when True (default), a plain breakout's
     reference level is the swing candle's own CLOSE (line chart), not its
     wick -- direct user correction, matching how A/V-shape key levels
@@ -1046,6 +1102,25 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 stop_loss = natural
                 stop_kind = "fourth_man"
                 stop_fallback_used = False
+
+        # stop_anchor="structural": replace whichever anchor the branches
+        # above picked with the setup's own reaction-leg extreme, and drop
+        # the width test entirely. See `_reaction_leg_extreme()` and
+        # OPERATIONS_LOG.md's source study -- the per-trigger wick rules
+        # above have no structural meaning (a two-candle wick extreme is
+        # not "the strong high that was actually created"), and the
+        # `_natural_stop_too_wide()` fallback they lean on anchors to the
+        # key level being ENTERED AT, which on aggressive style is the
+        # entry price itself and collapses to a 1-pip stop (the live
+        # EURGBP INVALID_STOPS rejection, 2026-09-01).
+        if stop_anchor == "structural":
+            anchor = _reaction_leg_extreme(h1, i, effective, new_key_level.time)
+            if anchor is None:
+                continue
+            stop_loss = origin_stop_loss(anchor, effective, pip_size=pip_size)
+            stop_kind = f"{trigger_type}_structural"
+            natural_stop_loss = stop_loss
+            stop_fallback_used = False
 
         # A stop-loss on the wrong side of entry isn't a stop at all -- it's
         # a corrupted trade. This used to actually happen for "origin"
