@@ -9,7 +9,7 @@ from ..key_levels import detect_key_levels
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
-    _resolve_date_range, _parse_rr, _resolve_trade_outcome,
+    _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme,
 )
 
 SOURCE = "test"
@@ -1107,3 +1107,72 @@ def test_run_backtest_falls_back_to_daily_when_weekly_data_missing(synthetic_cac
     trade = records[0]
     assert trade.bias_weekly is None
     assert trade.effective_bias_timeframe == "Daily"
+
+
+# ---- stop_anchor="structural": anchor the stop to the setup's own
+# reaction-leg extreme rather than a candle wick, and drop the width test.
+# Direct 2026-09-01/02 correction from the source study -- see
+# OPERATIONS_LOG.md. The pip WIDTH is an output, never a target or a cap.
+
+def test_reaction_leg_extreme_bearish_takes_the_highest_high_of_the_leg():
+    h1 = [
+        H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
+        H1(1, 1.1021, 1.1043, 1.1010, 1.1013),   # the leg's high: 1.1043
+        H1(2, 1.1013, 1.1030, 1.1008, 1.1010),
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),   # entry candle
+    ]
+    assert _reaction_leg_extreme(h1, 3, Direction.BEARISH, None) == pytest.approx(1.1043)
+
+
+def test_reaction_leg_extreme_bullish_takes_the_lowest_low_of_the_leg():
+    h1 = [
+        H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
+        H1(1, 1.1021, 1.1023, 1.1002, 1.1013),   # the leg's low: 1.1002
+        H1(2, 1.1013, 1.1014, 1.1008, 1.1010),
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),   # entry candle
+    ]
+    assert _reaction_leg_extreme(h1, 3, Direction.BULLISH, None) == pytest.approx(1.1002)
+
+
+def test_reaction_leg_extreme_ignores_structure_older_than_the_key_level():
+    # THE point of the whole change: an extreme from before this setup
+    # existed must not become its stop. CHFJPY's live stop landed at
+    # 198.101 -- the 28 Aug highs -- on a setup whose entire session
+    # traded 197.1-197.7.
+    h1 = [
+        H1(0, 1.1020, 1.1900, 1.1018, 1.1021),   # ancient spike, unrelated
+        H1(1, 1.1021, 1.1043, 1.1010, 1.1013),
+        H1(2, 1.1013, 1.1030, 1.1008, 1.1010),
+        H1(3, 1.1010, 1.1035, 1.1005, 1.1030),
+    ]
+    kl_time = H1_BASE + pd.Timedelta(hours=1)   # key level formed at index 1
+    assert _reaction_leg_extreme(h1, 3, Direction.BEARISH, kl_time) == pytest.approx(1.1043)
+    # Without the scoping, the ancient spike would win:
+    assert _reaction_leg_extreme(h1, 3, Direction.BEARISH, None) == pytest.approx(1.1900)
+
+
+def test_reaction_leg_extreme_is_bounded_when_the_key_level_predates_the_window():
+    # A key level far in the past must not drag the window back forever --
+    # max_lookback still bounds it.
+    h1 = [H1(i, 1.1020, 1.1024 + (0.01 if i == 0 else 0), 1.1018, 1.1021) for i in range(10)]
+    ancient = H1_BASE - pd.Timedelta(days=30)
+    assert _reaction_leg_extreme(h1, 9, Direction.BEARISH, ancient, max_lookback=3) == pytest.approx(1.1024)
+
+
+def test_structural_anchor_never_uses_the_collapsed_key_level_fallback(synthetic_cache):
+    # The default can emit a stop_kind of *_kl_fallback, which on
+    # aggressive style anchors to the entry price itself (a ~1 pip stop --
+    # the live EURGBP INVALID_STOPS rejection). Structural mode must never
+    # produce that kind at all.
+    for style in ("conservative", "aggressive"):
+        records = run_backtest(SYMBOL, style, source=SOURCE, pip_size=0.0001,
+                                stop_anchor="structural")
+        for trade in records:
+            assert trade.stop_kind.endswith("_structural")
+            assert "kl_fallback" not in trade.stop_kind
+
+
+def test_structural_anchor_leaves_the_default_path_untouched(synthetic_cache):
+    default = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001)
+    assert default[0].stop_kind == "engulfing"      # unchanged by the new flag existing
+    assert default[0].stop_loss == pytest.approx(1.10040)
