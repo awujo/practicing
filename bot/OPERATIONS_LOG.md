@@ -2103,6 +2103,79 @@ loop.** The stop rules simply don't consult it. A candidate rewrite:
 and needs the A/B plus a real design pass, not a midnight patch before
 an unmonitored stretch.
 
+## 2026-09-02 -- WORKED EXAMPLE: the CHFJPY stop, and why wide stops cancel the edge outright
+
+The clearest single illustration of the anchor problem, on a real live
+trade, with numbers read off the user's own chart. Keep this one -- it
+is more use than any amount of description.
+
+**The setup.** CHFJPY H1, 1 Sep. An impulsive red candle drops from
+~197.69 to ~197.13. Price bounces off that low, puts in a retracement
+high around **197.41-197.43**, and a SELL is taken at **197.345**,
+targeting the low at **197.103**.
+
+**Where the stop belongs.** Just above the retracement's own high --
+about **197.44**. That high is the last structure holding the short
+thesis up: above it, the "impulsive drop continues after this pullback"
+idea is dead; anywhere below it, nothing has gone wrong yet. This is
+the immediate invalidation point, arrived at structurally with no pip
+count consulted.
+
+**Where the stop actually went: 197.603.** That level sits inside the
+consolidation price was ranging in BEFORE the impulsive drop -- i.e.
+structure the setup had already broken through and invalidated on its
+way down. It is not the invalidation point for a short taken on the
+retracement OF that move. (The other position from the same incident
+was worse still: 198.101, up at the 28 Aug highs, unrelated to this
+setup entirely.)
+
+**What it costs, same entry, same target:**
+
+| | risk | reward | R:R |
+|---|---|---|---|
+| logical stop ~197.44 | ~9.5 pips | 24.2 pips | **~2.5R** |
+| actual stop 197.603 | 25.8 pips | 24.2 pips | **0.94R** |
+
+Nothing about the setup, the entry or the target changed. **The stop
+placement alone turned a 2.5R trade into a sub-1R one.**
+
+### The systemic consequence -- this is not a per-trade annoyance
+
+Direct user framing: *"if SL are wide like this we will not even get a
+1:1 RR."* Correct, and it generalises. If stops are systematically 2-3x
+wider than the true invalidation point, then every trade's R is
+understated by roughly that factor. A 3:1 target stops being a
+reasonable objective and becomes arithmetically out of reach -- price
+would have to travel two to three times further than the setup actually
+calls for to pay the same R. That is not a scattering of bad trades; it
+is the edge being cancelled across the whole book, on every instrument,
+for as long as the anchors stay wrong.
+
+It also reframes what "the strategy underperforms live" would even
+mean: an engine measuring R against wrong stops cannot be evaluated on
+R at all.
+
+### Knock-on: `min_reward_r=1.0` is now suspect, and so is its A/B
+
+The minimum-reward filter enabled 2026-09-01 skips any entry whose
+ERL-capped target is under 1R at entry. **But R is computed from the
+stop -- so when the stop is wrong, the filter is measuring the wrong
+quantity.** This trade is the proof: 0.94R with the bad stop (the filter
+would discard it), ~2.5R with the correct one (a perfectly good trade).
+The filter is not distinguishing weak setups from strong ones; it is
+partly distinguishing badly-anchored stops from luckily-anchored ones.
+
+And the A/B that validated it (+16.1R, win rate 51.7% -> 51.9%) ran
+against those same wrong stops throughout. It therefore measured "which
+bad-stop trades are worth dropping", not "which setups are weak" --
+which is a different question with no bearing on whether the filter is
+correct once stops are fixed.
+
+**Do not treat that validation as still standing after any stop-anchor
+change. Re-run it.** The same caution applies to every other A/B in this
+file that used R as its metric (rollover filter, retest-fill): they are
+all denominated in a unit that this finding calls into question.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
