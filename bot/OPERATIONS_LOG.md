@@ -1596,6 +1596,90 @@ definitional questions above (particularly whether "engulfing" should
 retest a different level than what `aggressive_entry_price()` computes
 today), not from re-adding this exact implementation.
 
+## 2026-09-01, 22:27 -- CRITICAL, UNINVESTIGATED: same signal re-attempted with different entry/stop/risk each time, produced 3 concurrent same-direction CHFJPY positions
+
+Reported directly by the user via phone screenshots (MT5 app + Telegram
+log), NOT yet investigated against the actual deployed code or the
+audit database -- no VPS terminal access from the session that received
+this report. Writing down the raw evidence precisely so it isn't lost
+before someone with real access can dig in.
+
+**Observed on the account (likely aggressive -- conservative was halted
+on daily drawdown from 17:18 UTC onward today, see the entry above;
+these attempts are timestamped after that):** three open CHFJPY SELL
+positions, 6.42 lots each, entries at 197.336 / 197.360 / 197.328,
+current price ~197.454 (all three underwater since price is ABOVE all
+three short entries), combined floating P&L -$1,355.71
+(-472.88/-376.70/-504.93). Balance 103,724.10, equity 102,368.39.
+
+**Telegram log shows the SAME 17:00:00 UTC bearish CHFJPY signal
+(engulfing, direct_mitigation, Weekly/Daily/H4 all bearish-aligned)
+attempted at least twice with DIFFERENT numbers each time, both
+declared execution_failed:**
+- 18:34:01 -- entry 197.748, stop 197.8615 (`engulfing_kl_fallback`),
+  target 197.4075, risking $500.00 -- `TRADE_RETCODE_INVALID_STOPS`.
+- 18:58:35 -- entry 197.8515, stop 198.101 (`engulfing`), target
+  197.103, risking $1,000.00 -- `TRADE_RETCODE_TIMEOUT`; log explicitly
+  says "confirmed no position was opened."
+
+Neither of those two logged attempts' entry_price matches ANY of the
+three actual open positions (197.336/197.360/197.328) -- meaning there
+were MORE attempts than the two visible in this scrollback, and at
+least three of them (with yet other entry prices) succeeded.
+
+**Why this looks different from the already-fixed duplicate-fill bug
+(2026-08-26 EURCAD, "confirmation lost, retry created a second
+position"):** that bug replayed the SAME order (same price/stop/risk)
+after a lost confirmation. Here the entry price, stop_kind (`engulfing`
+vs `engulfing_kl_fallback`), and risk amount ($1,000 vs $500) all
+differ between attempts for the supposedly SAME 17:00:00 signal
+candle -- that means the bot re-ran the FULL signal evaluation
+(`run_backtest()` -> `_consider_entry()`) multiple times and got a
+different answer each time, not that it blindly retried one failed
+`order_send()`. Two candidate mechanisms, NEITHER confirmed yet:
+(1) the underlying H1 17:00 candle's cached OHLC or the key level it's
+    measured against shifted between polls (`live_cache_sync.py`
+    revising recent bars as more data streams in), changing
+    `entry_price`/`stop_loss` on each fresh `run_backtest()` call for
+    what `entry_time` still reports as the same 17:00:00 candle: OR
+(2) `_last_entry_time`/the audit-log watermark got reset or widened
+    somewhere in between (a reconnect, a restart) such that the SAME
+    candle fell back into the "since last checked" gap and got
+    re-evaluated as if it were still unseen -- which would implicate
+    the watermark-persistence fix landed earlier today (`5dcf2b8`) if
+    that's confirmed to be the deployed code at the time these fired;
+    NOT confirmed either way from this scrollback alone.
+$500 vs $1,000 risk differing between attempts is ALSO consistent with
+either mechanism if enough real time passed between them for account
+equity/day_start_balance to move.
+
+**Needs, once someone has VPS/terminal access again:** (1) confirm
+which commit was actually deployed at 18:34-19:11 UTC today: (2) pull
+every `entry_attempt` row for CHFJPY from the aggressive account's audit
+db in that window (`sqlite3 aggressive_audit.db "SELECT * FROM decisions
+WHERE instrument='CHFJPY' AND timestamp BETWEEN '2026-09-01T18:00' AND
+'2026-09-01T20:00'"`) to see EVERY attempt, not just the two visible in
+Telegram scrollback, and check whether `entry_price`/`stop_loss` genuinely
+differ across rows sharing the same `entry_time`; (3) check
+`journalctl -u slk-bot2` for that window for restarts/reconnects
+coinciding with the differing attempts; (4) if mechanism (2) is
+confirmed, the watermark-persistence fix needs to re-derive a stricter
+"have we already ATTEMPTED this exact entry_time, regardless of
+success/failure" check, not just "what's the newest entry_time seen" --
+right now `AuditLog.last_entry_time()` already returns the newest
+entry_time including failed attempts (see its own comment), so if this
+IS the cause, the bug is likely somewhere in the RANGE match (`watermark
+< r.entry_time <= new_candle.time`) or in something resetting
+`_last_entry_time` mid-process, not in whether failures get logged.
+
+**Immediate note, not a fix:** whatever the mechanism, the practical
+effect is real risk beyond what was intended -- three same-direction
+positions instead of one meant ~3x the designed per-trade risk was live
+on one instrument at once. The risk manager's aggregate/day checks are
+still the ultimate backstop (see the conservative-account halt earlier
+today) but do not prevent duplicate ENTRIES into the same setup the way
+`find_open_entry_row`-style per-trade dedup is supposed to.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
