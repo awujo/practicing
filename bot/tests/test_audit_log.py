@@ -92,6 +92,38 @@ def test_find_open_entry_row_ignores_already_closed_trades(log):
     assert log.find_open_entry_row("GBPUSD", "9") is None
 
 
+def test_last_entry_time_returns_none_when_nothing_ever_logged(log):
+    assert log.last_entry_time("EURUSD") is None
+
+
+def test_last_entry_time_returns_the_most_recent_signal_candle(log):
+    # Confirmed live 2026-08-30/31: _last_entry_time lived only in
+    # memory, so every process restart lost it -- a Dukascopy-reference
+    # comparison the same day found 9 of 11 signals with zero trace in
+    # either audit database. This lets the watermark survive a restart
+    # by reconstructing it from what was already durably logged.
+    log.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok",
+                               instrument="EURUSD", entry_time="2026-08-31 11:00:00+00:00"))
+    log.append(DecisionRecord(event_type="entry_attempt", decision="decline_daily_aggregate_risk",
+                               reason="blocked", instrument="EURUSD",
+                               entry_time="2026-08-31 13:00:00+00:00"))
+    assert log.last_entry_time("EURUSD") == "2026-08-31 13:00:00+00:00"
+
+
+def test_last_entry_time_is_per_instrument(log):
+    log.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok",
+                               instrument="EURUSD", entry_time="2026-08-31 11:00:00+00:00"))
+    assert log.last_entry_time("GBPUSD") is None
+
+
+def test_last_entry_time_ignores_rows_with_no_entry_time(log):
+    # health_halt / phase_transition rows have entry_time="" -- must not
+    # be mistaken for a real (blank-string) watermark.
+    log.append(DecisionRecord(event_type="health_halt", decision="halt", reason="dd breach",
+                               instrument="EURUSD"))
+    assert log.last_entry_time("EURUSD") is None
+
+
 def test_export_csv_writes_every_row_with_headers(log, tmp_path):
     log.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok", instrument="EURUSD"))
     log.append(DecisionRecord(event_type="exit", decision="n/a", reason="closed", instrument="EURUSD"))

@@ -843,6 +843,63 @@ def test_a_signal_whose_gate_closed_before_the_recovery_poll_is_still_caught(tmp
     assert rows[0]["trade_id"] == "1"
 
 
+def test_a_fresh_process_reconstructs_its_watermark_from_the_audit_log_not_a_cold_start(tmp_path):
+    # Confirmed live 2026-08-30/31: _last_entry_time lives only in
+    # memory, so every process restart -- exactly when a deploy happens,
+    # one of the most common times for this to occur -- reset it to
+    # cold-start (exact-match-only). A Dukascopy-reference comparison
+    # the same day found 9 of 11 signals with zero trace in either audit
+    # database. A brand new LiveBot (simulating a fresh process after a
+    # restart) must reconstruct its watermark from what the PREVIOUS
+    # process durably logged, not silently fall back to exact-match-only
+    # and lose a signal that isn't the literal next candle checked.
+    from ..audit_log import DecisionRecord
+
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    t1 = pd.Timestamp("2026-01-13T12:00:00+00:00")  # the OLD process's last watermark, durably logged
+    t2 = pd.Timestamp("2026-01-13T13:00:00+00:00")  # a real signal in the gap -- NOT the next candle
+    t3 = pd.Timestamp("2026-01-13T14:00:00+00:00")  # the new process's first candle checked
+
+    audit.append(DecisionRecord(event_type="entry_attempt", decision="allow", reason="ok",
+                                 instrument="EURUSD", entry_time=str(t1)))
+    assert bot._last_entry_time.get("EURUSD") is None  # genuinely nothing in memory -- a fresh process
+
+    missed_signal = a_trade_record(t2, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": t3})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[missed_signal]):
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert any(r["trade_id"] == "1" and r["event_type"] == "entry_attempt"
+               and r["reason"] != "ok" for r in rows), \
+        "the t2 signal must have been evaluated (accepted or declined), not silently dropped"
+
+
+def test_a_genuinely_new_instrument_still_starts_cold(tmp_path):
+    # The audit log has never seen this instrument -- there is nothing
+    # to reconstruct, so this must still be exact-match-only, same as
+    # before the watermark-reconstruction fix existed (matching
+    # everything run_backtest() has ever produced on a true blank slate
+    # would replay history back to whenever the cache begins).
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    old_signal = a_trade_record(pd.Timestamp("2026-01-13T13:00:00+00:00"), trade_id=1)
+    new_candle_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": new_candle_time})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[old_signal]):
+        bot.run_once()
+
+    assert audit.recent(10) == []  # old_signal's time != new_candle_time -- correctly not matched
+
+
 def test_the_gap_replay_is_skipped_entirely_on_the_common_no_gap_path(tmp_path):
     # Steady-state polling (gate says HUNT right at the new candle) must
     # never even look at load_candles() -- the whole point of checking

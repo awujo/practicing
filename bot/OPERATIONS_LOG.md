@@ -1355,6 +1355,64 @@ manually-triggered run already publishes a feed generated with this
 fix. `bot/reconcile_signals.py` (the VPS-side reader) needed no
 changes -- it just reads whatever feed gets published.
 
+## 2026-09-01 -- root-caused the original "Dukascopy sees more trades" gap: found TWO distinct causes, fixed one
+
+Direct follow-up: the reference-feed mismatch was reported before
+today's two entry filters existed, so the fix above only explained
+part of it. Pulled a genuinely pre-fix Dukascopy reference run (commit
+e7c0a77, Sept 1 01:15 UTC, 36h window) and compared its 11 published
+signals directly against both audit databases for the same window.
+Result: **9 of 11 signals had zero trace in either database** -- not
+declined, not late, just absent.
+
+Two distinct, confirmed causes:
+
+1. **Restart-induced cold-start signal loss.** `_last_entry_time`
+   (the watermark that lets `_check_instrument()` catch up on
+   everything since the last real check) lives only in memory. Every
+   process restart resets it, and the FIRST check per instrument after
+   a restart falls back to exact-match-only (by design, to avoid
+   replaying full history on a truly blank slate) -- so a real signal
+   that closed around a restart, and doesn't land on the literal next
+   candle checked, is silently and permanently dropped. Confirmed via
+   journalctl: at least 3-4 process restarts (PID changes) fell inside
+   the 36h window this reference feed covered, matching how often this
+   bot was being redeployed that day.
+
+   **Fixed**: `AuditLog.last_entry_time(instrument)` (new method)
+   returns the most recent `entry_attempt`'s own signal-candle time --
+   durable, survives a restart. `_check_instrument()` now reconstructs
+   the watermark from this when nothing is cached in memory yet,
+   falling back to a genuine cold start only when the audit database
+   has never seen that instrument at all. Four new tests (2 in
+   `test_audit_log.py`, 2 in `test_orchestrator.py`, including one
+   confirming a truly new instrument still starts cold). 358 tests
+   pass.
+
+2. **MT5-vs-Dukascopy data divergence -- NOT fixed, separate issue.**
+   The one EURCAD row that DOES exist in the audit database is for an
+   11:00 candle; Dukascopy's reference found its EURCAD setup at 13:00
+   -- a different candle entirely, and by the time the live attempt was
+   logged (12:44-12:46) the 13:00 candle hadn't even closed yet. This
+   means `run_backtest()` running against MT5's live-merged cache
+   genuinely produced a DIFFERENT trade candidate than the pure-
+   Dukascopy offline engine, for the same instrument in the same
+   window -- not a timing gap, a real difference in what the two data
+   feeds show. Already an acknowledged tradeoff
+   (`live_cache_sync.py`'s own docstring: two different liquidity
+   providers, "usually small, occasionally not" different prices) but
+   this is direct evidence of the "occasionally not" case actually
+   happening, and restart-watermark persistence does nothing for it.
+   No fix attempted here -- would need comparing raw MT5 vs. Dukascopy
+   candle data for this exact window to characterize further, and it's
+   not obvious there's anything to "fix" beyond continuing to accept
+   the tradeoff.
+
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the
+VPS.** Worth watching `bot/reconcile_signals.py`'s next few runs to see
+how much of the original gap is now closed vs. still attributable to
+cause 2.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking

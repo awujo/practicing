@@ -182,6 +182,30 @@ class AuditLog:
         row = cur.fetchone()
         return row["id"] if row else None
 
+    def last_entry_time(self, instrument: str) -> str | None:
+        """The signal-candle time (DecisionRecord.entry_time, a string --
+        see that field's own comment) of the most recent entry_attempt
+        logged for this instrument, or None if nothing has ever been
+        logged for it.
+
+        Confirmed live 2026-08-30/31: orchestrator.py's _last_entry_time
+        watermark lives only in memory, so every process restart resets
+        it to cold-start (exact-match-only), and any signal that closed
+        around a restart -- one of the most common times for a restart
+        to happen, since a deploy is exactly when this bot gets
+        restarted -- was silently and permanently lost, with no audit
+        row at all: a Dukascopy-reference comparison the same day found
+        9 of 11 signals with zero trace in either audit database. This
+        lets the orchestrator reconstruct a real watermark from what was
+        already durably logged instead of starting blind every time."""
+        cur = self._conn.execute(
+            "SELECT entry_time FROM decisions WHERE instrument=? AND event_type='entry_attempt' "
+            "AND entry_time != '' ORDER BY id DESC LIMIT 1",
+            (instrument,),
+        )
+        row = cur.fetchone()
+        return row["entry_time"] if row else None
+
     def export_csv(self, path: str):
         cur = self._conn.execute("SELECT * FROM decisions ORDER BY id")
         rows = cur.fetchall()

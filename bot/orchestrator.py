@@ -25,6 +25,8 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+import pandas as pd
+
 from backtest.engine.candles import load_candles
 from backtest.engine.runner import run_backtest
 from backtest.engine.trade_log import TradeRecord
@@ -228,14 +230,26 @@ class LiveBot:
         So instead of matching the one candle that just closed, this
         matches everything since `_last_entry_time[instrument]` -- the
         newest candle actually evaluated last time -- up to and including
-        this one. The single exception is the very first check for an
-        instrument in this process's lifetime (`_last_entry_time` has no
-        entry yet): there it stays exact-match-only, because matching
-        "everything run_backtest() has ever produced" on a cold start
-        would replay every historical trade back to whenever the cache
-        begins. A full process restart resets `_last_entry_time` and so
-        re-enters that cold-start behavior; an in-process reconnect does
-        not, which is the gap this exists to close.
+        this one.
+
+        `_last_entry_time` itself lives only in memory, so a full process
+        restart used to reset it to cold-start (exact-match-only,
+        because matching "everything run_backtest() has ever produced"
+        on a truly blank slate would replay every historical trade back
+        to whenever the cache begins). Confirmed live 2026-08-30/31: a
+        Dukascopy-reference comparison found 9 of 11 signals with ZERO
+        trace in either audit database over a period that included
+        several restarts -- a restart is exactly when a deploy happens,
+        which is one of the most common times for this to bite. The
+        watermark is no longer purely in-memory: if there's nothing
+        cached for this instrument yet, `audit_log.last_entry_time()`
+        reconstructs it from the most recent entry_attempt actually
+        logged (durable, survives a restart) before falling back to a
+        genuine cold start only when the audit database has never seen
+        this instrument at all. An in-process reconnect never hit this
+        gap in the first place -- `_last_entry_time` stays intact for
+        those, this only ever changes what happens right after a fresh
+        process start.
 
         The storyline gate itself has the same "only checked at the
         recovery candle" problem this method fixes for entries -- and it
@@ -274,6 +288,10 @@ class LiveBot:
         # AT the single instant it's asked about. See this method's own
         # docstring for why that's not the same as "since we last checked."
         watermark = self._last_entry_time.get(instrument)
+        if watermark is None:
+            persisted = self.audit_log.last_entry_time(instrument)
+            if persisted is not None:
+                watermark = pd.Timestamp(persisted)
         if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
             return
 
