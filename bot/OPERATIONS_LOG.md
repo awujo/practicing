@@ -1967,11 +1967,35 @@ mechanical method?"* The answer, in his words:
   how long it's going to take to hit one to three... **It might take
   very long time**"*
 
-So the working range is **5-10 pips, with 15 already treated as too
-wide** -- and the reason given is R:R reachability, not risk appetite.
-Elsewhere: *"my stop loss was very tight. Not like very tight. It was a
-little bit, just a little"*; *"my stop loss was very tiny here, like
-this"*; *"your stop loss should have been very small."*
+**READ THESE AS OBSERVATIONS, NOT AS A SPECIFICATION.** Direct user
+correction after an earlier draft of this very entry made that mistake:
+*"it's not just a fixed 10 or 15... Bishop's SL aren't small because he
+wants it small, he is placing them at logical invalidation points."*
+
+These numbers are what correct placement HAPPENED TO PRODUCE on those
+particular charts. They are outputs, never inputs. Nothing in the method
+targets a pip count, compares against one, or caps one. If the logical
+invalidation point sits 25 pips away on a volatile instrument then 25
+pips is the correct stop there; if it sits 3 pips away, 3 is correct.
+The stops come out small so consistently because the invalidation point
+is genuinely close when the setup has been read properly -- that is the
+whole claim, and it is a claim about READING THE SETUP, not about
+sizing.
+
+This also dissolves the cross-instrument volatility problem raised
+earlier in this file: no ATR normalisation, no per-instrument pip table,
+no threshold of any kind is needed, because a pip number is never
+consulted in the first place. The instrument's own structure supplies
+the distance.
+
+Elsewhere, same register -- qualitative, never numeric: *"my stop loss
+was very tight. Not like very tight. It was a little bit, just a
+little"*; *"my stop loss was very tiny here, like this"*; *"your stop
+loss should have been very small."* The one place a number does carry
+weight is as a REJECTION signal: 15 pips prompts *"how long is it going
+to take to hit one to three... it might take very long time"* -- i.e. a
+stop that comes out wide is read as evidence the setup is poor, and the
+response is to pass on the trade, not to move the stop.
 
 ### 3. The mechanical rule -- WHERE the stop goes
 
@@ -2047,9 +2071,28 @@ loop.** The stop rules simply don't consult it. A candidate rewrite:
 2. Where the entry is AT a V/A-shape key level, the alternate anchor is
    the nearest OPPOSITE-shape key level, per *"put my stop at the A
    shape key level"* -- never the entry's own level.
-3. Treat a resulting stop wider than ~10-15 pips as a signal that the
-   ANCHOR is wrong (skip the setup), not as a number to clamp -- the
-   opposite of what `_natural_stop_too_wide()` does today.
+3. Validate the ANCHOR structurally, never by pip width. An earlier
+   draft of this list said "treat a stop wider than ~10-15 pips as a
+   signal the anchor is wrong" -- which is the same pip-budget thinking
+   in a new costume, and was corrected directly. The stop's width is an
+   OUTPUT; it is not evidence of anything on its own, because a real
+   invalidation point genuinely is further away on some instruments and
+   in some conditions. What can legitimately be checked is whether the
+   anchor is structurally coherent, all of which are answerable without
+   reference to any pip count:
+   - is it on the correct side of entry (already `_stop_on_correct_side`)
+   - does it come from THIS setup's own sweep, rather than an unrelated
+     older extreme (the CHFJPY failure -- an anchor at 198.101 when the
+     whole session traded 197.1-197.7 is wrong because it belongs to a
+     different piece of structure, NOT because 76 pips is a big number)
+   - is the candle/level it derives from inside the setup's own window
+   - for the opposite-shape fallback, does such a level actually exist
+     nearby (if not, there is no valid stop and the setup is skipped)
+   `_natural_stop_too_wide()` / `MAX_NATURAL_STOP_PIPS` should be
+   DELETED rather than retuned or ATR-normalised: a width test cannot
+   distinguish "correct anchor, volatile instrument" from "anchor
+   pointing at unrelated structure", and substituting a second anchor
+   whenever the first looks wide is what hides the real fault.
 4. A/B over 2025-2026 before trusting any of it. Note this will also
    change R:R materially: the source's real trades run 5-11R, while the
    engine targets a flat 3:1 with an ERL cap. A correct tight stop makes
