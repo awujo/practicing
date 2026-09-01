@@ -188,9 +188,37 @@ def test_place_market_order_retries_a_requote_and_then_succeeds():
     assert len(fake.order_send_calls) == 2
 
 
-def test_place_market_order_gives_up_after_max_retries_of_transient_failures():
+def test_place_market_order_gives_up_after_max_retries_of_rejected_sends():
+    # REQUOTE is a REJECTED-class failure: the broker answered and refused,
+    # so nothing landed and re-sending cannot duplicate. This is the one
+    # path that still loops, and it must still give up at max_retries.
     fake = FakeMT5()
     fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_REQUOTE, order=0, price=0, comment="requote"),
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_REQUOTE, order=0, price=0, comment="requote"),
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_REQUOTE, order=0, price=0, comment="requote"),
+    ]
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
+    result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
+    assert result.success is False
+    assert result.attempts == 3
+    assert len(fake.order_send_calls) == 3
+
+
+def test_an_ambiguous_timeout_is_sent_exactly_once_even_when_nothing_landed():
+    # THE regression test for the 2026-09-01 CHFJPY triple-fill. A TIMEOUT
+    # gives no answer, so "nothing landed" is not knowable -- the recovery
+    # check returning empty is NOT proof, because a real fill may simply
+    # not have propagated yet. Live, that check came back empty three
+    # times while three 6.42-lot positions were actually opening.
+    #
+    # So: exactly ONE send, no matter how many retries are configured.
+    # This deliberately gives up a genuinely-recoverable transient failure
+    # (see the renamed test below) -- that trade-off is the fix.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
+    fake.positions = []
     fake.order_send_queue = [
         SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0, comment="timeout"),
         SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0, comment="timeout"),
@@ -198,11 +226,19 @@ def test_place_market_order_gives_up_after_max_retries_of_transient_failures():
     ]
     ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
+
+    assert len(fake.order_send_calls) == 1, "an ambiguous send must NEVER be re-sent"
+    assert result.attempts == 1
     assert result.success is False
-    assert result.attempts == 3
+    assert "NOT retried" in result.reason
 
 
-def test_place_market_order_retries_when_order_send_returns_none():
+def test_order_send_returning_none_is_also_ambiguous_and_not_retried():
+    # order_send() returning None is the most ambiguous outcome there is:
+    # no retcode, no confirmation, nothing. It used to be retried (and the
+    # retry could succeed, which is what this test used to assert) -- but
+    # "no answer" cannot be distinguished from "filled, reply lost", so it
+    # now takes the same terminal path as an explicit TIMEOUT.
     fake = FakeMT5()
     fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
 
@@ -218,8 +254,9 @@ def test_place_market_order_retries_when_order_send_returns_none():
     fake.order_send = flaky_send
     ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURUSD", "bullish", 1.0, 1.17374, 1.17290, 1.17626)
-    assert result.success is True
-    assert result.attempts == 2
+    assert calls["n"] == 1, "a None reply must not be re-sent"
+    assert result.success is False
+    assert result.attempts == 1
 
 
 def test_sell_order_uses_order_type_sell():
@@ -313,10 +350,22 @@ def test_a_connection_failure_whose_order_actually_landed_is_not_retried():
     assert "confirmed open on the broker" in result.reason
 
 
-def test_a_connection_failure_that_truly_failed_is_still_retried():
-    # The other half: if nothing landed, retrying is correct and must
-    # still happen -- the fix must not make the bot give up on real
-    # transient failures.
+def test_a_connection_failure_that_truly_failed_is_NOT_retried_anymore():
+    # DELIBERATE REVERSAL of this test's original assertion (it used to
+    # require the retry, asserting 2 sends and an eventual success).
+    #
+    # The original reasoning was that if nothing landed, retrying is free.
+    # That is true -- but only if you can TELL that nothing landed, and
+    # 2026-09-01 proved you cannot: the check that answers that question
+    # queries the broker over the same link whose failure caused the
+    # ambiguity, so it reports "nothing landed" for fills that simply have
+    # not propagated. Acting on that answer opened three real CHFJPY
+    # positions against one intended trade, none of them tracked.
+    #
+    # So this case -- a connection failure where genuinely nothing landed
+    # -- now costs a missed entry instead of a retry. That is the accepted
+    # price: one missed trade out of ~1400 is a rounding error against a
+    # silently tripled position carrying a stop sized for a single one.
     fake = FakeMT5()
     fake.symbols["EURCAD"] = make_symbol_info(point=0.0001)
     fake.positions = []  # nothing ever opens
@@ -327,9 +376,9 @@ def test_a_connection_failure_that_truly_failed_is_still_retried():
     ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0, recovery_check_settle_seconds=0)
     result = ex.place_market_order("EURCAD", "bullish", 10.05, 1.61707, 1.61562, 1.61990)
 
-    assert len(fake.order_send_calls) == 2
-    assert result.success is True
-    assert result.ticket == 9002
+    assert len(fake.order_send_calls) == 1, "the queued success must never be reached"
+    assert result.success is False
+    assert result.ticket is None
 
 
 def test_a_pre_existing_position_on_the_same_symbol_is_not_mistaken_for_our_fill():
@@ -345,7 +394,7 @@ def test_a_pre_existing_position_on_the_same_symbol_is_not_mistaken_for_our_fill
 
     assert result.success is False
     assert result.ticket is None
-    assert "confirmed no position was opened" in result.reason
+    assert "NOT retried" in result.reason
 
 
 def test_a_position_from_another_bot_is_not_adopted():

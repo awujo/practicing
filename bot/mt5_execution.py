@@ -23,14 +23,49 @@ from enum import Enum
 from .config import SymbolMap
 
 
-# A conservative allowlist, not "retry everything" -- retcodes here are
-# transient/broker-side (requote, timeout, connection issue) and retrying
-# is safe. Anything else (bad stops, no money, market closed, invalid
-# volume) is a real problem retrying won't fix and should surface as a
-# hard failure for a human to look at, not get silently retried into
-# eventually placing a wrong order.
-RETRYABLE_RETCODE_NAMES = {"TRADE_RETCODE_REQUOTE", "TRADE_RETCODE_TIMEOUT", "TRADE_RETCODE_CONNECTION",
-                           "TRADE_RETCODE_PRICE_CHANGED", "TRADE_RETCODE_PRICE_OFF"}
+# A failed send splits into two CATEGORICALLY different cases, and
+# conflating them is what produced the 2026-09-01 CHFJPY incident (three
+# 6.42-lot positions against one intended trade, all three untracked --
+# see below and OPERATIONS_LOG.md).
+#
+# REJECTED: the broker ANSWERED and refused the order. Nothing landed, so
+# re-sending cannot possibly duplicate anything -- retrying is genuinely
+# safe here, and is worth doing (a requote on a fast-moving pair is
+# exactly the case retrying exists for).
+REJECTED_RETCODE_NAMES = {"TRADE_RETCODE_REQUOTE", "TRADE_RETCODE_PRICE_CHANGED",
+                          "TRADE_RETCODE_PRICE_OFF"}
+
+# AMBIGUOUS: NO usable answer came back. The order may have filled with
+# the confirmation lost in transit, or may never have reached the broker
+# at all -- and from this side those two are indistinguishable. Retrying
+# treats the first case as the second and opens a duplicate.
+#
+# These used to sit in the same "retryable" set as the rejections above,
+# with `_recover_landed_order()` below meant to make retrying safe by
+# asking the broker whether a position appeared. That check is not
+# sufficient and cannot be made sufficient: it queries the broker over
+# the SAME link whose failure produced the ambiguity, so under exactly
+# the conditions that matter it under-reads (returns "nothing landed"
+# for a position that did land but hasn't propagated yet) and greenlights
+# a retry. Confirmed live 2026-09-01 on CHFJPY: order_send timed out
+# three times, each attempt actually filled (197.336 / 197.360 /
+# 197.328), each recovery check came back empty inside its 2s settle
+# window, and the loop ran to max_retries and reported "confirmed no
+# position was opened" -- while three real positions sat open, untracked
+# by the bot and invisible to the risk manager.
+#
+# So ambiguity is now terminal: verify once (adopting the position if the
+# check DOES find it), and otherwise stop and surface it for
+# reconciliation rather than sending again. The cost asymmetry is not
+# close -- missing one entry costs a fraction of one trade's edge out of
+# ~1400 trades, while a silently multiplied position carries N times the
+# intended risk with a stop-loss computed for a single one.
+AMBIGUOUS_RETCODE_NAMES = {"TRADE_RETCODE_TIMEOUT", "TRADE_RETCODE_CONNECTION"}
+
+# Kept as the union for callers/tests that ask "was this failure the kind
+# we handle at all", as opposed to a hard rejection (bad stops, no money,
+# market closed, invalid volume) that should surface to a human.
+RETRYABLE_RETCODE_NAMES = REJECTED_RETCODE_NAMES | AMBIGUOUS_RETCODE_NAMES
 
 
 class ValidationError(Enum):
@@ -208,7 +243,20 @@ class MT5Execution:
                                             filled_price=result.price, slippage_points=slippage,
                                             retcode=result.retcode, retcode_name=retcode_name,
                                             attempts=attempts)
-                if retcode_name not in RETRYABLE_RETCODE_NAMES:
+                if retcode_name in REJECTED_RETCODE_NAMES:
+                    # The broker answered and refused -- nothing landed,
+                    # so re-sending is safe. This is the ONLY path that
+                    # loops.
+                    failure = f"{retcode_name} ({getattr(result, 'comment', '')})"
+                    if attempts < self._max_retries:
+                        time.sleep(self._retry_backoff_seconds)
+                        continue
+                    return ExecutionResult(success=False, requested_price=entry_price,
+                                            retcode=result.retcode, retcode_name=retcode_name,
+                                            reason=f"{failure}; retries exhausted, broker rejected every "
+                                                   f"attempt so nothing landed",
+                                            attempts=attempts)
+                if retcode_name not in AMBIGUOUS_RETCODE_NAMES:
                     # A definitive rejection (bad volume, no money, ...).
                     # The broker refused it outright, so nothing landed.
                     return ExecutionResult(success=False, requested_price=entry_price, retcode=result.retcode,
@@ -220,17 +268,21 @@ class MT5Execution:
             else:
                 failure = f"order_send returned None: {self._mt5.last_error()}"
 
-            # Ambiguous failure. Before doing anything else, find out
-            # whether it actually landed.
+            # AMBIGUOUS from here down -- no usable answer came back, so
+            # this order may or may not have landed. Check ONCE (which
+            # adopts the position if it's already visible), then stop
+            # either way. Never loop: see AMBIGUOUS_RETCODE_NAMES.
             recovered = self._recover_landed_order(symbol, tickets_before, entry_price, attempts, failure)
             if recovered is not None:
                 return recovered
 
-            if attempts < self._max_retries:
-                time.sleep(self._retry_backoff_seconds)
-                continue
-            return ExecutionResult(success=False, requested_price=entry_price,
-                                    reason=f"{failure}; confirmed no position was opened", attempts=attempts)
+            return ExecutionResult(
+                success=False, requested_price=entry_price, attempts=attempts,
+                reason=f"{failure}; no position found when checked, but this send was AMBIGUOUS "
+                       f"(no confirmation came back) and is deliberately NOT retried -- the check "
+                       f"can under-read a fill that has not propagated yet, which is exactly how "
+                       f"the 2026-09-01 CHFJPY triple-fill happened. If a {symbol} position appears "
+                       f"without a matching tracked trade, it came from this send.")
 
         return ExecutionResult(success=False, requested_price=entry_price,
                                 reason="exhausted retries", attempts=attempts)
