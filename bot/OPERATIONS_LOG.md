@@ -1214,6 +1214,72 @@ later if they persist once this deploys.
 **Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the
 VPS** -- this is the highest-priority deploy of the day.
 
+## 2026-09-01 -- session-rollover entry filter validated and enabled live
+
+Direct report following up on the GBPAUD incident above: risk sizing
+looked wrong on other trades too ("$1,500 range of risk"). Traced the
+GBPAUD loss precisely via its audit row: requested entry 1.88948, stop
+1.88846 (102-point distance, sized for $1,000), actual fill 1.89002
+(54 points of slippage) -- real distance to the still-fixed stop became
+156 points, 53% wider, and -$1,530.32 realized when it hit. Not a
+sizing-math bug (`compute_lot_size()` is correct); the gap is between
+the REQUESTED price sizing is computed against and the ACTUAL fill
+price a market order can land at, with nothing correcting the stop
+distance for the difference.
+
+STRATEGY.md Section 8 already documents the likely cause: "Avoid
+holding into very late hours -- spread widens sharply around session
+rollover (~10pm reference)." The GBPAUD entry was at 22:00 UTC, exactly
+that window. The live bot had never implemented this rule.
+
+Ran the `avoid_rollover_entries` A/B backtest (added above) over full
+2025-2026 history, all 25 instruments, both styles:
+
+| | without filter | with filter (21:00-23:00 UTC blocked) |
+|---|---|---|
+| closed trades | 2,696 | 2,512 |
+| win rate | 51.7% | 51.1% |
+| total R | 2,668.2 | 2,451.5 |
+| avg R/trade | 0.990 | 0.976 |
+
+The 185 removed trades contributed +216.7R (~8% of total), slightly
+ABOVE the overall per-trade average -- meaning the backtest thinks
+rollover-window signals are perfectly fine. That's expected and not a
+contradiction: `run_backtest()` has zero slippage model, so it cannot
+see the exact execution risk (a real, demonstrated 54-point slippage
+event) this filter exists to avoid. The comparison validates signal
+quality, not execution safety, and was never going to be able to prove
+the live incident wrong either way.
+
+**Decision (direct instruction): enable it live regardless of the
+backtest R cost** -- demonstrated live execution risk outweighs an
+opportunity cost the simulation structurally cannot measure.
+`orchestrator.py`'s `_check_instrument()` now calls `run_backtest(...,
+avoid_rollover_entries=True)` unconditionally. New test
+`test_check_instrument_always_asks_run_backtest_to_avoid_rollover_entries`
+asserts the flag is actually passed. 349 tests pass. Scope: all 25
+instruments (GBPAUD, the actual incident, is a cross, not one of the 7
+FX majors -- a majors-only scope would not have caught it); new
+entries only, not overnight-holding behavior (STRATEGY.md's separate
+"day trader, does not swing overnight" rule -- a bigger change, not
+done here).
+
+The temporary `compare-rollover-filter.yml` workflow has been removed
+now that results are captured, matching this project's established
+pattern (see the lookahead-bias and confirmation-source comparisons
+earlier in this file).
+
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS.**
+
+Also still open from the same report: risk exceeding $1,000 on OTHER
+trades may be largely the same slippage-vs-fixed-stop mechanism (any
+trade, any hour, can in principle slip on a Market Execution fill) --
+this rollover fix only addresses the specific high-spread WINDOW, not
+slippage in general. Worth re-checking whether oversized-risk reports
+keep happening on trades entered well outside 21:00-23:00 UTC; if so,
+that's a broader "stop should account for realized fill price" problem
+this fix does not solve.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking

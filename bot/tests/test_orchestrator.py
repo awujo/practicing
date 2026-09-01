@@ -317,6 +317,29 @@ def test_run_once_skips_iteration_when_account_state_fetch_fails(tmp_path):
     assert audit.recent(10) == []
 
 
+def test_check_instrument_always_asks_run_backtest_to_avoid_rollover_entries(tmp_path):
+    # Confirmed live 2026-08-31: a GBPAUD entry at 22:00 UTC filled 54
+    # points worse than requested, turning $1,000 of intended risk into a
+    # $1,530.32 realized loss -- STRATEGY.md Section 8's documented
+    # session-rollover risk, which the live bot had never actually
+    # implemented. A 2026-09-01 A/B backtest showed this window's signals
+    # are fine on paper, but that comparison has no slippage model and so
+    # cannot see the execution risk this flag exists to avoid -- direct
+    # instruction was to enable it live regardless of the backtest R cost.
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": entry_time})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]) as mock_rb:
+        bot.run_once()
+
+    mock_rb.assert_called_once()
+    assert mock_rb.call_args.kwargs.get("avoid_rollover_entries") is True
+
+
 # ---- health-based circuit breaker ----
 
 def test_run_once_logs_a_health_halt_and_skips_instrument_checks(tmp_path):

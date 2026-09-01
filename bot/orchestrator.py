@@ -277,7 +277,21 @@ class LiveBot:
         if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
             return
 
-        records = run_backtest(instrument, self.entry_style, source=self.source)
+        # avoid_rollover_entries=True: confirmed live 2026-08-31, a GBPAUD
+        # entry at 22:00 UTC filled 54 points worse than requested (Market
+        # Execution mode gives no slippage cap), turning $1,000 of intended
+        # risk into a realized $1,530.32 loss -- exactly the risk
+        # STRATEGY.md Section 8 already names ("spread widens sharply
+        # around session rollover"). A 2026-09-01 A/B backtest over
+        # 2025-2026 showed this window's signals are decent on paper
+        # (+216.7R of the +2,668.2R total, ~8%) -- but that comparison
+        # can't see the reason to skip it: the backtest has NO slippage
+        # model at all, so it can't price in the exact execution risk this
+        # flag exists to avoid. Live execution risk (demonstrated) wins
+        # over an unmeasurable backtest opportunity cost (the simulation
+        # structurally cannot validate either way), per direct instruction.
+        records = run_backtest(instrument, self.entry_style, source=self.source,
+                                avoid_rollover_entries=True)
         if watermark is None:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:
