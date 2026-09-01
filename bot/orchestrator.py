@@ -290,8 +290,18 @@ class LiveBot:
         # flag exists to avoid. Live execution risk (demonstrated) wins
         # over an unmeasurable backtest opportunity cost (the simulation
         # structurally cannot validate either way), per direct instruction.
+        # min_reward_r=1.0: direct 2026-09-01 question, "a trade of less
+        # than 1R doesn't make sense to hold." A/B backtest over 2025-2026
+        # confirmed it: the 65 trades this filter removes were net LOSERS
+        # (-16.1R combined, 44.6% win rate vs. 51.7% overall) -- skipping
+        # them raised total R (2,668.2 -> 2,684.3), win rate (51.7% ->
+        # 51.9%), and avg R/trade (0.990 -> 1.020), all at once. Unlike
+        # avoid_rollover_entries above, this isn't a safety-vs-opportunity
+        # tradeoff -- it's a clean improvement the backtest can measure
+        # directly (no slippage model needed to judge "is a sub-1R target
+        # worth the risk").
         records = run_backtest(instrument, self.entry_style, source=self.source,
-                                avoid_rollover_entries=True)
+                                avoid_rollover_entries=True, min_reward_r=1.0)
         if watermark is None:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:

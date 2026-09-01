@@ -1280,6 +1280,40 @@ keep happening on trades entered well outside 21:00-23:00 UTC; if so,
 that's a broader "stop should account for realized fill price" problem
 this fix does not solve.
 
+## 2026-09-01 -- minimum-reward entry filter validated and enabled live: a clean improvement, not a tradeoff
+
+Direct question: "a trade of less than 1R doesn't make sense to hold ...
+check backtesting ... taking trade with less than 1R and leaving it
+which gives more profit." Ran the same A/B process used for
+`avoid_rollover_entries` -- `run_backtest()` gained `min_reward_r`
+(default `None`), skipping any entry whose ERL-capped target sits less
+than that many R away from entry. Full 2025-2026 backtest, all 25
+instruments, both styles, `min_reward_r=1.0`:
+
+| | without filter | with filter (min 1R target) |
+|---|---|---|
+| closed trades | 2,696 | 2,631 |
+| win rate | 51.7% | 51.9% |
+| total R | 2,668.2 | 2,684.3 |
+| avg R/trade | 0.990 | 1.020 |
+
+Unlike the rollover filter, this is NOT a safety-vs-opportunity
+tradeoff -- the 65 removed trades were net LOSERS (-16.1R combined,
+44.6% win rate vs. 51.7% overall). Skipping them raised total R, win
+rate, AND avg R/trade simultaneously, and the backtest can judge this
+one directly (no slippage model needed to know whether a sub-1R target
+is worth the risk, unlike the rollover-window execution risk).
+
+**Enabled live immediately**, no further confirmation needed given the
+unambiguous result: `orchestrator.py`'s `_check_instrument()` now calls
+`run_backtest(..., avoid_rollover_entries=True, min_reward_r=1.0)`.
+Existing rollover-flag test extended to also assert `min_reward_r=1.0`
+is passed. 351 tests pass. Temporary `compare-min-reward-filter.yml`
+workflow removed now that results are captured, same pattern as
+`compare-rollover-filter.yml` before it.
+
+**Needs `git pull` + `systemctl restart slk-bot1 slk-bot2` on the VPS.**
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking

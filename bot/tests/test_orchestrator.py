@@ -317,15 +317,22 @@ def test_run_once_skips_iteration_when_account_state_fetch_fails(tmp_path):
     assert audit.recent(10) == []
 
 
-def test_check_instrument_always_asks_run_backtest_to_avoid_rollover_entries(tmp_path):
-    # Confirmed live 2026-08-31: a GBPAUD entry at 22:00 UTC filled 54
-    # points worse than requested, turning $1,000 of intended risk into a
-    # $1,530.32 realized loss -- STRATEGY.md Section 8's documented
-    # session-rollover risk, which the live bot had never actually
-    # implemented. A 2026-09-01 A/B backtest showed this window's signals
-    # are fine on paper, but that comparison has no slippage model and so
-    # cannot see the execution risk this flag exists to avoid -- direct
-    # instruction was to enable it live regardless of the backtest R cost.
+def test_check_instrument_always_asks_run_backtest_for_both_live_safety_filters(tmp_path):
+    # avoid_rollover_entries: confirmed live 2026-08-31, a GBPAUD entry at
+    # 22:00 UTC filled 54 points worse than requested, turning $1,000 of
+    # intended risk into a $1,530.32 realized loss -- STRATEGY.md Section
+    # 8's documented session-rollover risk, which the live bot had never
+    # actually implemented. A 2026-09-01 A/B backtest showed this
+    # window's signals are fine on paper, but that comparison has no
+    # slippage model and so cannot see the execution risk this flag
+    # exists to avoid -- direct instruction was to enable it live
+    # regardless of the backtest R cost.
+    #
+    # min_reward_r=1.0: direct 2026-09-01 question, "a trade of less than
+    # 1R doesn't make sense to hold." Unlike the rollover flag, this one
+    # is a clean backtest-confirmed improvement, not a tradeoff: the
+    # removed trades were net losers (-16.1R, 44.6% win rate vs. 51.7%
+    # overall) -- skipping them raised total R, win rate, AND avg R/trade.
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
     entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
@@ -338,6 +345,7 @@ def test_check_instrument_always_asks_run_backtest_to_avoid_rollover_entries(tmp
 
     mock_rb.assert_called_once()
     assert mock_rb.call_args.kwargs.get("avoid_rollover_entries") is True
+    assert mock_rb.call_args.kwargs.get("min_reward_r") == 1.0
 
 
 # ---- health-based circuit breaker ----
