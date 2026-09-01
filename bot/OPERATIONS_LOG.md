@@ -1796,6 +1796,69 @@ were already open and untracked when these fixes landed. Nothing here
 retroactively adopts or manages them -- they need manual closing or
 manual reconciliation.
 
+## 2026-09-01 -- stop-loss placement doesn't match SLK's own 5-15 pip range, in BOTH directions (found, NOT fixed)
+
+Raised directly by the user looking at the CHFJPY chart: "is that where
+the SL is meant to be based on SLK? That SL is too much for a logical
+point." Investigated, and they're right -- but the problem is wider than
+the one trade, and the obvious fix would make it worse.
+
+**Too wide (CHFJPY).** entry 197.8515, stop 198.101 = 0.2495 = ~25 pips.
+`MAX_NATURAL_STOP_PIPS = 30.0` is the gate deciding when a trigger's
+natural anchor is "too wide" and the fallback takes over, so 25 passed
+and the natural engulfing stop was used as-is. That constant's own
+comment concedes the issue: *"STRATEGY.md's own worked examples run 5-15
+pips; picked generously above that"* -- and it's flagged in the code as
+"a judgment call, not a number from the source material." Twice the top
+of the documented range.
+
+**Too tight (EURGBP, same day).** `entry 0.85574 | stop 0.85564
+(plug_and_play) | key level 0.85574 (V)` -- rejected with
+`TRADE_RETCODE_INVALID_STOPS`. Entry EQUALS the key level and the stop
+sits 1 pip from it.
+
+**Why both happen, and why lowering the threshold is the wrong fix.**
+For `DIRECT_MITIGATION` (both trades above),
+`classify_entry_pattern()` returns `new_key_level` itself as
+`reference_level`. Aggressive style then sets
+`entry_price = aggressive_entry_price(reference_level) =
+new_key_level.price`. The universal fallback is
+`origin_stop_loss(new_key_level.price, ...)` = that same price +/- a 1
+pip pad. So **for aggressive style the fallback stop is always ~1 pip
+from entry, by construction** -- entry and the fallback's anchor are the
+same number. It gets declined by the broker minimum-stop check, or
+rejected as INVALID_STOPS, or (if it ever passes) stopped out on noise.
+
+Which means lowering `MAX_NATURAL_STOP_PIPS` from 30 toward SLK's 15 --
+the intuitive fix, and what "the stop is too wide" seems to call for --
+would push MORE aggressive-style trades into a fallback that produces a
+1-pip stop. It would trade the too-wide failure for the too-tight one at
+higher volume. The threshold is not the defect; the fallback having no
+valid anchor for an entry taken AT the level is.
+
+Conservative style is unaffected by this specific collapse:
+`conservative_entry_price()` is the confirmation candle's close, which
+sits some real distance from the key level -- e.g. the 18:34 CHFJPY
+attempt, entry 197.748 / stop 197.8615 (`engulfing_kl_fallback`) =
+~11 pips, squarely inside SLK's 5-15.
+
+**Deliberately NOT fixed 2026-09-01.** This is core strategy logic, it
+needs a stop rule anchored to actual structure rather than to the entry
+price itself, both failure directions have to be addressed together, and
+any candidate needs the same A/B-over-2025-2026 validation every other
+change this session went through. Landing that unverified hours before
+several unmonitored weeks is exactly the wrong trade-off. Whoever picks
+this up:
+1. Decide what the fallback's anchor should be for an entry taken AT the
+   key level -- candidates: the swept liquidity point
+   (`candidate.liquidity_price`, already carried on `EntryCandidate` for
+   this kind of purpose), the H4 level BELOW/ABOVE the reaction level,
+   or the trigger candle's own structural extreme with a floor.
+2. Only then revisit `MAX_NATURAL_STOP_PIPS`; 30 may well be right once
+   the fallback is sound, and is certainly wrong to lower while it isn't.
+3. A/B both changes together -- they interact, and moving one without
+   the other is what makes this look like a threshold problem.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
