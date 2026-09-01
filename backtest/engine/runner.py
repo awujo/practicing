@@ -206,6 +206,19 @@ from .trade_log import TradeRecord, write_trade_log, summarize
 QMR_LOOKAHEAD = 30
 FOLLOWING_LOOKAHEAD = 3
 
+# STRATEGY.md Section 8: "Avoid holding into very late hours -- spread
+# widens sharply around session rollover (~10pm reference)." Confirmed
+# live 2026-08-31: a GBPAUD entry at 22:00 UTC filled 54 points worse
+# than requested (Market Execution mode gives no slippage cap), turning
+# an intended $1,000 risk into a realized -$1,530.32 loss when it hit
+# its stop -- the exact failure mode this window exists to avoid. Hours
+# are UTC, matching every candle timestamp in this codebase; 21:00-23:00
+# centers on the actual NY-close/rollover point with an hour of padding
+# either side, per direct 2026-09-01 correction (not literally just "10
+# pm" -- the doc's own wording is a loose reference, not a precise bound).
+ROLLOVER_WINDOW_START_HOUR_UTC = 21
+ROLLOVER_WINDOW_END_HOUR_UTC = 23  # exclusive -- blocks the 21:00 and 22:00 H1 candles
+
 # How far back a tier's OWN breakout/sweep+break can be and still count as
 # "aligned" with the current H1 entry candidate. Bounded for the same
 # reason candidate_levels/imbalance matching got bounded elsewhere in this
@@ -752,7 +765,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
                   erl_cap: bool = True, close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
-                  irl_mode: str = "ignore") -> list[TradeRecord]:
+                  irl_mode: str = "ignore",
+                  avoid_rollover_entries: bool = False) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -773,6 +787,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     False, every trade targets a flat `rr` with no cap at all -- for
     comparing the two approaches against each other, not a claim that the
     cap was wrong.
+    avoid_rollover_entries: when True, skips any entry whose FINAL candle
+    (after any IRL-sweep re-anchoring) falls in the 21:00-23:00 UTC
+    session-rollover window (see ROLLOVER_WINDOW_START_HOUR_UTC's
+    comment). Defaults to False -- this is a 2026-09-01 candidate fix,
+    not yet validated against history; compare against the default
+    before trusting it as the new normal, same as irl_mode's other
+    experimental variants.
     close_based_breakout: when True (default), a plain breakout's
     reference level is the swing candle's own CLOSE (line chart), not its
     wick -- direct user correction, matching how A/V-shape key levels
@@ -925,6 +946,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             # whole trade rather than just its price.
             i = swept_idx
             prev, curr = h1[i - 1], h1[i]
+
+        if (avoid_rollover_entries
+                and ROLLOVER_WINDOW_START_HOUR_UTC <= curr.time.hour < ROLLOVER_WINDOW_END_HOUR_UTC):
+            continue
 
         entry_price = (
             aggressive_entry_price(classification.reference_level)

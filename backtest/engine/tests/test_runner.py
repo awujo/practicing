@@ -211,6 +211,75 @@ def test_run_backtest_respects_a_custom_rr(synthetic_cache):
     assert rr4_run[0].raw_target == pytest.approx(entry + 4 * (entry - stop))
 
 
+# ---- avoid_rollover_entries: STRATEGY.md Section 8, "spread widens
+# sharply around session rollover" -- confirmed live 2026-08-31, a
+# GBPAUD entry at 22:00 UTC filled 54 points worse than requested,
+# turning $1,000 of intended risk into a $1,530.32 realized loss.
+
+@pytest.fixture
+def synthetic_cache_entry_at_22_utc(tmp_path, monkeypatch):
+    """Identical to `synthetic_cache` (same daily/H4 structure, same H1
+    OHLC shapes) except H1_BASE is shifted so the same entry candle
+    (index 3) lands at 22:00 UTC -- squarely inside the rollover window
+    -- instead of 03:00. Daily/H4 timestamps don't depend on H1_BASE at
+    all, so the underlying structure/bias/alignment is unaffected;
+    only the entry candle's clock hour changes."""
+    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
+    base = H1_BASE - pd.Timedelta(hours=3) + pd.Timedelta(hours=22)  # index 3 lands at 22:00 UTC
+
+    daily = [
+        D(0, 1.100, 1.105, 1.098, 1.102), D(1, 1.102, 1.108, 1.100, 1.106),
+        D(2, 1.106, 1.112, 1.104, 1.107), D(3, 1.107, 1.109, 1.102, 1.104),
+        D(4, 1.104, 1.106, 1.095, 1.096), D(5, 1.096, 1.099, 1.097, 1.098),
+        D(6, 1.098, 1.101, 1.097, 1.099), D(7, 1.099, 1.100, 1.090, 1.097),
+        D(8, 1.097, 1.120, 1.096, 1.115),
+    ]
+    h4 = [
+        H4(0, 1.1000, 1.1010, 1.0995, 1.1005), H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
+        H4(2, 1.1010, 1.1030, 1.1005, 1.1020), H4(3, 1.1020, 1.1025, 1.1010, 1.1015),
+        H4(4, 1.1015, 1.1022, 1.1008, 1.1012), H4(5, 1.1012, 1.1038, 1.1010, 1.1035),
+        H4(6, 1.1035, 1.1042, 1.1025, 1.1030), H4(7, 1.1030, 1.1032, 1.1015, 1.1020),
+        H4(8, 1.1020, 1.1028, 1.1018, 1.1025),
+    ]
+    h1_shape = [
+        (1.1020, 1.1024, 1.1018, 1.1021), (1.1021, 1.1023, 1.1010, 1.1013),
+        (1.1013, 1.1014, 1.1008, 1.1010), (1.1010, 1.1035, 1.1005, 1.1030),
+        (1.1030, 1.1045, 1.1025, 1.1040), (1.1040, 1.1060, 1.1035, 1.1055),
+        (1.1055, 1.1075, 1.1050, 1.1070), (1.1070, 1.1085, 1.1065, 1.1080),
+        (1.1080, 1.1115, 1.1075, 1.1110),
+    ]
+    h1 = [Candle(base + pd.Timedelta(hours=i), o, h, l, c, 1000)
+          for i, (o, h, l, c) in enumerate(h1_shape)]
+
+    _write("D", daily)
+    _write("H4", h4)
+    _write("H1", h1)
+    return base
+
+
+def test_avoid_rollover_entries_skips_an_entry_inside_the_window(synthetic_cache_entry_at_22_utc):
+    base = synthetic_cache_entry_at_22_utc
+    assert (base + pd.Timedelta(hours=3)).hour == 22  # sanity: the fixture lands where intended
+
+    without_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert len(without_filter) == 1  # unaffected by default -- opt-in only
+
+    with_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                                avoid_rollover_entries=True)
+    assert with_filter == []
+
+
+def test_avoid_rollover_entries_does_not_affect_an_entry_outside_the_window(synthetic_cache):
+    # The original fixture's entry is at 03:00 UTC -- outside the
+    # window, so the flag must be a no-op here.
+    assert (H1_BASE + pd.Timedelta(hours=3)).hour == 3
+
+    without_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    with_filter = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                                avoid_rollover_entries=True)
+    assert len(without_filter) == len(with_filter) == 1
+
+
 def test_resolve_date_range_returns_tz_aware_utc_bounds():
     # Regression test for a real bug: pd.Timestamp(year=..., month=...,
     # day=...) is tz-NAIVE by default, but cached candle timestamps are
