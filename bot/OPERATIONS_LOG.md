@@ -1931,6 +1931,135 @@ level it used), and check them against where price genuinely was. That
 tells you whether this is bad cached data, wrong candle pairing, or a
 stale reaction level -- and only then is it worth touching any rule.
 
+## 2026-09-01 -- SOURCE STUDY: what SLK actually says about stop placement, vs. what the bot does
+
+Direct instruction: *"You need to study what SL is and where invalidation
+points are honestly for SLK based on bishop concept. Check if you can
+find visual examples of bishops SL placements."* Done -- against the raw
+transcripts and the chart-example deck, not the existing notes'
+paraphrase. This supersedes the framing of every earlier stop-loss entry
+in this file.
+
+### 1. The empirical anchor: a real Bishop execution, exact numbers
+
+`bishop_chart_examples_pages7-60.md` line 139, independently
+re-verified from the rendered PDF page: EURCHF, **`BUY LIMIT 0.93193,
+SL 0.93147, TP 0.93704`**.
+- risk = **4.6 pips**
+- reward = 51.1 pips
+- **R:R = 11.1 : 1**
+
+Note also it is a **BUY LIMIT** -- a resting order at a level, not a
+market order.
+
+### 2. The stated numbers, from the mentor's own Q&A (video-13)
+
+A student asks the exact question this project keeps circling: *"I'm
+currently struggling with stop loss placement... I don't always get a
+standard, would I say, mechanical logic to stop loss placement... Apart
+from, say, maybe 10 pips or stuff like that... is there another
+mechanical method?"* The answer, in his words:
+- *"These are seven pips stops"*
+- *"I just moved it here to about **five pips**"*
+- *"I just believe that **10 pips is fine**... I would just prefer to
+  play the 10 pips stops"*
+- *"and you're showing me **15 pips stops**. So I'm trying to look at
+  how long it's going to take to hit one to three... **It might take
+  very long time**"*
+
+So the working range is **5-10 pips, with 15 already treated as too
+wide** -- and the reason given is R:R reachability, not risk appetite.
+Elsewhere: *"my stop loss was very tight. Not like very tight. It was a
+little bit, just a little"*; *"my stop loss was very tiny here, like
+this"*; *"your stop loss should have been very small."*
+
+### 3. The mechanical rule -- WHERE the stop goes
+
+Not a pip budget. A structural point:
+- *"ideally, where we should place our stops in situations like this is
+  **just below the low**, below this particular low"*
+- *"We have a sweep, we have a break, internal range liquidity, QMRK
+  level. We are playing above this QMRK level. The ideal place to place
+  your stops is just going to be **above this particular high**... just
+  place it above this particular high **to give it some space to
+  break**"*
+- *"Or many a times, I could just put my stop **at the A shape key
+  level**"*
+- *"it is always safer for me to put it above that high, **the strong
+  high that was actually created**"* / *"when you catch an origin of a
+  trade, just put it above"*
+
+And the reasoning for the A/V point, which is the whole concept in one
+sentence: *"there's every possibility that price would tap into my QMRK
+level, hit my stop plus, **which is the V shape key level**, before it
+continues to drop."* i.e. the stop must sit beyond the level price can
+legitimately still tap without the idea being wrong.
+
+**The invalidation point is the strong high/low created by the sweep --
+or the OPPOSITE-shape key level -- not a distance from entry.** The
+tight pip count is a CONSEQUENCE of picking that point correctly, which
+is exactly the user's own formulation: *"if you really understand SLK
+and where your immediate invalidation point is your SL will not even be
+wide."*
+
+### 4. What the code does instead
+
+| Trigger | Code's anchor (`entries.py`) | Source's anchor |
+|---|---|---|
+| engulfing | more extreme of the engulfing/engulfed candle **wicks** + pad | the strong high/low the sweep created; or the opposite A/V key level |
+| 4th man | pad beyond the **sweep candle's** low/high | closest match in the codebase -- this one is roughly right |
+| plug and play | far edge of the overlapping **imbalance** | not a stop rule stated in these terms in the source |
+| universal fallback | `origin_stop_loss(new_key_level.price)` = **the level being entered at**, + 1 pip | the OPPOSITE-shape key level, not the one you entered at |
+
+Two concrete defects fall straight out of that table:
+
+**(a) The fallback anchors to the entry's own level.** On aggressive
+style `entry_price = aggressive_entry_price(reference_level) =
+new_key_level.price`, and the fallback is that same price +/- 1 pip --
+so the stop collapses onto the entry. That is the 1-pip EURGBP
+INVALID_STOPS rejection (`entry 0.85574 | stop 0.85564 | key level
+0.85574`). The source says the opposite: enter at the V-shape, stop at
+the **A-shape** -- a DIFFERENT level.
+
+**(b) The engulfing anchor has no structural meaning.** A two-candle
+wick extreme is not "the strong high that was actually created." When
+those candles happen to have a long wick, the stop lands somewhere
+arbitrary -- which is the CHFJPY stop at 198.101 while all of 1 Sep
+traded 197.1-197.7.
+
+`MAX_NATURAL_STOP_PIPS = 30` then papers over both by substituting one
+wrong anchor for another whenever the first looks too wide. Against a
+source whose own numbers are 5-10 pips and who calls 15 too wide, a
+30-pip gate is 2-6x too loose to catch anything meaningful -- and, as
+established in the correction above, it is measured against the
+COMPUTED entry, not the fill.
+
+### 5. What the fix should use -- already present in the code
+
+`EntryCandidate.liquidity_price` already carries *"the setup's own swept
+liquidity point -- the particular high/low that was actually created by
+this specific setup's sweep"* (its own docstring, citing this same Video
+13 Q&A). **That is the mentor's "strong high that was actually
+created", already computed and already threaded through to the entry
+loop.** The stop rules simply don't consult it. A candidate rewrite:
+1. Primary anchor: `candidate.liquidity_price` +/- pad -- the swept
+   structural point.
+2. Where the entry is AT a V/A-shape key level, the alternate anchor is
+   the nearest OPPOSITE-shape key level, per *"put my stop at the A
+   shape key level"* -- never the entry's own level.
+3. Treat a resulting stop wider than ~10-15 pips as a signal that the
+   ANCHOR is wrong (skip the setup), not as a number to clamp -- the
+   opposite of what `_natural_stop_too_wide()` does today.
+4. A/B over 2025-2026 before trusting any of it. Note this will also
+   change R:R materially: the source's real trades run 5-11R, while the
+   engine targets a flat 3:1 with an ERL cap. A correct tight stop makes
+   the current 3:1 target far easier to reach, so trade count, win rate
+   and average R will ALL move -- do not read one metric in isolation.
+
+**Not implemented tonight, deliberately** -- this is core strategy logic
+and needs the A/B plus a real design pass, not a midnight patch before
+an unmonitored stretch.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
