@@ -1298,3 +1298,23 @@ this fix does not solve.
   `fetch_closed_deal()` for outcome reconciliation) is still the least
   field-verified piece of `orchestrator.py` -- confirm against a real
   closed trade once one actually happens live.
+- **Stale-signal orders can hit INVALID_STOPS with no pre-check.**
+  Confirmed live 2026-08-31: EURUSD signal candle at 13:00:00, order
+  attempt at 14:08:39 (68 minutes later, within the 3h staleness
+  cutoff) -- entry/stop/target were all computed once at signal time
+  and never re-validated against the CURRENT market price before
+  `_consider_entry()` (orchestrator.py:402) hands them straight to
+  `place_market_order()`. If price drifts enough in that window, the
+  stop can end up too close to (or briefly past) wherever price
+  actually is by send time, and the broker rejects with
+  `TRADE_RETCODE_INVALID_STOPS`. Confirmed low-severity as observed --
+  the order is cleanly rejected, logged with full reasoning, no money
+  moved, no duplicate-order risk (distinct from the 2026-08-31
+  duplicate-fill bug, already fixed). Net effect is a missed trade, not
+  a bad one. Direct instruction 2026-09-01: leave as-is for now, revisit
+  if this starts happening often enough to matter. If it's ever worth
+  fixing: re-fetch a current quote and re-check the stop distance
+  against the broker's minimum using CURRENT price before sending,
+  declining cleanly (matching the existing `STOP_TOO_CLOSE` pattern in
+  `compute_lot_size()`) instead of round-tripping to the broker for a
+  rejection that was predictable in advance.
