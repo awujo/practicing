@@ -187,6 +187,9 @@ class LiveBot:
     # so enabling this is a deliberate act and every existing caller and
     # test keeps its previous behavior.
     entry_order_type: str = "market"
+    # Where the stop is anchored -- passed straight through to
+    # run_backtest(). Default keeps the long-standing behavior.
+    stop_anchor: str = "trigger_wick"
 
     risk_manager: RiskManager = field(init=False)
     day_start_balance: float = field(init=False)
@@ -474,7 +477,8 @@ class LiveBot:
         # directly (no slippage model needed to judge "is a sub-1R target
         # worth the risk").
         records = run_backtest(instrument, self.entry_style, source=self.source,
-                                avoid_rollover_entries=True, min_reward_r=1.0)
+                                avoid_rollover_entries=True, min_reward_r=1.0,
+                                stop_anchor=self.stop_anchor)
         if watermark is None:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:

@@ -97,6 +97,12 @@ def main():
                          help="required when --account-type=prop_firm")
     parser.add_argument("--instruments", required=True, help="comma-separated, e.g. EURUSD,GBPUSD,XAUUSD")
     parser.add_argument("--style", choices=("aggressive", "conservative"), default="conservative")
+    parser.add_argument("--stop-anchor", default="trigger_wick",
+                         choices=("trigger_wick", "trigger_only", "trigger_skip", "structural"),
+                         help="where the stop is anchored. 'trigger_wick' (default) is the "
+                              "long-standing per-trigger behavior. 'structural' anchors to the "
+                              "setup's own reaction-leg extreme -- the invalidation point the "
+                              "confirmation actually created.")
     parser.add_argument("--entry-order-type", choices=("market", "limit"), default="market",
                          help="'market' (default) sends at whatever price exists when the order "
                               "goes out. 'limit' rests the order AT the computed entry level, so "
@@ -191,7 +197,8 @@ def main():
 
     bot = LiveBot(profile=profile, mt5_client=mt5_client, mt5_exec=mt5_exec,
                    audit_log=audit_log, instruments=instruments, entry_style=args.style,
-                   entry_order_type=args.entry_order_type)
+                   entry_order_type=args.entry_order_type,
+                   stop_anchor=args.stop_anchor)
 
     logger.info("starting live loop: %s, instruments=%s", args.account_type, instruments)
     try:

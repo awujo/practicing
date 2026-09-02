@@ -3429,3 +3429,64 @@ Nothing about the live bots changes on this commit. bot2 stays on limits:
 the case for it live was never its backtested R, it was that market orders
 were physically failing to reach the broker (1 order placed in 42
 attempts), and that is still true.
+
+## 2026-09-02, 19:00 -- VERDICT REVERSED AGAIN, and this time in the
+## operator's favour: with realistic fills, `structural` WINS on every
+## metric. The stop placement they have been describing all along is right.
+
+Operator marked up two rendered charts by hand: blue where the entry
+should be, red where the stop should be. The red mark sat well below the
+swing -- the invalidation point, exactly as described since the CHFJPY
+argument. Two separate claims in that markup; both checked.
+
+CLAIM 1: "it's not waiting for the retracement to the KL." Measured:
+
+    93% of limit fills land on the very NEXT candle
+    median departure from the level before filling: 1.9 pips (GBPJPY),
+                                                    0.9 pips (EURUSD)
+    over half fill after price moved less than 2 pips away
+
+So on the chart it does look instant. But the entry LEVEL is structurally
+right: 71.5% of resting orders sit INSIDE the confirmation candle's body
+(the open-close level SLK asks for), only 11% at an edge. What is really
+happening is that on H1 the next candle almost always reaches back into
+the prior candle's body, so the retracement completes inside one hour.
+Live that is fine -- a real limit fills tick by tick. In the BACKTEST it
+is a genuine weakness worth recording: for those 93% next-candle fills
+the engine cannot tell whether price touched the entry before or after
+running toward target, and it assumes before. That is optimistic and
+currently unquantified.
+
+CLAIM 2: the stop is in the wrong place. Correct, and the fill model
+built earlier today finally allows a fair test. Same three cached
+instruments, aggressive, entry_fill="limit", cancel at 80%:
+
+  stop anchor    trades   win%   totalR   avgR  medStop  clears leg
+  trigger_wick     1137  42.0%    738.0  0.649      9.5      33.3%
+  trigger_only     1159  43.4%    782.1  0.675     13.6      44.3%
+  structural       1336  49.3%    901.3  0.675     30.6      93.7%
+
+`structural` wins on trade count, win rate, total R, ties on avg R, and
+clears the leg 93.7% of the time against 33.3%. There is no axis on which
+it loses.
+
+THIS REVERSES THE EARLIER VERDICT, TWICE OVER. Under the old instant-fill
+model structural looked WORSE (2929 vs 3235 total R), and that is the
+number this log used to leave it disabled. The instant-fill model was
+filling every trade at the exact key level -- a price only reachable if
+you already had the position -- which flattered tight stops specifically,
+because a tight stop only survives if the entry is perfect. Give the
+entry a realistic fill and the tight stop's advantage disappears
+entirely: it is now the worst of the three.
+
+So the operator's position, held against my numbers since the CHFJPY
+argument, was right, and my numbers were wrong for a reason that had
+nothing to do with stops: the fill model. Recorded plainly because the
+sequence matters -- "the backtest disagrees" was never a good answer when
+the backtest could not model the thing being argued about.
+
+Wired `--stop-anchor` through run_live.py -> LiveBot -> run_backtest so
+this is now settable live (default unchanged).
+
+CAVEAT before acting: three instruments, and the intrabar-fill assumption
+above still favours limits generally. Worth a full 25-instrument run.
