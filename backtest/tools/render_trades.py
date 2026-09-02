@@ -45,7 +45,7 @@ PAD_T = 12
 PAD_B = 24
 
 # Minimum vertical spacing between right-axis captions.
-LABEL_GAP = 13.0
+LABEL_GAP = 14.0
 
 
 
@@ -166,33 +166,46 @@ def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size
             f'height="{height:.1f}" class="{cls}"/>'
         )
 
-    # The wait: signal fired here, the order rested, price left and came
-    # back. Empty for every fill model except "limit".
-    if signal_i is not None and signal_i != entry_i and 0 <= signal_i < len(window):
-        wx0 = PAD_L + signal_i * step
-        wx1 = PAD_L + entry_i * step
+    # The two candles that matter, boxed and labelled on the candles
+    # themselves rather than floating at the top of the plot: the one
+    # whose confirmation produced the signal and anchored the stop, and
+    # the one the resting order actually filled on. Under every fill model
+    # except "limit" they are the same candle and only one box is drawn.
+    def _box(i: int, cls: str, label: str, below: bool) -> None:
+        c = window[i]
+        cx = x(i)
+        top, bot = y(c.high), y(c.low)
         out.append(
-            f'<rect x="{min(wx0, wx1):.1f}" y="{PAD_T}" width="{abs(wx1 - wx0):.1f}" '
+            f'<rect x="{cx - body_w / 2 - 3:.1f}" y="{top - 3:.1f}" '
+            f'width="{body_w + 6:.1f}" height="{bot - top + 6:.1f}" class="{cls}"/>'
+        )
+        ty = (bot + 17) if below else (top - 9)
+        out.append(
+            f'<text x="{cx:.1f}" y="{ty:.1f}" class="marker-t {cls}-t" '
+            f'text-anchor="middle">{label}</text>'
+        )
+
+    filled_elsewhere = signal_i is not None and signal_i != entry_i
+
+    if filled_elsewhere and 0 <= signal_i < len(window):
+        # Shade the wait: order resting, price away from the level.
+        wx0 = PAD_L + min(signal_i, entry_i) * step
+        wx1 = PAD_L + max(signal_i, entry_i) * step
+        out.append(
+            f'<rect x="{wx0:.1f}" y="{PAD_T}" width="{abs(wx1 - wx0):.1f}" '
             f'height="{plot_h:.1f}" class="wait"/>'
         )
-        sx = x(signal_i)
+        mid = (wx0 + wx1) / 2
+        waited = abs(entry_i - signal_i)
         out.append(
-            f'<line x1="{sx:.1f}" y1="{PAD_T}" x2="{sx:.1f}" y2="{PAD_T + plot_h:.1f}" '
-            f'class="signal-line"/>'
+            f'<text x="{mid:.1f}" y="{PAD_T + plot_h - 6:.1f}" class="marker-t wait-t" '
+            f'text-anchor="middle">order resting &middot; {waited} candle'
+            f'{"s" if waited != 1 else ""}</text>'
         )
-        out.append(f'<text x="{sx + 4:.1f}" y="{PAD_T + 11:.1f}" class="exit-t">signal</text>')
-        out.append(
-            f'<text x="{x(entry_i) + 4:.1f}" y="{PAD_T + 24:.1f}" class="exit-t">filled</text>')
-
-    # Mark the confirmation candle -- the one the stop is anchored to.
-    if 0 <= entry_i < len(window):
-        cx = x(entry_i)
-        out.append(
-            f'<rect x="{cx - body_w / 2 - 2:.1f}" y="{y(window[entry_i].high) - 2:.1f}" '
-            f'width="{body_w + 4:.1f}" '
-            f'height="{y(window[entry_i].low) - y(window[entry_i].high) + 4:.1f}" '
-            f'class="conf"/>'
-        )
+        _box(signal_i, "conf", "confirmation", below=False)
+        _box(entry_i, "fill", "filled", below=True)
+    elif 0 <= entry_i < len(window):
+        _box(entry_i, "conf", "confirmation / entry", below=False)
 
     # Level lines, drawn last so they sit above the candles.
     levels_drawn = [
@@ -361,8 +374,17 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px;text-wrap
 .chart{width:100%;height:auto;display:block;background:transparent}
 .chart text{font-family:var(--mono);font-size:11px}
 .dur{fill:var(--fg);opacity:.05}
-.wait{fill:var(--brass);opacity:.10}
-.signal-line{stroke:var(--brass);stroke-width:1.2;stroke-dasharray:3 3;fill:none}
+.wait{fill:var(--brass);opacity:.09}
+.wait-t{fill:var(--brass);opacity:.85}
+/* Halo so a label stays readable wherever it lands -- these sit over
+   candles and other labels, and repositioning logic would be fragile. */
+.marker-t,.exit-t{paint-order:stroke;stroke:var(--panel);stroke-width:3px;
+  stroke-linejoin:round}
+.marker-t{font-size:10.5px;font-weight:600;letter-spacing:.04em}
+.conf{fill:none;stroke:var(--brass);stroke-width:1.6}
+.conf-t{fill:var(--brass)}
+.fill{fill:none;stroke:var(--fg);stroke-width:1.6;stroke-dasharray:3 2}
+.fill-t{fill:var(--fg)}
 .conf{fill:none;stroke:var(--fg);stroke-width:1.2;stroke-dasharray:2 2;opacity:.75}
 .exit{fill:var(--fg)}
 .exit-t{fill:var(--fg);font-size:11px}
@@ -404,12 +426,13 @@ def build_page(instrument: str, entry_style: str, trades, pip_size: float,
         cards.append(_card(tr, svg, pip_size,
                            (alt, alt_label) if alt is not None else None))
 
-    legend = ('<p class="legend">Below: individual trades from the same run. The shaded '
-              'band runs from the signal to the fill &mdash; the stretch where the order '
-              'sat at its level, price walked away, and came back. The dashed box is the '
-              'candle the order filled on. Read each chart twice: does the blue entry line '
-              'sit on the key level the confirmation formed at, and does the red stop clear '
-              'the swing that turn made?</p>')
+    legend = ('<p class="legend">Two candles are marked on every chart. The '
+              '<b>confirmation</b> candle (solid box) is the one whose trigger produced the '
+              'signal and anchored the stop. The <b>filled</b> candle (dashed box) is where '
+              'price came back and took the resting order. The shaded band between them is '
+              'the wait. Read each chart twice: does the blue entry line sit on the key '
+              'level the confirmation formed at, and does the red stop clear the swing that '
+              'turn made?</p>')
 
     return (f"<title>{html.escape(title)}</title>{STYLE}"
             f'<div class="wrap"><h1>{html.escape(title)}</h1>'
