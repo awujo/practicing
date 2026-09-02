@@ -3177,3 +3177,57 @@ LESSON for whoever picks this up: `or ()`, `or []`, `or {}` on any MT5
 query in this codebase is a bug until proven otherwise. The API's failure
 signal is a falsy return, so the idiom that looks like defensive tidying
 is precisely what erases the distinction that matters.
+
+## 2026-09-02, 15:25 -- LIVE CONFIGURATION AS LEFT (operator away ~1 month)
+
+Both bots on commit `fa6e0ac`, MetaQuotes-Demo, 25 instruments each.
+
+  slk-bot1  conservative  port 18812  MARKET orders  <- CONTROL, unchanged
+  slk-bot2  aggressive    port 18813  LIMIT orders   <- the change under test
+                                      (--entry-order-type limit)
+
+Deliberately ONE variable. The stop anchor stays at the default
+`trigger_wick` on both, despite trigger_only/structural being unresolved,
+because stacking a second change would make a month of data
+unattributable. Limits are also the change that addresses what is
+actually broken: lateness caused 41 of the bot's 42 failed attempts;
+stop placement only governs orders that reach the broker, and almost
+none did.
+
+Why this was enabled before a live test rather than after: on market
+orders the bot places roughly 1 order in 42 attempts, so a month of it
+produces nothing to learn from. The account is demo, so the downside is
+data rather than money, and bot1 is untouched as a fallback. A guaranteed
+dead month is worse than an untested code path on play money.
+
+Survivability checked before leaving: `Restart=always` on both units, and
+/srv at 50% (48G used, 49G free) -- the audit DBs and candle cache have
+room to grow for far longer than a month.
+
+WHEN YOU COME BACK, one command answers whether it worked:
+
+    journalctl -u slk-bot2 --since "30 days ago" | grep -c allow_pending
+
+Any number above zero means orders reached the broker, which has
+essentially never happened on this deployment. Compare against bot1's
+`allow` count over the same window for the A/B.
+
+REVERT (puts bot2 back to exactly bot1's behavior):
+
+    sed -i 's| --entry-order-type limit||' /srv/slk-bot/launch_bot2.sh
+    systemctl restart slk-bot2
+
+FIRST UNATTENDED EVENT: Friday 20:00 UTC (16:00 New York), the weekend
+flatten runs for the first time on both bots. Look for `weekend_flatten`,
+or `CLOSE IT BY HAND` if a close did not go through. This is
+close_position()'s first contact with a real terminal -- it is unit-tested
+against the fake only.
+
+STILL OPEN (nothing urgent, all recorded above in full):
+  - stop anchor: trigger_only / trigger_skip / structural, unresolved
+    because the backtest's perfect-fill model biases every comparison
+    toward tight stops. Fix the fill model before trusting another A/B.
+  - the Telegram bot token is exposed in launch_bot1.sh and in a chat
+    transcript. Operator is aware and chose to leave it.
+  - a restart still loses the pending-order map (resting orders are
+    warned about, not re-adopted).
