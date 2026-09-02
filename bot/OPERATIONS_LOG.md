@@ -2755,3 +2755,66 @@ in the stop formula. The work is in not taking those setups.
   declining cleanly (matching the existing `STOP_TOO_CLOSE` pattern in
   `compute_lot_size()`) instead of round-tripping to the broker for a
   rejection that was predictable in advance.
+
+## 2026-09-02 -- NEGATIVE RESULT: "skip abnormally large confirmation
+## candles" does NOT work. Wide natural stops are not bad setups.
+
+Tested the hypothesis recorded in the previous entry (that wide natural
+stop anchors come from oversized confirmation candles, and that skipping
+those setups would be the missing SLK "setup quality" rule). Swept three
+skip thresholds on the three locally-cached instruments (EURUSD, GBPJPY,
+GBPNZD), where "Nx" is the confirmation candle's range divided by the
+20-bar median range at that moment:
+
+                trades   win%   totalR   avgR   med stop   >30p
+no filter        4218   55.3%   4718.8   1.119    15.5     1041
+skip >2.5x       3787   53.8%   4136.6   1.092    14.5      825
+skip >2.0x       3446   53.0%   3685.8   1.070    14.0      702
+skip >1.5x       2745   52.5%   2903.1   1.058    13.0      488
+
+Monotonically worse on every quality metric as the filter tightens. The
+decisive number is **avg R per trade**, which falls 1.119 -> 1.058: it is
+already normalized for stop size, so if oversized-candle setups were
+genuinely lower quality, removing them would have RAISED it. It lowered
+it. A large confirmation candle produces a wide stop AND a proportionally
+wide run; the R holds. The filter removes good trades along with the
+ugly-looking ones.
+
+**Hypothesis rejected. Do not re-try a candle-size / volatility-ratio
+setup filter without new evidence -- this is a measured dead end, not an
+untested idea.**
+
+What this sharpens (the distinction now has numbers on both sides):
+
+- Fallback stops ARE broken: 846 trades, 36.9% win, 277.1R, median stop
+  25.4 pips, 235 of them under 2 pips. Source is
+  `_natural_stop_too_wide()` substituting
+  `origin_stop_loss(new_key_level.price)`, which resolves to the ENTRY
+  PRICE itself on aggressive style (`aggressive_entry_price()` returns
+  `key_level.price`) and to a distant level on conservative. This single
+  substitution caused BOTH live failures -- the sub-2-pip EURGBP stops
+  and the far-too-wide CHFJPY stop.
+- Natural anchors are fine even when wide: 3337 trades, 57.2% win,
+  4172.8R, median stop 11.7 pips.
+
+CHFJPY was a FALLBACK stop, not a wide natural anchor. So the earlier
+conclusion that "the bot hasn't understood SLK" is correct but much
+narrower than a stop-placement philosophy: `engulfing_stop_loss()` and
+`fourth_man_stop_loss()` already compute exactly what Bishop does (just
+beyond the swing extreme the confirmation itself created). The defect is
+one substitution rule that fires above `MAX_NATURAL_STOP_PIPS = 30.0`
+and replaces a correct stop with an incoherent one.
+
+NEXT CANDIDATE (untested, do not enable): when the natural stop exceeds
+the width limit, SKIP the trade instead of substituting a fake stop.
+Must be A/B'd at full 25-instrument scale on GitHub Actions before any
+live change. Note this is not the same as the rejected filter above --
+that one skipped on candle size regardless of stop coherence; this one
+skips only the trades currently getting a fabricated stop.
+
+Two decisions still open and belonging to the operator, not the bot:
+  1. Whether to enable `stop_anchor="trigger_only"` live (full A/B run
+     33600184873: win 51.7%->53.4%, total R 2671->2836, sub-2-pip stops
+     352->161, but >30-pip stops 318->647). A judgment call, not a free
+     win. Currently OFF.
+  2. Whether to pursue the skip-instead-of-substitute rule above.
