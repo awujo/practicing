@@ -49,6 +49,12 @@ class TradeRecord:
     instrument: str
     entry_time: object
     exit_time: object = None
+    # The candle whose confirmation produced the signal. Equal to
+    # entry_time in every fill model EXCEPT entry_fill="limit", where the
+    # order rests at the trigger and fills on some later candle -- so the
+    # two come apart, and telling them apart is the whole point of
+    # inspecting a limit trade: did price actually come back to the level?
+    signal_time: object = None
 
     # Entry context
     direction: object = None            # Direction

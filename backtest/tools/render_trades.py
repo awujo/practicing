@@ -49,8 +49,14 @@ LABEL_GAP = 13.0
 
 
 
-def _slice_for(candles: list[Candle], entry_time, exit_time):
-    """Window of candles around the trade, plus entry/exit indices within it."""
+def _slice_for(candles: list[Candle], entry_time, exit_time, signal_time=None):
+    """Window around the trade, plus the signal/entry/exit indices in it.
+
+    Anchored on the SIGNAL rather than the fill: under entry_fill="limit"
+    the order rests at the trigger and fills later, and the stretch
+    between them -- price leaving the level and coming back -- is the
+    thing worth looking at.
+    """
     times = [c.time for c in candles]
     try:
         entry_idx = times.index(entry_time)
@@ -59,7 +65,14 @@ def _slice_for(candles: list[Candle], entry_time, exit_time):
         # the trade came from a different series than the one loaded.
         return [], -1, -1
 
-    lo = max(0, entry_idx - BARS_BEFORE)
+    signal_idx = entry_idx
+    if signal_time is not None:
+        try:
+            signal_idx = times.index(signal_time)
+        except ValueError:
+            signal_idx = entry_idx
+
+    lo = max(0, min(signal_idx, entry_idx) - BARS_BEFORE)
     hi = min(len(candles), entry_idx + BARS_AFTER + 1)
 
     exit_idx = -1
@@ -73,7 +86,8 @@ def _slice_for(candles: list[Candle], entry_time, exit_time):
             if exit_idx >= hi:
                 hi = min(len(candles), exit_idx + 6)
 
-    return candles[lo:hi], entry_idx - lo, (exit_idx - lo if exit_idx >= 0 else -1)
+    return (candles[lo:hi], entry_idx - lo,
+            (exit_idx - lo if exit_idx >= 0 else -1), signal_idx - lo)
 
 
 def _fmt(price: float, pip_size: float) -> str:
@@ -84,7 +98,8 @@ def _fmt(price: float, pip_size: float) -> str:
 
 
 def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size: float,
-                alt_stop: float | None = None, alt_label: str = "other stop") -> str:
+                alt_stop: float | None = None, alt_label: str = "other stop",
+                signal_i: int | None = None) -> str:
     """Draw one trade as an SVG candlestick chart with its levels marked.
 
     `alt_stop` draws a second stop from a different anchor rule on the same
@@ -150,6 +165,24 @@ def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size
             f'<rect x="{cx - body_w / 2:.1f}" y="{top:.1f}" width="{body_w:.1f}" '
             f'height="{height:.1f}" class="{cls}"/>'
         )
+
+    # The wait: signal fired here, the order rested, price left and came
+    # back. Empty for every fill model except "limit".
+    if signal_i is not None and signal_i != entry_i and 0 <= signal_i < len(window):
+        wx0 = PAD_L + signal_i * step
+        wx1 = PAD_L + entry_i * step
+        out.append(
+            f'<rect x="{min(wx0, wx1):.1f}" y="{PAD_T}" width="{abs(wx1 - wx0):.1f}" '
+            f'height="{plot_h:.1f}" class="wait"/>'
+        )
+        sx = x(signal_i)
+        out.append(
+            f'<line x1="{sx:.1f}" y1="{PAD_T}" x2="{sx:.1f}" y2="{PAD_T + plot_h:.1f}" '
+            f'class="signal-line"/>'
+        )
+        out.append(f'<text x="{sx + 4:.1f}" y="{PAD_T + 11:.1f}" class="exit-t">signal</text>')
+        out.append(
+            f'<text x="{x(entry_i) + 4:.1f}" y="{PAD_T + 24:.1f}" class="exit-t">filled</text>')
 
     # Mark the confirmation candle -- the one the stop is anchored to.
     if 0 <= entry_i < len(window):
@@ -328,6 +361,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px;text-wrap
 .chart{width:100%;height:auto;display:block;background:transparent}
 .chart text{font-family:var(--mono);font-size:11px}
 .dur{fill:var(--fg);opacity:.05}
+.wait{fill:var(--brass);opacity:.10}
+.signal-line{stroke:var(--brass);stroke-width:1.2;stroke-dasharray:3 3;fill:none}
 .conf{fill:none;stroke:var(--fg);stroke-width:1.2;stroke-dasharray:2 2;opacity:.75}
 .exit{fill:var(--fg)}
 .exit-t{fill:var(--fg);font-size:11px}
@@ -360,18 +395,21 @@ def build_page(instrument: str, entry_style: str, trades, pip_size: float,
                alt_stops: dict | None = None, alt_label: str = "other stop") -> str:
     cards = []
     for tr in trades:
-        window, entry_i, exit_i = _slice_for(candles, tr.entry_time, tr.exit_time)
+        window, entry_i, exit_i, signal_i = _slice_for(
+            candles, tr.entry_time, tr.exit_time, getattr(tr, "signal_time", None))
         if not window or entry_i < 0:
             continue
         alt = (alt_stops or {}).get(tr.entry_time)
-        svg = _render_svg(window, entry_i, exit_i, tr, pip_size, alt, alt_label)
+        svg = _render_svg(window, entry_i, exit_i, tr, pip_size, alt, alt_label, signal_i)
         cards.append(_card(tr, svg, pip_size,
                            (alt, alt_label) if alt is not None else None))
 
-    legend = ('<p class="legend">Below: individual trades from the same run. The dashed '
-              'box marks the confirmation candle. Read each chart by asking whether the '
-              'red stop line clears the swing the turn made, or sits inside it where a '
-              'routine sweep would take it out.</p>')
+    legend = ('<p class="legend">Below: individual trades from the same run. The shaded '
+              'band runs from the signal to the fill &mdash; the stretch where the order '
+              'sat at its level, price walked away, and came back. The dashed box is the '
+              'candle the order filled on. Read each chart twice: does the blue entry line '
+              'sit on the key level the confirmation formed at, and does the red stop clear '
+              'the swing that turn made?</p>')
 
     return (f"<title>{html.escape(title)}</title>{STYLE}"
             f'<div class="wrap"><h1>{html.escape(title)}</h1>'
@@ -411,11 +449,19 @@ def stop_beyond_extreme(candles, i: int, trade, bars: int = LEG_BARS) -> bool:
 
 
 def fidelity(trades, candles) -> dict[str, tuple[int, int]]:
-    """Per-category (count, how many clear the leg that made the turn)."""
+    """Per-category (count, how many clear the leg that made the turn).
+
+    Measured at the SIGNAL candle, not the entry. Under
+    entry_fill="limit" those differ -- the stop was anchored to the leg
+    the confirmation made, and the order filled later -- so judging the
+    stop against the leg into the FILL asks whether it clears price
+    action that happened after the stop was already decided. That is a
+    different (and meaningless) question.
+    """
     idx = {c.time: i for i, c in enumerate(candles)}
     table: dict[str, list[int]] = {}
     for tr in trades:
-        i = idx.get(tr.entry_time)
+        i = idx.get(getattr(tr, "signal_time", None) or tr.entry_time)
         if i is None:
             continue
         row = table.setdefault(category(tr), [0, 0])
@@ -475,6 +521,10 @@ def main() -> None:
     ap.add_argument("--compare-anchor", default=None,
                     help="draw a second stop from this anchor mode on the same setups")
     ap.add_argument("--min-reward-r", type=float, default=None)
+    ap.add_argument("--entry-fill", default="instant",
+                    choices=("instant", "market_close", "limit"))
+    ap.add_argument("--cancel-at", type=float, default=None,
+                    help="cancel a resting limit once this fraction of the target is made")
     ap.add_argument("--title", default=None)
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--seed", type=int, default=7)
@@ -483,7 +533,9 @@ def main() -> None:
 
     pip_size = default_pip_size(args.instrument)
     trades = run_backtest(args.instrument, args.entry_style, source=args.source,
-                          stop_anchor=args.stop_anchor, min_reward_r=args.min_reward_r)
+                          stop_anchor=args.stop_anchor, min_reward_r=args.min_reward_r,
+                          entry_fill=args.entry_fill,
+                          cancel_at_target_fraction=args.cancel_at)
     candles = load_candles(args.source, args.instrument, "H1")
     chosen = pick(trades, args.count, args.seed)
     table = fidelity(trades, candles)
