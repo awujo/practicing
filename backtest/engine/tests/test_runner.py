@@ -6,6 +6,7 @@ from ..candles import Candle
 from ..structure import Direction
 from ..bias import detect_confirmations, Confirmation, ConfirmationKind
 from ..key_levels import detect_key_levels
+from ..entries import imbalance_stop_loss
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
@@ -1176,3 +1177,54 @@ def test_structural_anchor_leaves_the_default_path_untouched(synthetic_cache):
     default = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001)
     assert default[0].stop_kind == "engulfing"      # unchanged by the new flag existing
     assert default[0].stop_loss == pytest.approx(1.10040)
+
+
+# ---- stop_anchor="zone": the rule read directly off Bishop's 60-page
+# chart deck (all pages studied 2026-09-02, ~35 measured trades, zero
+# exceptions). Stop = FAR EDGE of the imbalance zone the entry is taken
+# from, so the stop distance is that zone's own height. Trigger-
+# independent, no width test, and no zone => skip the setup.
+
+def test_zone_anchor_skips_a_setup_with_no_identifiable_zone(synthetic_cache):
+    # The core discipline: no zone means no defined invalidation point, so
+    # there is no valid stop and the trade must not be taken at all --
+    # rather than falling back to a candle wick, which is what the default
+    # does and what put a CHFJPY stop at 198.101 on a session that traded
+    # 197.1-197.7. This fixture has no overlapping imbalance.
+    default = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001)
+    assert len(default) == 1                       # default still takes it, on a wick anchor
+    assert default[0].stop_kind == "engulfing"
+
+    zoned = run_backtest(SYMBOL, "aggressive", source=SOURCE, pip_size=0.0001,
+                          stop_anchor="zone")
+    assert zoned == []
+
+
+def test_zone_anchor_stop_is_the_far_edge_of_the_zone_bullish():
+    # Direct check of the rule against the one page in the deck that
+    # pairs a chart with its broker screenshot: EURCHF, pink zone
+    # 0.93147-0.93193, order BUY LIMIT 0.93193 / SL 0.93147. A long's
+    # stop is the zone's LOW (far edge), padded.
+    stop = imbalance_stop_loss(0.93147, 0.93193, Direction.BULLISH, pip_size=0.0001)
+    assert stop < 0.93147                      # just past the far edge
+    assert stop == pytest.approx(0.93147 - 0.0001)
+
+
+def test_zone_anchor_stop_is_the_far_edge_of_the_zone_bearish():
+    # Mirror, per the deck's shorts (e.g. EURNZD H3: zone 1.96156-1.96472
+    # sitting ABOVE entry, red label at 1.96472 = the stop).
+    stop = imbalance_stop_loss(1.96156, 1.96472, Direction.BEARISH, pip_size=0.0001)
+    assert stop > 1.96472
+    assert stop == pytest.approx(1.96472 + 0.0001)
+
+
+def test_zone_anchor_imposes_no_width_limit():
+    # Observed stops in the deck run 3.0 to 518.9 pips and every one is
+    # correct, because each is simply its own zone's height. A width test
+    # cannot express that -- MAX_NATURAL_STOP_PIPS=30 would reject the
+    # valid EURNZD (31.6), XAUUSD (~62.8), USOIL (68.6/82.8) and
+    # XAGUSD (518.9) trades outright.
+    tiny = imbalance_stop_loss(0.85289, 0.85319, Direction.BULLISH, pip_size=0.0001)
+    huge = imbalance_stop_loss(57.2402, 60.4838, Direction.BEARISH, pip_size=0.001)
+    assert tiny == pytest.approx(0.85289 - 0.0001)
+    assert huge == pytest.approx(60.4838 + 0.001)
