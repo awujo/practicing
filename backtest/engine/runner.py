@@ -744,6 +744,49 @@ def _first_sweep_of(h1, from_idx: int, irl_price: float, direction: Direction) -
     return None
 
 
+def _entry_zone(imbalances, imbalance_times, key_level_time, entry_time,
+                 entry_price: float, direction: Direction):
+    """The imbalance zone THIS entry is taken from -- the one whose NEAR
+    edge the entry sits at, per Bishop's chart deck (every example:
+    entry at the zone's near edge, stop at its far edge).
+
+    Selection, not invention:
+    - bounded in time to this setup's own window (key level formation ->
+      entry candle), the same bound the plug-and-play imbalance search
+      already uses;
+    - the zone must lie BEHIND entry (below it for a long, above for a
+      short) -- that is the risk side, the pink zone in the deck;
+    - among those, the one whose near edge is closest to entry_price,
+      since the deck consistently shows entry sitting ON that edge.
+
+    Deliberately NOT `overlaps_level(im, new_key_level.price)`. That is
+    what the first version of this reused, and it silently reduced the
+    whole rule to plug-and-play: an imbalance overlapping the KEY LEVEL
+    is exactly the condition that already labels a trade
+    "plug_and_play", so the A/B (2026-09-02, run 33574694823) came back
+    with `{'plug_and_play_zone': 533}` and 80.2% of setups skipped --
+    measuring "take only plug-and-play trades", not the deck's rule. In
+    the deck the zone sits at the ENTRY, which need not overlap the
+    level at all."""
+    lo = bisect.bisect_left(imbalance_times, key_level_time)
+    hi = bisect.bisect_right(imbalance_times, entry_time)
+    best = None
+    best_distance = None
+    for im in imbalances[lo:hi]:
+        if direction == Direction.BULLISH:
+            if im.low > entry_price:      # zone must sit below a long's entry
+                continue
+            near_edge = min(im.high, entry_price)
+        else:
+            if im.high < entry_price:     # zone must sit above a short's entry
+                continue
+            near_edge = max(im.low, entry_price)
+        distance = abs(near_edge - entry_price)
+        if best_distance is None or distance < best_distance:
+            best, best_distance = im, distance
+    return best
+
+
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -1159,10 +1202,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # No zone => no defined invalidation => SKIP the setup rather
         # than substitute a meaningless anchor.
         if stop_anchor == "zone":
-            if widest_imbalance is None:
+            zone = _entry_zone(h1_imbalances, h1_imbalance_times,
+                                new_key_level.time, curr.time, entry_price, effective)
+            if zone is None:
                 continue
             stop_loss = imbalance_stop_loss(
-                widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
+                zone.low, zone.high, effective, pip_size=pip_size
             )
             stop_kind = f"{trigger_type}_zone"
             natural_stop_loss = stop_loss
