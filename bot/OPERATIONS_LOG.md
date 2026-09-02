@@ -2362,6 +2362,55 @@ earlier retest-fill A/B (which failed) was testing limit-style entry
 WITHOUT the matching zone-anchored stop, i.e. half the mechanism -- it
 should be re-run once both sides come from the same zone.
 
+## 2026-09-02 -- zone-anchor A/B, run 1: INVALID, and why (kept as the record)
+
+First A/B of `stop_anchor="zone"` (run 33574694823) came back looking
+like a heavy loss. It is not a verdict on the rule -- the run did not
+test the rule. Keeping it because the way it failed is the useful part.
+
+```
+                               trigger_wick (today)                     zone
+total trades                                   2697                      533
+wins                                           1395                      247
+win rate                                      51.7%                    46.3%
+total R                                      2671.2                    419.0
+avg R per trade                               0.990                    0.786
+median risk (pips)                              9.4                      9.7
+stops under 2 pips                              352                       56
+stops over 30 pips                              318                      119
+2164 of 2697 setups (80.2%) skipped for "no zone"
+zone stop_kind breakdown: {'plug_and_play_zone': 533}
+```
+
+**The tell is the last line.** Every surviving trade is
+`plug_and_play_zone` -- not one engulfing, 4th-man or breakout entry
+got a zone-anchored stop. The implementation reused the existing
+`overlapping` list, which is imbalances overlapping the KEY LEVEL
+price. But that condition is exactly what already labels a trade
+`plug_and_play` upstream. So the flag did not apply the zone rule to
+every trigger; it kept the trades that already used it and skipped the
+other 80%.
+
+Which also reinterprets the headline numbers: median risk barely moved
+(9.4 -> 9.7) because those 533 trades were **identical** to their
+default versions. The R and win-rate drops are just what you get from
+dropping 80% of the book, not from a different stop. This run measured
+"take only plug-and-play trades" -- a question nobody asked.
+
+**Fix:** `_entry_zone()` now finds the zone at the ENTRY rather than on
+the key level -- within the same setup-scoped window, the imbalance
+lying behind entry (below for a long, above for a short) whose NEAR
+edge is closest to `entry_price`. That matches every example in the
+deck, where entry sits on the near edge and the stop on the far one,
+and where the zone frequently does not touch the reaction level at all.
+Re-run: 33575395100.
+
+**Process note for next time:** the `stop_kind` breakdown is what
+caught this, and it was only in the output because the workflow printed
+it. Keep emitting a breakdown of which code path actually produced each
+result -- a headline table alone would have been read as "the rule
+loses", and the wrong conclusion would have gone in the log.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
