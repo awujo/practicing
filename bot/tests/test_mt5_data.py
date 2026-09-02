@@ -369,3 +369,68 @@ def test_broker_symbol_override_takes_priority_over_suffix():
     client = make_client(FakeMT5(), suffix=".a", overrides={"NAS100": "USTEC"})
     assert client.broker_symbol("NAS100") == "USTEC"
     assert client.broker_symbol("EURUSD") == "EURUSD.a"
+
+
+# ---- new_candle_closed skips the broker when the clock rules it out ----
+# This call is the single biggest cost in the live loop: once per
+# instrument per poll, so 25 instruments on a 5s loop is ~300 bridge
+# round-trips a minute against MT5 under Wine. Nearly all of them cannot
+# find anything, because an H1 bar only closes on the hour.
+
+def _client_with_candles(fake, times):
+    """`times` are the CLOSED bars, oldest first. Row 0 is the forming bar
+    (real MT5 convention) and fetch_candles skips it."""
+    forming = times[-1] + pd.Timedelta(hours=1)
+    rows = [forming] + list(times)
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        {"time": int(t.timestamp()), "open": 1.1, "high": 1.2, "low": 1.0,
+         "close": 1.15, "tick_volume": 10} for t in rows
+    ]
+    c = MT5Client(fake, login=1, password="pw", server="Demo",
+                   server_utc_offset=pd.Timedelta(0))
+    c.connect()
+    return c
+
+
+def test_skips_the_broker_call_once_this_hours_candle_is_already_seen():
+    fake = FakeMT5()
+    now = pd.Timestamp.now(tz="UTC")
+    last_closed = now.floor("h") - pd.Timedelta(hours=1)
+    client = _client_with_candles(fake, [last_closed - pd.Timedelta(hours=1),
+                                          last_closed])
+
+    first = client.new_candle_closed("EURUSD", "H1")
+    assert first is not None and first.time == last_closed
+    calls_after_first = len(fake.copy_rates_calls)
+
+    # Nothing can close until the hour turns, so these must not touch MT5.
+    for _ in range(10):
+        assert client.new_candle_closed("EURUSD", "H1") is None
+    assert len(fake.copy_rates_calls) == calls_after_first
+
+
+def test_still_asks_the_broker_when_a_candle_could_have_closed():
+    """An unseen hour must always reach the broker -- if its bar is late,
+    the next poll has to ask again."""
+    fake = FakeMT5()
+    now = pd.Timestamp.now(tz="UTC")
+    stale = now.floor("h") - pd.Timedelta(hours=5)
+    client = _client_with_candles(fake, [stale])
+    client._last_closed_time[("EURUSD", "H1")] = stale
+
+    before = len(fake.copy_rates_calls)
+    client.new_candle_closed("EURUSD", "H1")
+    assert len(fake.copy_rates_calls) > before
+
+
+def test_last_completed_open_is_the_bar_that_must_have_finished():
+    now = pd.Timestamp.now(tz="UTC")
+    assert MT5Client._last_completed_open("H1") == now.floor("h") - pd.Timedelta(hours=1)
+    assert MT5Client._last_completed_open("H4") == now.floor("4h") - pd.Timedelta(hours=4)
+    assert MT5Client._last_completed_open("D") == now.floor("D") - pd.Timedelta(days=1)
+
+
+def test_an_unknown_granularity_never_skips():
+    """Fail safe: a timeframe added later costs an extra fetch rather than
+    silently going blind."""
+    assert MT5Client._last_completed_open("M5") == pd.Timestamp.min.tz_localize("UTC")

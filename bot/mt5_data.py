@@ -260,13 +260,71 @@ class MT5Client:
                 len(dropped), internal_symbol, granularity, dropped[0].time, pd.Timestamp.now(tz="UTC"))
         return plausible
 
+    @staticmethod
+    def _last_completed_open(granularity: str) -> "pd.Timestamp":
+        """Open time of the most recent candle that MUST have finished by
+        now, in UTC.
+
+        Purely arithmetic on the clock -- no broker call. Candle times
+        from `fetch_candles()` are already normalised to UTC (see
+        `_detect_server_utc_offset`), so this compares like with like even
+        though this terminal's own clock runs +3h.
+
+        Weekly is floored to Monday, which is a deliberate
+        under-estimate for a broker whose week opens Sunday evening: it
+        can only ever cause an EXTRA fetch, never a missed candle, and
+        that is the right way round for this check to be wrong.
+        """
+        now = pd.Timestamp.now(tz="UTC")
+        if granularity == "H1":
+            return now.floor("h") - pd.Timedelta(hours=1)
+        if granularity == "H4":
+            # H4 bars start at 00/04/08/12/16/20 UTC.
+            return now.floor("4h") - pd.Timedelta(hours=4)
+        if granularity == "D":
+            return now.floor("D") - pd.Timedelta(days=1)
+        if granularity == "W":
+            monday = now.floor("D") - pd.Timedelta(days=now.weekday())
+            return monday - pd.Timedelta(days=7)
+        # Unknown granularity: never skip, so a new timeframe added later
+        # fails safe (an extra fetch) rather than silently going blind.
+        return pd.Timestamp.min.tz_localize("UTC")
+
     def new_candle_closed(self, internal_symbol: str, granularity: str) -> Candle | None:
         """Call this on a polling loop (fast enough to not miss a close,
         e.g. every few seconds) -- returns the newly-closed candle the
         FIRST time it's seen, then None on every subsequent call until
         another one closes. This is what should actually trigger a
         strategy re-evaluation, not a fixed timer -- see the module
-        docstring on why live and backtest need to agree on this."""
+        docstring on why live and backtest need to agree on this.
+
+        Skips the broker round-trip entirely when the clock says nothing
+        can have closed yet. This is the single biggest cost in the live
+        loop: the orchestrator calls this per instrument per poll, so 25
+        instruments on a 5-second loop is ~300 bridge calls a MINUTE, per
+        bot, against an MT5 terminal running under Wine on two
+        oversubscribed vCPUs. Measured effect of that queue: the bot was
+        never once prompt -- zero entry attempts in its entire history
+        landed within 5 minutes of a candle close (OPERATIONS_LOG
+        2026-09-02), which in turn caused 41 of its 42 failed attempts.
+
+        Almost all of those calls could not have found anything. An H1
+        candle only closes on the hour, so between :00 and :59 there is
+        nothing to fetch. Comparing the last candle we were given against
+        the bar that must have completed by now answers that from the
+        clock, for free, and only reaches the broker when the answer
+        might actually have changed -- roughly a 700x reduction in bridge
+        traffic at H1.
+
+        Behaviour is unchanged: every skipped call is one that would have
+        returned None anyway. If the broker's bar is late, the next poll
+        five seconds later still asks.
+        """
+        key_check = (internal_symbol, granularity)
+        seen = self._last_closed_time.get(key_check)
+        if seen is not None and seen >= self._last_completed_open(granularity):
+            return None
+
         candles = self.fetch_candles(internal_symbol, granularity, count=2)
         if not candles:
             return None

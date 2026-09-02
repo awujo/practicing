@@ -3273,3 +3273,62 @@ spreads 2-9 points), and the stop-anchor work above is where it gets
 addressed properly. Not touched now: one variable at a time.
 
 269 tests pass.
+
+## 2026-09-02, 17:00 -- ROOT CAUSE OF THE LATENESS, and it was fixable
+## all along: 36,000 pointless broker calls an hour
+
+Operator, on being told limits were a workaround for lateness: "Why can't
+we not fix this data being stale or late issues." Correct instinct. I had
+concluded the lateness was structural ("you cannot make a 25-instrument
+pass finish inside 5 minutes on 2 shared vCPUs") without ever measuring
+WHY the pass was slow. It was not the pass. It was this:
+
+`MT5Client.new_candle_closed()` called `fetch_candles()` -- a live
+copy_rates_from_pos over the RPyC/Wine bridge -- unconditionally, once
+per instrument, per poll. At POLL_SECONDS=5 and 25 instruments:
+
+    720 polls/hour x 25 instruments x 2 bots = 36,000 bridge calls/hour
+
+against an MT5 terminal running under Wine on a box already at load ~7
+with 1.4GB of 2GB swap in use. THAT is the queue the signals were sitting
+behind.
+
+And essentially every one of those calls was guaranteed to find nothing.
+An H1 candle only closes on the hour; between :00 and :59 there is
+nothing to fetch. The clock already knows this for free.
+
+Fix: `new_candle_closed()` now compares the last candle it was given
+against `_last_completed_open(granularity)` -- pure arithmetic, no broker
+call -- and returns None immediately when no new bar can exist yet. Same
+50 real calls an hour instead of 36,000, a 720x reduction.
+
+Behaviour is provably unchanged: every skipped call is one that would
+have returned None anyway (it is the same `_last_closed_time` comparison,
+just reached without a round-trip first). If a broker's bar is late, the
+next poll five seconds later still asks. An unknown granularity never
+skips, so a timeframe added later fails safe toward an extra fetch rather
+than going blind.
+
+Two things I had wrong and should not have asserted:
+
+1. "The lateness is structural, you can't optimise it away." Wrong -- I
+   generalised from cold-start storyline timings (which ARE genuinely
+   slow: a fresh process rebuilds every instrument's Weekly/Daily/H4
+   bias) and never separated that one-off cost from steady state. The
+   steady-state cost was almost entirely this call.
+2. The EURCHF "7 hours old" decline that prompted this was NOT the bot
+   running 7 hours behind. bot2 had restarted 24 minutes earlier, and a
+   fresh process reconstructs its watermark from `audit_log.
+   last_entry_time()`, so it correctly replayed everything since that
+   instrument's last audited entry -- including 07:00's signals. Restart
+   replay and steady-state lag are different problems that both surface
+   as `decline_stale_signal`, and today's deploys produced a lot of the
+   former. Some meaningful share of the "22 of 42 at 2h+" is restart
+   replay, not queue delay, which means the 42-attempt audit sample is
+   more contaminated than presented.
+
+Limits remain the right change regardless -- they make a late or replayed
+signal harmless rather than merely rarer -- but they are no longer the
+ONLY answer to lateness, and should not have been sold as one.
+
+399 tests pass (bot + engine).

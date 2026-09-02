@@ -73,6 +73,7 @@ class FakeMT5:
         # falls back to a plain successful fill at the requested price.
         self.order_send_queue: list = []
         self.order_send_calls: list[dict] = []
+        self.copy_rates_calls: list[tuple] = []
         self.deals_by_position: dict[int, tuple] = {}
 
     def order_send(self, request):
@@ -139,6 +140,9 @@ class FakeMT5:
         return self._last_error
 
     def copy_rates_from_pos(self, symbol, timeframe, start, count):
+        # Recorded so tests can assert the live loop is NOT hammering the
+        # bridge -- this call is its dominant cost.
+        self.copy_rates_calls.append((symbol, timeframe, start, count))
         rows = self.rates_by_symbol_timeframe.get((symbol, timeframe))
         if rows is None:
             self._last_error = (3, f"unknown symbol {symbol}")
