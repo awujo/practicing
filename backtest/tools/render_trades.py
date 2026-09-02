@@ -40,7 +40,7 @@ BARS_AFTER = 30
 CHART_W = 900
 CHART_H = 420
 PAD_L = 8
-PAD_R = 104         # room for the price labels on the right axis
+PAD_R = 132         # room for the price labels on the right axis
 PAD_T = 12
 PAD_B = 24
 
@@ -83,9 +83,17 @@ def _fmt(price: float, pip_size: float) -> str:
     return f"{price:.{digits}f}"
 
 
-def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size: float) -> str:
-    """Draw one trade as an SVG candlestick chart with its levels marked."""
+def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size: float,
+                alt_stop: float | None = None, alt_label: str = "other stop") -> str:
+    """Draw one trade as an SVG candlestick chart with its levels marked.
+
+    `alt_stop` draws a second stop from a different anchor rule on the same
+    setup, which is the only way to see the two side by side on identical
+    price action rather than on two separately-sampled trades.
+    """
     levels = [trade.entry_price, trade.stop_loss, trade.primary_target, trade.key_level_price]
+    if alt_stop is not None:
+        levels.append(alt_stop)
     lo = min([c.low for c in window] + levels)
     hi = max([c.high for c in window] + levels)
     span = (hi - lo) or 1.0
@@ -160,6 +168,8 @@ def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size
         (trade.entry_price, "lv-entry", "entry"),
         (trade.stop_loss, "lv-stop", "stop"),
     ]
+    if alt_stop is not None:
+        levels_drawn.append((alt_stop, "lv-alt", alt_label))
     for price, cls, _label in levels_drawn:
         py = y(price)
         out.append(
@@ -202,7 +212,7 @@ def _render_svg(window: list[Candle], entry_i: int, exit_i: int, trade, pip_size
     return "".join(out)
 
 
-def _card(trade, svg: str, pip_size: float) -> str:
+def _card(trade, svg: str, pip_size: float, alt: tuple | None = None) -> str:
     rr = (abs(trade.primary_target - trade.entry_price)
           / abs(trade.entry_price - trade.stop_loss)) if trade.entry_price != trade.stop_loss else 0.0
     r_text = "open" if trade.r_multiple is None else f"{trade.r_multiple:+.2f}R"
@@ -215,6 +225,13 @@ def _card(trade, svg: str, pip_size: float) -> str:
             natural_pips = abs(trade.entry_price - trade.natural_stop_loss) / pip_size
             natural = (f'<dt>discarded</dt><dd><b>{_fmt(trade.natural_stop_loss, pip_size)}</b> '
                        f'<span class="q">{natural_pips:.1f} pips &middot; the real anchor</span></dd>')
+
+    alt_row = ""
+    if alt is not None:
+        alt_price, alt_name = alt
+        alt_pips = abs(trade.entry_price - alt_price) / pip_size
+        alt_row = (f'<dt>{html.escape(alt_name)}</dt><dd class="alt"><b>'
+                   f'{_fmt(alt_price, pip_size)}</b> <span class="q">{alt_pips:.1f} pips</span></dd>')
 
     is_long = trade.direction == Direction.BULLISH
     side = "LONG" if is_long else "SHORT"
@@ -231,7 +248,7 @@ def _card(trade, svg: str, pip_size: float) -> str:
   <dl>
     <dt>entry</dt><dd><b>{_fmt(trade.entry_price, pip_size)}</b> <span class="q">{html.escape(trade.entry_style)}</span></dd>
     <dt>stop</dt><dd><b>{_fmt(trade.stop_loss, pip_size)}</b> <span class="q">{trade.risk_pips:.1f} pips &middot; {html.escape(str(trade.stop_kind))}</span></dd>
-    {natural}
+    {natural}{alt_row}
     <dt>target</dt><dd><b>{_fmt(trade.primary_target, pip_size)}</b> <span class="q">{rr:.1f}R</span></dd>
     <dt>key level</dt><dd><b>{_fmt(trade.key_level_price, pip_size)}</b> <span class="q">{html.escape(str(trade.key_level_shape))}</span></dd>
     <dt>exit</dt><dd><b>{_fmt(trade.exit_price, pip_size) if trade.exit_price else '&mdash;'}</b> <span class="q">{html.escape(str(trade.exit_reason))}</span></dd>
@@ -325,6 +342,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px;text-wrap
 .lv-entry{stroke:var(--entry);fill:var(--entry)}
 .lv-stop{stroke:var(--stop);fill:var(--stop)}
 .lv-target{stroke:var(--target);fill:var(--target)}
+.lv-alt{stroke:var(--brass);fill:var(--brass);stroke-dasharray:2 3}
+dd.alt b{color:var(--brass)}
 
 dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 16px;margin:12px 0 0;
   font-size:13px;align-items:baseline}
@@ -337,18 +356,22 @@ dd b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500}
 
 def build_page(instrument: str, entry_style: str, trades, pip_size: float,
                candles: list[Candle], title: str, lede: str,
-               table: dict[str, tuple[int, int]] | None = None) -> str:
+               table: dict[str, tuple[int, int]] | None = None,
+               alt_stops: dict | None = None, alt_label: str = "other stop") -> str:
     cards = []
     for tr in trades:
         window, entry_i, exit_i = _slice_for(candles, tr.entry_time, tr.exit_time)
         if not window or entry_i < 0:
             continue
-        cards.append(_card(tr, _render_svg(window, entry_i, exit_i, tr, pip_size), pip_size))
+        alt = (alt_stops or {}).get(tr.entry_time)
+        svg = _render_svg(window, entry_i, exit_i, tr, pip_size, alt, alt_label)
+        cards.append(_card(tr, svg, pip_size,
+                           (alt, alt_label) if alt is not None else None))
 
-    legend = ('<p class="legend">Below: individual trades, drawn from the same run. '
-              'The dashed box is the confirmation candle &mdash; the thing the stop is '
-              'supposed to be anchored to. Read each chart by asking whether the red stop '
-              'line sits just past that box, or somewhere unrelated to it.</p>')
+    legend = ('<p class="legend">Below: individual trades from the same run. The dashed '
+              'box marks the confirmation candle. Read each chart by asking whether the '
+              'red stop line clears the swing the turn made, or sits inside it where a '
+              'routine sweep would take it out.</p>')
 
     return (f"<title>{html.escape(title)}</title>{STYLE}"
             f'<div class="wrap"><h1>{html.escape(title)}</h1>'
@@ -363,29 +386,41 @@ def category(trade) -> str:
     return "fallback" if trade.stop_fallback_used else str(trade.trigger_type)
 
 
-def stop_beyond_extreme(trade, candle) -> bool:
-    """Bishop's rule: the stop sits beyond the extreme the confirmation made.
+# How many candles back count as "the leg that made the turn". Bishop's
+# stops clear the whole descending/ascending cluster into the entry, not
+# just the confirmation candle -- checking only that candle scores the
+# single-candle anchors at 100% and hides the real gap (2026-09-02).
+LEG_BARS = 5
 
-    For a long that is below the low that held; for a short, above the high
-    that held. This is the one placement property that can be checked
-    mechanically, so it is what the fidelity table reports.
+
+def stop_beyond_extreme(candles, i: int, trade, bars: int = LEG_BARS) -> bool:
+    """Bishop's rule: the stop clears the extreme the turn actually made.
+
+    For a long that is below the lowest low of the leg into the entry; for
+    a short, above its highest high. Deliberately measured over the whole
+    leg rather than the confirmation candle alone: a stop that clears only
+    its own candle still sits inside the swing, where price can sweep the
+    recent lows without invalidating anything and stop the trade out.
     """
+    leg = candles[max(0, i - bars + 1): i + 1]
+    if not leg:
+        return False
     if trade.direction == Direction.BULLISH:
-        return trade.stop_loss < candle.low
-    return trade.stop_loss > candle.high
+        return trade.stop_loss < min(c.low for c in leg)
+    return trade.stop_loss > max(c.high for c in leg)
 
 
 def fidelity(trades, candles) -> dict[str, tuple[int, int]]:
-    """Per-category (count, how many place the stop beyond the extreme)."""
-    by_time = {c.time: c for c in candles}
+    """Per-category (count, how many clear the leg that made the turn)."""
+    idx = {c.time: i for i, c in enumerate(candles)}
     table: dict[str, list[int]] = {}
     for tr in trades:
-        candle = by_time.get(tr.entry_time)
-        if candle is None:
+        i = idx.get(tr.entry_time)
+        if i is None:
             continue
         row = table.setdefault(category(tr), [0, 0])
         row[0] += 1
-        row[1] += stop_beyond_extreme(tr, candle)
+        row[1] += stop_beyond_extreme(candles, i, tr)
     return {k: (v[0], v[1]) for k, v in sorted(table.items())}
 
 
@@ -421,11 +456,12 @@ def fidelity_html(table: dict[str, tuple[int, int]]) -> str:
             f'<td class="n">{n}</td>'
             f'<td class="bar"><span><i style="width:{pct:.1f}%"></i></span></td>'
             f'<td class="pct">{pct:.1f}%</td></tr>')
-    return ('<table class="fid"><caption>Does the stop sit beyond the extreme the '
-            "confirmation candle made &mdash; below the low that held for a long, above "
-            "the high that held for a short? That is Bishop's rule, and it is the one "
-            "placement property that can be checked mechanically. Measured on every "
-            "trade in the run, not just the ones drawn below.</caption>"
+    return ('<table class="fid"><caption>Does the stop clear the leg that made the '
+            "turn &mdash; below the lowest low of the last five candles into the entry "
+            "for a long, above the highest high for a short? That is the standard "
+            "visible in Bishop's own charts, where the stop sits under the whole "
+            "cluster of lows rather than under one candle. Measured on every trade in "
+            "the run, not just the ones drawn below.</caption>"
             "<tr><th>stop rule</th><th>trades</th><th></th><th>follows the rule</th></tr>"
             + "".join(rows) + "</table>")
 
@@ -436,6 +472,10 @@ def main() -> None:
     ap.add_argument("--entry-style", default="aggressive")
     ap.add_argument("--source", default="dukascopy")
     ap.add_argument("--stop-anchor", default="trigger_wick")
+    ap.add_argument("--compare-anchor", default=None,
+                    help="draw a second stop from this anchor mode on the same setups")
+    ap.add_argument("--min-reward-r", type=float, default=None)
+    ap.add_argument("--title", default=None)
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--out", required=True)
@@ -443,14 +483,26 @@ def main() -> None:
 
     pip_size = default_pip_size(args.instrument)
     trades = run_backtest(args.instrument, args.entry_style, source=args.source,
-                          stop_anchor=args.stop_anchor)
+                          stop_anchor=args.stop_anchor, min_reward_r=args.min_reward_r)
     candles = load_candles(args.source, args.instrument, "H1")
     chosen = pick(trades, args.count, args.seed)
     table = fidelity(trades, candles)
 
+    # Matching on entry time lines the two rules up on the SAME setups, so
+    # the comparison is one rule against another rather than two samples.
+    alt_stops = None
+    alt_label = "other stop"
+    if args.compare_anchor:
+        alt_label = "live stop"
+        alt_stops = {t.entry_time: t.stop_loss
+                     for t in run_backtest(args.instrument, args.entry_style,
+                                           source=args.source,
+                                           stop_anchor=args.compare_anchor)}
+
     page = build_page(
         args.instrument, args.entry_style, chosen, pip_size, candles, table=table,
-        title=f"{args.instrument} trade placements",
+        alt_stops=alt_stops, alt_label=alt_label,
+        title=args.title or f"{args.instrument} trade placements",
         lede=("Every stop the bot places, checked against the rule it is supposed to follow, then "
               "shown one trade at a time so the placements can be judged by eye rather than "
               "taken on trust. Trades below are sampled evenly across every stop rule and "
