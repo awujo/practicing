@@ -2511,6 +2511,77 @@ stop logic. What is established and worth keeping is the measured rule
 itself (`knowledge-base/supplementary/bishop_pdf_sl_measurements.md`,
 all 35 measurements) plus yesterday's two live execution fixes.
 
+## 2026-09-02 -- FINAL three-way A/B: both zone modes clearly underperform. Do not enable.
+
+Run 33576378823. Full 2025-2026, 25 instruments, both entry styles.
+
+```
+                                  trigger_wick                zone          zone_entry
+total trades                              2697                1320                1238
+wins                                      1395                 502                 457
+win rate                                 51.7%               38.0%               36.9%
+total R                                 2671.2               628.4               534.2
+avg R per trade                          0.990               0.476               0.431
+median risk (pips)                         9.4                 7.7                 8.7
+min risk (pips)                            0.2                 1.0                 1.1
+max risk (pips)                         2967.0              2174.0              5063.0
+stops < 2 pips                             352                 145                 127
+stops > 30 pips                            318                 222                 233
+setups skipped                               0                1377                1459
+```
+
+**Verdict: neither zone mode goes live.** Both cost roughly a quarter of
+the win rate and three quarters of total R.
+
+**CORRECTION to the previous entry.** It recorded that `zone_entry`
+beats `zone`, based on a 3-instrument local preview (41.7% vs 38.0%),
+and read that as supporting "entry and stop are one geometry". At full
+scale the ordering REVERSES: 36.9% vs 38.0%. Completing the mechanism
+does not rescue it, and that inference should not have been drawn from
+three instruments. The corrected reading is that entry-at-the-near-edge
+adds nothing here and slightly hurts -- 1459 setups skipped for never
+filling, and a max stop of 5063 pips (worse than the default's 2967),
+meaning some zones being selected are enormous.
+
+**What is genuinely better, and is the only thing worth carrying
+forward:** the stop DISTRIBUTION improves on every measure that
+described a real live failure. The 1-pip collapse (the live EURGBP
+INVALID_STOPS rejection) drops 352 -> 145 -> 127. The minimum stop stops
+being 0.2 pips. The >30-pip unrelated-anchor cases (the live CHFJPY
+198.101 stop) drop 318 -> 222. So zone anchoring does place stops more
+sensibly -- it just does not make money on this engine's setups.
+
+### Conclusion after a full night on this
+
+The RULE is established beyond reasonable doubt: 35 measured trades
+across 60 pages, zero exceptions, one broker screenshot confirming it to
+the pip. Entry at the zone's near edge, stop at its far edge, stop
+distance = the zone's own height.
+
+Three faithful implementations were tested (stop only; entry+stop; and
+nearest-vs-widest zone selection). All underperform the current default,
+and the obvious refinement changes nothing. So the gap is NOT in the
+rule as read, and not in zone selection. The two remaining explanations
+were stated before these runs and both survive:
+
+1. **Our FVG detection is not his zone drawing.** We detect every
+   3-candle gap (20-26k per instrument, 10th percentile under 1.5 pips).
+   He marks one significant zone per setup. Same rule, different zones,
+   different experiment.
+2. **The deck is a curated teaching artifact.** It shows trades worth
+   publishing. The stop MECHANIC can be read off it; a hit rate cannot.
+   Our engine selects a different population of setups.
+
+Anyone picking this up should start at (1) -- specifically, work out what
+construction actually reproduces the zones drawn on those 60 charts,
+because everything downstream depends on feeding the rule the right
+zones. `knowledge-base/supplementary/bishop_pdf_sl_measurements.md` has
+every measurement to check a candidate construction against.
+
+**Live is untouched throughout.** All three modes are opt-in; the default
+`trigger_wick` path is byte-for-byte unchanged, and the bots continue on
+`d340eb8` with yesterday's two execution fixes.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
