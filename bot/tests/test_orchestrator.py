@@ -1296,3 +1296,37 @@ def test_close_position_never_retries_an_ambiguous_close():
     assert not result.success
     assert len(fake.order_send_calls) == 1
     assert "REVERSE position" in result.reason
+
+
+def test_restart_does_not_report_cumulative_loss_as_todays_drawdown(tmp_path):
+    """Confirmed live 2026-09-02: a restart logged "HALTED: daily drawdown
+    breach: 6.86%" one second after starting, on an account that had lost
+    nothing that day -- 6.86% was its loss since the phase began.
+
+    `__post_init__` seeds day_start_balance with the PHASE start (100k),
+    so the first _account_state() of a fresh process carries that seed;
+    the health gate then read a cumulative drawdown as a daily one.
+    """
+    fake = FakeMT5()
+    # Down 6.86% since the phase began, but flat on the day.
+    fake.account = SimpleNamespace(balance=93140.0, equity=93140.0)
+    bot, _, _ = make_bot(fake, tmp_path)
+
+    bot.run_once()
+
+    assert not bot.halted
+    assert bot.day_start_balance == 93140.0
+
+
+def test_a_genuine_daily_breach_still_halts(tmp_path):
+    """The guard above must not blunt the real rule."""
+    fake = FakeMT5()
+    fake.account = SimpleNamespace(balance=100000.0, equity=100000.0)
+    bot, _, _ = make_bot(fake, tmp_path)
+    bot.run_once()                      # establishes today's baseline
+    assert not bot.halted
+
+    fake.account = SimpleNamespace(balance=94000.0, equity=94000.0)  # -6% today
+    bot.run_once()
+
+    assert bot.halted

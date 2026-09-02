@@ -3077,3 +3077,48 @@ STILL OPEN:
     deploying this changes live behavior on Fridays.
   - A restart still loses the pending-order map (orders are warned about,
     not re-adopted).
+
+## 2026-09-02 -- FIXED: every restart logged a false "daily drawdown
+## breach" halt
+
+From the operator's log after the 5abf2df deploy:
+
+    12:18:54 INFO  starting live loop: prop_firm, instruments=(...)
+    12:18:55 ERROR HALTED: daily drawdown breach: 6.86% >= 4%
+
+One second after startup, on an account that had lost nothing that day.
+6.86% was its CUMULATIVE loss since the phase began (~$6,860 of 100,000).
+
+Cause is an ordering bug in `run_once()`. `__post_init__` seeds
+`day_start_balance` with the PHASE starting balance (100,000) because a
+cold start has no account reading yet. `run_once()` then built `state`
+from that seed and only afterwards called `_roll_day_if_needed()` to
+snapshot the real balance -- but `state` was already constructed, so
+`check_health(state)` measured today's drawdown against 100,000 and read
+the account's whole-phase loss as a single day's.
+
+Self-clearing (the next poll, ~5s later, has the correct snapshot and
+`halted` is re-derived every iteration), so NOTHING was ever actually
+blocked by it. That is also why it survived this long: it looked like a
+transient startup artifact. But it fired a false ERROR and a Telegram
+halt alert on every single restart, and a halt alert that is usually
+wrong is one that gets ignored on the day it is right.
+
+Fix: `_roll_day_if_needed()` now returns whether the baseline moved, and
+`run_once()` rebuilds `state` when it did, before anything reads it. Two
+tests: a restart on an account down 6.86% since phase start does NOT halt
+and snapshots 93,140 as the day's baseline; a genuine -6% intraday move
+still halts.
+
+Also seen in the same log, unfixed and lower severity:
+
+    09:53:29 WARNING new_candle_closed(USDCAD) failed:
+             copy_rates_from_pos(USDCAD, H1) failed: (-1, 'Terminal: Call failed')
+
+Single-instrument bridge failure, caught and skipped per-instrument, with
+the failing/recovered dedup already in place so it logs once rather than
+per poll. Same class as the reconnect flakiness that produces the
+catch-up lateness -- it costs that instrument that hour's check. Not
+separately worth fixing: it is the Wine/mt5linux bridge being unreliable
+on an oversubscribed box, which is the condition the resting-limit work
+exists to tolerate rather than eliminate.

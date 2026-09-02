@@ -208,11 +208,33 @@ class LiveBot:
         self.phase_start_balance = self.profile.starting_balance
         self.day_start_balance = self.profile.starting_balance
 
-    def _roll_day_if_needed(self, state):
+    def _roll_day_if_needed(self, state) -> bool:
+        """Snapshot today's opening balance. Returns True if it changed,
+        so the caller can rebuild any state built against the old one.
+
+        That return value is not cosmetic. `__post_init__` seeds
+        `day_start_balance` with the PHASE starting balance (100,000),
+        because on a cold start there is no account reading yet -- so the
+        first `_account_state()` of a fresh process carries that seed, and
+        anything measured against it reads the account's CUMULATIVE
+        drawdown as if it were today's.
+
+        Confirmed live 2026-09-02: bot1 restarted at 12:18:54 and logged
+        "HALTED: daily drawdown breach: 6.86% >= 4%" one second later, on
+        an account that had lost nothing that day -- 6.86% was its total
+        loss since the phase began. It cleared itself on the next poll
+        (five seconds), because by then the snapshot had been taken, so
+        nothing was actually blocked; but it fires a false ERROR and a
+        Telegram alert on every single restart, and a false halt alert is
+        exactly the kind of thing that gets ignored right up until it is
+        real.
+        """
         today = datetime.now(timezone.utc).date()
-        if self.today != today:
-            self.today = today
-            self.day_start_balance = state.balance
+        if self.today == today:
+            return False
+        self.today = today
+        self.day_start_balance = state.balance
+        return True
 
     def _account_state(self):
         return self.mt5_client.account_state(self.day_start_balance, self.phase_start_balance)
@@ -232,7 +254,18 @@ class LiveBot:
             logger.warning("account_state fetch failed, skipping this iteration: %s", exc)
             return
 
-        self._roll_day_if_needed(state)
+        if self._roll_day_if_needed(state):
+            # The baseline just moved, and `state` was built against the
+            # old one -- rebuild before anything reads it, or the health
+            # gate below judges today against yesterday's (or the phase's)
+            # opening balance. See _roll_day_if_needed()'s docstring.
+            try:
+                state = self._account_state()
+            except MT5ConnectionError as exc:
+                logger.warning("account_state refetch after day-roll failed, "
+                                "skipping this iteration: %s", exc)
+                return
+
         self._reconcile_closed_positions(state)
         # Before the health gate: resting orders must still be cancelled
         # when the setup dies or the weekend arrives even while halted --
