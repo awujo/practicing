@@ -1,0 +1,111 @@
+name: Compare trigger_only vs current default
+
+# TEMPORARY one-off A/B, removed once results are captured.
+#
+# 2026-09-02. The pink boxes in Bishop's deck are the STOP SECTION OF A
+# RISK/REWARD DRAWING TOOL (confirmed by the user), not FVGs -- so the
+# earlier "far edge of the zone" rule was circular and its backtest
+# meaningless. Page 8's annotation ("H2 High swept, Low standing V-shaped
+# kl 4thman's CE", stop just below that standing low) says the stop is
+# anchored to the CONFIRMATION CANDLE'S OWN EXTREME, which is what
+# engulfing_stop_loss()/fourth_man_stop_loss() already compute.
+#
+# So this tests the minimal change: keep those anchors, never substitute
+# the _natural_stop_too_wide() key-level fallback (which on aggressive
+# style resolves to the entry price itself -- the live EURGBP 1-pip
+# INVALID_STOPS rejection).
+on:
+  workflow_dispatch: {}
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+          echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."
+      - name: Run the A/B comparison
+        run: |
+          python3 - <<'PYEOF'
+          import statistics
+          import pandas as pd
+          from backtest.engine.runner import run_backtest
+          from backtest.engine.trade_log import summarize
+
+          INSTRUMENTS = [
+              "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD",
+              "EURGBP", "EURJPY", "EURCHF", "EURCAD", "EURNZD", "GBPJPY", "GBPCHF",
+              "GBPCAD", "GBPNZD", "GBPAUD", "AUDCAD", "AUDJPY", "CHFJPY",
+              "XAUUSD", "XAGUSD", "US30", "NAS100", "JP225",
+          ]
+          STYLES = ["conservative", "aggressive"]
+          START = pd.Timestamp("2025-01-01", tz="UTC")
+          END = pd.Timestamp("2026-12-31T23:59:59", tz="UTC")
+          MODES = ["trigger_wick", "trigger_only"]
+
+          def run_all(mode):
+              out = []
+              for ins in INSTRUMENTS:
+                  for st in STYLES:
+                      try:
+                          out.extend(run_backtest(ins, st, source="dukascopy",
+                                                  start_date=START, end_date=END,
+                                                  stop_anchor=mode))
+                      except Exception as exc:
+                          print("  [skip] %s/%s: %s" % (ins, st, exc))
+              return out
+
+          results = {}
+          for m in MODES:
+              print("Running stop_anchor=%r ..." % m, flush=True)
+              results[m] = run_all(m)
+
+          stats = {m: summarize(results[m]) for m in MODES}
+
+          def pips(m):
+              return sorted(r.risk_pips for r in results[m] if r.risk_pips)
+
+          def row(label, vals):
+              print(label.ljust(26) + "".join(str(v).rjust(22) for v in vals))
+
+          width = 26 + 22 * len(MODES)
+          print()
+          print("=" * width)
+          row("", MODES)
+          row("total trades", [stats[m]["total_trades"] for m in MODES])
+          row("wins", [stats[m]["wins"] for m in MODES])
+          wr = []
+          for m in MODES:
+              v = stats[m]["win_rate"]
+              wr.append("n/a" if v is None else "%.1f%%" % (v * 100))
+          row("win rate", wr)
+          row("total R", ["%.1f" % stats[m]["total_r"] for m in MODES])
+          ar = []
+          for m in MODES:
+              v = stats[m]["avg_r"]
+              ar.append("n/a" if v is None else "%.3f" % v)
+          row("avg R per trade", ar)
+          print("-" * width)
+          row("median risk (pips)", ["%.1f" % statistics.median(pips(m)) if pips(m) else "n/a" for m in MODES])
+          row("min risk (pips)", ["%.1f" % min(pips(m)) if pips(m) else "n/a" for m in MODES])
+          row("max risk (pips)", ["%.1f" % max(pips(m)) if pips(m) else "n/a" for m in MODES])
+          row("stops < 2 pips", [sum(1 for p in pips(m) if p < 2) for m in MODES])
+          row("stops > 30 pips", [sum(1 for p in pips(m) if p > 30) for m in MODES])
+          print("=" * width)
+          print()
+          for m in MODES:
+              kinds = {}
+              for r in results[m]:
+                  kinds[r.stop_kind] = kinds.get(r.stop_kind, 0) + 1
+              print("%s stop_kind breakdown: %s" % (m, dict(sorted(kinds.items()))))
+          PYEOF

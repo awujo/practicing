@@ -1272,6 +1272,26 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # are all correct, because each is just its own zone's height.
         # No zone => no defined invalidation => SKIP the setup rather
         # than substitute a meaningless anchor.
+        # stop_anchor="trigger_only": keep each trigger's OWN structural
+        # anchor -- engulfing's / 4th-man's candle extreme -- and never
+        # substitute the key-level fallback, no width test at all.
+        #
+        # Added 2026-09-02 after re-reading page 8 of the deck, whose
+        # annotation reads "H2 High swept, Low standing V-shaped kl
+        # 4thman's CE" with the stop sitting just below that standing
+        # low. That is a CANDLE extreme, not a gap edge -- the mentor's
+        # own "just below the low, below this particular low" (video-13).
+        # Which means the per-trigger anchors already in this file were
+        # closer to correct than the zone rule built on top of them, and
+        # the real defect is `_natural_stop_too_wide()` swapping in
+        # `origin_stop_loss(new_key_level.price)` -- an anchor that on
+        # aggressive style IS the entry price (the live EURGBP 1-pip
+        # INVALID_STOPS rejection). This isolates exactly that.
+        if stop_anchor == "trigger_only":
+            stop_loss = natural_stop_loss
+            stop_kind = f"{trigger_type}_natural"
+            stop_fallback_used = False
+
         if stop_anchor == "zone_entry":
             stop_loss = zone_stop
             stop_kind = f"{trigger_type}_zone_entry"
