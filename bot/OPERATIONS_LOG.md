@@ -2411,6 +2411,59 @@ it. Keep emitting a breakdown of which code path actually produced each
 result -- a headline table alone would have been read as "the rule
 loses", and the wrong conclusion would have gone in the log.
 
+## 2026-09-02 -- zone-anchor A/B, run 2 (valid): stops improve, win rate collapses
+
+Run 33575395100, after `_entry_zone()` was fixed to find the zone at the
+ENTRY rather than on the key level. All three triggers now get
+zone-anchored stops (`engulfing_zone` 433, `fourth_man_zone` 337,
+`plug_and_play_zone` 550), so this run does test the rule.
+
+```
+                               trigger_wick (today)                     zone
+total trades                                   2697                     1320
+wins                                           1395                      502
+win rate                                      51.7%                    38.0%
+total R                                      2671.2                    628.4
+avg R per trade                               0.990                    0.476
+median risk (pips)                              9.4                      7.7
+min risk (pips)                                 0.2                      1.0
+max risk (pips)                              2967.0                   2174.0
+stops under 2 pips                              352                      145
+stops over 30 pips                              318                      222
+1377 of 2697 setups (51.1%) skipped for no identifiable zone
+```
+
+**What improved, and it is real:** median stop 9.4 -> 7.7 pips, the
+1-pip collapse cut 352 -> 145, the >30-pip unrelated-anchor cases cut
+318 -> 222, and the minimum stop is no longer 0.2 pips. The stops are
+measurably better placed.
+
+**What got worse:** win rate 51.7% -> 38.0%, total R 2671 -> 628, avg R
+0.990 -> 0.476. On these numbers the change must NOT be enabled.
+
+**Most likely cause -- the experiment is structurally incomplete.** In
+the deck, entry sits at the zone's NEAR edge and the stop at its FAR
+edge; those are one geometry, not two independent choices. This run
+moved only the stop while entry still comes from
+`aggressive_entry_price()`/`conservative_entry_price()` against a market
+fill, which can sit anywhere relative to the zone. So trades get the
+tight stop WITHOUT the favourable entry that makes that stop survivable
+-- entry is frequently deep inside the zone (or beyond it), leaving far
+less room before the far edge than Bishop's own trades have. A win-rate
+collapse is the expected symptom of exactly that.
+
+This was flagged as a caveat before the run, not after, and the result
+is consistent with it. It is not yet evidence against the deck's rule;
+it is evidence that half the mechanism performs worse than the current
+whole.
+
+**Next: test entry and stop together, both from the same zone** -- entry
+as a resting order at the near edge (which needs fill simulation, since
+such an entry may never fill: see the reverted retest-fill work,
+c662961/3e10422, whose A/B failed for the mirror-image reason -- it
+tested limit-style ENTRY without the matching zone-anchored STOP).
+Neither half works alone; the deck only ever shows them together.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
