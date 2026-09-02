@@ -2655,6 +2655,68 @@ them, it just stops hiding them. That is the remaining piece of the
 CHFJPY problem, and the honest next question is what bounds a natural
 anchor WITHOUT a pip threshold and without the entry-price fallback.
 
+## 2026-09-02 -- WHERE Bishop actually puts the stop, and why ours goes wide
+
+Direct question: from the PDF, what are the logical places he keeps his
+SL? Re-read the charts with that specific question rather than looking
+at the drawn boxes (which are a risk/reward tool -- see the correction
+above).
+
+**The answer is consistent across every chart, both directions, and all
+four trigger types:**
+
+> The stop sits **just beyond the swing extreme created by the
+> confirmation itself** -- the low that held for a long, the high that
+> held for a short. Always the immediate turn. Never an older level.
+
+Evidence:
+- p8 EURGBP H2 long: annotation reads *"H2 High swept, **Low standing**
+  V-shaped kl 4thman's CE"*; stop 0.85289 sits just below that standing
+  low.
+- p17 AUDUSD M30 long: stop 0.69793 sits just below the low of the small
+  dip where the engulfing formed.
+- p29 CHFJPY H1 short: stop 199.787 sits just above the local swing high
+  immediately before the drop -- NOT at an older level.
+
+Matches video-13 word for word: *"just below the low, below this
+particular low"* / *"above that high, the strong high that was actually
+created"*.
+
+**This is what `engulfing_stop_loss()` and `fourth_man_stop_loss()`
+already compute.** The formulas were never the problem.
+
+### So why do ours come out wide? Measured, not guessed.
+
+For trades whose natural anchor exceeds 30 pips, compared the
+confirmation candle's own range against the median range of the
+preceding 20 bars:
+
+```
+EURUSD   wide(>30p) n= 178  median 2.43x the 20-bar median  |  normal n=1414  1.23x
+GBPJPY   wide(>30p) n= 344  median 1.67x                    |  normal n= 978  1.09x
+GBPNZD   wide(>30p) n= 519  median 1.42x                    |  normal n= 785  1.07x
+```
+
+**Wide anchors come from abnormally large confirmation candles.** The
+rule is behaving correctly -- it puts the stop past the wick of a candle
+that happens to be 1.4-2.4x normal size. A spike/expansion bar.
+
+And that is exactly what Bishop does not trade. In every chart in the
+deck his confirmation is an ordinary-sized bar at a clean turn, never a
+2.4x expansion candle. He is filtering these out by eye; the engine has
+no equivalent.
+
+**So the missing rule is not a stop rule at all -- it is a SETUP
+QUALITY rule:** if the confirmation candle is abnormally large for that
+instrument at that moment, it is not the clean turn the method is
+built on, and the setup should be skipped. Relative and self-scaling
+(a ratio against recent range), so it carries none of the problems of
+a pip threshold -- it adapts per instrument and per volatility regime
+automatically.
+
+This also reframes the "wide anchor" open item: there is nothing to fix
+in the stop formula. The work is in not taking those setups.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
