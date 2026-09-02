@@ -2284,6 +2284,84 @@ chat. **Commit it (or attach it to a release) so this is reproducible**
 -- otherwise the next session is back to inferring geometry from
 transcripts, which is precisely how the last two attempts went wrong.
 
+## 2026-09-02 -- ALL 60 PDF PAGES STUDIED: the stop rule, measured
+
+Full page-by-page study of Bishop's chart-examples PDF, supplied
+directly by the user. Every page read as an image. Raw per-page
+measurements preserved in
+`knowledge-base/supplementary/bishop_pdf_sl_measurements.md`.
+
+**~35 measured trades. Zero exceptions.**
+
+### The rule
+
+Every example annotates two zones: a risk-side zone behind entry (pink;
+grey in the one mindguy0x chart) and a teal target zone in front.
+
+- **ENTRY = the NEAR edge of the risk-side zone** (grey axis label),
+  placed as a resting LIMIT order
+- **STOP = the FAR edge of that same zone** (always the RED axis label)
+- **TARGET = the far edge of the teal zone** (always the TEAL label)
+
+**So the stop distance is simply that zone's own height**, on that
+instrument and that timeframe. The zone is the imbalance/FVG price
+returned to rebalance; if price clears the whole gap, the reason for
+the trade is gone.
+
+Confirmed to the pip by the single page pairing a chart with its broker
+screenshot: **EURCHF, pink zone 0.93147-0.93193, order `BUY LIMIT
+0.93193 / SL 0.93147 / TP 0.93704`.**
+
+### The measurements that kill every pip threshold
+
+Observed stops, each in its own instrument's pips:
+
+```
+3.0  3.1  4.6  5.5  6.0  6.2  6.8  6.9  7.6  9.7  11.3 11.9 14.1 15.0
+15.1 16.7 17.7 31.6 49.2 51.1 67.9 68.6 80.0 82.8 89.7 132.6 378 518.9
+```
+
+A ~170x spread, and every one of them is correct, because each is just
+its own zone. **`MAX_NATURAL_STOP_PIPS = 30` would reject roughly eight
+of these valid trades** -- including EURNZD (31.6), XAUUSD (~62.8),
+USOIL (68.6 and 82.8) and XAGUSD (518.9).
+
+Note also **CHFJPY H1 appears in the deck at 15.0 pips** -- the same
+pair and timeframe where our live stops were 25.8 and 76.5.
+
+Observed R:R: **2.1 to 11.1, typically 4-6.** Never the engine's flat
+`rr=3.0`. The target is the liquidity draw, not a ratio -- the same
+shape of error as the stop thresholds, and still unaddressed.
+
+The identical stop rule appears on engulfing, breakout,
+breakout-with-idm and 4th-man (V-shape) entries, across M30/M45/H1/H2/
+H3/H4. **It is trigger-independent.**
+
+### What was implemented
+
+`stop_anchor="zone"` in `run_backtest()` (opt-in; default
+`trigger_wick` untouched, nothing live changed):
+- stop = far edge of the imbalance zone, for EVERY trigger, via the
+  existing `imbalance_stop_loss()` -- which was already correct and
+  already documented the right invalidation logic, but was only ever
+  reached through `imbalance_overlap` ("plug_and_play")
+- no width test
+- **no zone => SKIP the setup.** No identifiable zone means no defined
+  invalidation point, so there is no valid stop. This replaces falling
+  back to a candle wick, which is what produced the CHFJPY stop at
+  198.101 on a session that traded 197.1-197.7.
+
+### Honest caveat on the entry side
+
+Only the STOP anchor was changed. The deck also shows entry at the
+zone's near edge as a LIMIT order, which this does not yet implement --
+entry still uses `aggressive_entry_price()`/`conservative_entry_price()`
+against a market fill. Changing both at once would make the A/B
+unreadable, so entry is left for a second pass. That also means the
+earlier retest-fill A/B (which failed) was testing limit-style entry
+WITHOUT the matching zone-anchored stop, i.e. half the mechanism -- it
+should be re-run once both sides come from the same zone.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
