@@ -2582,6 +2582,79 @@ every measurement to check a candidate construction against.
 `trigger_wick` path is byte-for-byte unchanged, and the bots continue on
 `d340eb8` with yesterday's two execution fixes.
 
+## 2026-09-02 -- CORRECTION: the pink boxes are a R:R TOOL, not FVGs. The real defect is the fallback.
+
+**The user rejected the zone results and was right to.** Their words:
+*"The pink box is not an FVG. Is the Stop section of a rise/reward ratio
+tool."* Confirmed. That makes the rule I derived CIRCULAR -- the box's
+far edge IS the stop by construction, so "the stop sits at the far edge
+of the zone" says nothing about what structural feature set that price.
+Every zone backtest above therefore tested my guess, not Bishop's
+method, and a failing backtest of the wrong rule is not evidence against
+the right one. A corroborating detail was already in my own notes and I
+walked past it: on EURCHF the teal box tops at 0.93498 while the real TP
+was 0.93704 -- a genuine target zone would not do that.
+
+**What the charts actually say.** Page 8's annotation reads *"H2 High
+swept, Low standing V-shaped kl 4thman's CE"* with the stop just below
+that standing low -- a CANDLE extreme, matching video-13's "just below
+the low, below this particular low". That is precisely what
+`engulfing_stop_loss()` and `fourth_man_stop_loss()` already compute.
+
+**So the anchors were never the defect.** `_natural_stop_too_wide()`
+substituting `origin_stop_loss(new_key_level.price)` is. Isolating the
+fallback trades (3 cached instruments, full history, both styles):
+
+```
+fallback fired        n= 846  win=36.9%  totalR= 277.1  medStop=25.4  <2pip=235
+natural anchor kept   n=3337  win=57.2%  totalR=4172.8  medStop=11.7  <2pip=228
+```
+
+20% of trades producing 6% of the R, at 36.9% vs 57.2% win rate. And it
+causes BOTH live failures at once: 28% of its trades carry sub-2-pip
+stops (the EURGBP INVALID_STOPS rejection) while its median stop is
+WIDER at 25.4 pips (the CHFJPY 25.8/76.5). Same mechanism, opposite
+symptoms, because that anchor resolves to the entry price itself on
+aggressive style and to something distant on conservative.
+
+### Full A/B (run 33600184873, 25 instruments, 2025-2026, both styles)
+
+```
+                                    trigger_wick          trigger_only
+total trades                                2697                  2741
+wins                                        1395                  1465
+win rate                                   51.7%                 53.4%
+total R                                   2671.2                2835.8
+avg R per trade                            0.990                 1.035
+median risk (pips)                           9.4                  11.9
+min risk (pips)                              0.2                   0.2
+max risk (pips)                           2967.0                3753.0
+stops < 2 pips                               352                   161
+stops > 30 pips                              318                   647
+```
+
+**A real but MIXED result.** Win rate +1.7pp, total R +6.2%, avg R
++4.5%, and the 1-pip collapse halved (352 -> 161). But stops over 30
+pips DOUBLED (318 -> 647) and max risk rose, because trades whose wide
+natural anchor used to be swapped out now keep it. The fallback was
+doing two jobs -- causing the 1-pip disaster AND hiding wide anchors.
+Removing it wins on net but makes the CHFJPY-style failure more common,
+not less.
+
+Note also the local 3-instrument preview overstated this (55.3% vs 53.4%
+win, +269R vs +164R). Direction held, magnitude did not -- same lesson
+as the zone_entry preview that reversed outright at full scale.
+
+**Recommendation: worth enabling, but it is a judgment call, not a
+free win** -- it trades more wide stops for far fewer broken ones and
+~6% more R. Left OFF pending the user's decision; `trigger_wick` remains
+the default and live is untouched.
+
+**Still open:** wide natural anchors. `trigger_only` does not address
+them, it just stops hiding them. That is the remaining piece of the
+CHFJPY problem, and the honest next question is what bounds a natural
+anchor WITHOUT a pip threshold and without the entry-price fallback.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
