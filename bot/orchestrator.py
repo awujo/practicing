@@ -95,11 +95,20 @@ STALE_ENTRY_CUTOFF = timedelta(hours=3)
 # "0 days 07:00:00 old (cutoff 3:00:00)" an hour after limits went on, in
 # exactly the bucket (2h+) that accounts for 22 of the bot's 42 attempts.
 #
-# 24h is a backstop rather than a judgment about staleness: the storyline
-# gate independently re-checks that Daily/H4 bias still aligns before any
-# entry search runs, so a signal reaching here already has current
-# higher-timeframe context. This only stops an order resting for days on
-# a setup nobody has looked at.
+# 24h is a backstop rather than a judgment about staleness, and it is only
+# safe BECAUSE of the separate current-bias check in _place_limit_entry().
+#
+# An earlier version of this comment justified 24h by claiming the
+# storyline gate re-checks Daily/H4 alignment before any entry search
+# runs. That was WRONG on the path that matters:
+# `_storyline_hunted_anywhere_in_gap()` returns True if the gate said HUNT
+# at ANY of the last 72 candles, precisely so a signal missed during an
+# outage still gets reported. Right for reporting, wrong for resting an
+# order -- across a 24h window the higher-timeframe thesis can flip, and
+# check_setup() would never notice because it only compares price against
+# stop and target, never bias. _place_limit_entry() now re-asks the gate
+# about the CURRENT candle and declines
+# (decline_bias_no_longer_aligned) if it no longer says hunt.
 STALE_ENTRY_CUTOFF_LIMIT = timedelta(hours=24)
 
 
@@ -206,6 +215,9 @@ class LiveBot:
     # replays history (only a full process restart resets it; an
     # in-process reconnect does not).
     _last_entry_time: dict[str, object] = field(init=False, default_factory=dict)
+    # The candle currently being evaluated, per instrument. Only the limit
+    # path reads it -- see _place_limit_entry()'s bias re-check.
+    _current_candle_time: dict[str, object] = field(init=False, default_factory=dict)
     # instrument (H1) or "instrument:granularity" (storyline's W/D/H4
     # checks) keys currently in a new_candle_closed() failure state --
     # so a SUSTAINED failure (e.g. weekend market closure hitting the
@@ -436,6 +448,7 @@ class LiveBot:
                 watermark = pd.Timestamp(persisted)
         if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
             return
+        self._current_candle_time[instrument] = new_candle.time
 
         # avoid_rollover_entries=True: confirmed live 2026-08-31, a GBPAUD
         # entry at 22:00 UTC filled 54 points worse than requested (Market
@@ -678,6 +691,29 @@ class LiveBot:
                                  instrument=instrument, trade_id=str(record.trade_id),
                                  risk=risk, **base_fields)
                 return
+
+        # A resting limit commits to a thesis for as long as it sits
+        # there, so it needs that thesis to hold NOW -- not merely to have
+        # held at some candle in the replay gap.
+        #
+        # `_storyline_hunted_anywhere_in_gap()` deliberately returns True
+        # if the gate said HUNT at ANY of the last 72 candles, so a missed
+        # signal still gets reported after an outage. That is right for
+        # reporting and wrong for resting an order: with the limit path's
+        # 24h window, a signal could rest against Weekly/Daily/H4
+        # alignment that has since flipped, and check_setup() would never
+        # notice because it only compares price against stop and target.
+        # Market mode is unaffected -- it fires once and is done, so a
+        # stale bias cannot keep costing anything.
+        as_of = self._current_candle_time.get(instrument)
+        if as_of is not None and not self._storyline_says_hunt(instrument, as_of):
+            self._log_event("entry_attempt", "decline_bias_no_longer_aligned",
+                             "higher-timeframe bias no longer aligns as of the current candle -- "
+                             "this signal only passed the gate on an earlier candle in the replay "
+                             "gap, and a resting order would hold a thesis that has since expired",
+                             state, instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            return
 
         since = self._candles_since(instrument, record.entry_time)
         if since is None:

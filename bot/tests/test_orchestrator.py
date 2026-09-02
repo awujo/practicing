@@ -1411,3 +1411,35 @@ def test_market_mode_keeps_the_3h_cutoff(tmp_path):
         bot._check_instrument("EURUSD", state)
 
     considered.assert_not_called()
+
+
+def test_limit_entry_declines_when_bias_no_longer_aligns_now(tmp_path):
+    """The gap-replay gate passes a signal that hunted at ANY of the last
+    72 candles, which is right for reporting a missed signal and wrong for
+    resting an order: with a 24h window the thesis can have flipped, and
+    check_setup() only looks at price, never bias.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    bot._current_candle_time["EURUSD"] = pd.Timestamp("2026-09-02T10:00Z")
+
+    with patch.object(LiveBot, "_storyline_says_hunt", return_value=False), \
+         patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert audit.recent(1)[0]["decision"] == "decline_bias_no_longer_aligned"
+
+
+def test_limit_entry_proceeds_while_bias_still_aligns(tmp_path):
+    fake = FakeMT5()
+    bot, _, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    bot._current_candle_time["EURUSD"] = pd.Timestamp("2026-09-02T10:00Z")
+
+    with patch.object(LiveBot, "_storyline_says_hunt", return_value=True), \
+         patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert len(bot.pending_entries) == 1

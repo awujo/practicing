@@ -3332,3 +3332,41 @@ signal harmless rather than merely rarer -- but they are no longer the
 ONLY answer to lateness, and should not have been sold as one.
 
 399 tests pass (bot + engine).
+
+## 2026-09-02, 17:30 -- the 24h limit window was unsafe as justified;
+## added the current-bias check that makes it defensible
+
+Operator, on being told limit mode allows signals up to 24h old:
+"under 24h how." Right to ask -- the justification I gave was wrong.
+
+I wrote that 24h was safe because "the storyline gate independently
+re-checks that Daily/H4 bias still aligns before any entry search runs."
+It does not, on the path that matters.
+`_storyline_hunted_anywhere_in_gap()` returns True if the gate said HUNT
+at ANY of the last 72 candles (3 days), which exists so a signal missed
+during an outage still gets reported. Only the FAST path checks the
+current candle; the gap-replay path passes on a historical hunt state.
+
+So under the 24h window a limit could rest on a setup whose Weekly/Daily/
+H4 alignment had since flipped -- and `check_setup()` would never catch
+it, because it compares price against stop and target and never looks at
+bias at all. The order would sit there holding a thesis that had expired,
+possibly for a full day.
+
+Fix: `_place_limit_entry()` now re-asks `_storyline_says_hunt()` about the
+CURRENT candle and declines with `decline_bias_no_longer_aligned` if the
+answer is no. `_check_instrument()` records which candle it is evaluating
+(`_current_candle_time`) so the limit path can ask.
+
+Market mode is deliberately untouched: it fires once and is done, so a
+stale bias cannot keep costing anything after the fact. A resting order is
+different in kind -- it commits to the thesis for as long as it sits
+there, which is exactly why it needs the thesis to hold NOW.
+
+275 tests pass.
+
+Note for later: this is the second time today that gap-replay behavior
+correct for REPORTING turned out to be wrong for ACTING. The first was the
+3h staleness gate blocking the limit path. Worth checking any future
+"never silently drop a signal" mechanism against the question "and should
+it be traded?", which is a different question with a different answer.
