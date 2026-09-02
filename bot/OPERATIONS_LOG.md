@@ -2176,6 +2176,114 @@ change. Re-run it.** The same caution applies to every other A/B in this
 file that used R as its metric (rollover filter, retest-fill): they are
 all denominated in a unit that this finding calls into question.
 
+## 2026-09-02 -- SOLVED (from the visual source): the stop is the FAR EDGE OF THE IMBALANCE ZONE
+
+The user supplied the 60-page Bishop chart-examples PDF directly, after
+correctly pointing out that the repo contains NO images at all -- only
+transcripts and second-hand notes -- and that every stop rule proposed
+so far was therefore inferred from someone saying *"here"*, *"this
+low"*, *"that high"* while pointing at a screen nobody could see. That
+was exactly right, and it explains why two separate attempts at defining
+the anchor both missed.
+
+With the charts in hand the rule is unambiguous, and it is not what any
+of the text-derived guesses said.
+
+### The rule
+
+Every example uses the same two-zone annotation:
+- **PINK zone = behind entry (the risk side).** The imbalance/FVG price
+  came back to rebalance.
+- **TEAL zone = in front of entry (the reward side).** The continuation
+  the trade is aiming at.
+- Long -> pink below, teal above. Short -> pink above, teal below.
+
+And:
+- **ENTRY = the NEAR edge of the pink zone** (the edge price reaches
+  first). Placed as a resting LIMIT order.
+- **STOP = the FAR edge of the pink zone.**
+- **TARGET = the teal zone's extent (or beyond it).**
+
+**So stop distance = the height of the imbalance zone.** Nothing else.
+No pip budget, no candle wick, no cap.
+
+### The two measured examples that prove it is not a pip count
+
+**EURCHF, M30 long (pages 5-6, chart + broker screenshot of the same
+trade):** pink zone spans 0.93147-0.93193. Broker shows
+`BUY LIMIT 0.93193` (top of pink = near edge), `SL 0.93147` (bottom of
+pink = far edge), `TP 0.93704`. Risk **4.6 pips**, R:R **11.1:1**.
+
+**EURNZD, H3 short (page 13):** pink zone spans 1.96156-1.96472, sitting
+ABOVE entry. Entry 1.96156 (bottom of pink = near edge, and where the
+"H3 Engulfing Confirmation Entry" label points); 1.96472 carries a RED
+axis label -- the stop -- at the top of pink. Teal runs down to 1.94902,
+carrying a TEAL axis label -- the target. Risk **31.6 pips**, R:R **~4:1**.
+
+**Same rule. A 7x difference in pip count.** A 31.6-pip stop is
+perfectly correct SLK when the zone is 31.6 pips tall. This kills every
+threshold discussed in this file, including the "5-15 pips" that earlier
+entries derived from the transcripts and the `MAX_NATURAL_STOP_PIPS = 30`
+gate -- **which would have REJECTED the valid EURNZD trade above.** The
+pip figures the mentor says out loud (five, seven, "10 pips is fine")
+are measurements of whatever zone he happened to be trading, exactly as
+the user said: *"Bishop's SL aren't small because he wants it small, he
+is placing them at logical invalidation points."*
+
+R:R is likewise not fixed -- 11:1 and 4:1 in these two -- because the
+target is the liquidity draw, not a ratio. The engine's flat `rr=3.0`
+default has the same shape of error as the stop thresholds.
+
+### What this means for the code -- the rule is ALREADY implemented
+
+`entries.py`'s `imbalance_stop_loss()` is correct as written, and its
+docstring already states the exact invalidation logic observed here:
+*"price is expected to sweep liquidity and rebalance THAT gap, and has
+no logical reason to trade beyond its far edge to do so. Stop sits just
+past the far edge."*
+
+**The defect is its SCOPE, not its logic.** In `runner.py` it fires only
+when `imbalance_overlap` is true (an imbalance overlapping the key
+level, labelled "plug_and_play"). Every other trade falls through to
+anchors with no structural meaning:
+- `engulfing_stop_loss()` -- the more extreme of two candle WICKS
+- `fourth_man_stop_loss()` -- the sweep candle's wick
+- `origin_stop_loss(new_key_level.price)` as the width-triggered
+  fallback -- which on aggressive style IS the entry price (1-pip stop,
+  the live EURGBP INVALID_STOPS rejection)
+
+Per this evidence the imbalance zone is not a special case for one
+trigger type -- **it is the mechanism, in every example in the deck.**
+
+### Candidate fix (NOT yet implemented)
+
+1. Make the imbalance-anchored stop the PRIMARY rule for all triggers,
+   not just `plug_and_play`.
+2. Entry at the zone's near edge (this also matches the BUY LIMIT
+   observation -- see the retest-fill entries above, whose failed A/B
+   should be revisited once entry and stop are both defined off the same
+   zone rather than against a market-order fill).
+3. If no imbalance zone can be identified for a setup, SKIP it -- there
+   is no valid stop. Do not fall back to a wick.
+4. Delete `MAX_NATURAL_STOP_PIPS` / `_natural_stop_too_wide()` outright:
+   proven above to reject valid trades.
+5. Re-run every R-denominated A/B afterwards (see the 2026-09-02 entry
+   on why they are all currently measured in a suspect unit).
+
+Also note the earlier `stop_anchor="structural"` attempt (reaction-leg
+extreme) was A/B'd and **failed** -- median stop 9.4 -> 24.3 pips, total
+R 2671 -> 2392. It is off by default and should be REPLACED by the
+zone-anchored rule above, not tuned. Its one real success (sub-2-pip
+collapses 352 -> 10) came from removing the entry-price fallback, which
+the zone rule also removes.
+
+### Process note worth keeping
+
+The repo still contains no images. The PDF was supplied directly in
+chat. **Commit it (or attach it to a release) so this is reproducible**
+-- otherwise the next session is back to inferring geometry from
+transcripts, which is precisely how the last two attempts went wrong.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
