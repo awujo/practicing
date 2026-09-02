@@ -934,9 +934,34 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     and a setup with no identifiable zone is SKIPPED rather than handed a
     meaningless fallback anchor. See the block at the call site.
     "structural" anchors instead to the setup's own reaction-leg extreme
-    (`_reaction_leg_extreme()`). A/B'd 2026-09-02 and it FAILED -- median
-    stop 9.4 -> 24.3 pips, total R 2671 -> 2392 -- kept only so that
-    result stays reproducible. Do not enable it.
+    (`_reaction_leg_extreme()`).
+    VERDICT REVISED 2026-09-02. It was first marked "FAILED -- do not
+    enable" on median stop widening 9.4 -> 24.3 pips and total R
+    2671 -> 2392. Widening was the WRONG criterion to judge it on: the
+    operator's standing correction is that pip width is an output, never
+    a target, and a separate sweep that same day confirmed wide stops are
+    not lower-quality (skipping oversized-confirmation setups lowered
+    average R, which is already width-normalized -- see OPERATIONS_LOG).
+    Re-measured against the standard actually visible in Bishop's own
+    charts -- does the stop clear the whole leg that made the turn, not
+    merely the confirmation candle's own wick -- "structural" is the only
+    mode that places stops where he places them:
+
+        mode           win%   totalR   avgR   medStop  clears 5-bar leg
+        trigger_wick   63.2%   3235.0  1.512     7.3        40.5%
+        trigger_only   65.2%   3372.4  1.576     9.9        48.6%
+        trigger_skip   67.5%   3122.2  1.692     8.2        46.0%
+        structural     64.4%   2929.3  1.364    23.5        92.1%
+
+    (3 locally-cached instruments, aggressive style.) So the placement
+    that matches the source material earns ~9% less R here than the
+    default. That gap is NOT yet evidence the rule is wrong, because this
+    engine is a poor judge of it: entries fill at the exact computed price
+    with no fill test (`open_position()` at the trigger candle), and
+    targets are a multiple of the stop, so a wider stop is forced to chase
+    a proportionally more distant target. Both confounds favour tight
+    stops. Resolve the fill model before treating this comparison as
+    decisive.
     Direct 2026-09-01/02 correction, from studying the source material
     (see OPERATIONS_LOG.md): SLK stops are not small because small is the
     goal, they are small because a correctly-read invalidation point is
@@ -1288,6 +1313,19 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # aggressive style IS the entry price (the live EURGBP 1-pip
         # INVALID_STOPS rejection). This isolates exactly that.
         if stop_anchor == "trigger_only":
+            stop_loss = natural_stop_loss
+            stop_kind = f"{trigger_type}_natural"
+            stop_fallback_used = False
+
+        # stop_anchor="trigger_skip": same natural anchor as "trigger_only",
+        # but a setup whose anchor comes out too wide is SKIPPED rather than
+        # traded on a substituted stop. The substitution has no structural
+        # meaning at any width, so the choice when the real anchor is
+        # unusable is to decline the setup -- the same stance `zone` already
+        # takes when no zone can be identified.
+        if stop_anchor == "trigger_skip":
+            if _natural_stop_too_wide(entry_price, natural_stop_loss, pip_size):
+                continue
             stop_loss = natural_stop_loss
             stop_kind = f"{trigger_type}_natural"
             stop_fallback_used = False

@@ -2818,3 +2818,69 @@ Two decisions still open and belonging to the operator, not the bot:
      352->161, but >30-pip stops 318->647). A judgment call, not a free
      win. Currently OFF.
   2. Whether to pursue the skip-instead-of-substitute rule above.
+
+## 2026-09-02 -- CORRECTION: the "100% follows Bishop's rule" claim was
+## measured against too weak a test. Operator was right.
+
+Operator sent Bishop's EURJPY H2 engulfing example beside one of our own
+rendered GBPJPY charts and said the placements are wrong. They are.
+
+The fidelity test reported earlier that day asked only: is the stop beyond
+the CONFIRMATION CANDLE's own extreme? engulfing and fourth_man scored
+100% on that. But Bishop's stop in the EURJPY chart clears the whole leg
+that made the turn -- the descending cluster of lows into the entry -- not
+just the one or two candles of the confirmation. Re-measured against that
+standard:
+
+                    clears confirmation   clears 5-bar leg   clears 10-bar leg
+  engulfing              100.0%               55-63%             43-45%
+  fourth_man             100.0%               48-51%             29-38%
+  plug_and_play           34-44%               16-18%              9-11%
+  FALLBACK                  5-11%              0-2.6%              0.0%
+
+So more than half of even the "good" stops sit INSIDE the swing: price can
+take out the recent lows without invalidating anything and still stop us
+out. The earlier 100% was true of the test I ran and NOT true of the claim
+I made from it. Anchors are `engulfing_stop_loss()` (min/max of two candle
+wicks) and `fourth_man_stop_loss()` (one candle's wick) -- single candles
+by construction, so they cannot clear a leg except by luck.
+
+The operator's screenshot is the cleanest single example: GBPJPY short,
+entry 135.145, real anchor 135.510 (36.5 pips, above the swing high),
+replaced by the fallback with 135.155 -- ONE pip. Price ticked up into
+that pip, stopped the trade at -1R, then collapsed for what would have
+been a full winner on the correct anchor.
+
+Mode comparison (3 cached instruments, aggressive), adding `trigger_skip`
+(natural anchor, skip the setup when it is too wide rather than
+substitute):
+
+  mode           trades  win%   totalR   avgR  medStop  clears5  clears10
+  trigger_wick     2140  63.2%  3235.0  1.512     7.3    40.5%    28.4%
+  trigger_only     2140  65.2%  3372.4  1.576     9.9    48.6%    35.0%
+  trigger_skip     1845  67.5%  3122.2  1.692     8.2    46.0%    32.2%
+  structural       2147  64.4%  2929.3  1.364    23.5    92.1%    86.2%
+
+Two things follow, and they point different ways:
+
+1. `trigger_only` beats the default on every axis -- win rate, total R,
+   average R, sub-2-pip count (431 -> 210) and structural fidelity. The
+   fallback is strictly harmful; removing it costs nothing.
+2. `structural` is the ONLY mode that places stops where Bishop places
+   them (92% vs 40-49%), and it earns ~9% less R than the default here.
+
+Point 2 is NOT settled, and this engine cannot settle it. Two confounds
+both favour tight stops: entries fill at the exact computed price with no
+fill test at all (`open_position()` on the trigger candle -- neither the
+market orders we run live nor real limit orders), and targets are a
+multiple of the stop, so a wider stop must chase a proportionally more
+distant target. A 1-pip stop scoring +3R in this engine is fiction.
+
+Earlier that day I marked `structural` "FAILED -- do not enable" on the
+grounds that it widened the median stop 9.4 -> 24.3 pips. That was the
+wrong criterion by the operator's own standing correction (width is an
+output, never a target), and the docstring has been revised to say so.
+
+NEXT: fix the fill model before running any further stop-anchor A/B. Until
+entries are filled against real price action, every comparison in this log
+is biased toward whichever rule keeps stops tightest.
