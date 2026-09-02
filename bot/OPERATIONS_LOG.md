@@ -2464,6 +2464,53 @@ c662961/3e10422, whose A/B failed for the mirror-image reason -- it
 tested limit-style ENTRY without the matching zone-anchored STOP).
 Neither half works alone; the deck only ever shows them together.
 
+## 2026-09-02 -- zone selection (nearest vs widest) tested and RULED OUT
+
+Before recommending it, tested the leading explanation for run 2's
+win-rate collapse. Hypothesis: `_entry_zone()` picks the imbalance
+nearest to entry, and our detector finds 20-26k imbalances per
+instrument on H1 (EURUSD median 4.5 pips, p10 0.7; GBPJPY 7.6/1.1;
+GBPNZD 10.1/1.5), so "nearest" would often be a sub-pip noise gap
+rather than the one significant zone Bishop marks per setup. Consistent
+with zone mode still emitting 145 stops under 2 pips.
+
+Measured locally on the three cached instruments, both styles, full
+history, by swapping only the selector:
+
+```
+baseline trigger_wick   trades=4183  win=53.1%  totalR=4449.9  avgR=1.064  medStop=12.5  <2pip=463
+zone_entry NEAREST      trades=1809  win=41.7%  totalR=1132.8  avgR=0.626  medStop=10.4  <2pip=133
+zone_entry WIDEST       trades=1718  win=42.0%  totalR=1077.9  avgR=0.627  medStop=12.5  <2pip= 73
+```
+
+Widest halves the sub-2-pip stops and restores a sane median stop, but
+the outcome is unchanged: 41.7% -> 42.0% win rate, 0.626 -> 0.627 avg R.
+**Zone selection is not the explanation.** Recording it so nobody spends
+time re-deriving this refinement -- it is a real cleanup of the stop
+distribution and makes no difference to results.
+
+Also visible here: `zone_entry` does beat `zone` alone (41.7% vs 38.0%
+at full scale in run 2), which supports the "entry and stop are one
+geometry" reading -- the complete mechanism is better than half of it.
+It is still well short of the current default.
+
+### Two explanations remain, neither yet tested
+
+1. **Our FVG detection is not his zone drawing.** We detect every
+   3-candle gap. He marks ONE significant zone per setup, possibly by
+   eye, possibly by a different construction (an open-close gap, the
+   displacement leg's range). Applying his RULE to different ZONES is a
+   different experiment.
+2. **The deck is a curated teaching artifact, not a sample.** It shows
+   trades worth publishing. Deriving the stop MECHANIC from it is sound;
+   inferring a hit rate from it is not. Our engine selects a different
+   population of setups, so his rule on our setups is not his trading.
+
+**Recommendation: do not enable any zone mode.** Live keeps the current
+stop logic. What is established and worth keeping is the measured rule
+itself (`knowledge-base/supplementary/bishop_pdf_sl_measurements.md`,
+all 35 measurements) plus yesterday's two live execution fixes.
+
 ## Open / worth re-checking
 
 ## Open / worth re-checking
