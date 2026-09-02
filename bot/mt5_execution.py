@@ -148,6 +148,9 @@ class MT5Execution:
     def broker_symbol(self, internal_symbol: str) -> str:
         return self._symbol_map.broker_symbol(internal_symbol)
 
+    def internal_symbol(self, broker_symbol: str) -> str:
+        return self._symbol_map.internal_symbol(broker_symbol)
+
     def compute_lot_size(self, internal_symbol: str, risk_amount: float,
                           entry_price: float, stop_loss: float) -> ValidationResult:
         """Converts a $ risk amount into a broker-valid lot size, using
@@ -550,6 +553,27 @@ class MT5Execution:
                                 retcode_name=retcode_name, attempts=1,
                                 reason=f"cancel rejected: {retcode_name} "
                                        f"({getattr(result, 'comment', '')})")
+
+    def pending_tickets_by_symbol(self) -> dict | None:
+        """Every resting order of ours, grouped by INTERNAL symbol, or
+        None if the query itself failed.
+
+        None means "can't tell" and callers must not treat it as "nothing
+        is resting" -- the same rule as `_our_open_tickets()`. Keyed by
+        internal symbol so the orchestrator, which thinks in internal
+        names, doesn't have to reverse the suffix/override mapping.
+        """
+        try:
+            orders = self._mt5.orders_get() or ()
+        except Exception:
+            return None
+        by_symbol: dict = {}
+        for o in orders:
+            if getattr(o, "magic", None) != self._magic_number:
+                continue
+            internal = self.internal_symbol(getattr(o, "symbol", ""))
+            by_symbol.setdefault(internal, set()).add(o.ticket)
+        return by_symbol
 
     def _our_pending_tickets(self, symbol: str) -> set | None:
         """Our resting orders on `symbol`, or None if the query itself

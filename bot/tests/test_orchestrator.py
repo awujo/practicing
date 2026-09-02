@@ -15,6 +15,12 @@ from ..mt5_data import MT5Client, MT5ConnectionError
 from ..mt5_execution import MT5Execution
 from ..orchestrator import RECONNECT_BACKOFF_BASE_SECONDS, LiveBot, TrackedPosition
 
+
+def _bar(high, low, time="2026-09-01T18:00Z"):
+    """Minimal candle stand-in -- check_setup() reads high/low/time."""
+    from types import SimpleNamespace
+    return SimpleNamespace(high=high, low=low, time=time)
+
 RULES = PhaseRules(daily_dd_limit_pct=0.04, overall_dd_limit_pct=0.10,
                     risk_normal=1000.0, risk_reduced=500.0, de_risk_at_pct=0.05,
                     profit_target_pct=0.08)
@@ -967,3 +973,186 @@ def test_reconcile_sets_accepting_entries_false_when_target_is_hit(tmp_path):
     assert bot.risk_manager.accepting_entries is False
     rows = audit.recent(10)
     assert any(r["event_type"] == "phase_transition" for r in rows)
+
+
+# ---- limit-order entries (entry_order_type="limit") ----
+# Motivated by the 2026-09-02 audit: the bot is never prompt, so a market
+# order sent 40 minutes late buys at a price the stop was never sized for.
+# See setup_validity.py and place_limit_order().
+
+def _limit_bot(fake, tmp_path, instruments=("EURUSD",)):
+    bot, audit, client = make_bot(fake, tmp_path, instruments)
+    bot.entry_order_type = "limit"
+    return bot, audit, client
+
+
+def test_market_remains_the_default():
+    """Enabling limits must be a deliberate act -- nothing changes for
+    existing callers until they ask."""
+    fake = FakeMT5()
+    assert LiveBot(profile=make_profile(), mt5_client=MT5Client(fake, login=1, password="pw",
+                                                                 server="Demo"),
+                    mt5_exec=MT5Execution(fake), audit_log=None,
+                    instruments=("EURUSD",)).entry_order_type == "market"
+
+
+def test_limit_entry_rests_an_order_at_the_computed_entry(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    req = fake.order_send_calls[-1]
+    assert req["action"] == fake.TRADE_ACTION_PENDING
+    # Snapped to this symbol's 4-digit tick grid -- an unrounded price is
+    # rejected INVALID_STOPS (confirmed live 2026-08-29).
+    assert req["price"] == pytest.approx(round(record.entry_price, 4))
+    assert len(bot.pending_entries) == 1
+    row = audit.recent(1)[0]
+    assert row["decision"] == "allow_pending"
+
+
+def test_limit_entry_declines_a_setup_whose_stop_was_already_breached(tmp_path):
+    """Late is fine; invalidated is not. The distinction is price, not
+    the clock."""
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    breached = [_bar(high=1.17400, low=1.17200)]  # through the 1.17290 stop
+
+    with patch.object(LiveBot, "_candles_since", return_value=breached):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert not any(c.get("action") == fake.TRADE_ACTION_PENDING
+                   for c in fake.order_send_calls)
+    assert audit.recent(1)[0]["decision"] == "decline_setup_stop_breached"
+
+
+def test_resting_order_is_cancelled_once_the_setup_dies(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+    assert len(bot.pending_entries) == 1
+
+    # Now price runs through the stop while the order rests.
+    with patch.object(LiveBot, "_candles_since",
+                      return_value=[_bar(high=1.17400, low=1.17200)]):
+        bot._reconcile_pending_entries(bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert fake.orders == []
+    assert audit.recent(1)[0]["decision"] == "cancel_pending"
+
+
+def test_resting_order_survives_while_the_setup_is_merely_waiting(tmp_path):
+    """The case the old code threw away as 'stale': price simply hasn't
+    come back to the level yet."""
+    fake = FakeMT5()
+    bot, _, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    with patch.object(LiveBot, "_candles_since",
+                      return_value=[_bar(high=1.17390, low=1.17380)]):
+        bot._reconcile_pending_entries(bot._account_state())
+
+    assert len(bot.pending_entries) == 1
+    assert len(fake.orders) == 1
+
+
+def test_resting_orders_are_cancelled_at_the_weekend_cutoff(tmp_path):
+    """Direct operator requirement: nothing rests over the weekend."""
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    friday_evening = datetime(2026, 9, 4, 19, 30, tzinfo=timezone.utc)
+    assert bot._weekend_is_close(friday_evening)
+    with patch.object(LiveBot, "_weekend_is_close", return_value=True), \
+         patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._reconcile_pending_entries(bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert "weekend" in audit.recent(1)[0]["reason"]
+
+
+def test_weekend_cutoff_is_not_tripped_midweek():
+    fake = FakeMT5()
+    bot = LiveBot(profile=make_profile(),
+                   mt5_client=MT5Client(fake, login=1, password="pw", server="Demo"),
+                   mt5_exec=MT5Execution(fake), audit_log=None, instruments=("EURUSD",))
+    assert not bot._weekend_is_close(datetime(2026, 9, 2, 23, 0, tzinfo=timezone.utc))
+    assert not bot._weekend_is_close(datetime(2026, 9, 4, 18, 59, tzinfo=timezone.utc))
+    assert bot._weekend_is_close(datetime(2026, 9, 5, 1, 0, tzinfo=timezone.utc))
+
+
+def test_a_filled_limit_becomes_a_tracked_position(tmp_path):
+    fake = FakeMT5()
+    bot, _, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    # The broker fills it: gone from the order book, present as a position.
+    fake.orders = []
+    fake.positions = [make_position(ticket=9001, symbol="EURUSD", volume=0.5,
+                                     price_open=record.entry_price, sl=record.stop_loss)]
+
+    bot._reconcile_pending_entries(bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert ("EURUSD", 9001) in bot.tracked_positions
+
+
+def test_a_failed_orders_query_does_not_look_like_nothing_resting(tmp_path):
+    """`orders_get()` breaking must not silently drop tracked orders --
+    the same "can't tell means can't tell" rule that positions follow."""
+    fake = FakeMT5()
+    bot, _, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    fake.orders_get_raises = True
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._reconcile_pending_entries(bot._account_state())
+
+    assert len(bot.pending_entries) == 1  # still ours, still tracked
+
+
+def test_resting_orders_count_toward_the_daily_risk_cap(tmp_path):
+    """A resting order carries no risk until it fills -- but the worst
+    case is that they ALL fill, within the same minute. Without this the
+    same headroom gets handed out to every limit placed that day.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path, instruments=("EURUSD",))
+
+    # Four orders already resting, $1,000 of risk each, against a 4%
+    # daily limit on a 100k account -- that is the entire day's headroom.
+    from ..orchestrator import PendingEntry
+    for i in range(4):
+        bot.pending_entries[("EURUSD", 8000 + i)] = PendingEntry(
+            row_id=i, instrument="EURUSD", ticket=8000 + i, risk_amount=1000.0,
+            entry_price=1.17374, stop_loss=1.17290, target=1.17626,
+            direction=Direction.BULLISH, signal_time=pd.Timestamp("2026-09-01T12:00Z"))
+
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"), trade_id=99)
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    # Declined, and no fifth order was sent.
+    assert len(bot.pending_entries) == 4
+    assert not any(c.get("action") == fake.TRADE_ACTION_PENDING
+                   for c in fake.order_send_calls)
+    row = audit.recent(1)[0]
+    assert row["decision"] == "decline_daily_aggregate_risk"
+    assert "resting order(s) as though already filled" in row["reason"]

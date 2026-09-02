@@ -52,6 +52,23 @@ class SymbolMap:
             return self.overrides[internal_symbol]
         return f"{internal_symbol}{self.suffix}"
 
+    def internal_symbol(self, broker_symbol: str) -> str:
+        """The reverse mapping, for reading MT5 back.
+
+        Positions and orders come back from MT5 labelled with the BROKER's
+        name, while the rest of this codebase thinks in internal codes, so
+        anything matching them up needs this direction too. An override
+        wins over the suffix rule (USTEC is not "USTEC" minus a suffix),
+        and an unrecognised name is returned unchanged rather than
+        mangled -- a symbol we don't manage should stay identifiable in
+        logs, not silently become something else."""
+        for internal, broker in self.overrides.items():
+            if broker == broker_symbol:
+                return internal
+        if self.suffix and broker_symbol.endswith(self.suffix):
+            return broker_symbol[: -len(self.suffix)]
+        return broker_symbol
+
 
 @dataclass(frozen=True)
 class PhaseRules:

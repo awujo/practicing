@@ -97,6 +97,11 @@ def main():
                          help="required when --account-type=prop_firm")
     parser.add_argument("--instruments", required=True, help="comma-separated, e.g. EURUSD,GBPUSD,XAUUSD")
     parser.add_argument("--style", choices=("aggressive", "conservative"), default="conservative")
+    parser.add_argument("--entry-order-type", choices=("market", "limit"), default="market",
+                         help="'market' (default) sends at whatever price exists when the order "
+                              "goes out. 'limit' rests the order AT the computed entry level, so "
+                              "a late send fills at the price the stop was sized for or not at "
+                              "all -- see setup_validity.py for the live audit that motivated it.")
     parser.add_argument("--symbol-suffix", default=os.environ.get("MT5_SYMBOL_SUFFIX", ""),
                          help="broker's Market Watch suffix, e.g. .a")
     parser.add_argument("--symbol-overrides", default=os.environ.get("MT5_SYMBOL_OVERRIDES", "{}"),
@@ -185,7 +190,8 @@ def main():
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 
     bot = LiveBot(profile=profile, mt5_client=mt5_client, mt5_exec=mt5_exec,
-                   audit_log=audit_log, instruments=instruments, entry_style=args.style)
+                   audit_log=audit_log, instruments=instruments, entry_style=args.style,
+                   entry_order_type=args.entry_order_type)
 
     logger.info("starting live loop: %s, instruments=%s", args.account_type, instruments)
     try:

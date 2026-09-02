@@ -2962,3 +2962,58 @@ NEXT, in priority order:
 3. Stop-anchor choice (trigger_only / trigger_skip / structural) -- still
    open, still unresolved by backtest because of the perfect-fill model,
    and now clearly not the bottleneck.
+
+## 2026-09-02 -- Resting limit entries wired in (OPT-IN, still OFF live)
+
+Built in response to the audit above: the bot is never prompt, and market
+orders sent 30min-2h late caused 41 of its 42 failed attempts. A resting
+limit makes lateness harmless rather than something to detect -- the order
+sits at the level the setup was sized for, so it fills at that price or
+not at all. It is also simply what an SLK entry IS: a predefined key level
+price is expected to return to, not a chase.
+
+Enabled with `--entry-order-type limit`. Default stays `market`, so
+nothing changes until it is passed. To try it on one bot:
+
+    (edit launch_bot1.sh, add:  --entry-order-type limit)
+    systemctl restart slk-bot1
+
+What happens per signal under `limit`:
+  1. Re-check the setup against every H1 candle that closed since it fired
+     (`setup_validity.check_setup()`, reading the cache
+     `sync_recent_from_mt5()` just refreshed -- live bars, not history).
+     Stop breached, or 80%+ of the target already made => decline, logged
+     as decline_setup_stop_breached / decline_setup_target_achieved.
+  2. Re-run the aggregate risk check counting every ALREADY-RESTING order
+     as though it had filled. Without this the same daily headroom is
+     handed to every limit placed that day and a simultaneous batch fill
+     breaches the cap. Reuses RiskManager rather than reimplementing it.
+  3. Place the limit AT the computed entry; log allow_pending.
+  4. On every later poll, `_reconcile_pending_entries()`: promote fills to
+     tracked positions, cancel orders whose setup has since died, cancel
+     everything at the Friday cutoff, and WARN about anything resting at
+     the broker this process did not place (a restart loses the in-memory
+     map but not the orders -- never silently adopt).
+
+Weekend rule: WEEKEND_CUTOFF_WEEKDAY/HOUR_UTC, currently Friday 19:00 UTC.
+Cancellation is in-process in UTC rather than the broker's own
+ORDER_TIME_SPECIFIED expiry ON PURPOSE -- this terminal's clock runs +3h
+against UTC, and an expiry sent in the wrong frame fires either three
+hours early or three hours into the weekend. 19:00 is a deliberately
+conservative guess: THE BROKER'S ACTUAL CLOSE IS STILL UNCONFIRMED.
+
+Verified in the live check this session: `stops_level=0` on every symbol
+on both accounts, so nothing here is at risk of the broker's minimum-stop
+rule; and `_account_state()` reads positions_get() only, which is why
+step 2 above had to be added explicitly.
+
+NOT DONE, and needed before this can be called complete:
+  - Closing open POSITIONS before the weekend. This change only cancels
+    resting ORDERS. There is no close-position method in mt5_execution.py
+    at all, so "flat before the weekend" is only half-implemented.
+  - Confirming the broker's Friday close time and correcting the cutoff.
+  - A restart still loses the pending-order map (orders are warned about,
+    not re-adopted). Persisting it the way `last_entry_time()` is
+    persisted would close that.
+  - None of this has run against a live terminal. It is unit-tested
+    against the fake only -- same caveat as every other MT5 path here.

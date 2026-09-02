@@ -22,7 +22,7 @@ rather say that plainly than paper over it with untested precision.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -38,7 +38,8 @@ from .live_cache_sync import sync_recent_from_mt5
 from .live_strategy import HUNTING, HTFContext, build_htf_context, storyline_at
 from .mt5_data import MT5Client, MT5ConnectionError
 from .mt5_execution import MT5Execution
-from .risk_manager import Decision, RiskManager
+from .risk_manager import Decision, OpenPosition, RiskManager
+from .setup_validity import check_setup
 
 logger = logging.getLogger("bot.orchestrator")
 
@@ -76,6 +77,23 @@ STORYLINE_GAP_LOOKBACK_CANDLES = 72
 STALE_ENTRY_CUTOFF = timedelta(hours=3)
 
 
+# Weekend flatten cutoff, UTC. Nothing may be left resting into the
+# weekend -- direct operator requirement 2026-09-02 ("we will not be
+# leaving any trades over the weekend especially in the geopolitical
+# situation"). Cancellation is done in-process, in UTC, deliberately
+# rather than via the broker's own ORDER_TIME_SPECIFIED expiry: this
+# terminal's clock runs +3h against UTC (see mt5_data.py's offset
+# detection), and an expiry sent in the wrong frame either fires three
+# hours early or three hours into the weekend. UTC is the frame this
+# process controls.
+#
+# 19:00 Friday is deliberately conservative -- the broker's actual close
+# has NOT been confirmed, and being early costs a few late-Friday setups
+# while being late costs the requirement itself.
+WEEKEND_CUTOFF_WEEKDAY = 4      # Monday=0, so 4 = Friday
+WEEKEND_CUTOFF_HOUR_UTC = 19
+
+
 @dataclass
 class TrackedPosition:
     row_id: int              # audit_log row for this trade's entry, to fill in the outcome later
@@ -83,6 +101,26 @@ class TrackedPosition:
     ticket: int
     risk_amount: float
     entry_price: float
+
+
+@dataclass
+class PendingEntry:
+    """A limit order resting at its setup's entry level.
+
+    Held separately from TrackedPosition because a resting order is not a
+    position: it carries no risk until it fills, the risk manager must not
+    count it as exposure, and it needs the setup's own numbers kept around
+    so validity can be re-checked on later polls.
+    """
+    row_id: int
+    instrument: str
+    ticket: int
+    risk_amount: float
+    entry_price: float
+    stop_loss: float
+    target: float
+    direction: object
+    signal_time: object
 
 
 @dataclass
@@ -94,12 +132,24 @@ class LiveBot:
     instruments: tuple[str, ...]
     entry_style: str = "conservative"
     source: str = "dukascopy"
+    # "market" (default, unchanged behavior) or "limit". Opt-in at the
+    # wiring site, matching max_spread_points/max_entry_drift_fraction,
+    # so enabling this is a deliberate act and every existing caller and
+    # test keeps its previous behavior.
+    entry_order_type: str = "market"
 
     risk_manager: RiskManager = field(init=False)
     day_start_balance: float = field(init=False)
     phase_start_balance: float = field(init=False)
     today: object = field(init=False, default=None)
     tracked_positions: dict[tuple[str, int], TrackedPosition] = field(init=False, default_factory=dict)
+    # Limit orders currently resting, keyed the same way. In-memory only:
+    # a restart loses the mapping but NOT the orders, which is why
+    # _reconcile_pending_entries() reports anything resting at the broker
+    # that this process doesn't recognise rather than assuming it owns
+    # everything -- same stance as _reconcile_closed_positions() takes
+    # for untracked positions.
+    pending_entries: dict[tuple[str, int], PendingEntry] = field(init=False, default_factory=dict)
     halted: bool = field(init=False, default=False)
     # Cached Weekly/Daily/H4 bias context per instrument, plus the last
     # storyline stage logged for it -- see _storyline_says_hunt().
@@ -168,6 +218,14 @@ class LiveBot:
 
         self._roll_day_if_needed(state)
         self._reconcile_closed_positions(state)
+        # Before the health gate: resting orders must still be cancelled
+        # when the setup dies or the weekend arrives even while halted --
+        # a halt stops new entries, it does not license leaving orders
+        # parked at the broker unattended.
+        try:
+            self._reconcile_pending_entries(state)
+        except Exception:
+            logger.exception("pending-order reconcile failed; continuing")
 
         health = self.risk_manager.check_health(state)
         if health is not None:
@@ -443,7 +501,14 @@ class LiveBot:
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)
             return
 
-        result = self.mt5_exec.place_market_order(instrument, record.direction.value if hasattr(record.direction, "value") else record.direction,
+        direction = record.direction.value if hasattr(record.direction, "value") else record.direction
+
+        if self.entry_order_type == "limit":
+            self._place_limit_entry(instrument, record, state, risk, sizing.lot_size,
+                                     direction, base_fields)
+            return
+
+        result = self.mt5_exec.place_market_order(instrument, direction,
                                                     sizing.lot_size, record.entry_price, record.stop_loss, record.primary_target)
         row_id = self._log_event(
             "entry_attempt", "allow" if result.success else "execution_failed",
@@ -457,6 +522,162 @@ class LiveBot:
                 row_id=row_id, instrument=instrument, ticket=result.ticket,
                 risk_amount=risk, entry_price=result.filled_price or record.entry_price,
             )
+
+    def _candles_since(self, instrument: str, signal_time):
+        """H1 candles that closed AFTER the signal candle, oldest first.
+
+        Read from the same cache `sync_recent_from_mt5()` has just
+        refreshed from MT5 in `_check_instrument()`, so these are live
+        bars, not stale history.
+        """
+        try:
+            h1 = load_candles(self.source, instrument, "H1")
+        except FileNotFoundError:
+            return []
+        return [c for c in h1 if c.time > signal_time]
+
+    def _place_limit_entry(self, instrument, record, state, risk, lot_size,
+                            direction, base_fields):
+        """Rest a limit at the setup's own entry level, once the setup has
+        been re-checked against everything price has done since it fired.
+
+        This is the answer to the finding that the bot is never prompt
+        (see setup_validity.py). A market order sent 40 minutes late buys
+        at whatever price exists then; a limit sits at the level the stop
+        was sized for. What age DOES change is whether the setup is still
+        worth taking at all, and that is a question about price, not the
+        clock -- so it is asked of the candles, not of a cutoff.
+        """
+        # A resting order is not exposure -- until it fills. `_account_state()`
+        # reads positions_get() only, so without this a batch of limits could
+        # all be approved against the same headroom and then all fill within
+        # the same minute, blowing straight through the daily cap. So the
+        # aggregate check is re-run counting every order already resting as
+        # though it were already open: the worst case IS that they all fill.
+        #
+        # Deliberately re-uses RiskManager rather than reimplementing the
+        # arithmetic here -- the risk rules must have exactly one definition.
+        if self.pending_entries:
+            committed = replace(state, open_positions=state.open_positions + tuple(
+                OpenPosition(ticket=p.ticket, instrument=p.instrument, risk_amount=p.risk_amount)
+                for p in self.pending_entries.values()))
+            decision = self.risk_manager.check_new_entry(committed)
+            if decision.decision != Decision.ALLOW:
+                self._log_event("entry_attempt", decision.decision.value,
+                                 f"{decision.reason} (counting {len(self.pending_entries)} "
+                                 f"resting order(s) as though already filled)", state,
+                                 instrument=instrument, trade_id=str(record.trade_id),
+                                 risk=risk, **base_fields)
+                return
+
+        verdict = check_setup(record.entry_price, record.stop_loss, record.primary_target,
+                              record.direction, self._candles_since(instrument, record.entry_time))
+        if not verdict.alive:
+            self._log_event("entry_attempt", f"decline_setup_{verdict.validity.value}",
+                             verdict.reason, state, instrument=instrument,
+                             trade_id=str(record.trade_id), risk=risk, **base_fields)
+            return
+
+        result = self.mt5_exec.place_limit_order(instrument, direction, lot_size,
+                                                  record.entry_price, record.stop_loss,
+                                                  record.primary_target)
+        row_id = self._log_event(
+            "entry_attempt", "allow_pending" if result.success else "execution_failed",
+            f"limit resting at {record.entry_price} -- {verdict.reason}"
+            if result.success else result.reason,
+            state, instrument=instrument, trade_id=str(record.trade_id), risk=risk,
+            requested_price=result.requested_price, **base_fields,
+        )
+        if result.success:
+            self.pending_entries[(instrument, result.ticket)] = PendingEntry(
+                row_id=row_id, instrument=instrument, ticket=result.ticket,
+                risk_amount=risk, entry_price=record.entry_price,
+                stop_loss=record.stop_loss, target=record.primary_target,
+                direction=record.direction, signal_time=record.entry_time,
+            )
+
+    def _weekend_is_close(self, now=None) -> bool:
+        """True once we're past the Friday cutoff -- nothing may rest into
+        the weekend (operator requirement, 2026-09-02)."""
+        now = now or datetime.now(timezone.utc)
+        return now.weekday() > WEEKEND_CUTOFF_WEEKDAY or (
+            now.weekday() == WEEKEND_CUTOFF_WEEKDAY and now.hour >= WEEKEND_CUTOFF_HOUR_UTC)
+
+    def _reconcile_pending_entries(self, state):
+        """Keep resting orders honest: promote fills, cancel the dead.
+
+        Three things can happen to an order between polls, and each needs
+        a different answer:
+          - it filled           -> a position now exists; start tracking it
+          - the setup died      -> cancel, the thesis is gone
+          - the weekend is here -> cancel, nothing rests over it
+
+        Anything resting at the broker that this process doesn't recognise
+        is REPORTED rather than adopted or ignored -- a restart loses the
+        in-memory mapping but not the orders, and silently assuming
+        ownership is the same conflation that produced untracked
+        positions on 2026-08-31.
+        """
+        if not self.pending_entries and self.entry_order_type != "limit":
+            return
+
+        resting = self.mt5_exec.pending_tickets_by_symbol()
+        weekend = self._weekend_is_close()
+        open_tickets = {p.ticket for p in state.open_positions}
+
+        for key, pending in list(self.pending_entries.items()):
+            instrument, ticket = key
+
+            # Gone from the broker's book: it filled, expired, or someone
+            # removed it. A matching position means it filled.
+            if resting is not None and ticket not in resting.get(instrument, set()):
+                del self.pending_entries[key]
+                filled = open_tickets - {t for _, t in self.tracked_positions}
+                if filled:
+                    new_ticket = sorted(filled)[0]
+                    self.tracked_positions[(instrument, new_ticket)] = TrackedPosition(
+                        row_id=pending.row_id, instrument=instrument, ticket=new_ticket,
+                        risk_amount=pending.risk_amount, entry_price=pending.entry_price,
+                    )
+                    logger.info("limit order %s on %s filled -> position %s at %s",
+                                ticket, instrument, new_ticket, pending.entry_price)
+                else:
+                    logger.info("limit order %s on %s is no longer resting and no position "
+                                "appeared -- expired or cancelled elsewhere", ticket, instrument)
+                continue
+
+            if weekend:
+                self._cancel_pending(key, pending, state,
+                                     "weekend cutoff reached -- nothing rests over the weekend")
+                continue
+
+            verdict = check_setup(pending.entry_price, pending.stop_loss, pending.target,
+                                   pending.direction,
+                                   self._candles_since(instrument, pending.signal_time))
+            if not verdict.alive:
+                self._cancel_pending(key, pending, state, verdict.reason)
+
+        # Orders at the broker that this process has no record of.
+        if resting is not None:
+            known = {(i, t) for (i, t) in self.pending_entries}
+            for instrument, tickets in resting.items():
+                for ticket in tickets:
+                    if (instrument, ticket) not in known and ticket not in self._reported_untracked:
+                        self._reported_untracked.add(ticket)
+                        logger.warning(
+                            "UNTRACKED resting order %s on %s -- this process did not place it "
+                            "(or was restarted since). It will NOT be cancelled automatically; "
+                            "check it by hand.", ticket, instrument)
+
+    def _cancel_pending(self, key, pending: PendingEntry, state, reason: str):
+        result = self.mt5_exec.cancel_pending_order(pending.ticket)
+        if result.success:
+            del self.pending_entries[key]
+            self._log_event("entry_cancelled", "cancel_pending", reason, state,
+                             instrument=pending.instrument, risk=pending.risk_amount)
+        else:
+            logger.warning("could not cancel resting order %s on %s: %s -- will retry next poll",
+                           pending.ticket, pending.instrument, result.reason)
 
     def _reconcile_closed_positions(self, state):
         """Best-effort: anything we're tracking that's no longer in MT5's
