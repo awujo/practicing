@@ -564,8 +564,16 @@ class MT5Execution:
         terminal is left alone.
         """
         try:
-            positions = self._mt5.positions_get() or ()
+            positions = self._mt5.positions_get()
         except Exception:
+            return None
+        # `or ()` here would be a BUG, not a tidy-up: the real MT5 API
+        # returns None on FAILURE and an empty tuple when there genuinely
+        # are none, without raising either way. Collapsing them makes a
+        # broken query indistinguishable from a flat account -- which,
+        # for the weekend flatten, means reporting "nothing to close"
+        # while positions sit open through the weekend.
+        if positions is None:
             return None
         return [p for p in positions if getattr(p, "magic", None) == self._magic_number]
 
@@ -586,10 +594,19 @@ class MT5Execution:
         human instead.
         """
         try:
-            matches = self._mt5.positions_get(ticket=ticket) or ()
+            matches = self._mt5.positions_get(ticket=ticket)
         except Exception as exc:
             return ExecutionResult(success=False, ticket=ticket, attempts=0,
                                     reason=f"could not read position {ticket}: {exc!r}")
+        if matches is None:
+            # NOT the same as "no such position": None is the API's
+            # failure signal. Reporting success here would tell the
+            # weekend flatten this position is dealt with when nobody
+            # has looked at it.
+            return ExecutionResult(success=False, ticket=ticket, attempts=0,
+                                    reason=f"could not read position {ticket}: "
+                                           f"{self._mt5.last_error()} -- could NOT confirm "
+                                           f"whether it is open. Check it by hand.")
         if not matches:
             # Already gone -- closed by its stop, its target, or by hand.
             # The caller's intent ("this must not be open") is satisfied.
@@ -645,8 +662,10 @@ class MT5Execution:
         names, doesn't have to reverse the suffix/override mapping.
         """
         try:
-            orders = self._mt5.orders_get() or ()
+            orders = self._mt5.orders_get()
         except Exception:
+            return None
+        if orders is None:      # API failure, not an empty book -- see our_open_positions()
             return None
         by_symbol: dict = {}
         for o in orders:
@@ -662,8 +681,10 @@ class MT5Execution:
         are resting" -- same rule, and the same scar, as
         `_our_open_tickets()`."""
         try:
-            orders = self._mt5.orders_get() or ()
+            orders = self._mt5.orders_get()
         except Exception:
+            return None
+        if orders is None:      # API failure, not an empty book
             return None
         return {
             o.ticket for o in orders
@@ -689,8 +710,10 @@ class MT5Execution:
         times, both untracked and unmanaged by the risk manager). "Can't
         tell" must mean "can't tell" to the caller, not "assume empty"."""
         try:
-            positions = self._mt5.positions_get() or ()
+            positions = self._mt5.positions_get()
         except Exception:
+            return None
+        if positions is None:   # API failure, not a flat account
             return None
         return {
             p.ticket for p in positions
@@ -734,6 +757,11 @@ class MT5Execution:
             return None
         ticket = sorted(landed)[0]
         filled = next(
+            # `or ()` is SAFE here, unlike every other positions_get call
+            # in this file: the position is already confirmed adopted via
+            # the ticket-set diff above, and this read only decorates the
+            # result with a fill price. A None here costs a log field, not
+            # a correctness guarantee.
             (getattr(p, "price_open", None) for p in (self._mt5.positions_get() or ())
              if getattr(p, "ticket", None) == ticket),
             None,

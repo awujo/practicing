@@ -600,11 +600,19 @@ class LiveBot:
         Read from the same cache `sync_recent_from_mt5()` has just
         refreshed from MT5 in `_check_instrument()`, so these are live
         bars, not stale history.
+
+        Returns None -- NOT an empty list -- when the cache cannot be
+        read. The two mean opposite things to `check_setup()`: an empty
+        list is "nothing has happened since the signal, it is fresh", so
+        returning it on a failed read would declare every unvalidatable
+        setup alive and rest a limit against a thesis nobody checked.
+        That is the same "can't tell read as all clear" conflation this
+        codebase keeps getting caught by; callers must handle None.
         """
         try:
             h1 = load_candles(self.source, instrument, "H1")
-        except FileNotFoundError:
-            return []
+        except (FileNotFoundError, OSError):
+            return None
         return [c for c in h1 if c.time > signal_time]
 
     def _place_limit_entry(self, instrument, record, state, risk, lot_size,
@@ -641,8 +649,17 @@ class LiveBot:
                                  risk=risk, **base_fields)
                 return
 
+        since = self._candles_since(instrument, record.entry_time)
+        if since is None:
+            self._log_event("entry_attempt", "decline_setup_unverifiable",
+                             "could not read the H1 cache to re-check the setup against price "
+                             "since the signal -- declining rather than resting an order against "
+                             "a thesis nobody has checked", state, instrument=instrument,
+                             trade_id=str(record.trade_id), risk=risk, **base_fields)
+            return
+
         verdict = check_setup(record.entry_price, record.stop_loss, record.primary_target,
-                              record.direction, self._candles_since(instrument, record.entry_time))
+                              record.direction, since)
         if not verdict.alive:
             self._log_event("entry_attempt", f"decline_setup_{verdict.validity.value}",
                              verdict.reason, state, instrument=instrument,
@@ -795,9 +812,18 @@ class LiveBot:
                                      "weekend cutoff reached -- nothing rests over the weekend")
                 continue
 
+            since = self._candles_since(instrument, pending.signal_time)
+            if since is None:
+                # Cannot judge it this poll. LEAVE IT RESTING rather than
+                # cancelling: the order sits at the right price and costs
+                # nothing while it waits, so "don't know" argues for doing
+                # nothing, not for acting. It gets re-checked next poll.
+                logger.warning("could not re-check %s's resting order %s (H1 cache unreadable) "
+                                "-- leaving it in place", instrument, ticket)
+                continue
+
             verdict = check_setup(pending.entry_price, pending.stop_loss, pending.target,
-                                   pending.direction,
-                                   self._candles_since(instrument, pending.signal_time))
+                                   pending.direction, since)
             if not verdict.alive:
                 self._cancel_pending(key, pending, state, verdict.reason)
 

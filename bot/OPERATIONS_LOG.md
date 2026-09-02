@@ -3122,3 +3122,58 @@ catch-up lateness -- it costs that instrument that hour's check. Not
 separately worth fixing: it is the Wine/mt5linux bridge being unreliable
 on an oversubscribed box, which is the condition the resting-limit work
 exists to tolerate rather than eliminate.
+
+## 2026-09-02 -- PATTERN AUDIT: swept the codebase for repeats of the two
+## bug shapes that account for nearly everything found this session.
+
+Operator, reasonably: "What if another error comes up. It seems every
+[time]." Rather than reassure, swept for the specific shapes rather than
+reading hopefully. Nearly every bug this session was one of two:
+
+  A. "can't tell" collapsed into a definite answer ("nothing is there",
+     "all clear", "already handled")
+  B. state read after the thing it was derived from changed
+
+Six more instances of A found, FIVE OF THEM IN CODE WRITTEN TODAY.
+
+A1-A5: `self._mt5.positions_get() or ()` / `orders_get() or ()`, in
+our_open_positions(), close_position(), pending_tickets_by_symbol(),
+_our_pending_tickets() and _our_open_tickets(). The real MT5 API returns
+**None on failure** and an **empty tuple when there genuinely is
+nothing**, WITHOUT RAISING -- so `or ()` made a broken query
+indistinguishable from an empty account, and the surrounding try/except
+never fired because nothing was thrown.
+
+  - The worst was close_position(): a failed read fell through to "if not
+    matches" and returned SUCCESS, reason "position was already closed".
+    The weekend flatten would have logged every position as dealt with
+    while they sat open through the weekend -- i.e. the one rule the
+    operator asked for by name would have reported success while doing
+    nothing.
+  - _our_open_tickets() is the function whose OWN DOCSTRING is about this
+    exact conflation ("'Can't tell' must mean 'can't tell' to the
+    caller, not 'assume empty'"). The docstring only ever covered the
+    exception path; `or ()` defeated it on the None path. A documented
+    rule is not an enforced one.
+
+A6: `_candles_since()` returned `[]` on an unreadable H1 cache. An empty
+list means "nothing has happened since the signal, it is fresh" to
+check_setup(), so an unverifiable setup was declared ALIVE and a limit
+rested against a thesis nobody had checked. Now returns None; the entry
+path declines (decline_setup_unverifiable) and the reconcile path LEAVES
+a resting order alone rather than cancelling -- "don't know" argues for
+doing nothing, not for acting, and the order costs nothing while it waits.
+
+B: only one mutation site remains (day_start_balance), fixed earlier
+today by rebuilding `state` when the baseline moves.
+
+267 tests pass. One `or ()` deliberately kept, at the fill-price lookup in
+_recover_landed_order(): the position is already confirmed adopted via the
+ticket-set diff, and that read only decorates the result with a price, so
+a None there costs a log field rather than a correctness guarantee. It is
+commented as such so it is not "fixed" or copied.
+
+LESSON for whoever picks this up: `or ()`, `or []`, `or {}` on any MT5
+query in this codebase is a bug until proven otherwise. The API's failure
+signal is a falsy return, so the idiom that looks like defensive tidying
+is precisely what erases the distinction that matters.

@@ -1330,3 +1330,33 @@ def test_a_genuine_daily_breach_still_halts(tmp_path):
     bot.run_once()
 
     assert bot.halted
+
+
+def test_limit_entry_declines_when_the_setup_cannot_be_verified(tmp_path):
+    """An unreadable cache must not read as "nothing happened since the
+    signal" -- that would rest an order against an unchecked thesis."""
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=None):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert audit.recent(1)[0]["decision"] == "decline_setup_unverifiable"
+
+
+def test_an_unverifiable_resting_order_is_left_alone_not_cancelled(tmp_path):
+    """"Don't know" argues for doing nothing: the order sits at the right
+    price and costs nothing while it waits."""
+    fake = FakeMT5()
+    bot, _, _ = _limit_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    with patch.object(LiveBot, "_candles_since", return_value=None):
+        bot._reconcile_pending_entries(bot._account_state())
+
+    assert len(bot.pending_entries) == 1
+    assert len(fake.orders) == 1

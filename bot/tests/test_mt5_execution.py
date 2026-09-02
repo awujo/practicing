@@ -814,3 +814,50 @@ def test_cancel_treats_an_already_gone_order_as_success():
 
     assert result.success
     assert "already gone" in result.reason
+
+
+# ---- "the query failed" must never read as "there is nothing there" ----
+# The real MT5 API signals failure by RETURNING None, without raising, and
+# returns an empty tuple when there genuinely is nothing. `or ()` collapsed
+# those into one for five separate queries -- found 2026-09-02 while
+# auditing for repeats of this exact pattern.
+
+def test_our_open_positions_reports_cannot_tell_when_the_query_returns_none():
+    fake = FakeMT5()
+    fake.positions_get_returns_none = True
+    assert make_exec(fake).our_open_positions() is None
+
+
+def test_close_position_does_not_claim_success_when_it_cannot_read():
+    """The dangerous one: reporting "already closed" on a failed read
+    tells the weekend flatten this position is handled when nothing has
+    looked at it, and it sits open through the weekend."""
+    fake = FakeMT5()
+    fake.positions_get_returns_none = True
+    result = make_exec(fake).close_position(77)
+    assert not result.success
+    assert "could NOT confirm" in result.reason
+    assert fake.order_send_calls == []
+
+
+def test_close_position_still_treats_a_genuinely_absent_position_as_done():
+    """An empty tuple really does mean "no such position"."""
+    fake = FakeMT5()
+    fake.positions = []
+    result = make_exec(fake).close_position(77)
+    assert result.success
+    assert "already closed" in result.reason
+
+
+def test_pending_queries_report_cannot_tell_when_orders_get_returns_none():
+    fake = FakeMT5()
+    fake.orders_get_returns_none = True
+    ex = make_exec(fake)
+    assert ex.pending_tickets_by_symbol() is None
+    assert ex._our_pending_tickets("EURUSD") is None
+
+
+def test_open_ticket_query_reports_cannot_tell_when_positions_get_returns_none():
+    fake = FakeMT5()
+    fake.positions_get_returns_none = True
+    assert make_exec(fake)._our_open_tickets("EURUSD") is None

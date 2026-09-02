@@ -56,6 +56,11 @@ class FakeMT5:
         self.positions: list = []
         self.orders: list = []          # resting pending orders
         self.orders_get_raises = False  # simulate the query itself failing
+        # The real MT5 API signals failure by RETURNING None, without
+        # raising -- a distinct case from the exception above, and the one
+        # that `or ()` used to swallow.
+        self.orders_get_returns_none = False
+        self.positions_get_returns_none = False
         self.symbols: dict[str, SimpleNamespace] = {}
         self._last_error = (0, "no error")
         self._fail_init = False
@@ -99,6 +104,8 @@ class FakeMT5:
     def orders_get(self, symbol=None):
         if self.orders_get_raises:
             raise RuntimeError("orders_get unavailable")
+        if self.orders_get_returns_none:
+            return None
         if symbol is None:
             return tuple(self.orders)
         return tuple(o for o in self.orders if o.symbol == symbol)
@@ -142,6 +149,8 @@ class FakeMT5:
         return self.account
 
     def positions_get(self, ticket=None):
+        if self.positions_get_returns_none:
+            return None
         if ticket is None:
             return self.positions
         return [p for p in self.positions if p.ticket == ticket]
