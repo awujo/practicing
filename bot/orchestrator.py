@@ -24,6 +24,7 @@ rather say that plainly than paper over it with untested precision.
 import logging
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -77,21 +78,36 @@ STORYLINE_GAP_LOOKBACK_CANDLES = 72
 STALE_ENTRY_CUTOFF = timedelta(hours=3)
 
 
-# Weekend flatten cutoff, UTC. Nothing may be left resting into the
-# weekend -- direct operator requirement 2026-09-02 ("we will not be
+# The weekend rule: nothing open and nothing resting when the market
+# closes -- direct operator requirement 2026-09-02 ("we will not be
 # leaving any trades over the weekend especially in the geopolitical
-# situation"). Cancellation is done in-process, in UTC, deliberately
-# rather than via the broker's own ORDER_TIME_SPECIFIED expiry: this
-# terminal's clock runs +3h against UTC (see mt5_data.py's offset
-# detection), and an expiry sent in the wrong frame either fires three
-# hours early or three hours into the weekend. UTC is the frame this
-# process controls.
+# situation"), the concern being gap risk over a closed weekend, which a
+# stop-loss cannot protect against because there is no price to fill at.
 #
-# 19:00 Friday is deliberately conservative -- the broker's actual close
-# has NOT been confirmed, and being early costs a few late-Friday setups
-# while being late costs the requirement itself.
-WEEKEND_CUTOFF_WEEKDAY = 4      # Monday=0, so 4 = Friday
-WEEKEND_CUTOFF_HOUR_UTC = 19
+# The broker closes with the New York exchange: 17:00 Friday, New York
+# time. That is NOT a fixed UTC hour -- it is 21:00 UTC under EDT and
+# 22:00 UTC under EST, so it must be computed in the New York zone and
+# converted, or it is an hour wrong for half the year. zoneinfo carries
+# the DST rules; hard-coding either number would be a bug twice a year.
+WEEKEND_CLOSE_ZONE = ZoneInfo("America/New_York")
+WEEKEND_CLOSE_WEEKDAY = 4       # Monday=0, so 4 = Friday
+WEEKEND_CLOSE_LOCAL_HOUR = 17
+
+# Flatten an hour before the close rather than at it. Spreads widen
+# sharply into the Friday close (STRATEGY.md Section 8, and the measured
+# 54-point GBPAUD slippage at rollover that avoid_rollover_entries exists
+# for), and closing a position needs the market still open enough to fill
+# -- leaving it to the last minute risks paying the worst spread of the
+# week, or not getting out at all.
+FLATTEN_MINUTES_BEFORE_CLOSE = 60
+
+# Stop opening new trades well before that. A position opened at 16:00
+# Friday that gets force-closed at 16:00 is closed by the clock rather
+# than by its own stop or target -- it books whatever noise it happens to
+# be sitting on, which is neither the strategy's edge nor its risk model.
+# Four hours is a judgment call, not a measured number: long enough for a
+# typical H1 setup to resolve, short enough not to write off Friday.
+NO_NEW_ENTRIES_MINUTES_BEFORE_CLOSE = 240
 
 
 @dataclass
@@ -226,6 +242,16 @@ class LiveBot:
             self._reconcile_pending_entries(state)
         except Exception:
             logger.exception("pending-order reconcile failed; continuing")
+
+        # Flatten before the health gate too: a halt stops new entries, it
+        # does not license carrying positions through a closed weekend.
+        # Gap risk is exactly what a stop-loss cannot protect against --
+        # there is no price to fill at until Monday.
+        if self._weekend_is_close():
+            try:
+                self._flatten_for_weekend(state)
+            except Exception:
+                logger.exception("WEEKEND FLATTEN FAILED -- check the account by hand")
 
         health = self.risk_manager.check_health(state)
         if health is not None:
@@ -490,6 +516,18 @@ class LiveBot:
         decision = self.risk_manager.check_new_entry(state)
 
         base_fields = _audit_fields_from_trade_record(record)
+
+        if self._too_late_to_open():
+            minutes = self._minutes_to_weekend_close()
+            self._log_event("entry_attempt", "decline_weekend_close", state=state,
+                             reason=f"{minutes:.0f} minutes to the Friday "
+                                    f"{WEEKEND_CLOSE_LOCAL_HOUR}:00 New York close -- a trade "
+                                    f"opened now would be flattened by the clock rather than "
+                                    f"resolved on its own stop or target",
+                             instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            return
+
         if decision.decision != Decision.ALLOW:
             self._log_event("entry_attempt", decision.decision.value, decision.reason, state,
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)
@@ -596,12 +634,85 @@ class LiveBot:
                 direction=record.direction, signal_time=record.entry_time,
             )
 
-    def _weekend_is_close(self, now=None) -> bool:
-        """True once we're past the Friday cutoff -- nothing may rest into
-        the weekend (operator requirement, 2026-09-02)."""
+    def _weekend_close_at(self, now) -> datetime:
+        """The next Friday 17:00 New York, as UTC.
+
+        Computed in the New York zone and converted, never as a fixed UTC
+        hour -- the close is 21:00 UTC under EDT and 22:00 under EST.
+        """
+        local = now.astimezone(WEEKEND_CLOSE_ZONE)
+        days_ahead = (WEEKEND_CLOSE_WEEKDAY - local.weekday()) % 7
+        close = (local + timedelta(days=days_ahead)).replace(
+            hour=WEEKEND_CLOSE_LOCAL_HOUR, minute=0, second=0, microsecond=0)
+        if close < local:
+            close += timedelta(days=7)
+        return close.astimezone(timezone.utc)
+
+    def _minutes_to_weekend_close(self, now=None) -> float:
         now = now or datetime.now(timezone.utc)
-        return now.weekday() > WEEKEND_CUTOFF_WEEKDAY or (
-            now.weekday() == WEEKEND_CUTOFF_WEEKDAY and now.hour >= WEEKEND_CUTOFF_HOUR_UTC)
+        return (self._weekend_close_at(now) - now).total_seconds() / 60.0
+
+    def _market_closed_for_weekend(self, now=None) -> bool:
+        """True while the market is actually shut: Friday's close through
+        Sunday's open, both 17:00 New York.
+
+        Needed as its own case because `_minutes_to_weekend_close()` rolls
+        forward to NEXT Friday the moment this Friday's close passes -- so
+        on a Saturday it reports six days, and a window measured purely as
+        "minutes until close" reads the weekend itself as the safest time
+        of the week. Anything found resting after a restart over the
+        weekend still has to be cancelled.
+        """
+        local = (now or datetime.now(timezone.utc)).astimezone(WEEKEND_CLOSE_ZONE)
+        after_friday_close = (local.weekday() == WEEKEND_CLOSE_WEEKDAY
+                              and local.hour >= WEEKEND_CLOSE_LOCAL_HOUR)
+        saturday = local.weekday() == 5
+        sunday_before_open = local.weekday() == 6 and local.hour < WEEKEND_CLOSE_LOCAL_HOUR
+        return after_friday_close or saturday or sunday_before_open
+
+    def _weekend_is_close(self, now=None) -> bool:
+        """True inside the flatten window, or once the market has actually
+        closed -- everything must be closed and cancelled (operator
+        requirement, 2026-09-02)."""
+        return (self._minutes_to_weekend_close(now) <= FLATTEN_MINUTES_BEFORE_CLOSE
+                or self._market_closed_for_weekend(now))
+
+    def _too_late_to_open(self, now=None) -> bool:
+        """True once a new trade would be force-closed by the clock rather
+        than resolved on its own terms."""
+        return self._minutes_to_weekend_close(now) <= NO_NEW_ENTRIES_MINUTES_BEFORE_CLOSE
+
+    def _flatten_for_weekend(self, state):
+        """Close every position we own before the market closes.
+
+        Scoped to OUR magic number: a position opened by hand in the
+        terminal is the operator's business, not this loop's, and closing
+        someone else's trade is not a mistake that can be undone. Those
+        are surfaced loudly instead.
+
+        Untracked positions carrying our magic ARE closed -- they came
+        from a send whose confirmation was lost (the 2026-09-01 CHFJPY
+        triple-fill is exactly this), so they are ours whether or not this
+        process remembers placing them, and they are precisely the
+        positions most likely to be left sitting over a weekend.
+        """
+        ours = self.mt5_exec.our_open_positions()
+        if ours is None:
+            logger.error("WEEKEND FLATTEN: could not read open positions -- cannot confirm "
+                          "the account is flat. CHECK BY HAND before the close.")
+            return
+        for position in ours:
+            instrument = self.mt5_exec.internal_symbol(position.symbol)
+            result = self.mt5_exec.close_position(position.ticket)
+            if result.success:
+                self._log_event("exit", "weekend_flatten",
+                                 f"closed before the Friday {WEEKEND_CLOSE_LOCAL_HOUR}:00 New York "
+                                 f"close -- nothing is held over the weekend", state,
+                                 instrument=instrument, trade_id=str(position.ticket))
+                self.tracked_positions.pop((instrument, position.ticket), None)
+            else:
+                logger.error("WEEKEND FLATTEN: could not close %s on %s: %s -- CLOSE IT BY HAND",
+                              position.ticket, instrument, result.reason)
 
     def _reconcile_pending_entries(self, state):
         """Keep resting orders honest: promote fills, cancel the dead.

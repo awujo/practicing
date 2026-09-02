@@ -554,6 +554,87 @@ class MT5Execution:
                                 reason=f"cancel rejected: {retcode_name} "
                                        f"({getattr(result, 'comment', '')})")
 
+    def our_open_positions(self) -> list | None:
+        """Every open position carrying our magic number, or None if the
+        query failed.
+
+        None means "can't tell", never "there are none" -- the caller
+        (weekend flatten) must escalate rather than conclude the account
+        is flat. Scoped by magic so a position opened by hand in the
+        terminal is left alone.
+        """
+        try:
+            positions = self._mt5.positions_get() or ()
+        except Exception:
+            return None
+        return [p for p in positions if getattr(p, "magic", None) == self._magic_number]
+
+    def close_position(self, ticket: int) -> ExecutionResult:
+        """Close one position at market, by opposing deal.
+
+        MT5 has no "close" action: closing is a DEAL in the opposite
+        direction carrying `position: <ticket>`, for the position's own
+        volume. Getting the volume from the broker rather than from
+        anything this process remembers matters -- a partially closed
+        position would otherwise be over- or under-closed.
+
+        Deliberately NOT retried on ambiguity, for the same reason sends
+        aren't: a timeout here means "no answer", and re-sending a close
+        against a position that already closed opens a NEW position in the
+        opposite direction. That failure mode is worse than the one it
+        would be trying to fix, so an ambiguous close is surfaced for a
+        human instead.
+        """
+        try:
+            matches = self._mt5.positions_get(ticket=ticket) or ()
+        except Exception as exc:
+            return ExecutionResult(success=False, ticket=ticket, attempts=0,
+                                    reason=f"could not read position {ticket}: {exc!r}")
+        if not matches:
+            # Already gone -- closed by its stop, its target, or by hand.
+            # The caller's intent ("this must not be open") is satisfied.
+            return ExecutionResult(success=True, ticket=ticket, attempts=0,
+                                    reason="position was already closed")
+
+        position = matches[0]
+        closing_type = (self._mt5.ORDER_TYPE_SELL if position.type == self._mt5.POSITION_TYPE_BUY
+                        else self._mt5.ORDER_TYPE_BUY)
+        request = {
+            "action": self._mt5.TRADE_ACTION_DEAL,
+            "symbol": position.symbol,
+            "volume": position.volume,
+            "type": closing_type,
+            "position": ticket,
+            "deviation": self._max_slippage_points,
+            "magic": self._magic_number,
+            "comment": "slk-bot close",
+            "type_time": self._mt5.ORDER_TIME_GTC,
+            "type_filling": self._filling_type(position.symbol),
+        }
+
+        result = self._mt5.order_send(request)
+        if result is None:
+            return ExecutionResult(success=False, ticket=ticket, attempts=1,
+                                    reason=f"close returned None: {self._mt5.last_error()} -- "
+                                           f"AMBIGUOUS, not retried (a repeat close against an "
+                                           f"already-closed position opens a REVERSE position). "
+                                           f"Verify {ticket} by hand.")
+        retcode_name = self._retcode_name(result.retcode)
+        if retcode_name == "TRADE_RETCODE_DONE":
+            return ExecutionResult(success=True, ticket=ticket, retcode=result.retcode,
+                                    retcode_name=retcode_name, attempts=1,
+                                    filled_price=getattr(result, "price", None))
+        if retcode_name in AMBIGUOUS_RETCODE_NAMES:
+            return ExecutionResult(success=False, ticket=ticket, retcode=result.retcode,
+                                    retcode_name=retcode_name, attempts=1,
+                                    reason=f"{retcode_name} -- AMBIGUOUS, not retried (a repeat "
+                                           f"close against an already-closed position opens a "
+                                           f"REVERSE position). Verify {ticket} by hand.")
+        return ExecutionResult(success=False, ticket=ticket, retcode=result.retcode,
+                                retcode_name=retcode_name, attempts=1,
+                                reason=f"close rejected: {retcode_name} "
+                                       f"({getattr(result, 'comment', '')})")
+
     def pending_tickets_by_symbol(self) -> dict | None:
         """Every resting order of ours, grouped by INTERNAL symbol, or
         None if the query itself failed.

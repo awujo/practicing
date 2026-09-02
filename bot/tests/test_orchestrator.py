@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
@@ -1074,8 +1075,9 @@ def test_resting_orders_are_cancelled_at_the_weekend_cutoff(tmp_path):
     with patch.object(LiveBot, "_candles_since", return_value=[]):
         bot._consider_entry("EURUSD", record, bot._account_state())
 
-    friday_evening = datetime(2026, 9, 4, 19, 30, tzinfo=timezone.utc)
-    assert bot._weekend_is_close(friday_evening)
+    # Close is Fri 17:00 New York = 21:00 UTC in September (EDT); the
+    # flatten window opens 60 minutes before that.
+    assert bot._weekend_is_close(datetime(2026, 9, 4, 20, 15, tzinfo=timezone.utc))
     with patch.object(LiveBot, "_weekend_is_close", return_value=True), \
          patch.object(LiveBot, "_candles_since", return_value=[]):
         bot._reconcile_pending_entries(bot._account_state())
@@ -1084,14 +1086,40 @@ def test_resting_orders_are_cancelled_at_the_weekend_cutoff(tmp_path):
     assert "weekend" in audit.recent(1)[0]["reason"]
 
 
-def test_weekend_cutoff_is_not_tripped_midweek():
+def test_weekend_window_tracks_the_new_york_close_through_dst():
+    """The broker closes with the NY exchange -- 21:00 UTC under EDT,
+    22:00 under EST. A fixed UTC hour would be an hour wrong for half the
+    year, so this pins both sides of the changeover."""
     fake = FakeMT5()
     bot = LiveBot(profile=make_profile(),
                    mt5_client=MT5Client(fake, login=1, password="pw", server="Demo"),
                    mt5_exec=MT5Execution(fake), audit_log=None, instruments=("EURUSD",))
+
+    # Midweek: nowhere near it.
     assert not bot._weekend_is_close(datetime(2026, 9, 2, 23, 0, tzinfo=timezone.utc))
-    assert not bot._weekend_is_close(datetime(2026, 9, 4, 18, 59, tzinfo=timezone.utc))
+    # Friday in EDT: 19:59 UTC is still 61 minutes out; 20:00 is in.
+    assert not bot._weekend_is_close(datetime(2026, 9, 4, 19, 59, tzinfo=timezone.utc))
+    assert bot._weekend_is_close(datetime(2026, 9, 4, 20, 15, tzinfo=timezone.utc))
+    # Friday in EST (December): the same wall-clock 20:15 UTC is now an
+    # hour and 45 minutes out, because the close moved to 22:00 UTC.
+    assert not bot._weekend_is_close(datetime(2026, 12, 4, 20, 15, tzinfo=timezone.utc))
+    assert bot._weekend_is_close(datetime(2026, 12, 4, 21, 15, tzinfo=timezone.utc))
+    # The weekend itself counts -- "minutes to next Friday" alone would
+    # read Saturday as the safest moment of the week.
     assert bot._weekend_is_close(datetime(2026, 9, 5, 1, 0, tzinfo=timezone.utc))
+    assert bot._weekend_is_close(datetime(2026, 9, 6, 12, 0, tzinfo=timezone.utc))
+    # Sunday after the 17:00 NY reopen: trading again.
+    assert not bot._weekend_is_close(datetime(2026, 9, 6, 22, 0, tzinfo=timezone.utc))
+
+
+def test_new_entries_stop_well_before_the_close():
+    fake = FakeMT5()
+    bot = LiveBot(profile=make_profile(),
+                   mt5_client=MT5Client(fake, login=1, password="pw", server="Demo"),
+                   mt5_exec=MT5Execution(fake), audit_log=None, instruments=("EURUSD",))
+    # 4h before a 21:00 UTC close is 17:00 UTC.
+    assert not bot._too_late_to_open(datetime(2026, 9, 4, 16, 30, tzinfo=timezone.utc))
+    assert bot._too_late_to_open(datetime(2026, 9, 4, 17, 30, tzinfo=timezone.utc))
 
 
 def test_a_filled_limit_becomes_a_tracked_position(tmp_path):
@@ -1156,3 +1184,115 @@ def test_resting_orders_count_toward_the_daily_risk_cap(tmp_path):
     row = audit.recent(1)[0]
     assert row["decision"] == "decline_daily_aggregate_risk"
     assert "resting order(s) as though already filled" in row["reason"]
+
+
+# ---- weekend flatten: closing positions, not just cancelling orders ----
+
+def test_flatten_closes_our_open_positions(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = make_bot(fake, tmp_path)
+    fake.positions = [
+        make_position(ticket=101, symbol="EURUSD", price_open=1.1737, sl=1.1729, volume=0.5),
+        make_position(ticket=102, symbol="EURUSD", price_open=1.1740, sl=1.1732, volume=0.3),
+    ]
+
+    bot._flatten_for_weekend(bot._account_state())
+
+    assert fake.positions == []
+    reasons = [r["reason"] for r in audit.recent(5)]
+    assert all("weekend" in r for r in reasons)
+
+
+def test_flatten_leaves_a_hand_placed_position_alone(tmp_path):
+    """A position without our magic number is the operator's own trade.
+    Closing someone else's position is not an undoable mistake."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+    fake.positions = [
+        make_position(ticket=101, symbol="EURUSD", price_open=1.1737, sl=1.1729, volume=0.5),
+        make_position(ticket=999, symbol="EURUSD", price_open=1.1700, sl=1.1690, volume=1.0,
+                      magic=0),
+    ]
+
+    bot._flatten_for_weekend(bot._account_state())
+
+    assert [p.ticket for p in fake.positions] == [999]
+
+
+def test_flatten_closes_untracked_positions_that_are_ours(tmp_path):
+    """The CHFJPY triple-fill case: they carry our magic but this process
+    never recorded placing them, and they are exactly the positions most
+    likely to be left sitting over a weekend."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+    fake.positions = [
+        make_position(ticket=555, symbol="EURUSD", price_open=1.1737, sl=1.1729, volume=6.42),
+    ]
+    assert bot.tracked_positions == {}
+
+    bot._flatten_for_weekend(bot._account_state())
+
+    assert fake.positions == []
+
+
+def test_flatten_escalates_rather_than_assuming_flat_when_it_cannot_read(tmp_path, caplog):
+    """"Can't tell" must never read as "the account is flat"."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+
+    def boom(ticket=None):
+        raise RuntimeError("bridge down")
+    fake.positions_get = boom
+
+    # state is unused on this path -- the read fails before it is touched.
+    with caplog.at_level("ERROR"):
+        bot._flatten_for_weekend(None)
+
+    assert "CHECK BY HAND" in caplog.text
+
+
+def test_close_position_is_a_deal_against_the_position_ticket():
+    """MT5 has no close action -- it is an opposing DEAL carrying
+    `position`, for the position's own broker-reported volume."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.positions = [make_position(ticket=77, symbol="EURUSD", price_open=1.1737,
+                                     sl=1.1729, volume=0.42)]
+    ex = MT5Execution(fake)
+
+    result = ex.close_position(77)
+
+    assert result.success
+    req = fake.order_send_calls[-1]
+    assert req["position"] == 77
+    assert req["type"] == fake.ORDER_TYPE_SELL       # opposite of a long
+    assert req["volume"] == 0.42                     # the broker's number
+
+
+def test_close_position_treats_an_already_closed_position_as_success():
+    fake = FakeMT5()
+    ex = MT5Execution(fake)
+    result = ex.close_position(12345)
+    assert result.success
+    assert "already closed" in result.reason
+    assert fake.order_send_calls == []
+
+
+def test_close_position_never_retries_an_ambiguous_close():
+    """Re-sending a close against a position that already closed opens a
+    NEW position the other way -- worse than the problem it would fix."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.positions = [make_position(ticket=77, symbol="EURUSD", price_open=1.1737,
+                                     sl=1.1729, volume=0.42)]
+    fake.positions[0].type = fake.POSITION_TYPE_BUY
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0.0, comment="timeout"),
+    ]
+    ex = MT5Execution(fake)
+
+    result = ex.close_position(77)
+
+    assert not result.success
+    assert len(fake.order_send_calls) == 1
+    assert "REVERSE position" in result.reason

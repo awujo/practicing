@@ -3017,3 +3017,63 @@ NOT DONE, and needed before this can be called complete:
     persisted would close that.
   - None of this has run against a live terminal. It is unit-tested
     against the fake only -- same caveat as every other MT5 path here.
+
+## 2026-09-02 -- Weekend rule completed: positions are closed, not just
+## orders cancelled. Cutoff is the New York close, DST-aware.
+
+Operator: "My broker closes when the New York exchange closes. Close open
+positions too before the weekend."
+
+The close is 17:00 Friday NEW YORK, which is NOT a fixed UTC hour: 21:00
+UTC under EDT, 22:00 under EST. It is computed in the America/New_York
+zone via zoneinfo and converted, so it tracks the DST changeover on its
+own. The previous placeholder (a flat 19:00 UTC) is gone -- it would have
+been an hour wrong for half the year and, in winter, would have flattened
+three hours early.
+
+Three windows, all measured backwards from that close:
+  NO_NEW_ENTRIES_MINUTES_BEFORE_CLOSE = 240   -> stop opening (Fri 13:00 NY)
+  FLATTEN_MINUTES_BEFORE_CLOSE        = 60    -> close everything (Fri 16:00 NY)
+  the close itself                            -> flat
+
+Stopping entries 4 hours out is a judgment call, not a measured number: a
+trade opened at 16:00 and force-closed at 16:00 is closed by the clock
+rather than by its stop or target, so it books noise. Flattening 60
+minutes early rather than at the bell is deliberate too -- spreads widen
+sharply into the Friday close, and closing needs the market open enough
+to actually fill.
+
+`_market_closed_for_weekend()` exists as its own case because
+"minutes until the next Friday close" rolls forward the instant the close
+passes -- so on a Saturday it reports six days, and a window measured only
+that way reads the weekend itself as the safest moment of the week. A
+restart over a weekend with orders resting has to still cancel them.
+
+New in mt5_execution.py:
+  - `our_open_positions()` -- positions carrying our magic; None on a
+    failed read, which the caller escalates ("CHECK BY HAND") rather than
+    treating as "the account is flat".
+  - `close_position(ticket)` -- MT5 has no close action, so this is an
+    opposing DEAL carrying `position: <ticket>` for the position's
+    BROKER-REPORTED volume (not anything this process remembers, which
+    would over- or under-close a partially closed position). An already
+    closed position is SUCCESS. An ambiguous close is NEVER retried: a
+    repeat close against a position that already closed opens a NEW
+    position the other way, which is worse than the problem it would fix.
+
+Scope: positions with OUR magic are closed, including untracked ones (the
+CHFJPY triple-fill case -- ours whether or not this process remembers
+placing them, and exactly the ones most likely to be left over a weekend).
+A position opened by hand in the terminal is left alone and logged.
+
+Verified end-to-end: run_once() at Friday 20:15 UTC closes an open
+position and empties the book. 258 tests pass. Still unit-tested against
+the fake only -- no live terminal.
+
+STILL OPEN:
+  - Enabling any of this. `--entry-order-type limit` is off; the weekend
+    flatten, however, is ALWAYS ON once deployed (it is not gated on the
+    limit flag) -- that is deliberate, it is a safety rule, but it means
+    deploying this changes live behavior on Fridays.
+  - A restart still loses the pending-order map (orders are warned about,
+    not re-adopted).

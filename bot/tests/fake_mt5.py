@@ -17,6 +17,8 @@ class FakeMT5:
 
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = 1
+    POSITION_TYPE_BUY = 0
+    POSITION_TYPE_SELL = 1
     ORDER_TYPE_BUY_LIMIT = 2
     ORDER_TYPE_SELL_LIMIT = 3
     TRADE_ACTION_DEAL = 1
@@ -76,6 +78,12 @@ class FakeMT5:
             self.orders = [o for o in self.orders if o.ticket != request["order"]]
             return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=request["order"],
                                     price=0.0, comment="removed")
+        if request.get("position"):
+            self.positions = [p for p in self.positions
+                              if p.ticket != request["position"]]
+            return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE,
+                                    order=request["position"],
+                                    price=request.get("price", 0.0), comment="closed")
         if request.get("action") == self.TRADE_ACTION_PENDING:
             ticket = 2000 + len(self.orders)
             self.orders.append(SimpleNamespace(ticket=ticket, symbol=request["symbol"],
@@ -133,8 +141,10 @@ class FakeMT5:
     def account_info(self):
         return self.account
 
-    def positions_get(self):
-        return self.positions
+    def positions_get(self, ticket=None):
+        if ticket is None:
+            return self.positions
+        return [p for p in self.positions if p.ticket == ticket]
 
     def symbol_info(self, symbol):
         return self.symbols.get(symbol)
@@ -147,9 +157,11 @@ def make_rate(time_unix, o, h, l, c, tick_volume=1000):
     return {"time": time_unix, "open": o, "high": h, "low": l, "close": c, "tick_volume": tick_volume}
 
 
-def make_position(ticket, symbol, price_open, sl, volume, magic=20260101):
+def make_position(ticket, symbol, price_open, sl, volume, magic=20260101, type=0):
+    # `type` mirrors the real MT5 position struct (0=buy, 1=sell) and is
+    # what close_position() reads to pick the opposing side.
     return SimpleNamespace(ticket=ticket, symbol=symbol, price_open=price_open, sl=sl,
-                            volume=volume, magic=magic)
+                            volume=volume, magic=magic, type=type)
 
 
 def make_deal(entry, price, profit, reason):
