@@ -843,9 +843,19 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
     with `_natural_stop_too_wide()` swapping in a key-level fallback when
-    the result looks wide. "structural" instead anchors every trigger to
-    the setup's OWN reaction-leg extreme (`_reaction_leg_extreme()`) and
-    applies no width test at all.
+    the result looks wide.
+    "zone" is the rule derived from Bishop's own 60-page chart deck (every
+    page studied 2026-09-02; ~35 measured trades; zero exceptions): the
+    stop is the FAR EDGE OF THE IMBALANCE ZONE the entry is taken from, so
+    the stop distance is simply that zone's own height on that instrument
+    and timeframe. Applies to EVERY trigger rather than only plug-and-play;
+    no width test (observed stops span 3.0-518.9 pips and are all correct);
+    and a setup with no identifiable zone is SKIPPED rather than handed a
+    meaningless fallback anchor. See the block at the call site.
+    "structural" anchors instead to the setup's own reaction-leg extreme
+    (`_reaction_leg_extreme()`). A/B'd 2026-09-02 and it FAILED -- median
+    stop 9.4 -> 24.3 pips, total R 2671 -> 2392 -- kept only so that
+    result stays reproducible. Do not enable it.
     Direct 2026-09-01/02 correction, from studying the source material
     (see OPERATIONS_LOG.md): SLK stops are not small because small is the
     goal, they are small because a correctly-read invalidation point is
@@ -1119,6 +1129,42 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 continue
             stop_loss = origin_stop_loss(anchor, effective, pip_size=pip_size)
             stop_kind = f"{trigger_type}_structural"
+            natural_stop_loss = stop_loss
+            stop_fallback_used = False
+
+        # stop_anchor="zone": the rule derived from Bishop's own 60-page
+        # chart deck (2026-09-02, all 60 pages studied, ~35 measured
+        # trades, zero exceptions -- see OPERATIONS_LOG.md). Every example
+        # annotates a risk-side zone (pink; grey for one other trader)
+        # behind entry and a teal target zone in front. Entry sits at the
+        # zone's NEAR edge as a resting limit order, the stop at its FAR
+        # edge, the target at the teal zone's far edge -- so the stop
+        # distance is simply THE ZONE'S OWN HEIGHT, measured on that
+        # instrument and timeframe. Confirmed to the pip by the one page
+        # pairing a chart with its broker screenshot (EURCHF: pink zone
+        # 0.93147-0.93193, order BUY LIMIT 0.93193 / SL 0.93147).
+        #
+        # That zone is the imbalance/FVG price returned to rebalance, and
+        # `imbalance_stop_loss()` already implements exactly this -- its
+        # own docstring even states the invalidation logic ("no logical
+        # reason to trade beyond its far edge"). The defect this fixes is
+        # SCOPE, not logic: the branches above only reach it via
+        # `imbalance_overlap` ("plug_and_play"), leaving every other
+        # trigger on candle-wick anchors that have no structural meaning.
+        # The deck shows the zone rule applying to engulfing, breakout,
+        # breakout-with-idm and 4th-man alike -- it is trigger-independent.
+        #
+        # No width test: observed stops run 3.0 to 518.9 pips (~170x) and
+        # are all correct, because each is just its own zone's height.
+        # No zone => no defined invalidation => SKIP the setup rather
+        # than substitute a meaningless anchor.
+        if stop_anchor == "zone":
+            if widest_imbalance is None:
+                continue
+            stop_loss = imbalance_stop_loss(
+                widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
+            )
+            stop_kind = f"{trigger_type}_zone"
             natural_stop_loss = stop_loss
             stop_fallback_used = False
 

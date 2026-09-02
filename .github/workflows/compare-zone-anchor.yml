@@ -1,0 +1,134 @@
+name: Compare stop anchor (ZONE (Bishop deck rule) vs trigger wick)
+
+# TEMPORARY, one-off A/B comparison -- removed once results are captured,
+# same pattern as compare-rollover-filter.yml / compare-min-reward-filter.yml.
+#
+# Tests run_backtest()'s new stop_anchor="zone" against the
+# long-standing "trigger_wick" default across all 25 live instruments,
+# both entry styles, 2025-2026.
+#
+# READ THE OUTPUT CAREFULLY: this change alters the unit R is measured
+# in. A correct (tighter) stop makes the same target worth more R, so
+# total R can rise even if nothing about trade selection improved. Trade
+# count, win rate, average R and median risk in pips all have to be read
+# TOGETHER -- see OPERATIONS_LOG.md 2026-09-02. Median risk_pips is
+# reported precisely so the R numbers can be interpreted rather than
+# taken at face value.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backtest/data_pipeline/requirements.txt
+
+      - name: Download latest data cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download data-latest --pattern 'backtest-data.tar.gz' --dir /tmp
+          mkdir -p backtest/data
+          tar -xzf /tmp/backtest-data.tar.gz -C backtest/
+          echo "Restored $(find backtest/data -name '*.csv' | wc -l) cached data files."
+
+      - name: Run the A/B comparison
+        run: |
+          python3 - <<'PYEOF'
+          import statistics
+          import pandas as pd
+          from backtest.engine.runner import run_backtest
+          from backtest.engine.trade_log import summarize
+
+          INSTRUMENTS = [
+              "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD",
+              "EURGBP", "EURJPY", "EURCHF", "EURCAD", "EURNZD", "GBPJPY", "GBPCHF",
+              "GBPCAD", "GBPNZD", "GBPAUD", "AUDCAD", "AUDJPY", "CHFJPY",
+              "XAUUSD", "XAGUSD", "US30", "NAS100", "JP225",
+          ]
+          STYLES = ["conservative", "aggressive"]
+          START = pd.Timestamp("2025-01-01", tz="UTC")
+          END = pd.Timestamp("2026-12-31T23:59:59", tz="UTC")
+
+          def run_all(anchor):
+              out = []
+              for instrument in INSTRUMENTS:
+                  for style in STYLES:
+                      try:
+                          out.extend(run_backtest(
+                              instrument, style, source="dukascopy",
+                              start_date=START, end_date=END,
+                              stop_anchor=anchor,
+                          ))
+                      except Exception as exc:
+                          print(f"  [skip] {instrument}/{style}: {exc}")
+              return out
+
+          print("Running stop_anchor='trigger_wick' (current default)...")
+          base = run_all("trigger_wick")
+          print("Running stop_anchor='zone' (far edge of the imbalance zone)...")
+          new = run_all("zone")
+
+          def risk_stats(records):
+              pips = [r.risk_pips for r in records if r.risk_pips]
+              if not pips:
+                  return None, None, None
+              return statistics.median(pips), min(pips), max(pips)
+
+          bs, ns = summarize(base), summarize(new)
+          bmed, bmin, bmax = risk_stats(base)
+          nmed, nmin, nmax = risk_stats(new)
+
+          def fmt(v, spec=".1f"):
+              return "n/a" if v is None else format(v, spec)
+
+          print()
+          print("=" * 78)
+          print(f"{'':26s} {'trigger_wick (today)':>24s} {'zone':>24s}")
+          print(f"{'total trades':26s} {bs['total_trades']:>24d} {ns['total_trades']:>24d}")
+          print(f"{'closed trades':26s} {bs['closed_trades']:>24d} {ns['closed_trades']:>24d}")
+          print(f"{'wins':26s} {bs['wins']:>24d} {ns['wins']:>24d}")
+          wrb = f"{bs['win_rate']*100:.1f}%" if bs['win_rate'] is not None else "n/a"
+          wrn = f"{ns['win_rate']*100:.1f}%" if ns['win_rate'] is not None else "n/a"
+          print(f"{'win rate':26s} {wrb:>24s} {wrn:>24s}")
+          print(f"{'total R':26s} {bs['total_r']:>24.1f} {ns['total_r']:>24.1f}")
+          arb = f"{bs['avg_r']:.3f}" if bs['avg_r'] is not None else "n/a"
+          arn = f"{ns['avg_r']:.3f}" if ns['avg_r'] is not None else "n/a"
+          print(f"{'avg R per trade':26s} {arb:>24s} {arn:>24s}")
+          print("-" * 78)
+          print(f"{'median risk (pips)':26s} {fmt(bmed):>24s} {fmt(nmed):>24s}")
+          print(f"{'min risk (pips)':26s} {fmt(bmin):>24s} {fmt(nmin):>24s}")
+          print(f"{'max risk (pips)':26s} {fmt(bmax):>24s} {fmt(nmax):>24s}")
+          print("=" * 78)
+          print()
+
+          # The two live failure modes this change exists to remove.
+          def count_sub(records, threshold):
+              return sum(1 for r in records if r.risk_pips and r.risk_pips < threshold)
+          def count_over(records, threshold):
+              return sum(1 for r in records if r.risk_pips and r.risk_pips > threshold)
+
+          print("Failure modes seen live on 2026-09-01:")
+          print(f"  stops under 2 pips (the EURGBP INVALID_STOPS collapse):"
+                f"  trigger_wick={count_sub(base, 2)}  zone={count_sub(new, 2)}")
+          print(f"  stops over 30 pips (the CHFJPY unrelated-anchor case):"
+                f"  trigger_wick={count_over(base, 30)}  zone={count_over(new, 30)}")
+          print()
+          kinds = {}
+          for r in new:
+              kinds[r.stop_kind] = kinds.get(r.stop_kind, 0) + 1
+          print("zone stop_kind breakdown:", dict(sorted(kinds.items())))
+          skipped = bs['total_trades'] - ns['total_trades']
+          pct = 100*skipped/bs['total_trades'] if bs['total_trades'] else 0
+          print()
+          print(f"{skipped} of {bs['total_trades']} setups ({pct:.1f}%) had no identifiable imbalance "
+                f"zone and were SKIPPED rather than given a fallback anchor.")
+          PYEOF
