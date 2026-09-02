@@ -75,54 +75,68 @@ jobs:
           MODES = ["trigger_wick", "zone", "zone_entry"]
           results = {}
           for mode in MODES:
-              print(f"Running stop_anchor={mode!r} ...", flush=True)
+              print("Running stop_anchor=%r ..." % mode, flush=True)
               results[mode] = run_all(mode)
 
           def risk_stats(records):
               pips = [r.risk_pips for r in records if r.risk_pips]
               if not pips:
-                  return None, None, None
-              return statistics.median(pips), min(pips), max(pips)
+                  return (None, None, None)
+              return (statistics.median(pips), min(pips), max(pips))
 
           def count_sub(records, t):
               return sum(1 for r in records if r.risk_pips and r.risk_pips < t)
+
           def count_over(records, t):
               return sum(1 for r in records if r.risk_pips and r.risk_pips > t)
 
+          def cell(value):
+              return str(value).rjust(20)
+
           stats = {m: summarize(results[m]) for m in MODES}
+          risks = {m: risk_stats(results[m]) for m in MODES}
           base_n = stats["trigger_wick"]["total_trades"]
 
-          w = 20
+          def row(label, values):
+              print(label.ljust(26) + "".join(cell(v) for v in values))
+
+          width = 26 + 20 * len(MODES)
           print()
-          print("=" * (26 + w * len(MODES)))
-          print(f"{'':26s}" + "".join(f"{m:>{w}s}" for m in MODES))
-          for label, key, fmt in [
-              ("total trades", "total_trades", "d"),
-              ("closed trades", "closed_trades", "d"),
-              ("wins", "wins", "d"),
-          ]:
-              print(f"{label:26s}" + "".join(f"{stats[m][key]:>{w}{fmt}}" for m in MODES))
-          print(f"{'win rate':26s}" + "".join(
-              f"{(f'{stats[m]['win_rate']*100:.1f}%' if stats[m]['win_rate'] is not None else 'n/a'):>{w}s}"
-              for m in MODES))
-          print(f"{'total R':26s}" + "".join(f"{stats[m]['total_r']:>{w}.1f}" for m in MODES))
-          print(f"{'avg R per trade':26s}" + "".join(
-              f"{(f'{stats[m]['avg_r']:.3f}' if stats[m]['avg_r'] is not None else 'n/a'):>{w}s}"
-              for m in MODES))
-          print("-" * (26 + w * len(MODES)))
-          for label, idx in [("median risk (pips)", 0), ("min risk (pips)", 1), ("max risk (pips)", 2)]:
-              print(f"{label:26s}" + "".join(
-                  f"{(f'{risk_stats(results[m])[idx]:.1f}' if risk_stats(results[m])[idx] is not None else 'n/a'):>{w}s}"
-                  for m in MODES))
-          print(f"{'stops < 2 pips':26s}" + "".join(f"{count_sub(results[m], 2):>{w}d}" for m in MODES))
-          print(f"{'stops > 30 pips':26s}" + "".join(f"{count_over(results[m], 30):>{w}d}" for m in MODES))
-          print(f"{'setups skipped':26s}" + "".join(
-              f"{base_n - stats[m]['total_trades']:>{w}d}" for m in MODES))
-          print("=" * (26 + w * len(MODES)))
+          print("=" * width)
+          row("", MODES)
+          row("total trades", [stats[m]["total_trades"] for m in MODES])
+          row("closed trades", [stats[m]["closed_trades"] for m in MODES])
+          row("wins", [stats[m]["wins"] for m in MODES])
+
+          win_rates = []
+          for m in MODES:
+              wr = stats[m]["win_rate"]
+              win_rates.append("n/a" if wr is None else "%.1f%%" % (wr * 100))
+          row("win rate", win_rates)
+
+          row("total R", ["%.1f" % stats[m]["total_r"] for m in MODES])
+
+          avgs = []
+          for m in MODES:
+              a = stats[m]["avg_r"]
+              avgs.append("n/a" if a is None else "%.3f" % a)
+          row("avg R per trade", avgs)
+
+          print("-" * width)
+          for label, idx in (("median risk (pips)", 0), ("min risk (pips)", 1), ("max risk (pips)", 2)):
+              vals = []
+              for m in MODES:
+                  v = risks[m][idx]
+                  vals.append("n/a" if v is None else "%.1f" % v)
+              row(label, vals)
+          row("stops < 2 pips", [count_sub(results[m], 2) for m in MODES])
+          row("stops > 30 pips", [count_over(results[m], 30) for m in MODES])
+          row("setups skipped", [base_n - stats[m]["total_trades"] for m in MODES])
+          print("=" * width)
           print()
           for m in MODES:
               kinds = {}
               for r in results[m]:
                   kinds[r.stop_kind] = kinds.get(r.stop_kind, 0) + 1
-              print(f"{m} stop_kind breakdown:", dict(sorted(kinds.items())))
+              print("%s stop_kind breakdown: %s" % (m, dict(sorted(kinds.items()))))
           PYEOF
