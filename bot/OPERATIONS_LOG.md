@@ -2884,3 +2884,81 @@ output, never a target), and the docstring has been revised to say so.
 NEXT: fix the fill model before running any further stop-anchor A/B. Until
 entries are filled against real price action, every comparison in this log
 is biased toward whichever rule keeps stops tightest.
+
+## 2026-09-02 -- LIVE AUDIT DB READ: the bot has a DELIVERY problem, not
+## a strategy problem. 1 order placed in 42 attempts.
+
+Pulled the real numbers off both audit DBs on the VPS (read-only). Every
+entry attempt ever made, by outcome:
+
+  order actually placed (decision='allow')            1
+  execution_failed                                   12
+  decline_stale_signal (all 2h+ past candle close)   22
+  decline_daily_aggregate_risk                        4
+  decline_sizing_entry_price_drifted                  2
+  decline_sizing_symbol_not_tradeable                 1
+                                                     --
+                                                     42
+
+`orchestrator.py:449` writes 'allow' only when `place_market_order()`
+succeeded, so that 1 is literal: one order has ever reached the broker.
+
+**Timing (delay measured from CANDLE CLOSE, not candle open -- entry_time
+is the bar's OPEN, so a perfectly prompt trade already reads ~1h stale on
+a naive timestamp-minus-entry_time measure; an earlier pass got this
+wrong and reported "no fresh signals at all"):**
+
+  <5m       0     <-- nothing is ever prompt
+  5-30m     5
+  30-60m    9
+  1-2h      6
+  2h+      22
+
+**All 17 execution failures, by broker retcode:**
+  INVALID_STOPS  12    TIMEOUT  4    CONNECTION  1
+
+**stops_level = 0 on EVERY symbol on BOTH accounts** (checked live via the
+mt5linux bridge inside the `mt5` container; spreads 0-9 points). The
+broker imposes no minimum stop distance at all. That RULES OUT "stop too
+close to price" as the cause of any INVALID_STOPS rejection -- including
+the 1-pip ones, which are still far outside a 0.2-pip spread. The only
+remaining explanation is the stop being on the WRONG SIDE of the current
+price by send time, i.e. price had already traded past it during the
+30min-2h the order sat unsent.
+
+Two claims made earlier this session and now retracted:
+1. "INVALID_STOPS is the 1-pip fallback bug" -- wrong; 7 of 12 had
+   perfectly normal stops (9.3, 10.4, 11.4, 13.9, 14.2, 25.9, 46.6 pips).
+2. The revised "4 of 12 are the fallback" -- also wrong. stops_level=0
+   means NONE were rejected for distance. The fallback defect is real and
+   documented above, but it did not cause these rejections.
+
+**Everything traces to one cause: the bot is 30 minutes to 2 hours late
+on every signal.** Lateness produces the 22 stale declines, the 12
+wrong-side rejections, the 2 drift declines, and the CHFJPY 50-pip fill.
+41 of 42 failures are downstream of it. Stop placement -- the subject of
+most of this session -- is a real but SECOND-ORDER problem: it changes
+what happens on trades that reach the broker, and almost none do.
+
+**Open positions: 0 on both accounts.** The three untracked CHFJPY
+positions have closed (consistent with the -$1,355 the operator saw).
+The EURCAD/EURNZD/GBPAUD timeouts left no orphans either. Note this does
+NOT vindicate `_recover_landed_order()`'s "confirmed no position was
+opened" message -- CHFJPY carried that exact message while three
+positions were open. The message remains untrustworthy.
+
+Both accounts are on MetaQuotes-Demo (see launch_bot1.sh), so all of the
+above is simulated money and purely diagnostic.
+
+NEXT, in priority order:
+1. The lateness. Either fix the delay, or make it harmless by resting
+   LIMIT orders at the computed entry instead of sending market orders
+   late (the operator's own SLK entry model, and the reverted work from
+   earlier this session). Limits are the stronger option: they remove
+   wrong-side rejections, drift, and stale-signal loss in one move.
+2. Rotate the Telegram bot token -- it is hardcoded in launch_bot1.sh and
+   was pasted in plaintext into a chat transcript. Move it to
+   ~/.mt5_bot_env with MT5_PW.
+3. Stop-anchor choice (trigger_only / trigger_skip / structural) -- still
+   open, still unresolved by backtest because of the perfect-fill model,
+   and now clearly not the bottleneck.
