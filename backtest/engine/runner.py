@@ -268,6 +268,13 @@ LIQUIDITY_SWEEP_LOOKAHEAD = 120
 # sweep fairly quickly.
 REACTION_LOOKAHEAD = 40
 
+# How long a resting entry at a zone's near edge stays live waiting for
+# price to come back to it (stop_anchor="zone_entry"). Bishop's deck
+# shows the retest happening within the same local move, so this is
+# deliberately short -- an order still unfilled well after the setup
+# formed is a setup that did not play out, not one still waiting.
+ZONE_FILL_LOOKAHEAD = 24
+
 # Judgment call, not a number from the source material: how many pips a
 # trigger's own natural stop-loss anchor (engulfing/4th-man's own wick)
 # can sit from entry before it's "too wide" and the universal 4H-KL
@@ -787,6 +794,37 @@ def _entry_zone(imbalances, imbalance_times, key_level_time, entry_time,
     return best
 
 
+def _zone_edges(zone, direction: Direction) -> tuple[float, float]:
+    """(near_edge, far_edge) of a zone for a trade in `direction`.
+
+    Per Bishop's deck the entry rests on the near edge -- the one price
+    reaches first coming back into the zone -- and the stop sits just
+    past the far edge. For a long the zone is below entry, so its near
+    edge is its HIGH and its far edge its LOW; mirrored for a short."""
+    if direction == Direction.BULLISH:
+        return zone.high, zone.low
+    return zone.low, zone.high
+
+
+def _first_touch(h1, from_idx: int, price: float, direction: Direction,
+                  max_lookahead: int) -> int | None:
+    """Index of the first candle after `from_idx` whose range reaches
+    `price` -- i.e. where a resting order at that price would fill.
+
+    Wick-based, matching `_first_sweep_of()`: taking a level is price
+    trading through it, which is what the sweep half of this strategy
+    means everywhere else."""
+    end = min(from_idx + 1 + max_lookahead, len(h1))
+    for j in range(from_idx + 1, end):
+        c = h1[j]
+        if direction == Direction.BULLISH:
+            if c.low <= price:
+                return j
+        elif c.high >= price:
+            return j
+    return None
+
+
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -1074,6 +1112,39 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             else conservative_entry_price(curr)
         )
 
+        # stop_anchor="zone_entry": the COMPLETE mechanism from Bishop's
+        # deck, entry and stop taken from the SAME zone rather than one
+        # of them in isolation.
+        #
+        # Run 2 (33575395100) moved only the stop to the zone's far edge
+        # and win rate fell 51.7% -> 38.0% while stops genuinely improved
+        # (median 9.4 -> 7.7 pips). That is the expected symptom of half
+        # a mechanism: a tight stop is only survivable from the entry it
+        # was designed around. In every example in the deck the entry
+        # RESTS ON THE ZONE'S NEAR EDGE and the stop sits just past the
+        # far edge -- one geometry, not two independent choices.
+        #
+        # So here: entry moves to the near edge, the stop comes from the
+        # far edge of that same zone, and the entry must actually FILL --
+        # a resting order at the near edge only becomes a trade if price
+        # returns to it, so `_first_touch()` gates that and the setup is
+        # abandoned if it never does. (The reverted retest-fill work,
+        # c662961/3e10422, failed for the mirror-image reason: limit-style
+        # entry WITHOUT the matching zone stop.)
+        zone_stop = None
+        zone_fill_idx = None
+        if stop_anchor == "zone_entry":
+            zone = _entry_zone(h1_imbalances, h1_imbalance_times,
+                                new_key_level.time, curr.time, entry_price, effective)
+            if zone is None:
+                continue
+            near_edge, _far_edge = _zone_edges(zone, effective)
+            zone_fill_idx = _first_touch(h1, i, near_edge, effective, ZONE_FILL_LOOKAHEAD)
+            if zone_fill_idx is None:
+                continue  # price never came back to the zone -- no trade
+            entry_price = near_edge
+            zone_stop = imbalance_stop_loss(zone.low, zone.high, effective, pip_size=pip_size)
+
         # Computed before the stop-loss selection below (not just for the
         # imbalance_overlap/fill_size stats further down) because "plug and
         # play" -- a continuation trade whose key level overlaps an
@@ -1201,6 +1272,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # are all correct, because each is just its own zone's height.
         # No zone => no defined invalidation => SKIP the setup rather
         # than substitute a meaningless anchor.
+        if stop_anchor == "zone_entry":
+            stop_loss = zone_stop
+            stop_kind = f"{trigger_type}_zone_entry"
+            natural_stop_loss = stop_loss
+            stop_fallback_used = False
+
         if stop_anchor == "zone":
             zone = _entry_zone(h1_imbalances, h1_imbalance_times,
                                 new_key_level.time, curr.time, entry_price, effective)
@@ -1250,11 +1327,20 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
         test_count, _ = count_tests_before_disrespect(h1[i + 1: i + 1 + QMR_LOOKAHEAD], new_key_level)
 
+        # A zone_entry trade opens when its resting order actually fills,
+        # which is a LATER candle than the trigger -- so the trade's own
+        # timeline (when it opened, and from where stop/target are
+        # resolved) starts there, not at the trigger. Every other mode
+        # keeps entry_idx == i and behaves exactly as before.
+        entry_idx = i if zone_fill_idx is None else zone_fill_idx
+        entry_candle = h1[entry_idx]
+
         concurrent = len(mgr.open_positions(effective))
-        pos = mgr.open_position(effective, entry_price, stop_loss, curr.time, "H1", target)
+        pos = mgr.open_position(effective, entry_price, stop_loss, entry_candle.time, "H1", target)
 
         exit_reason, exit_price, exit_time, mae_r, mfe_r = _resolve_trade_outcome(
-            entry_price, stop_loss, target, effective, h1[i + 1: i + 1 + MAX_TRADE_DURATION_CANDLES]
+            entry_price, stop_loss, target, effective,
+            h1[entry_idx + 1: entry_idx + 1 + MAX_TRADE_DURATION_CANDLES]
         )
         if exit_reason == "still_open":
             status = "open"
@@ -1280,7 +1366,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         records.append(TradeRecord(
             trade_id=trade_id,
             instrument=instrument,
-            entry_time=curr.time,
+            entry_time=entry_candle.time,
             exit_time=exit_time,
             direction=effective,
             entry_timeframe="H1",
