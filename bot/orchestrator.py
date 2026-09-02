@@ -77,6 +77,31 @@ STORYLINE_GAP_LOOKBACK_CANDLES = 72
 # tagged decline_stale_signal instead of executed.
 STALE_ENTRY_CUTOFF = timedelta(hours=3)
 
+# The same cutoff, but for `--entry-order-type limit`. Much longer on
+# purpose, and the reason is the whole point of the limit-order work.
+#
+# The 3h number above is a PROXY for a question about price: "has the
+# market moved past this level?" A market order sent late is dangerous
+# precisely because it buys at whatever price exists now rather than the
+# one the stop was sized for, and the clock is a crude stand-in for how
+# far that has drifted. A resting limit has neither problem -- it fills at
+# the level or not at all -- and `setup_validity.check_setup()` answers
+# the real question directly, from the candles, rather than by proxy.
+#
+# Leaving the 3h gate in front of the limit path would have made the whole
+# change pointless: it sits BEFORE _consider_entry(), so check_setup()
+# would never run on the very signals it exists to rescue. Caught
+# 2026-09-02 from a live Telegram log -- two EURCHF signals declined as
+# "0 days 07:00:00 old (cutoff 3:00:00)" an hour after limits went on, in
+# exactly the bucket (2h+) that accounts for 22 of the bot's 42 attempts.
+#
+# 24h is a backstop rather than a judgment about staleness: the storyline
+# gate independently re-checks that Daily/H4 bias still aligns before any
+# entry search runs, so a signal reaching here already has current
+# higher-timeframe context. This only stops an order resting for days on
+# a setup nobody has looked at.
+STALE_ENTRY_CUTOFF_LIMIT = timedelta(hours=24)
+
 
 # The weekend rule: nothing open and nothing resting when the market
 # closes -- direct operator requirement 2026-09-02 ("we will not be
@@ -441,15 +466,20 @@ class LiveBot:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:
             fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
+        # A resting limit does not care how late it was placed, so the
+        # time-based gate relaxes to a backstop and check_setup() decides
+        # -- see STALE_ENTRY_CUTOFF_LIMIT.
+        cutoff = (STALE_ENTRY_CUTOFF_LIMIT if self.entry_order_type == "limit"
+                  else STALE_ENTRY_CUTOFF)
         for record in fresh:
             staleness = new_candle.time - record.entry_time
-            if staleness > STALE_ENTRY_CUTOFF:
+            if staleness > cutoff:
                 # See STALE_ENTRY_CUTOFF's own comment. Declined, not
                 # silently dropped -- full reasoning still logged/audited,
                 # just never reaches the risk manager or MT5.
                 self._log_event(
                     "entry_attempt", "decline_stale_signal",
-                    f"signal candle is {staleness} old (cutoff {STALE_ENTRY_CUTOFF}) -- "
+                    f"signal candle is {staleness} old (cutoff {cutoff}) -- "
                     f"market has likely moved past this level, not attempting it late",
                     state, instrument=instrument, trade_id=str(record.trade_id),
                     **_audit_fields_from_trade_record(record),

@@ -1360,3 +1360,54 @@ def test_an_unverifiable_resting_order_is_left_alone_not_cancelled(tmp_path):
 
     assert len(bot.pending_entries) == 1
     assert len(fake.orders) == 1
+
+
+def test_limit_mode_does_not_discard_signals_the_3h_market_cutoff_would(tmp_path):
+    """The 3h gate sits BEFORE _consider_entry, so leaving it in front of
+    the limit path would stop check_setup() ever running on the signals it
+    exists to rescue -- the 2h+ bucket, 22 of the bot's 42 attempts.
+
+    Caught live 2026-09-02: two EURCHF signals declined as "0 days
+    07:00:00 old (cutoff 3:00:00)" an hour after limits were enabled.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)
+    signal_time = pd.Timestamp("2026-09-02T07:00Z")
+    record = a_trade_record(signal_time)
+
+    state = bot._account_state()   # before mt5_client is mocked out
+    bot._last_entry_time["EURUSD"] = signal_time - pd.Timedelta(hours=1)
+
+    with gate_open(), \
+         patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_consider_entry") as considered, \
+         patch.object(bot, "mt5_client") as client, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        client.new_candle_closed.return_value = SimpleNamespace(
+            time=signal_time + pd.Timedelta(hours=7))
+        bot._check_instrument("EURUSD", state)
+
+    # 7h old: over the 3h market cutoff, under the 24h limit backstop.
+    considered.assert_called_once()
+
+
+def test_market_mode_keeps_the_3h_cutoff(tmp_path):
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)          # market, the default
+    signal_time = pd.Timestamp("2026-09-02T07:00Z")
+    record = a_trade_record(signal_time)
+
+    state = bot._account_state()   # before mt5_client is mocked out
+    bot._last_entry_time["EURUSD"] = signal_time - pd.Timedelta(hours=1)
+
+    with gate_open(), \
+         patch.object(LiveBot, "_consider_entry") as considered, \
+         patch.object(bot, "mt5_client") as client, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        client.new_candle_closed.return_value = SimpleNamespace(
+            time=signal_time + pd.Timedelta(hours=7))
+        bot._check_instrument("EURUSD", state)
+
+    considered.assert_not_called()

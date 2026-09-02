@@ -3231,3 +3231,45 @@ STILL OPEN (nothing urgent, all recorded above in full):
     transcript. Operator is aware and chose to leave it.
   - a restart still loses the pending-order map (resting orders are
     warned about, not re-adopted).
+
+## 2026-09-02, 16:46 -- CAUGHT BY A TELEGRAM LOG: the 3h staleness gate
+## sat IN FRONT of the limit path and would have neutered the whole month
+
+An hour after limits went on, bot2 sent:
+
+    EURCHF: entry_attempt (decline_stale_signal) -- signal candle is
+    0 days 07:00:00 old (cutoff 3:00:00) -- market has likely moved past
+    this level, not attempting it late
+
+That decline is `_check_instrument`'s STALE_ENTRY_CUTOFF check at
+orchestrator.py:446, which `continue`s BEFORE `_consider_entry()` is ever
+called -- so the limit path, and `check_setup()` with it, never ran.
+
+Consequence had this not been caught: bot2 would have declined exactly the
+same 2h+ bucket as bot1 -- 22 of the bot's 42 lifetime attempts, the
+single biggest failure category and the whole reason limits were enabled.
+The month's experiment would have produced nearly the same nothing as
+market orders, and the comparison would have looked like "limits don't
+help" when limits had never been reached.
+
+Fix: STALE_ENTRY_CUTOFF_LIMIT = 24h, used when entry_order_type ==
+"limit". The 3h number was always a PROXY for a question about price
+("has the market moved past this level?"), and it is the right proxy for
+a market order, which buys at whatever price exists on arrival.
+`check_setup()` answers that question directly from the candles, and a
+resting limit fills at the level or not at all -- so the proxy is not just
+unnecessary there, it actively blocks the mechanism that replaces it.
+
+24h is a backstop, not a staleness judgment: the storyline gate
+independently re-checks Daily/H4 alignment before any entry search runs,
+so anything reaching this point already has current higher-timeframe
+context. Market mode keeps 3h unchanged, with a test pinning both.
+
+Also visible in the same log, noted not fixed: the second EURCHF signal
+had entry 0.94139 EQUAL to its key level with a 2-pip stop -- the
+aggressive plug_and_play case where `aggressive_entry_price()` returns
+the key level itself. Harmless on this broker (stops_level=0 confirmed,
+spreads 2-9 points), and the stop-anchor work above is where it gets
+addressed properly. Not touched now: one variable at a time.
+
+269 tests pass.
