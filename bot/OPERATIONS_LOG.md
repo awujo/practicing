@@ -3370,3 +3370,62 @@ correct for REPORTING turned out to be wrong for ACTING. The first was the
 3h staleness gate blocking the limit path. Worth checking any future
 "never silently drop a signal" mechanism against the question "and should
 it be traded?", which is a different question with a different answer.
+
+## 2026-09-02, 18:00 -- FILL MODEL BUILT. Every backtest number in this
+## log before now was roughly 3x inflated.
+
+Operator: "this 80% was just a number I formed, can we run a test over the
+last year and this year to find what optimal % is best." The engine could
+not answer it -- it opened every position at the exact computed price on
+the trigger candle, so there was no resting order for a cancellation rule
+to act on. Built the fill simulation, which also closes the perfect-fill
+hole that has undermined every comparison in this file.
+
+Three fill models now available on run_backtest(), default unchanged:
+  entry_fill="instant"       (default) fill at entry_price on the trigger
+  entry_fill="market_close"  fill at the trigger candle's CLOSE
+  entry_fill="limit"         rest at entry_price; fill only if price
+                             returns, with cancel_at_target_fraction and
+                             a 48-candle expiry
+
+Measured on the three cached instruments, aggressive:
+
+  fill model                     trades   win%   totalR   avgR  medStop
+  instant at key level (FANTASY)   2140  63.2%   3235.0  1.512      7.3
+  market order at close            2001  43.5%   1218.7  0.609     20.8
+  limit, no cancel                 1759  39.9%   1010.1  0.574      7.5
+  limit, cancel at 80%             1137  42.0%    738.0  0.649      9.5
+
+**The default is not achievable by any order type.** For aggressive style
+entry_price IS the key level, and by the time the confirmation candle has
+closed price has usually reacted away from it -- so "instant" was filling
+at a price nobody could have got. Every headline number in this log
+(3,235R here; the 2,671R / 2,836R stop-anchor A/Bs; the candle-size sweep;
+the structural-vs-default comparison) was produced under it and is
+inflated by roughly 3x. Win rates around 63% are really around 43%.
+
+ANSWER TO THE QUESTION ASKED: the cancellation threshold barely matters.
+Across 30%-100% average R moves 0.642 -> 0.653 and total R 688 -> 749 --
+flat. 80% was a fine guess; so is anything from 50% to 100%. This is not
+a knob worth tuning, and that is a useful thing to know rather than a
+disappointment.
+
+WHAT IS NOT SETTLED: market_close earns more TOTAL R (1218 vs 738) while
+limit+cancel earns more PER TRADE (0.649 vs 0.609) on far fewer trades,
+with a much tighter median stop (9.5 vs 20.8 pips). Total R is what
+compounds at fixed fractional risk, so market looks ahead -- BUT the
+engine still models no spread and no slippage, and both fall entirely on
+the market side (measured live: 54 points of slippage on a single GBPAUD
+fill). A 480R gap is not obviously larger than that unmodelled cost.
+Adding spread/slippage is the next thing needed before this comparison
+decides anything.
+
+Also note limits fill only 82% of setups with no cancel, 53% at the 80%
+threshold -- the missing ones are largely runaway winners that never came
+back, which is exactly the adverse selection a resting order buys. That
+is a real cost of the approach, not a modelling artifact.
+
+Nothing about the live bots changes on this commit. bot2 stays on limits:
+the case for it live was never its backtested R, it was that market orders
+were physically failing to reach the broker (1 order placed in 42
+attempts), and that is still true.

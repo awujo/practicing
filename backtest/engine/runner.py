@@ -275,6 +275,12 @@ REACTION_LOOKAHEAD = 40
 # formed is a setup that did not play out, not one still waiting.
 ZONE_FILL_LOOKAHEAD = 24
 
+# How long a resting limit is given to fill before it is treated as
+# expired, in H1 candles. 48 = two days, comfortably longer than the live
+# bot's own 24h staleness window so the backtest is not the tighter of the
+# two and cannot make limits look worse than they are.
+LIMIT_FILL_LOOKAHEAD = 48
+
 # Judgment call, not a number from the source material: how many pips a
 # trigger's own natural stop-loss anchor (engulfing/4th-man's own wick)
 # can sit from entry before it's "too wide" and the universal 4H-KL
@@ -825,6 +831,52 @@ def _first_touch(h1, from_idx: int, price: float, direction: Direction,
     return None
 
 
+def _resting_limit_outcome(h1, trigger_idx: int, entry_price: float, stop_loss: float,
+                            target: float, direction: Direction, max_lookahead: int,
+                            cancel_at_target_fraction: float | None):
+    """Simulate a limit resting at `entry_price` from the trigger candle on.
+
+    Returns (fill_idx, cancel_reason). Exactly one is set: an int index
+    where the order filled, or a string saying why it never did.
+
+    This is what the live bot actually does under
+    `--entry-order-type limit`, and modelling it is what lets the
+    cancellation threshold be measured rather than guessed. Without it the
+    engine opens every position at the exact computed price on the trigger
+    candle, which is neither the market orders nor the limit orders that
+    live code sends, and which flatters tight stops throughout.
+
+    Order of checks inside one candle matters. The fill is tested FIRST:
+    for a correctly-ordered long the entry sits above the stop, so a
+    candle falling far enough to touch the stop has already traded through
+    the entry, and treating that as "cancelled" would silently drop trades
+    that really did fill and then lose. Resolving the loss is the honest
+    outcome; `_resolve_trade_outcome()` then handles it with the same
+    stop-before-target convention used everywhere else.
+    """
+    reward = abs(target - entry_price)
+    achieved_at = None
+    if cancel_at_target_fraction is not None and reward:
+        achieved_at = (entry_price + cancel_at_target_fraction * reward
+                       if direction == Direction.BULLISH
+                       else entry_price - cancel_at_target_fraction * reward)
+
+    end = min(trigger_idx + 1 + max_lookahead, len(h1))
+    for j in range(trigger_idx + 1, end):
+        c = h1[j]
+        if direction == Direction.BULLISH:
+            if c.low <= entry_price:
+                return j, None
+            if achieved_at is not None and c.high >= achieved_at:
+                return None, "target_achieved_unfilled"
+        else:
+            if c.high >= entry_price:
+                return j, None
+            if achieved_at is not None and c.low <= achieved_at:
+                return None, "target_achieved_unfilled"
+    return None, "never_filled"
+
+
 def _stop_on_correct_side(entry_price: float, stop_loss: float, direction: Direction) -> bool:
     """A BULLISH stop must sit below entry (it protects against price
     falling); a BEARISH stop must sit above entry. If it doesn't, the
@@ -885,7 +937,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   irl_mode: str = "ignore",
                   avoid_rollover_entries: bool = False,
                   min_reward_r: float | None = None,
-                  stop_anchor: str = "trigger_wick") -> list[TradeRecord]:
+                  stop_anchor: str = "trigger_wick",
+                  entry_fill: str = "instant",
+                  cancel_at_target_fraction: float | None = None,
+                  limit_lookahead: int = LIMIT_FILL_LOOKAHEAD) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -1390,6 +1445,40 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # timeline (when it opened, and from where stop/target are
         # resolved) starts there, not at the trigger. Every other mode
         # keeps entry_idx == i and behaves exactly as before.
+        # entry_fill="limit": the order rests at entry_price and the trade
+        # only exists if price comes back to it -- the live bot's own
+        # behavior under --entry-order-type limit. A setup whose move
+        # happened without us, or which never returned, produces NO trade
+        # rather than a free fill at a price nobody could have got.
+        # entry_fill="market_close": what a real market order actually
+        # gets -- the trigger candle's close, not the level the strategy
+        # named. The default "instant" fills at entry_price itself, which
+        # for aggressive style is the KEY LEVEL: price has usually just
+        # reacted away from it by the time the confirmation candle closes,
+        # so that fill was never obtainable by any order type. Comparing
+        # limits against it is comparing them against a fantasy.
+        if entry_fill == "market_close":
+            entry_price = curr.close
+            if not _stop_on_correct_side(entry_price, stop_loss, effective):
+                continue
+            risk_distance = abs(entry_price - stop_loss)
+            if not risk_distance:
+                continue
+            target = (entry_price + rr * risk_distance if effective == Direction.BULLISH
+                      else entry_price - rr * risk_distance)
+            if erl_cap and erl_price is not None:
+                target = (min(target, erl_price) if effective == Direction.BULLISH
+                          else max(target, erl_price))
+
+        limit_cancel = None
+        if entry_fill == "limit":
+            fill_idx, limit_cancel = _resting_limit_outcome(
+                h1, i, entry_price, stop_loss, target, effective,
+                limit_lookahead, cancel_at_target_fraction)
+            if limit_cancel is not None:
+                continue
+            zone_fill_idx = fill_idx
+
         entry_idx = i if zone_fill_idx is None else zone_fill_idx
         entry_candle = h1[entry_idx]
 
