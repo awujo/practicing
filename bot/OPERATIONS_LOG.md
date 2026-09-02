@@ -3490,3 +3490,66 @@ this is now settable live (default unchanged).
 
 CAVEAT before acting: three instruments, and the intrabar-fill assumption
 above still favours limits generally. Worth a full 25-instrument run.
+
+## 2026-09-02, 20:00 -- PDF committed, and it settles the entry question:
+## the missing rule was never the STOP, it was requiring the RETEST.
+
+The deck is now in the repo (knowledge-base/supplementary/source/), so
+none of this has to be taken on trust again.
+
+Page 6 is the decisive page: a broker screenshot of a resting
+`BUY LIMIT 0.93193 | SL 0.93147 | TP 0.93704` on EURCHF M30, with the
+market reading **0.93330** at the top of the same screen. The order sits
+~14 pips BELOW price, UNFILLED, waiting for a pullback to a level price
+has already left. Page 17 (AUDUSD M30, entry 0.69853 / stop 0.69793)
+shows the same shape.
+
+Ours did the opposite. It rested the limit at the key level the
+confirmation had just formed at -- where price still was -- so 93% of
+fills landed on the very next candle after a median departure under 2
+pips. A market order wearing a limit's label, exactly as the operator
+said when they looked at the charts.
+
+Added `min_departure_r`: price must travel this many R AWAY from the
+entry, in the trade's favour, before a touch counts as a fill. 0.0
+(default) is the old behavior. Sweep, aggressive, cancel at 80%:
+
+  departure  trades   win%   totalR   avgR  medStop
+       0.00    1137  42.0%    738.0  0.649      9.5
+       0.50    1082  47.6%    948.5  0.877      9.2
+       1.00     991  50.6%    991.3  1.000      8.2
+       1.50     846  52.7%    929.3  1.098      6.6
+
+And crossed with the stop anchor:
+
+  anchor        dep  trades   win%   totalR   avgR  medStop  fill=1cdl
+  trigger_wick  0.0    1137  42.0%    738.0  0.649      9.5       94%
+  trigger_wick  1.0     991  50.6%    991.3  1.000      8.2       61%
+  structural    0.0    1336  49.3%    901.3  0.675     30.6       80%
+  structural    1.0     765  52.8%    792.1  1.035     21.1       35%
+
+**THIS RESOLVES THE TENSION AND REVERSES THIS MORNING'S RECOMMENDATION
+AGAIN.** With the retest required, the ORIGINAL tight anchor wins outright
+(991R vs structural's 792R) AND its 8.2-pip median stop matches the
+source material's own measured distances (median 9.7, range 3.1-17.7 over
+15 trades). structural's 21-30 pips remains 2-3x anything in the deck.
+
+So the sequence was: structural looked worse under fantasy fills, better
+under naive limit fills, and worse again once the limit models what
+Bishop actually does. The stop anchor was never the defect. The defect was
+that we were not waiting for the retest, and a tight stop cannot survive
+an entry taken before the pullback -- which is exactly why widening the
+stop appeared to help.
+
+CAVEAT, and it is not small: 61% of fills still land on the FIRST candle
+after the signal even at 1.0R departure, meaning one candle both travelled
+1R away and came back. On H1 highs and lows have no order, so the engine
+assumes depart-then-return when return-then-depart is equally consistent
+with the data. That inflates the departure results by an unknown amount.
+Resolving it needs M1/M5 data to sequence the intrabar path, which the
+cache does not currently hold.
+
+RECOMMENDATION FOR bot2, superseding the structural one made at 19:00:
+revert to trigger_wick. It is both the better performer under the honest
+fill model and the one matching the source. min_departure_r is NOT yet
+wired to the live bot -- backtest only.

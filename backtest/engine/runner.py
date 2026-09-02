@@ -833,7 +833,8 @@ def _first_touch(h1, from_idx: int, price: float, direction: Direction,
 
 def _resting_limit_outcome(h1, trigger_idx: int, entry_price: float, stop_loss: float,
                             target: float, direction: Direction, max_lookahead: int,
-                            cancel_at_target_fraction: float | None):
+                            cancel_at_target_fraction: float | None,
+                            min_departure_r: float = 0.0):
     """Simulate a limit resting at `entry_price` from the trigger candle on.
 
     Returns (fill_idx, cancel_reason). Exactly one is set: an int index
@@ -855,6 +856,26 @@ def _resting_limit_outcome(h1, trigger_idx: int, entry_price: float, stop_loss: 
     stop-before-target convention used everywhere else.
     """
     reward = abs(target - entry_price)
+
+    # `min_departure_r`: price must first travel this many R AWAY from the
+    # entry (in the trade's favour) before a touch counts as a fill.
+    #
+    # Straight from the source material. Page 6 of Bishop's deck is a
+    # broker screenshot of a resting BUY LIMIT at 0.93193 while the market
+    # reads 0.93330 -- the order sits ~14 pips BELOW price, unfilled,
+    # waiting for a pullback to a level price has already left. Ours rests
+    # at the key level the confirmation just formed at, where price still
+    # is: measured, 93% of fills land on the very next candle after a
+    # median departure of under 2 pips. That is not a retest, it is a
+    # market order with a limit's label.
+    #
+    # 0.0 (default) keeps the old behavior: any touch fills.
+    risk = abs(entry_price - stop_loss)
+    departed = min_departure_r <= 0 or not risk
+    departure_level = (entry_price + min_departure_r * risk
+                       if direction == Direction.BULLISH
+                       else entry_price - min_departure_r * risk)
+
     achieved_at = None
     if cancel_at_target_fraction is not None and reward:
         achieved_at = (entry_price + cancel_at_target_fraction * reward
@@ -865,12 +886,16 @@ def _resting_limit_outcome(h1, trigger_idx: int, entry_price: float, stop_loss: 
     for j in range(trigger_idx + 1, end):
         c = h1[j]
         if direction == Direction.BULLISH:
-            if c.low <= entry_price:
+            if not departed and c.high >= departure_level:
+                departed = True
+            if departed and c.low <= entry_price:
                 return j, None
             if achieved_at is not None and c.high >= achieved_at:
                 return None, "target_achieved_unfilled"
         else:
-            if c.high >= entry_price:
+            if not departed and c.low <= departure_level:
+                departed = True
+            if departed and c.high >= entry_price:
                 return j, None
             if achieved_at is not None and c.low <= achieved_at:
                 return None, "target_achieved_unfilled"
@@ -940,7 +965,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   stop_anchor: str = "trigger_wick",
                   entry_fill: str = "instant",
                   cancel_at_target_fraction: float | None = None,
-                  limit_lookahead: int = LIMIT_FILL_LOOKAHEAD) -> list[TradeRecord]:
+                  limit_lookahead: int = LIMIT_FILL_LOOKAHEAD,
+                  min_departure_r: float = 0.0) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -1474,7 +1500,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if entry_fill == "limit":
             fill_idx, limit_cancel = _resting_limit_outcome(
                 h1, i, entry_price, stop_loss, target, effective,
-                limit_lookahead, cancel_at_target_fraction)
+                limit_lookahead, cancel_at_target_fraction, min_departure_r)
             if limit_cancel is not None:
                 continue
             zone_fill_idx = fill_idx
