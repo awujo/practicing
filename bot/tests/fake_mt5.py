@@ -17,8 +17,13 @@ class FakeMT5:
 
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = 1
+    ORDER_TYPE_BUY_LIMIT = 2
+    ORDER_TYPE_SELL_LIMIT = 3
     TRADE_ACTION_DEAL = 1
+    TRADE_ACTION_PENDING = 5
+    TRADE_ACTION_REMOVE = 8
     ORDER_TIME_GTC = 0
+    ORDER_TIME_SPECIFIED = 2
     ORDER_FILLING_FOK = 0
     ORDER_FILLING_IOC = 1
     ORDER_FILLING_RETURN = 2
@@ -31,6 +36,9 @@ class FakeMT5:
     TRADE_RETCODE_PRICE_OFF = 10021
     TRADE_RETCODE_INVALID_STOPS = 10016
     TRADE_RETCODE_NO_MONEY = 10019
+    TRADE_RETCODE_PLACED = 10008
+    TRADE_RETCODE_INVALID_ORDER = 10014
+    TRADE_RETCODE_ORDER_CHANGED = 10007
 
     DEAL_ENTRY_IN = 0
     DEAL_ENTRY_OUT = 1
@@ -44,6 +52,8 @@ class FakeMT5:
         self.rates_by_symbol_timeframe: dict[tuple[str, str], list[dict]] = {}
         self.account = SimpleNamespace(balance=100000.0, equity=100000.0)
         self.positions: list = []
+        self.orders: list = []          # resting pending orders
+        self.orders_get_raises = False  # simulate the query itself failing
         self.symbols: dict[str, SimpleNamespace] = {}
         self._last_error = (0, "no error")
         self._fail_init = False
@@ -62,8 +72,28 @@ class FakeMT5:
         self.order_send_calls.append(request)
         if self.order_send_queue:
             return self.order_send_queue.pop(0)
+        if request.get("action") == self.TRADE_ACTION_REMOVE:
+            self.orders = [o for o in self.orders if o.ticket != request["order"]]
+            return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=request["order"],
+                                    price=0.0, comment="removed")
+        if request.get("action") == self.TRADE_ACTION_PENDING:
+            ticket = 2000 + len(self.orders)
+            self.orders.append(SimpleNamespace(ticket=ticket, symbol=request["symbol"],
+                                                magic=request.get("magic"),
+                                                price_open=request["price"],
+                                                sl=request.get("sl"), tp=request.get("tp"),
+                                                volume_current=request["volume"]))
+            return SimpleNamespace(retcode=self.TRADE_RETCODE_PLACED, order=ticket,
+                                    price=request["price"], comment="placed")
         return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=1001,
                                 price=request["price"], comment="ok")
+
+    def orders_get(self, symbol=None):
+        if self.orders_get_raises:
+            raise RuntimeError("orders_get unavailable")
+        if symbol is None:
+            return tuple(self.orders)
+        return tuple(o for o in self.orders if o.symbol == symbol)
 
     def initialize(self, path=None):
         self.initialize_calls += 1

@@ -394,6 +394,178 @@ class MT5Execution:
         return ExecutionResult(success=False, requested_price=entry_price,
                                 reason="exhausted retries", attempts=attempts)
 
+    def place_limit_order(self, internal_symbol: str, direction: str, lot_size: float,
+                           entry_price: float, stop_loss: float, target_price: float,
+                           expires_at=None) -> ExecutionResult:
+        """Rest a limit order AT the computed entry, rather than taking
+        whatever price the market happens to be at when we get around to
+        sending.
+
+        Why this exists (2026-09-02 live audit): the bot is never prompt.
+        Zero entry attempts in its history landed within 5 minutes of the
+        candle closing; the spread runs 5-30m through 2h+, the tail being
+        catch-up after MT5 reconnect storms. Sending a MARKET order that
+        late is what produced 41 of its 42 failed attempts -- 22 declined
+        as stale, 12 rejected (the stop having ended up on the wrong side
+        of a price that moved while the order sat unsent), 2 declined on
+        drift -- and the CHFJPY fill 50 pips from its own entry.
+
+        A resting limit makes all of that a non-issue rather than a thing
+        to detect: the order sits at the level the setup was sized for, so
+        it either fills at that price or does not fill. Which is also
+        simply what the strategy is -- an SLK entry is a predefined key
+        level that price is expected to return to, not a chase.
+
+        Same three safety properties as place_market_order(): every price
+        snapped to the broker's tick grid first (TRADE_RETCODE_INVALID_STOPS
+        otherwise -- confirmed live 2026-08-29), a rejected send may retry
+        because the broker answered and nothing landed, and an AMBIGUOUS
+        send is NEVER retried. The ambiguity check here looks at PENDING
+        ORDERS rather than positions, since that is what this send would
+        have created.
+
+        expires_at: optional datetime after which the broker itself drops
+        the order. Left as None the order is GTC and must be cancelled
+        explicitly. Pass it to honour "nothing rests over the weekend"
+        without depending on this process being alive to clean up.
+        """
+        symbol = self.broker_symbol(internal_symbol)
+        order_type = (self._mt5.ORDER_TYPE_BUY_LIMIT if direction == "bullish"
+                      else self._mt5.ORDER_TYPE_SELL_LIMIT)
+
+        info = self._mt5.symbol_info(symbol)
+        entry_price = self._round_price(entry_price, info)
+        stop_loss = self._round_price(stop_loss, info)
+        target_price = self._round_price(target_price, info)
+
+        request = {
+            "action": self._mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": lot_size,
+            "type": order_type,
+            # Unlike a market send, this price is the whole point: it is
+            # the level, and the broker holds the order until price
+            # reaches it. No `deviation` -- there is nothing to slip.
+            "price": entry_price,
+            "sl": stop_loss,
+            "tp": target_price,
+            "magic": self._magic_number,
+            "comment": "slk-bot",
+            "type_time": self._mt5.ORDER_TIME_GTC,
+            "type_filling": self._filling_type(symbol),
+        }
+        if expires_at is not None:
+            request["type_time"] = self._mt5.ORDER_TIME_SPECIFIED
+            request["expiration"] = expires_at
+
+        orders_before = self._our_pending_tickets(symbol)
+
+        attempts = 0
+        while attempts < self._max_retries:
+            attempts += 1
+            result = self._mt5.order_send(request)
+
+            if result is not None:
+                retcode_name = self._retcode_name(result.retcode)
+                if retcode_name in ("TRADE_RETCODE_DONE", "TRADE_RETCODE_PLACED"):
+                    return ExecutionResult(success=True, ticket=result.order,
+                                            requested_price=entry_price, filled_price=None,
+                                            slippage_points=0.0, retcode=result.retcode,
+                                            retcode_name=retcode_name, attempts=attempts)
+                if retcode_name in REJECTED_RETCODE_NAMES:
+                    failure = f"{retcode_name} ({getattr(result, 'comment', '')})"
+                    if attempts < self._max_retries:
+                        time.sleep(self._retry_backoff_seconds)
+                        continue
+                    return ExecutionResult(success=False, requested_price=entry_price,
+                                            retcode=result.retcode, retcode_name=retcode_name,
+                                            reason=f"{failure}; retries exhausted, broker rejected "
+                                                   f"every attempt so nothing was placed",
+                                            attempts=attempts)
+                if retcode_name not in AMBIGUOUS_RETCODE_NAMES:
+                    return ExecutionResult(success=False, requested_price=entry_price,
+                                            retcode=result.retcode, retcode_name=retcode_name,
+                                            reason=f"limit order rejected: {retcode_name} "
+                                                   f"({getattr(result, 'comment', '')})",
+                                            attempts=attempts)
+                failure = f"{retcode_name} ({getattr(result, 'comment', '')})"
+            else:
+                failure = f"order_send returned None: {self._mt5.last_error()}"
+
+            # AMBIGUOUS -- the pending order may or may not have been
+            # accepted. Check once; never loop. A duplicate RESTING order
+            # is less immediately costly than a duplicate position, but it
+            # is still two orders where the risk manager counted one.
+            current = self._our_pending_tickets(symbol)
+            if current is not None and orders_before is not None:
+                landed = current - orders_before
+                if landed:
+                    ticket = sorted(landed)[0]
+                    return ExecutionResult(success=True, ticket=ticket, requested_price=entry_price,
+                                            filled_price=None, slippage_points=0.0,
+                                            retcode_name="RECOVERED_AMBIGUOUS", attempts=attempts,
+                                            reason=f"{failure}; the order was found resting on a "
+                                                   f"follow-up check and has been adopted")
+            return ExecutionResult(
+                success=False, requested_price=entry_price, attempts=attempts,
+                reason=f"{failure}; no pending order found when checked, but this send was "
+                       f"AMBIGUOUS (no confirmation came back) and is deliberately NOT retried "
+                       f"-- the check can under-read an order that has not propagated yet. If a "
+                       f"{symbol} order appears without a matching tracked one, it came from here.")
+
+        return ExecutionResult(success=False, requested_price=entry_price,
+                                reason="exhausted retries", attempts=attempts)
+
+    def cancel_pending_order(self, ticket: int) -> ExecutionResult:
+        """Remove a resting order -- the setup died, or it must not be
+        left over the weekend.
+
+        Treats "the order is already gone" as SUCCESS, not failure: it may
+        have filled, expired, or been cancelled by hand, and in every one
+        of those cases the caller's intent ("this must not be resting any
+        more") is satisfied. Reporting failure would invite a retry loop
+        against an order that no longer exists.
+        """
+        try:
+            result = self._mt5.order_send({
+                "action": self._mt5.TRADE_ACTION_REMOVE,
+                "order": ticket,
+            })
+        except Exception as exc:
+            return ExecutionResult(success=False, reason=f"cancel failed: {exc!r}", attempts=1)
+
+        if result is None:
+            return ExecutionResult(success=False, attempts=1,
+                                    reason=f"cancel returned None: {self._mt5.last_error()}")
+        retcode_name = self._retcode_name(result.retcode)
+        if retcode_name in ("TRADE_RETCODE_DONE", "TRADE_RETCODE_PLACED"):
+            return ExecutionResult(success=True, ticket=ticket, retcode=result.retcode,
+                                    retcode_name=retcode_name, attempts=1)
+        if retcode_name in ("TRADE_RETCODE_INVALID_ORDER", "TRADE_RETCODE_ORDER_CHANGED"):
+            return ExecutionResult(success=True, ticket=ticket, retcode=result.retcode,
+                                    retcode_name=retcode_name, attempts=1,
+                                    reason="order was already gone (filled, expired or "
+                                           "cancelled elsewhere) -- nothing left to cancel")
+        return ExecutionResult(success=False, ticket=ticket, retcode=result.retcode,
+                                retcode_name=retcode_name, attempts=1,
+                                reason=f"cancel rejected: {retcode_name} "
+                                       f"({getattr(result, 'comment', '')})")
+
+    def _our_pending_tickets(self, symbol: str) -> set | None:
+        """Our resting orders on `symbol`, or None if the query itself
+        failed. None means "can't tell" and must never be read as "none
+        are resting" -- same rule, and the same scar, as
+        `_our_open_tickets()`."""
+        try:
+            orders = self._mt5.orders_get() or ()
+        except Exception:
+            return None
+        return {
+            o.ticket for o in orders
+            if getattr(o, "symbol", None) == symbol
+            and getattr(o, "magic", None) == self._magic_number
+        }
+
     def _our_open_tickets(self, symbol: str) -> set | None:
         """Tickets of currently-open positions on `symbol` carrying this
         bot's magic number. Returns None (NOT an empty set) if the query

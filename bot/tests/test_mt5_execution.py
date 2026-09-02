@@ -633,3 +633,184 @@ def test_entry_drift_guard_ignores_zero_and_negative_quotes():
     result = ex.compute_lot_size("EURUSD", 1000.0, 1.17374, 1.17290)
     assert result.ok is False
     assert result.error is ValidationError.PRICE_UNAVAILABLE
+
+
+# ---- place_limit_order / cancel_pending_order ----
+# The point of resting limits is that lateness stops mattering: the order
+# sits at the level the setup was sized for. See place_limit_order()'s
+# docstring for the live audit that motivated it.
+
+def test_place_limit_order_sends_a_pending_order_at_the_entry_level():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    ex = make_exec(fake)
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    assert result.success
+    req = fake.order_send_calls[-1]
+    assert req["action"] == fake.TRADE_ACTION_PENDING
+    assert req["type"] == fake.ORDER_TYPE_BUY_LIMIT
+    # The price is the whole point of a limit -- it must be sent as-is.
+    assert req["price"] == pytest.approx(1.10000)
+    assert req["sl"] == pytest.approx(1.09900)
+    assert "deviation" not in req  # nothing to slip on a resting order
+
+
+def test_place_limit_order_uses_sell_limit_for_a_short():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    ex = make_exec(fake)
+
+    ex.place_limit_order("EURUSD", "bearish", 0.5, 1.10000, 1.10100, 1.09700)
+
+    assert fake.order_send_calls[-1]["type"] == fake.ORDER_TYPE_SELL_LIMIT
+
+
+def test_place_limit_order_rounds_prices_to_the_tick_grid():
+    """Half-tick entries come straight from key-level midpoints, and an
+    unrounded sl/tp is rejected INVALID_STOPS -- confirmed live
+    2026-08-29 and again in the 2026-09-01 audit rows, several of which
+    carry visible float noise (1.9560650000000002)."""
+    fake = FakeMT5()
+    fake.symbols["EURNZD"] = make_symbol_info(digits=5, point=0.00001)
+    ex = make_exec(fake)
+
+    ex.place_limit_order("EURNZD", "bullish", 0.5,
+                         1.9560650000000002, 1.9559650000000002, 1.95900)
+
+    req = fake.order_send_calls[-1]
+    assert req["price"] == round(req["price"], 5)
+    assert req["sl"] == round(req["sl"], 5)
+
+
+def test_place_limit_order_sets_expiry_when_given():
+    """Lets the broker drop the order itself, so "nothing rests over the
+    weekend" does not depend on this process still being alive."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    ex = make_exec(fake)
+
+    ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300,
+                         expires_at=1234567890)
+
+    req = fake.order_send_calls[-1]
+    assert req["type_time"] == fake.ORDER_TIME_SPECIFIED
+    assert req["expiration"] == 1234567890
+
+
+def test_place_limit_order_never_retries_an_ambiguous_send():
+    """Same rule as place_market_order: a timeout means "no answer came
+    back", not "nothing landed". Retrying is how the CHFJPY triple-fill
+    happened."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0.0, comment="timeout"),
+    ]
+    ex = make_exec(fake, max_retries=3)
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    assert not result.success
+    assert len(fake.order_send_calls) == 1
+    assert "NOT retried" in result.reason
+
+
+def test_place_limit_order_adopts_an_order_that_landed_despite_the_timeout():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    ex = make_exec(fake)
+
+    # The order really lands, but the confirmation is lost -- so it must
+    # appear BECAUSE of this send, not have been resting beforehand
+    # (an order already there is somebody else's and must not be adopted).
+    def send_that_lands_then_times_out(request):
+        fake.order_send_calls.append(request)
+        fake.orders.append(SimpleNamespace(ticket=7777, symbol="EURUSD",
+                                            magic=ex._magic_number, price_open=1.10000,
+                                            sl=1.09900, tp=1.10300, volume_current=0.5))
+        return SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0,
+                                price=0.0, comment="timeout")
+
+    fake.order_send = send_that_lands_then_times_out
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    assert result.success
+    assert result.ticket == 7777
+    assert len(fake.order_send_calls) == 1  # adopted, not re-sent
+
+
+def test_place_limit_order_does_not_adopt_an_order_that_was_already_resting():
+    """A pre-existing order is not evidence that THIS send landed."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_TIMEOUT, order=0, price=0.0, comment="timeout"),
+    ]
+    ex = make_exec(fake)
+    fake.orders.append(SimpleNamespace(ticket=5555, symbol="EURUSD", magic=ex._magic_number,
+                                        price_open=1.09000, sl=1.08900, tp=1.09300,
+                                        volume_current=0.5))
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    assert not result.success
+    assert "NOT retried" in result.reason
+
+
+def test_place_limit_order_retries_a_plain_rejection():
+    """A broker that answered and refused is safe to re-send."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_REQUOTE, order=0, price=0.0, comment="requote"),
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_PLACED, order=4242, price=1.10000, comment="placed"),
+    ]
+    ex = make_exec(fake, max_retries=3, retry_backoff_seconds=0)
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    assert result.success and result.ticket == 4242
+    assert len(fake.order_send_calls) == 2
+
+
+def test_pending_ticket_query_failure_reads_as_cannot_tell_not_none_resting():
+    """`orders_get()` blowing up must never be read as "nothing rests" --
+    the same conflation that produced duplicate positions on 2026-08-31."""
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    fake.orders_get_raises = True
+    ex = make_exec(fake)
+
+    assert ex._our_pending_tickets("EURUSD") is None
+
+
+def test_cancel_pending_order_removes_it():
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info()
+    ex = make_exec(fake)
+    placed = ex.place_limit_order("EURUSD", "bullish", 0.5, 1.10000, 1.09900, 1.10300)
+
+    result = ex.cancel_pending_order(placed.ticket)
+
+    assert result.success
+    assert fake.orders == []
+
+
+def test_cancel_treats_an_already_gone_order_as_success():
+    """It may have filled, expired, or been cancelled by hand. In every
+    case the caller's intent is satisfied, and reporting failure would
+    invite a retry loop against an order that no longer exists."""
+    fake = FakeMT5()
+    fake.order_send_queue = [
+        SimpleNamespace(retcode=fake.TRADE_RETCODE_INVALID_ORDER, order=99, price=0.0,
+                        comment="order not found"),
+    ]
+    ex = make_exec(fake)
+
+    result = ex.cancel_pending_order(99)
+
+    assert result.success
+    assert "already gone" in result.reason
