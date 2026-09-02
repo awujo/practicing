@@ -421,7 +421,7 @@ def build_page(instrument: str, entry_style: str, trades, pip_size: float,
             candles, tr.entry_time, tr.exit_time, getattr(tr, "signal_time", None))
         if not window or entry_i < 0:
             continue
-        alt = (alt_stops or {}).get(tr.entry_time)
+        alt = (alt_stops or {}).get(getattr(tr, "signal_time", None))
         svg = _render_svg(window, entry_i, exit_i, tr, pip_size, alt, alt_label, signal_i)
         cards.append(_card(tr, svg, pip_size,
                            (alt, alt_label) if alt is not None else None))
@@ -563,16 +563,20 @@ def main() -> None:
     chosen = pick(trades, args.count, args.seed)
     table = fidelity(trades, candles)
 
-    # Matching on entry time lines the two rules up on the SAME setups, so
-    # the comparison is one rule against another rather than two samples.
+    # Joined on SIGNAL time, not entry time. The signal is what the two
+    # rules share; the stop differs, which under a limit fill changes when
+    # (and whether) the order fills -- so entry times do not line up and
+    # an entry-time join silently drops most of the comparison.
     alt_stops = None
     alt_label = "other stop"
     if args.compare_anchor:
-        alt_label = "live stop"
-        alt_stops = {t.entry_time: t.stop_loss
+        alt_label = f"{args.compare_anchor}"
+        alt_stops = {t.signal_time: t.stop_loss
                      for t in run_backtest(args.instrument, args.entry_style,
                                            source=args.source,
-                                           stop_anchor=args.compare_anchor)}
+                                           stop_anchor=args.compare_anchor,
+                                           entry_fill=args.entry_fill,
+                                           cancel_at_target_fraction=args.cancel_at)}
 
     page = build_page(
         args.instrument, args.entry_style, chosen, pip_size, candles, table=table,
