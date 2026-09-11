@@ -108,6 +108,16 @@ def main():
                               "goes out. 'limit' rests the order AT the computed entry level, so "
                               "a late send fills at the price the stop was sized for or not at "
                               "all -- see setup_validity.py for the live audit that motivated it.")
+    parser.add_argument("--min-departure-r", type=float, default=0.0,
+                         help="only meaningful with --entry-order-type limit. Require price to "
+                              "travel this many multiples of the stop distance AWAY from entry, "
+                              "in the trade's favour, before the order is actually rested -- "
+                              "otherwise it fills almost immediately at the level it just formed "
+                              "at, which is a market order wearing a limit's label, not the "
+                              "retest Bishop's own broker screenshots show. 0.0 (default) rests "
+                              "immediately, matching every behavior before 2026-09-11. Backtested "
+                              "at 1.0: 738R -> 991R, win rate 42.0%% -> 50.6%% -- see "
+                              "check_setup()'s docstring in setup_validity.py.")
     parser.add_argument("--symbol-suffix", default=os.environ.get("MT5_SYMBOL_SUFFIX", ""),
                          help="broker's Market Watch suffix, e.g. .a")
     parser.add_argument("--symbol-overrides", default=os.environ.get("MT5_SYMBOL_OVERRIDES", "{}"),
@@ -198,6 +208,7 @@ def main():
     bot = LiveBot(profile=profile, mt5_client=mt5_client, mt5_exec=mt5_exec,
                    audit_log=audit_log, instruments=instruments, entry_style=args.style,
                    entry_order_type=args.entry_order_type,
+                   min_departure_r=args.min_departure_r,
                    stop_anchor=args.stop_anchor)
 
     logger.info("starting live loop: %s, instruments=%s", args.account_type, instruments)

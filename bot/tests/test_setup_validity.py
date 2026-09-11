@@ -154,3 +154,90 @@ def test_works_with_real_backtest_candles():
     bars = [Candle(pd.Timestamp("2026-09-01T18:00Z"), 1.10, 1.1005, 1.0985, 1.099, 0.0)]
     v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars)
     assert v.validity is Validity.STOP_BREACHED
+
+
+# ---- min_departure_r: the retest requirement (added 2026-09-11) ----
+# Bishop's own broker screenshot (PDF page 6) shows a resting BUY LIMIT
+# sitting ~14 pips BELOW the market, waiting for a pullback -- not filling
+# the instant the confirmation forms. min_departure_r makes that a
+# testable, then enforceable, requirement: price must travel this many
+# multiples of the stop distance away from entry, in the trade's favour,
+# before the setup counts as `departed`.
+
+def test_departed_defaults_true_when_min_departure_r_is_zero():
+    """0.0 must reproduce every behavior before 2026-09-11 exactly."""
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, [])
+    assert v.departed is True
+
+
+def test_fresh_signal_with_departure_required_is_alive_but_not_departed():
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, [],
+                    min_departure_r=1.0)
+    assert v.alive
+    assert v.departed is False
+
+
+def test_long_departs_once_price_clears_one_stop_distance_away():
+    # risk = 0.0010; 1.0R away = 1.1010.
+    bars = [Bar(high=1.1011, low=1.1002)]
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars,
+                    min_departure_r=1.0)
+    assert v.alive
+    assert v.departed is True
+
+
+def test_long_has_not_departed_short_of_the_threshold():
+    bars = [Bar(high=1.1008, low=1.1002)]  # only 0.8R away
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars,
+                    min_departure_r=1.0)
+    assert v.alive
+    assert v.departed is False
+
+
+def test_short_departs_once_price_clears_one_stop_distance_away():
+    bars = [Bar(high=1.0999, low=1.0989)]  # risk=0.0010; 1.0R away = 1.0990
+    v = check_setup(1.1000, 1.1010, 1.0970, Direction.BEARISH, bars,
+                    min_departure_r=1.0)
+    assert v.alive
+    assert v.departed is True
+
+
+def test_departure_persists_once_achieved_even_if_price_comes_back():
+    """Departed is "has this happened at any point", not "is it true on
+    the current candle" -- once price has proven the move, a pullback
+    toward entry is exactly what should let the order fill next, not
+    reset the requirement."""
+    bars = [Bar(high=1.1015, low=1.1005, time="departs"),
+            Bar(high=1.1006, low=1.0999, time="pulls back through entry")]
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars,
+                    min_departure_r=1.0)
+    assert v.alive
+    assert v.departed is True
+    assert v.entry_revisited  # the pullback also means it would fill
+
+
+def test_stop_breach_before_departure_is_still_reported_as_not_departed():
+    """A setup invalidated before ever proving the move is dead -- not
+    departed, not alive, and departed should read False since it never
+    happened."""
+    bars = [Bar(high=1.1002, low=1.0985)]  # straight through the stop
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars,
+                    min_departure_r=1.0)
+    assert not v.alive
+    assert v.validity is Validity.STOP_BREACHED
+    assert v.departed is False
+
+
+def test_target_achieved_without_ever_departing_is_still_dead():
+    """A huge R:R setup could in principle jump straight to the 80%
+    target-achieved threshold without ever crossing the (much closer)
+    1R departure line first -- either way the move happened without us."""
+    # reward = 0.0300; 80% = 1.1240; departure at 1.0R = 1.1010.
+    # This candle clears BOTH in one bar -- departure is checked first in
+    # the loop body, so it should register True even though the setup as
+    # a whole is declared dead by the target-achieved check right after.
+    bars = [Bar(high=1.1245, low=1.1002)]
+    v = check_setup(1.1000, 1.0990, 1.1030, Direction.BULLISH, bars,
+                    min_departure_r=1.0)
+    assert not v.alive
+    assert v.validity is Validity.TARGET_ACHIEVED

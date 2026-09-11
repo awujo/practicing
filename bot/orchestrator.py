@@ -174,6 +174,24 @@ class PendingEntry:
 
 
 @dataclass
+class AwaitingEntry:
+    """A signal validated as alive but not yet DEPARTED from its entry
+    level -- see check_setup()'s min_departure_r and _place_limit_entry()'s
+    docstring. No order exists at the broker for this yet; it exists only
+    here, re-validated by calling _place_limit_entry() again on every
+    poll, until it either departs (and gets placed) or dies (and is
+    dropped). Stores everything _place_limit_entry() needs to re-run
+    itself, so the awaiting and immediate-placement paths are the exact
+    same code, not two implementations that can drift apart.
+    """
+    record: TradeRecord
+    risk: float
+    lot_size: float
+    direction: str
+    base_fields: dict
+
+
+@dataclass
 class LiveBot:
     profile: AccountProfile
     mt5_client: MT5Client
@@ -187,6 +205,14 @@ class LiveBot:
     # so enabling this is a deliberate act and every existing caller and
     # test keeps its previous behavior.
     entry_order_type: str = "market"
+    # How many multiples of the stop distance price must travel AWAY from
+    # entry, in the trade's favour, before a limit order is actually
+    # rested -- see check_setup()'s min_departure_r for the full reasoning
+    # and the backtest numbers that justify it. 0.0 (default) rests the
+    # order the instant the setup is confirmed alive, matching every
+    # behavior before 2026-09-11. Only meaningful when entry_order_type
+    # is "limit".
+    min_departure_r: float = 0.0
     # Where the stop is anchored -- passed straight through to
     # run_backtest(). Default keeps the long-standing behavior.
     stop_anchor: str = "trigger_wick"
@@ -203,6 +229,15 @@ class LiveBot:
     # everything -- same stance as _reconcile_closed_positions() takes
     # for untracked positions.
     pending_entries: dict[tuple[str, int], PendingEntry] = field(init=False, default_factory=dict)
+    # Signals confirmed alive but not yet departed from entry -- see
+    # AwaitingEntry. In-memory only, and deliberately NOT reported as
+    # untracked-at-the-broker on a restart the way pending_entries is:
+    # nothing has been placed yet, so there is nothing at the broker to
+    # reconcile against. A restart simply forgets the wait and the signal
+    # is gone, which is a missed trade, not a risk -- the same trade-off
+    # this codebase already accepts for pending_entries surviving a
+    # restart only by being re-detected as untracked.
+    awaiting_departure: dict[tuple[str, object], AwaitingEntry] = field(init=False, default_factory=dict)
     halted: bool = field(init=False, default=False)
     # Cached Weekly/Daily/H4 bias context per instrument, plus the last
     # storyline stage logged for it -- see _storyline_says_hunt().
@@ -315,6 +350,10 @@ class LiveBot:
             self._reconcile_pending_entries(state)
         except Exception:
             logger.exception("pending-order reconcile failed; continuing")
+        try:
+            self._reconcile_awaiting_departure(state)
+        except Exception:
+            logger.exception("awaiting-departure reconcile failed; continuing")
 
         # Flatten before the health gate too: a halt stops new entries, it
         # does not license carrying positions through a closed weekend.
@@ -665,7 +704,9 @@ class LiveBot:
     def _place_limit_entry(self, instrument, record, state, risk, lot_size,
                             direction, base_fields):
         """Rest a limit at the setup's own entry level, once the setup has
-        been re-checked against everything price has done since it fired.
+        been re-checked against everything price has done since it fired,
+        AND (if min_departure_r > 0) once price has genuinely left that
+        level rather than still sitting on it.
 
         This is the answer to the finding that the bot is never prompt
         (see setup_validity.py). A market order sent 40 minutes late buys
@@ -673,13 +714,93 @@ class LiveBot:
         was sized for. What age DOES change is whether the setup is still
         worth taking at all, and that is a question about price, not the
         clock -- so it is asked of the candles, not of a cutoff.
+
+        Called twice over a signal's life when min_departure_r > 0: once
+        when first detected (from _consider_entry), and again on every
+        subsequent poll while it sits in `awaiting_departure`
+        (from _reconcile_awaiting_departure) -- same function, same
+        checks, so there is exactly one implementation of "is this signal
+        still good" rather than two that can quietly drift apart. Bias and
+        setup-validity are re-checked on EVERY call, including while
+        merely waiting: a thesis that expires before ever departing should
+        stop waiting, not sit until the 24h cutoff for no reason. The risk
+        gate is checked LAST, only once actually departed and about to
+        place -- checking it while still waiting would decline a signal
+        for today's transient risk headroom instead of tomorrow's.
         """
+        # A resting limit commits to a thesis for as long as it sits
+        # there (or, now, for as long as it sits WAITING to be rested), so
+        # it needs that thesis to hold NOW -- not merely to have held at
+        # some candle in the replay gap.
+        #
+        # `_storyline_hunted_anywhere_in_gap()` deliberately returns True
+        # if the gate said HUNT at ANY of the last 72 candles, so a missed
+        # signal still gets reported after an outage. That is right for
+        # reporting and wrong for resting an order: with the limit path's
+        # 24h window, a signal could rest against Weekly/Daily/H4
+        # alignment that has since flipped, and check_setup() would never
+        # notice because it only compares price against stop and target.
+        # Market mode is unaffected -- it fires once and is done, so a
+        # stale bias cannot keep costing anything.
+        as_of = self._current_candle_time.get(instrument)
+        if as_of is not None and not self._storyline_says_hunt(instrument, as_of):
+            self.awaiting_departure.pop((instrument, record.entry_time), None)
+            self._log_event("entry_attempt", "decline_bias_no_longer_aligned",
+                             "higher-timeframe bias no longer aligns as of the current candle -- "
+                             "this signal only passed the gate on an earlier candle in the replay "
+                             "gap, and a resting order would hold a thesis that has since expired",
+                             state, instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            return
+
+        since = self._candles_since(instrument, record.entry_time)
+        if since is None:
+            # "Can't tell" while merely waiting is not a reason to give up
+            # on a signal that was already validated once -- leave it in
+            # awaiting_departure (if it's there) and try again next poll,
+            # same stance _reconcile_pending_entries takes on an unreadable
+            # cache. Only decline outright the FIRST time, before anything
+            # has been recorded to wait on.
+            if (instrument, record.entry_time) not in self.awaiting_departure:
+                self._log_event("entry_attempt", "decline_setup_unverifiable",
+                                 "could not read the H1 cache to re-check the setup against price "
+                                 "since the signal -- declining rather than resting an order against "
+                                 "a thesis nobody has checked", state, instrument=instrument,
+                                 trade_id=str(record.trade_id), risk=risk, **base_fields)
+            return
+
+        verdict = check_setup(record.entry_price, record.stop_loss, record.primary_target,
+                              record.direction, since, min_departure_r=self.min_departure_r)
+        if not verdict.alive:
+            self.awaiting_departure.pop((instrument, record.entry_time), None)
+            self._log_event("entry_attempt", f"decline_setup_{verdict.validity.value}",
+                             verdict.reason, state, instrument=instrument,
+                             trade_id=str(record.trade_id), risk=risk, **base_fields)
+            return
+
+        if not verdict.departed:
+            key = (instrument, record.entry_time)
+            if key not in self.awaiting_departure:
+                self._log_event("entry_attempt", "awaiting_departure",
+                                 f"setup intact but price has not yet moved "
+                                 f"{self.min_departure_r:.2f}R away from {record.entry_price} -- "
+                                 f"holding off so resting the order is a genuine retest, not an "
+                                 f"immediate fill", state, instrument=instrument,
+                                 trade_id=str(record.trade_id), risk=risk, **base_fields)
+                self.awaiting_departure[key] = AwaitingEntry(record, risk, lot_size, direction, base_fields)
+            return
+
+        self.awaiting_departure.pop((instrument, record.entry_time), None)
+
         # A resting order is not exposure -- until it fills. `_account_state()`
         # reads positions_get() only, so without this a batch of limits could
         # all be approved against the same headroom and then all fill within
         # the same minute, blowing straight through the daily cap. So the
         # aggregate check is re-run counting every order already resting as
         # though it were already open: the worst case IS that they all fill.
+        # Checked HERE, at actual placement, rather than when the signal
+        # was first seen -- headroom that was full when the signal fired
+        # may have freed up by the time it's actually ready to place.
         #
         # Deliberately re-uses RiskManager rather than reimplementing the
         # arithmetic here -- the risk rules must have exactly one definition.
@@ -695,46 +816,6 @@ class LiveBot:
                                  instrument=instrument, trade_id=str(record.trade_id),
                                  risk=risk, **base_fields)
                 return
-
-        # A resting limit commits to a thesis for as long as it sits
-        # there, so it needs that thesis to hold NOW -- not merely to have
-        # held at some candle in the replay gap.
-        #
-        # `_storyline_hunted_anywhere_in_gap()` deliberately returns True
-        # if the gate said HUNT at ANY of the last 72 candles, so a missed
-        # signal still gets reported after an outage. That is right for
-        # reporting and wrong for resting an order: with the limit path's
-        # 24h window, a signal could rest against Weekly/Daily/H4
-        # alignment that has since flipped, and check_setup() would never
-        # notice because it only compares price against stop and target.
-        # Market mode is unaffected -- it fires once and is done, so a
-        # stale bias cannot keep costing anything.
-        as_of = self._current_candle_time.get(instrument)
-        if as_of is not None and not self._storyline_says_hunt(instrument, as_of):
-            self._log_event("entry_attempt", "decline_bias_no_longer_aligned",
-                             "higher-timeframe bias no longer aligns as of the current candle -- "
-                             "this signal only passed the gate on an earlier candle in the replay "
-                             "gap, and a resting order would hold a thesis that has since expired",
-                             state, instrument=instrument, trade_id=str(record.trade_id),
-                             risk=risk, **base_fields)
-            return
-
-        since = self._candles_since(instrument, record.entry_time)
-        if since is None:
-            self._log_event("entry_attempt", "decline_setup_unverifiable",
-                             "could not read the H1 cache to re-check the setup against price "
-                             "since the signal -- declining rather than resting an order against "
-                             "a thesis nobody has checked", state, instrument=instrument,
-                             trade_id=str(record.trade_id), risk=risk, **base_fields)
-            return
-
-        verdict = check_setup(record.entry_price, record.stop_loss, record.primary_target,
-                              record.direction, since)
-        if not verdict.alive:
-            self._log_event("entry_attempt", f"decline_setup_{verdict.validity.value}",
-                             verdict.reason, state, instrument=instrument,
-                             trade_id=str(record.trade_id), risk=risk, **base_fields)
-            return
 
         result = self.mt5_exec.place_limit_order(instrument, direction, lot_size,
                                                   record.entry_price, record.stop_loss,
@@ -753,6 +834,51 @@ class LiveBot:
                 stop_loss=record.stop_loss, target=record.primary_target,
                 direction=record.direction, signal_time=record.entry_time,
             )
+
+    def _reconcile_awaiting_departure(self, state):
+        """Re-check every signal still waiting for its retest.
+
+        Three ways out, same as a resting order: it departs (place it, via
+        _place_limit_entry -- see there for why bias/validity are
+        re-checked every time), the thesis dies (dropped, inside
+        _place_limit_entry), or it simply times out. Timing out needs its
+        own check here: `_check_instrument()`'s STALE_ENTRY_CUTOFF_LIMIT
+        only runs ONCE, when a signal is first seen as fresh -- a signal
+        already accepted into this dict never passes back through that
+        gate, so nothing else would ever stop it waiting except an
+        explicit check for how long it's been waiting.
+
+        Also cleared at the weekend cutoff: nothing should be left in
+        limbo over a closed weekend either, even though (unlike
+        pending_entries) there is no order at the broker to cancel here --
+        just a wait to abandon.
+        """
+        if not self.awaiting_departure:
+            return
+
+        weekend = self._weekend_is_close()
+        for key, awaiting in list(self.awaiting_departure.items()):
+            instrument, signal_time = key
+            now = self._current_candle_time.get(instrument, signal_time)
+            if weekend:
+                del self.awaiting_departure[key]
+                self._log_event("entry_attempt", "decline_weekend_close",
+                                 "still waiting for the retest when the weekend cutoff arrived -- "
+                                 "nothing is left pending over a closed weekend", state,
+                                 instrument=instrument, trade_id=str(awaiting.record.trade_id),
+                                 risk=awaiting.risk, **awaiting.base_fields)
+                continue
+            if now - signal_time > STALE_ENTRY_CUTOFF_LIMIT:
+                del self.awaiting_departure[key]
+                self._log_event("entry_attempt", "decline_stale_signal",
+                                 f"still waiting for the retest after {now - signal_time} -- "
+                                 f"past the {STALE_ENTRY_CUTOFF_LIMIT} limit, giving up rather than "
+                                 f"waiting indefinitely for a departure that may never come", state,
+                                 instrument=instrument, trade_id=str(awaiting.record.trade_id),
+                                 risk=awaiting.risk, **awaiting.base_fields)
+                continue
+            self._place_limit_entry(instrument, awaiting.record, state, awaiting.risk,
+                                    awaiting.lot_size, awaiting.direction, awaiting.base_fields)
 
     def _weekend_close_at(self, now) -> datetime:
         """The next Friday 17:00 New York, as UTC.

@@ -60,6 +60,12 @@ class ValidityVerdict:
     validity: Validity
     reason: str
     entry_revisited: bool = False
+    # Has price moved min_departure_r away from entry, in the trade's
+    # favour, at any point since the signal? See check_setup()'s
+    # min_departure_r parameter for why this exists. Always True when
+    # min_departure_r is 0 (the default, and the only value ever asked
+    # for before 2026-09-11).
+    departed: bool = True
 
     @property
     def alive(self) -> bool:
@@ -68,7 +74,8 @@ class ValidityVerdict:
 
 def check_setup(entry_price: float, stop_loss: float, target: float,
                 direction: Direction, candles_since,
-                target_fraction: float = TARGET_ACHIEVED_FRACTION) -> ValidityVerdict:
+                target_fraction: float = TARGET_ACHIEVED_FRACTION,
+                min_departure_r: float = 0.0) -> ValidityVerdict:
     """Judge a signal against the candles that have closed since it fired.
 
     `candles_since` is every candle AFTER the signal candle, oldest first
@@ -81,16 +88,47 @@ def check_setup(entry_price: float, stop_loss: float, target: float,
     conservative reading and matches how `_resolve_trade_outcome()`
     already resolves the same ambiguity in the backtest -- the two must
     not disagree about the same price action.
+
+    min_departure_r: require price to travel this many multiples of the
+    stop distance AWAY from entry, in the trade's favour, before the
+    setup counts as `departed` -- i.e. before resting a limit order at
+    entry_price is actually a RETEST rather than an immediate fill.
+
+    Added 2026-09-11, moving into live what `_resting_limit_outcome()`
+    already modelled in the backtest since the previous day. Page 6 of
+    Bishop's own deck is a broker screenshot of a resting BUY LIMIT
+    sitting ~14 pips BELOW a market that had already moved away from it --
+    waiting for a genuine pullback, not filling on first touch. The live
+    bot never modelled that: `_place_limit_entry()` rested the order the
+    moment the signal was confirmed alive, at the level price had often
+    only just left, so it filled almost immediately -- a market order
+    wearing a limit's label, per the operator's own reading of the
+    rendered charts. Backtested with the retest required (min_departure_r
+    1.0, i.e. price must travel a full stop distance away first):
+    trigger_wick 738R -> 991R, win rate 42.0% -> 50.6%, median stop
+    9.5 -> 8.2 pips (matching the deck's own measured 3.1-17.7 pip range).
+    Critically, this ALSO reverses which stop anchor wins: under the OLD
+    immediate-fill assumption `structural` beat `trigger_wick` (901R vs
+    738R) -- switching the stop anchor alone, without this, would have
+    picked the wrong one by our own numbers.
+
+    0.0 (default) reproduces the old behavior exactly: `departed` is
+    always True, so callers that don't pass this see no change.
     """
     if not candles_since:
-        return ValidityVerdict(Validity.ALIVE, "fresh signal, no candles since")
+        return ValidityVerdict(Validity.ALIVE, "fresh signal, no candles since",
+                               departed=min_departure_r <= 0)
 
     bullish = direction == Direction.BULLISH
     reward = abs(target - entry_price)
+    risk = abs(entry_price - stop_loss)
     # A degenerate setup (target at entry) can never "achieve" anything;
     # treat the threshold as unreachable rather than dividing by zero.
     achieved_at = (entry_price + target_fraction * reward) if bullish else \
                   (entry_price - target_fraction * reward)
+    departed = min_departure_r <= 0 or not risk
+    departure_at = (entry_price + min_departure_r * risk if bullish
+                    else entry_price - min_departure_r * risk)
 
     revisited = False
     for candle in candles_since:
@@ -100,7 +138,9 @@ def check_setup(entry_price: float, stop_loss: float, target: float,
                     Validity.STOP_BREACHED,
                     f"price traded to {candle.low} at {candle.time}, through the stop "
                     f"at {stop_loss} -- the setup's own invalidation point",
-                    revisited)
+                    revisited, departed)
+            if not departed and candle.high >= departure_at:
+                departed = True
             if candle.low <= entry_price:
                 revisited = True
             if reward and candle.high >= achieved_at:
@@ -109,14 +149,16 @@ def check_setup(entry_price: float, stop_loss: float, target: float,
                     f"price reached {candle.high} at {candle.time}, "
                     f"{target_fraction:.0%} of the way to target {target} -- "
                     f"the move happened without us",
-                    revisited)
+                    revisited, departed)
         else:
             if candle.high >= stop_loss:
                 return ValidityVerdict(
                     Validity.STOP_BREACHED,
                     f"price traded to {candle.high} at {candle.time}, through the stop "
                     f"at {stop_loss} -- the setup's own invalidation point",
-                    revisited)
+                    revisited, departed)
+            if not departed and candle.low <= departure_at:
+                departed = True
             if candle.high >= entry_price:
                 revisited = True
             if reward and candle.low <= achieved_at:
@@ -125,8 +167,8 @@ def check_setup(entry_price: float, stop_loss: float, target: float,
                     f"price reached {candle.low} at {candle.time}, "
                     f"{target_fraction:.0%} of the way to target {target} -- "
                     f"the move happened without us",
-                    revisited)
+                    revisited, departed)
 
     where = "entry level was revisited and would have filled" if revisited else \
             "price has not returned to the entry level yet"
-    return ValidityVerdict(Validity.ALIVE, f"setup intact -- {where}", revisited)
+    return ValidityVerdict(Validity.ALIVE, f"setup intact -- {where}", revisited, departed)

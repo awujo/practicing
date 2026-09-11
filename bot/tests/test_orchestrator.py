@@ -1052,15 +1052,24 @@ def test_resting_order_is_cancelled_once_the_setup_dies(tmp_path):
 
 def test_resting_order_survives_while_the_setup_is_merely_waiting(tmp_path):
     """The case the old code threw away as 'stale': price simply hasn't
-    come back to the level yet."""
+    come back to the level yet.
+
+    _weekend_is_close() reads the real wall clock when not given `now=`,
+    so this (and the two tests below with the same shape) must pin it --
+    otherwise the test is calendar-flaky, failing for real every Friday
+    evening through the weekend regardless of what it's actually testing.
+    Found 2026-09-11 running this suite for the first time on a Friday.
+    """
     fake = FakeMT5()
     bot, _, _ = _limit_bot(fake, tmp_path)
     record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
-    with patch.object(LiveBot, "_candles_since", return_value=[]):
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._consider_entry("EURUSD", record, bot._account_state())
 
     with patch.object(LiveBot, "_candles_since",
-                      return_value=[_bar(high=1.17390, low=1.17380)]):
+                      return_value=[_bar(high=1.17390, low=1.17380)]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._reconcile_pending_entries(bot._account_state())
 
     assert len(bot.pending_entries) == 1
@@ -1142,15 +1151,21 @@ def test_a_filled_limit_becomes_a_tracked_position(tmp_path):
 
 def test_a_failed_orders_query_does_not_look_like_nothing_resting(tmp_path):
     """`orders_get()` breaking must not silently drop tracked orders --
-    the same "can't tell means can't tell" rule that positions follow."""
+    the same "can't tell means can't tell" rule that positions follow.
+
+    Pins _weekend_is_close() -- see the comment on
+    test_resting_order_survives_while_the_setup_is_merely_waiting.
+    """
     fake = FakeMT5()
     bot, _, _ = _limit_bot(fake, tmp_path)
     record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
-    with patch.object(LiveBot, "_candles_since", return_value=[]):
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._consider_entry("EURUSD", record, bot._account_state())
 
     fake.orders_get_raises = True
-    with patch.object(LiveBot, "_candles_since", return_value=[]):
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._reconcile_pending_entries(bot._account_state())
 
     assert len(bot.pending_entries) == 1  # still ours, still tracked
@@ -1348,14 +1363,20 @@ def test_limit_entry_declines_when_the_setup_cannot_be_verified(tmp_path):
 
 def test_an_unverifiable_resting_order_is_left_alone_not_cancelled(tmp_path):
     """"Don't know" argues for doing nothing: the order sits at the right
-    price and costs nothing while it waits."""
+    price and costs nothing while it waits.
+
+    Pins _weekend_is_close() -- see the comment on
+    test_resting_order_survives_while_the_setup_is_merely_waiting.
+    """
     fake = FakeMT5()
     bot, _, _ = _limit_bot(fake, tmp_path)
     record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
-    with patch.object(LiveBot, "_candles_since", return_value=[]):
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._consider_entry("EURUSD", record, bot._account_state())
 
-    with patch.object(LiveBot, "_candles_since", return_value=None):
+    with patch.object(LiveBot, "_candles_since", return_value=None), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
         bot._reconcile_pending_entries(bot._account_state())
 
     assert len(bot.pending_entries) == 1
@@ -1443,3 +1464,154 @@ def test_limit_entry_proceeds_while_bias_still_aligns(tmp_path):
         bot._consider_entry("EURUSD", record, bot._account_state())
 
     assert len(bot.pending_entries) == 1
+
+
+# ---- min_departure_r: deferred placement (added 2026-09-11) ----
+# Extends the limit-order path so a resting order is only rested once
+# price has genuinely left the entry level -- see setup_validity.py's
+# check_setup() docstring for the backtest numbers that justify this, and
+# why switching to trigger_wick without it would have picked the wrong
+# stop anchor by the project's own data.
+
+def _departure_bot(fake, tmp_path, instruments=("EURUSD",), min_departure_r=1.0):
+    bot, audit, client = _limit_bot(fake, tmp_path, instruments)
+    bot.min_departure_r = min_departure_r
+    return bot, audit, client
+
+
+def test_signal_that_has_not_departed_is_not_placed_yet(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert bot.pending_entries == {}
+    assert fake.orders == []
+    assert ("EURUSD", record.entry_time) in bot.awaiting_departure
+    assert audit.recent(1)[0]["decision"] == "awaiting_departure"
+
+
+def test_signal_is_placed_once_price_actually_departs(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+    assert bot.awaiting_departure
+
+    # risk = 1.17374 - 1.17290 = 0.00084; 1.0R away = 1.17458.
+    departed = [_bar(high=1.17460, low=1.17380)]
+    with patch.object(LiveBot, "_candles_since", return_value=departed), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._reconcile_awaiting_departure(bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert len(bot.pending_entries) == 1
+    assert len(fake.orders) == 1
+    assert fake.order_send_calls[-1]["price"] == pytest.approx(round(record.entry_price, 4))
+    assert audit.recent(1)[0]["decision"] == "allow_pending"
+
+
+def test_awaiting_signal_dies_if_stop_breached_before_departing(tmp_path):
+    """The move went straight through the invalidation point without ever
+    proving itself first -- dead, never placed."""
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"), direction=Direction.BULLISH)
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    breached = [_bar(high=1.17300, low=1.17200)]  # through the 1.17290 stop
+    with patch.object(LiveBot, "_candles_since", return_value=breached), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._reconcile_awaiting_departure(bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert bot.pending_entries == {}
+    assert fake.orders == []
+    assert audit.recent(1)[0]["decision"] == "decline_setup_stop_breached"
+
+
+def test_awaiting_signal_dies_if_bias_flips_while_waiting(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+    bot._current_candle_time["EURUSD"] = pd.Timestamp("2026-09-01T18:00Z")
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_storyline_says_hunt", return_value=True), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+    assert bot.awaiting_departure
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_storyline_says_hunt", return_value=False), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._reconcile_awaiting_departure(bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert bot.pending_entries == {}
+    assert audit.recent(1)[0]["decision"] == "decline_bias_no_longer_aligned"
+
+
+def test_awaiting_signal_times_out_past_the_stale_limit_cutoff(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+    assert bot.awaiting_departure
+
+    bot._current_candle_time["EURUSD"] = record.entry_time + timedelta(hours=25)
+    with patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._reconcile_awaiting_departure(bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert bot.pending_entries == {}
+    row = audit.recent(1)[0]
+    assert row["decision"] == "decline_stale_signal"
+    assert "25:00:00" in row["reason"] or "1 day" in row["reason"]
+
+
+def test_awaiting_signal_is_dropped_not_placed_at_the_weekend_cutoff(tmp_path):
+    fake = FakeMT5()
+    bot, audit, _ = _departure_bot(fake, tmp_path)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+    assert bot.awaiting_departure
+
+    with patch.object(LiveBot, "_weekend_is_close", return_value=True):
+        bot._reconcile_awaiting_departure(bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert bot.pending_entries == {}
+    assert fake.orders == []
+    assert audit.recent(1)[0]["decision"] == "decline_weekend_close"
+
+
+def test_min_departure_r_zero_places_immediately_unchanged(tmp_path):
+    """The default must reproduce every limit-mode behavior from before
+    2026-09-11 exactly -- nothing waits when min_departure_r is 0.0."""
+    fake = FakeMT5()
+    bot, audit, _ = _limit_bot(fake, tmp_path)   # min_departure_r defaults to 0.0
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]), \
+         patch.object(LiveBot, "_weekend_is_close", return_value=False):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert bot.awaiting_departure == {}
+    assert len(bot.pending_entries) == 1
+    assert audit.recent(1)[0]["decision"] == "allow_pending"

@@ -3867,3 +3867,80 @@ Operator confirmed they manually closed the XAGUSD position at the
 exactly. No further action on this specific ticket. The twin-process fix
 and the "zero duplicate orders across full history" finding both stand
 independently of this and remain the operative conclusions.
+
+## 2026-09-11, later -- Implemented "the wick stuff" properly: it's two
+## changes, not one, and only one was asked for by name
+
+Operator: "Ok that's nice. Implement it the wick stuff" -- referring to
+the earlier flag that `--stop-anchor structural` was never reverted to
+`trigger_wick` after the retest-modeled backtest showed trigger_wick
+winning (991R vs 792R).
+
+Caught before touching the config: that 991R number was measured WITH
+`min_departure_r=1.0` (the retest requirement) ALSO applied in the
+backtest. min_departure_r has never been wired into live execution --
+the live limit path has always rested the order the instant the setup is
+confirmed alive, with no retest requirement at all. Re-checking the
+comparison at departure=0.0 (what live actually does today):
+
+  trigger_wick  dep=0.0  738.0R  42.0% win
+  structural    dep=0.0  901.3R  49.3% win
+
+Under the fill behavior actually running in production, `structural`
+WINS. Switching only the stop anchor, without also making the live
+order-placement path wait for a genuine retest, would have moved bot2
+from the better-performing config to the worse one by the project's own
+numbers -- the two changes are a package, and only implementing the
+half that was named out loud would have been a regression dressed up as
+the fix that was asked for.
+
+Built both:
+
+1. `setup_validity.check_setup()` gains `min_departure_r` (default 0.0,
+   reproducing every prior behavior exactly) and `ValidityVerdict.departed`
+   -- has price moved this many multiples of the stop distance away from
+   entry, in the trade's favour, at ANY point since the signal. Once
+   proven, stays proven even if price pulls back afterward (that pullback
+   is the fill, not a reason to reset the requirement).
+
+2. `orchestrator.py`: a new `awaiting_departure` dict and `AwaitingEntry`,
+   parallel to `pending_entries`/`PendingEntry` but for signals validated
+   as alive that have not yet departed. `_place_limit_entry()` now: if
+   not departed, records the signal and returns without touching the
+   broker (logging `awaiting_departure` once, not every poll); if
+   departed, proceeds to place exactly as before. `_reconcile_awaiting_
+   departure()` (wired into run_once() alongside the existing pending-
+   order reconcile) re-calls `_place_limit_entry()` on every poll for
+   anything still waiting -- same function, same bias/validity checks,
+   so there is one implementation of "is this signal still good," not two
+   that can drift apart. Two things ONLY apply to the awaiting stage,
+   since check_setup() has no way to notice either on its own: an
+   explicit 24h expiry (STALE_ENTRY_CUTOFF_LIMIT re-applied, since a
+   signal that never departs would otherwise wait forever) and the
+   weekend cutoff (nothing left in limbo over a closed weekend, mirroring
+   pending_entries even though nothing is resting at the broker yet to
+   cancel). The risk-headroom gate was moved to fire only at ACTUAL
+   placement (once departed) rather than when the signal first appears --
+   headroom that's full today may free up before departure confirms, and
+   gating on a stale snapshot would decline signals for the wrong reason.
+
+New CLI flag `--min-departure-r` (default 0.0) on `run_live.py`, threaded
+to `LiveBot.min_departure_r`. 15 new tests (setup_validity: departure
+tracking including the target-achieved-without-departing edge case;
+orchestrator: deferred placement, death by stop-breach/bias-flip/
+timeout/weekend, and the 0.0-changes-nothing guarantee). Also fixed
+three PRE-EXISTING tests that read the real wall clock via
+`_weekend_is_close()` with no `now=` override -- found because running
+this suite for the first time on a Friday evening (2026-09-11, past the
+21:00 UTC EDT close) made them fail for real, regardless of this feature;
+they would have failed the same way on any prior Friday evening or
+weekend anyone happened to run them. Pinned with an explicit mock,
+unrelated to the departure feature itself.
+
+DEPLOY NEEDED, not yet done: `--stop-anchor structural` must be removed
+from bot2's launch script (reverting to the trigger_wick default) AND
+`--min-departure-r 1.0` added, together -- doing only the first half
+regresses bot2 by the numbers above. `journalctl` cutoff messages will
+change wording slightly (staleness/weekend-cancel reasons on
+`awaiting_departure` entries use the same phrasing as `pending_entries`'
+but say "still waiting for the retest" rather than "resting order").
