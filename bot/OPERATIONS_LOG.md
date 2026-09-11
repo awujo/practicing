@@ -3858,3 +3858,12 @@ further; not assumed to be operator error, just not yet explained.
   - cTrader/IC Markets -- still a serious option if Incident 4 persists
     post-fix, still not started, still needs an explicit decision once
     the picture is clearer than it is today.
+
+## 2026-09-11, later -- XAGUSD thread closed by the operator
+
+Operator confirmed they manually closed the XAGUSD position at the
++$202.80 profit found in the deal history, and asked to let the original
+"$9,999" figure go rather than keep chasing it. Matches the broker record
+exactly. No further action on this specific ticket. The twin-process fix
+and the "zero duplicate orders across full history" finding both stand
+independently of this and remain the operative conclusions.
