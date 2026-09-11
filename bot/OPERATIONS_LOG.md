@@ -3944,3 +3944,57 @@ regresses bot2 by the numbers above. `journalctl` cutoff messages will
 change wording slightly (staleness/weekend-cancel reasons on
 `awaiting_departure` entries use the same phrasing as `pending_entries`'
 but say "still waiting for the retest" rather than "resting order").
+
+## 2026-09-11, 23:05 -- Resource snapshot 23 minutes after the twin-process
+## fix, and an hourly watch set up rather than judging off one reading
+
+Operator asked directly whether stale/delayed price data (MT5 terminal
+instability) is a root cause needing a broker migration (IC Markets +
+cTrader, raised by a friend's own bot). Answered precisely: authorization/
+IPC failures are a TERMINAL STABILITY problem, not literally "delayed
+data" -- but a real, distinct, still-open question from tonight's
+duplicate-process fix.
+
+First post-fix reading, ~23 minutes after the clean restart:
+
+    Mem:  total 7.8Gi  used 2.8Gi  available 4.9Gi   (RAM was never the
+                                                       real pressure)
+    Swap: total 2.0Gi  used 1.2Gi  free 848Mi         (was 2.0/2.0 FULL
+                                                       a few hours earlier
+                                                       -- 40% drained)
+    load average: 2.13, 4.22, 4.75                    (falling fast as the
+                                                       higher recent
+                                                       history ages out)
+    authorization/IPC failures in the last hour: 0
+
+All four numbers move exactly the way they should if the twin-process bug
+was a major contributor to the instability. NOT treated as conclusive --
+23 minutes is far too short a window; the original 2026-08-26 instability
+built up over HOURS as history accumulated, and declaring this solved off
+one clean reading would repeat the same overconfidence this session had
+to retract three separate times tonight already (stop-anchor verdict
+twice, the XAGUSD sizing theory).
+
+Set up passive observability instead of guessing: an hourly cron
+appending `free -h`/`uptime`/auth-failure-count to
+/srv/slk-bot/health_watch.log. No trading-logic changes.
+
+DECISION RULE recorded for whoever reads this log next:
+  - swap keeps draining, failures stay at 0    -> the twin-process bug
+    WAS the disease; watch a little longer, then close this out.
+  - swap plateaus (~1GB), occasional failures  -> some residual strain;
+    resize the VPS (cheap, reversible) BEFORE considering anything else.
+  - swap climbs back to full, failures return
+    in volume even with just 2 processes       -> the box is genuinely
+    undersized for 2 Wine-hosted MT5 terminals; try the resize first
+    regardless (cheapest test of that theory), and only escalate to the
+    cTrader migration if resizing does not fix it.
+
+Deliberately sequenced VPS-resize before cTrader in every branch: a
+broker migration is a multi-week rewrite of every safety rule in
+mt5_execution.py (retry/ambiguity handling, tick-grid rounding, the
+entry-drift guard, close_position's opposing-deal semantics), all of it
+re-scarred against a new API's own quirks -- the same kind of cost this
+project has spent weeks paying against MT5 already. A resize is a
+five-minute, fully reversible test of the identical "not enough headroom"
+hypothesis. Not started; watching first.
