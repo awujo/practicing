@@ -3769,3 +3769,92 @@ explicit decision, not a unilateral rewrite, once the two incidents above
 are actually root-caused -- fixing MT5 stability and then discovering
 cTrader was unnecessary is a much cheaper mistake than migrating broker
 APIs and discovering the real bug was never MT5 at all.
+
+## 2026-09-11 -- RESOLUTION on the incidents above, and one theory retracted
+
+### Twin-process bug: CONFIRMED and FIXED, financial damage NOT confirmed
+
+Direct process evidence (`ps aux`) showed FOUR live `bot.run_live`
+processes where two were expected: a pair started 2026-09-03 (never
+killed, ~53 hours CPU time each) alongside the current pair from a
+same-day restart. Both zombie processes were polling the same 25
+instruments against the same two MT5 accounts through the same bridge
+ports as the live pair, for roughly 9 days.
+
+Killed (`kill` then confirmed dead), then hardened against recurrence:
+both `slk-bot1`/`slk-bot2` systemd units already carried an `ExecStop=`
+pkill hook (added at some earlier point in this project, evidently not
+sufficient on its own), but `ExecStop` only fires when systemd believes
+the unit is still active at the moment it decides to stop it -- if the
+outer `docker exec` client dies on its own (a docker/network hiccup) while
+the real python process inside the container survives, systemd sees the
+MainPID already gone, may skip `ExecStop` entirely, and `Restart=always`
+launches a fresh process on top of the orphan. Added a matching
+`ExecStartPre=-docker exec mt5 pkill -f ...` (leading `-` so a normal
+"nothing to kill" is not a startup failure) plus a 2s settle sleep to both
+units' override.conf, so cleanup is attempted on the way IN as well as
+the way out -- either one firing is enough to prevent accumulation.
+`systemctl daemon-reload` + restart verified exactly 4 processes (2 per
+bot, as expected) with a clean startup log.
+
+Financial impact of the duplication itself: queried both audit DBs,
+unrestricted, for any (instrument, entry_time) pair with more than one
+`allow`/`allow_pending` row. RESULT: ZERO rows in either database, across
+the entire recorded history. So despite running doubled for 9 days, the
+audit trail shows no signal was ever actually double-executed. Working
+theory: MT5/mt5linux likely only tolerates one effective IPC client per
+terminal at a time, so the zombie process was mostly failing its own MT5
+calls (consistent with the "Terminal: Authorization failed" / "No IPC
+connection" storms) rather than successfully racing the live process to
+place a second order. The duplication's proven cost is resource
+contention and instability, not doubled trades -- though this is a
+negative result (absence of evidence in one query), not a proof that no
+other symptom exists; flagged as the current best understanding, not a
+closed book.
+
+### The specific $9,999 claim: NOT reproduced by MT5's own deal history
+
+Operator's report: "Our limit order that is a day stale have caused a
+problem. This is over $9999 in SL," attached to the XAGUSD signal above.
+Pulled the actual deal history for that ticket directly from the broker:
+
+    BUY  vol=1.69 price=65.910 profit=0.0      (opening deal)
+    SELL vol=1.69 price=65.934 profit=+202.80  (closing deal)
+
+Single position, matching volume on both legs (no duplication), entry
+exactly at the intended 65.91 key level, and a POSITIVE closing profit of
+$202.80 -- not a loss, and nowhere near $9,999 in either direction. Hand-
+verified the lot size independently against the account's own
+`symbol_info` (tick_value=0.5, tick_size=0.001): risk distance 1.183 /
+0.001 * 0.5 = $591.50/lot; $1,000 / $591.50 = 1.69 lots, exactly matching
+what filled. The sizing math for this trade is correct.
+
+RETRACTED: the "duplicate order caused 10x sizing" theory for this
+specific trade, floated in the previous entry before the audit row and
+deal history were available. The trade this incident report was attached
+to appears, on the broker's own record, to have executed correctly and
+profitably. Where the operator's $9,999 figure came from is UNRESOLVED --
+possibly a different instrument, a floating (unrealized) figure seen
+mid-trade before price recovered, or something read differently in the
+MT5 app than intended. Needs a screenshot of the actual figure to trace
+further; not assumed to be operator error, just not yet explained.
+
+### Standing, unrevised from the previous entry
+  - Incident 3 (EURJPY entry-drift decline) -- correct behavior, not a
+    bug; recorded as a live illustration of the drift guard's cost.
+  - Incident 4 (MT5 authorization/IPC failures, high load/swap) -- the
+    twin-process contention is a plausible PARTIAL contributor (now
+    removed), but the box's underlying resource pressure predates this
+    specific bug and is not fully explained by it alone. Continue
+    monitoring load/swap after this fix; if authorization failures
+    persist with only 2 processes running, that points back to the
+    Wine/terminal stability question directly, strengthening (not yet
+    proving) the case for the cTrader alternative.
+  - Architecture question (one script per instrument) -- the twin-process
+    finding is a concrete, now-demonstrated data point AGAINST this: two
+    REDUNDANT processes per bot alone produced measurable instability.
+    Twenty-five separate processes would multiply that pressure, not
+    relieve it. Not revisited without new evidence.
+  - cTrader/IC Markets -- still a serious option if Incident 4 persists
+    post-fix, still not started, still needs an explicit decision once
+    the picture is clearer than it is today.
