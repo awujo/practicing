@@ -3998,3 +3998,65 @@ re-scarred against a new API's own quirks -- the same kind of cost this
 project has spent weeks paying against MT5 already. A resize is a
 five-minute, fully reversible test of the identical "not enough headroom"
 hypothesis. Not started; watching first.
+
+## 2026-09-11, 23:40 -- CONFIRMED: run_backtest() costs 54-73s per
+## instrument on the live box RIGHT NOW, not the ~12s cited earlier tonight
+
+Operator ran the timing script from the "Why Signals Arrive Late"
+walkthrough, inside the mt5 container where the real cache lives:
+
+    EURUSD   72.9s
+    GBPJPY   53.8s
+    USDJPY   63.7s
+
+The ~12s/instrument figure used in tonight's diagram was the 2026-08-26
+post-optimization measurement ("238.0s -> 75.0s across three instruments
+x two styles") -- but that was taken on a dedicated GitHub Actions core,
+not this VPS, and is over two weeks old. The real, current, on-box cost
+is 5-6x higher. This was flagged as "not yet re-measured" rather than
+assumed, and the caution was warranted -- the old number badly
+understated the problem.
+
+Arithmetic this changes: a SINGLE hunting instrument now costs roughly a
+minute, not 12 seconds. Two or three aligning in the same poll (routine
+at the top of the hour, when correlated pairs' Daily/H4 bias often flips
+together) means two or three minutes where `run_once()` does nothing else
+-- not other instruments, not pending-order reconciliation, not the
+weekend check. This is very likely the dominant remaining cause of the
+lateness the operator has been describing for two weeks, on top of (not
+instead of) the two mechanisms already fixed (the polling storm, the
+twin-process bug).
+
+Two candidate contributors to the 5-6x gap from the old number, not yet
+distinguished:
+  (a) the VPS shares 2 vCPUs across two Wine-hosted MT5 terminals and two
+      live bot processes, all polling concurrently with this measurement
+      -- versus a dedicated, unloaded CI core;
+  (b) `run_backtest()`'s cost grows monotonically with the amount of
+      cached history it replays (documented in its own module comment
+      since 2026-08-26), and roughly 2.5 more weeks of live-synced
+      history has accumulated since that number was taken.
+A fresh cProfile of one call (same technique as the original 2026-08-26
+investigation) was requested to distinguish "same known hot spots,
+now bigger" from "something new is now the bottleneck" -- result pending.
+
+One structurally important, favorable finding either way: `run_backtest()`
+makes ZERO MT5/bridge calls -- by the time it runs, `sync_recent_from_mt5()`
+has already finished the only network step, and everything inside
+run_backtest() is pure CPU work over already-synced local cache files.
+That means running it CONCURRENTLY across instruments is safe with
+respect to the shared, almost certainly non-thread-safe MT5 connection --
+the risky part is already over by the time the expensive part starts.
+The GIL means real parallelism needs separate processes, not threads, and
+with 2 vCPUs the ceiling is 2 concurrent replays at a time -- a real,
+meaningful cut to the worst-case pileup, not a full fix, and one more
+reason a VPS resize (already being evaluated for the load/swap question)
+would compound in value here too.
+
+NEXT: read the profile once it comes back, then decide, with the
+operator, whether to (1) reduce the per-call cost further if the profile
+shows a fixable hot spot, and/or (2) build a small process-pool so
+multiple instruments' searches run concurrently within one run_once()
+iteration instead of strictly sequentially. Not started -- this changes
+the live loop's core scheduling and deserves a clear decision point
+before writing it, not a unilateral change.
