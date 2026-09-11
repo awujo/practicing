@@ -3553,3 +3553,219 @@ RECOMMENDATION FOR bot2, superseding the structural one made at 19:00:
 revert to trigger_wick. It is both the better performer under the honest
 fill model and the one matching the source. min_departure_r is NOT yet
 wired to the live bot -- backtest only.
+
+## 2026-09-11 -- OPERATOR-REPORTED INCIDENTS FROM ~2 WEEKS UNATTENDED
+## RUNNING (2026-09-02 to 2026-09-11). Recorded verbatim first, root-caused
+## below where confirmed, still OPEN where not. Do not treat anything in
+## this entry as fixed unless it says so explicitly.
+
+Operator was away for exams; checked in after roughly a week and a half
+and reported multiple serious problems from the Telegram log, plus a
+direct message from a friend running a comparable SLK bot on IC Markets /
+cTrader instead of MT5. Summarized in the operator's own words: "The bot
+worked so bad for the last 2 weeks... I even have a note full of errors
+detected by me." Reported in full below, then triaged.
+
+### INCIDENT 1 -- XAGUSD: logged $1,000 risk, opened position was ~$9,999
+
+    2026-09-06 22:16:33,670 INFO bot.orchestrator: XAGUSD: entry_attempt
+    (allow_pending) -- limit resting at 65.91 -- setup intact -- entry
+    level was revisited and would have filled
+      signal candle: 2026-09-04 18:00:00+00:00
+      bullish | confirmation: fourth_man (direct_mitigation) | effective
+      bias: Weekly | aligned: Daily,H4
+      bias by timeframe: Weekly=bullish, Daily=bullish, H4=bullish
+      entry 65.91 | stop 64.72699999999999 (fourth_man_structural) |
+      target 67.467 | key level 65.91 (V)
+      risking $1,000.00
+
+    [IDENTICAL second line, same instrument, same signal candle, same
+    entry/stop/target, same "risking $1,000.00" -- timestamped
+    2026-09-06 22:16:33,670, the SAME MILLISECOND as the first]
+
+Operator: "this opened with about $9999 check not $1000." A single H1
+signal correctly logged at $1,000 intended risk apparently turned into
+roughly 10x that when it actually opened. THIS IS A REAL-MONEY-SHAPED BUG
+even though the account is demo -- the same bug on a funded account would
+be a account-ending event on one trade.
+
+STATUS: NOT YET ROOT-CAUSED. Two lines with byte-identical content at the
+exact same millisecond is the loudest single clue in the whole report --
+that is not consistent with a normal retry (which would carry a different
+timestamp) and points at either (a) two live bot processes running
+concurrently against the same account, in lockstep from a shared restart,
+each independently reaching and logging the same decision, or (b) a
+single process calling the logging/placement path twice for one signal.
+Both would explain a doubled-or-worse position; neither is confirmed.
+Diagnostics requested from the operator, not yet returned:
+  - `git log -1` on the VPS checkout, both bot dirs -- confirms which
+    commit was actually running when this happened, since the repo has
+    moved since the last confirmed deploy and this may predate fixes
+    already in main.
+  - `ps aux | grep run_live` -- checks for a duplicate/zombie bot2 process
+    (Restart=always plus a hung old process not exiting cleanly is a
+    known failure shape for exactly this symptom).
+  - The XAGUSD rows from `conservative_audit.db`/`aggressive_audit.db`
+    around 2026-09-04 through 09-07 -- to see whether the audit DB itself
+    (not just Telegram) shows one entry_attempt row or two, and whether
+    two tickets exist.
+  - `positions_get`/`history_deals_get` for XAGUSD in that window, read
+    directly from the terminal -- to see the actual ticket count, lot
+    sizes, and realized loss.
+Do not accept "duplicate process" or "duplicate log call" as the answer
+until the audit DB and ticket history confirm it -- this session has
+guessed wrong on root cause from log text alone multiple times already
+today (see the several retracted INVALID_STOPS theories and the
+stop-anchor verdict reversed twice), and this incident is too costly to
+guess on again.
+
+### INCIDENT 2 -- a signal ~2 days stale still got a resting limit placed
+
+Same XAGUSD example as Incident 1: signal candle 2026-09-04 18:00:00,
+order allowed 2026-09-06 22:16:33 -- roughly 52 hours later. Operator:
+"Our limit order that is a day stale have caused a problem. This is over
+$9999 in SL."
+
+`STALE_ENTRY_CUTOFF_LIMIT = timedelta(hours=24)` exists at HEAD
+(orchestrator.py, added 2026-09-02 commit 6f0700f) specifically to
+decline anything older than this under `--entry-order-type limit`. 52
+hours should have tripped it and produced `decline_stale_signal`, not
+`allow_pending`.
+
+STATUS: NOT YET ROOT-CAUSED, likely connects to Incident 1 rather than
+being independent. Two live hypotheses, not yet distinguished:
+  (a) the VPS was running a commit older than 6f0700f/current HEAD when
+      this fired, so the 24h limit cutoff simply did not exist yet on the
+      deployed code -- possible, since the operator's last confirmed
+      "git pull" was mid-session and several more commits landed
+      afterward that may not have been deployed;
+  (b) the cutoff exists in the deployed code but the staleness
+      computation itself is wrong in the specific case of a signal that
+      only becomes reachable again after an extended MT5 outage (see
+      Incident 4) -- e.g. if `new_candle.time` used in the comparison
+      does not reflect true "now" the way it's assumed to.
+Resolve by first confirming the deployed commit (see Incident 1's
+diagnostics); if the fix was deployed and still failed, the staleness
+arithmetic itself needs a live trace, not a guess.
+
+### INCIDENT 3 -- a real, correct decline (recorded for contrast, not a bug)
+
+    2026-09-07 21:11:29,270 INFO bot.orchestrator: EURJPY: entry_attempt
+    (decline_sizing_entry_price_drifted) -- EURJPY is at 179.428, 1.8045
+    away from this signal's 181.232 entry -- more than 100% of its 0.573
+    stop distance (limit 0.573). A market order would fill here while the
+    stop/target still go out sized for 181.232, so the trade would carry
+    a risk:reward it was never validated at. Declining instead.
+      signal candle: 2026-09-07 02:00:00+00:00
+      bearish | confirmation: plug_and_play (direct_mitigation) |
+      effective bias: Weekly | aligned: Weekly,Daily,H4
+      entry 181.232 | stop 181.80499999999998 (plug_and_play_structural) |
+      target 179.51300000000006 | key level 181.232 (open_close)
+
+Operator flagged this as "What it could have been, another option to make
+money gone" -- i.e. frustration at a decline, not a bug report. This is
+the entry-drift guard (added 2026-09-01 after the CHFJPY incident) working
+exactly as designed: EURJPY moved 180 pips (over 3x its own stop distance)
+between signal and this check, a MARKET order here would be badly
+mispriced. Declining it was correct. Recorded because it illustrates the
+cost side of the drift guard plainly, and because it is exactly the kind
+of missed opportunity that `--entry-order-type limit` on this same signal
+would have converted into a resting order instead of a discard -- if
+EURJPY had been on limit mode. Worth a direct decision from the operator:
+is bot1 (still market-only) costing more in missed EURJPY-style moves than
+it saves in avoided bad fills? Not answerable without more of this data.
+
+### INCIDENT 4 -- repeated MT5 authorization/connection failures, at least
+### one caused the account picture to be temporarily wrong
+
+    2026-09-11 07:02:16,897 WARNING reconnect failed (attempt 3, next
+    retry in 20s): mt5.initialize() failed: (-6, 'Terminal: Authorization
+    failed')
+    2026-09-11 07:02:36,298 WARNING reconnect failed (attempt 4, next
+    retry in 40s): mt5.initialize() failed: (-6, 'Terminal: Authorization
+    failed')
+    2026-09-11 07:03:04 through 07:03:09+ -- new_candle_closed(SYMBOL)
+    failed: copy_rates_from_pos(SYMBOL, H1) failed: (-10004, 'No IPC
+    connection') for USDJPY, USDCHF, USDCAD, AUDUSD, NZDUSD... (repeats
+    across essentially every instrument in the same few seconds)
+
+Earlier the same session:
+    2026-09-11 06:24:05 -- "reconnected to MT5"
+    2026-09-11 06:24:06 -- "resources at recovery: load=10.9,5.7,5.6
+    mem=2.7/7.8GB swap=2.0/2.0GB cpus=2"
+    2026-09-11 06:52:38-40 -- BOTH bots logged "starting live loop" again
+    within 2 seconds of each other (fresh process start, not just a
+    reconnect) -- i.e. something restarted both bot processes, not just
+    reconnected MT5. Operator: "I did[n't] do anything via terminal the
+    bot restarted I think."
+
+STATUS: This is the box's stability, not the trading logic. Load 10.9 on
+2 vCPUs (5.4x oversubscribed) and swap AT its 2.0GB CAP are both worse
+than the numbers that already caused the original 2026-08-26 lateness
+investigation. "Terminal: Authorization failed" from mt5.initialize()
+is MT5-terminal-level (session/license), not a network blip -- consistent
+with the underlying Wine-hosted terminal itself crashing or losing its
+session under memory pressure, which then cascades into "No IPC
+connection" for every symbol until reconnect succeeds. This is very
+likely THE mechanism behind both Incidents 1 and 2: a terminal-level
+crash-and-restart is exactly the boundary condition under which
+`_last_entry_time` / pending-order bookkeeping can be re-derived
+incorrectly (see Incident 2's hypothesis (a)/(b)) and, if systemd's
+Restart=always fires before the old process has fully released its MT5
+session, is also how a second process could end up briefly live
+alongside a new one (Incident 1).
+
+Not yet checked: whether `systemctl status` shows a clean single PID per
+unit with no restart flapping, and what `journalctl -u slk-bot1 -u
+slk-bot2` shows for actual process START events (not just MT5 reconnects)
+across the full two weeks -- needed to know how many times this actually
+happened, not just the one morning the operator captured.
+
+### THE OPERATOR'S ARCHITECTURE QUESTION -- "why sequential, why not one
+### script per instrument running independently"
+
+Direct quote (paraphrased from voice-to-text): getting all candles for
+all instruments "in a screenshot order" [sequentially] is what's "making
+us lose money" from lateness, so why not run each instrument as its own
+separate, independently-running script instead of one process working
+through 25 instruments in turn.
+
+ANSWERED DIRECTLY, not deferred: this is the right question to ask, and
+the honest answer is that the sequential SCAN was already fixed on
+2026-09-02 (36,000 pointless MT5 calls/hour down to ~50, commit 5edbf9e)
+and is very unlikely to be today's bottleneck. What Incident 4 shows
+instead is the MT5 terminal itself failing at the authorization/IPC
+level -- a problem that splitting into one script per instrument would
+make WORSE, not better: each instrument would need either its own MT5
+terminal instance (25 Wine-hosted terminals instead of 2, on a box
+already swapping at its cap with 2 vCPUs) or would still funnel through
+the SAME single terminal per account via the SAME mt5linux bridge, in
+which case splitting into separate processes changes nothing about the
+bridge's stability and only adds process-count overhead. Recorded so this
+specific proposal is not revisited without new evidence -- the honest
+open problem is terminal/bridge stability under memory pressure, not
+scan architecture.
+
+### RAISED BY THE OPERATOR, FROM A FRIEND RUNNING A COMPARABLE BOT
+
+Friend's own SLK-style bot runs on IC Markets via the cTrader Open API,
+not MT5. Quoted from the operator's conversation with them: "No call
+limit right? / They have rate limits for sure / But it's generous / And
+you can tell your ai to do research and work around it."
+
+WORTH TAKING SERIOUSLY, NOT YET ACTED ON. cTrader's Open API is a proper
+network protocol (JSON/Protobuf over a socket) that a Linux process talks
+to directly -- no Wine, no desktop terminal, no IPC bridge, none of which
+this deployment can currently keep stable under its own load. If Incident
+4 is confirmed as this deployment's primary remaining failure mode (looks
+likely), IC Markets + cTrader is a genuine structural fix to the exact
+class of bug that has caused two of today's incidents, not a lateral
+move. This is a real broker+execution-layer migration, not a config
+change -- new credentials, a new client library, and mt5_execution.py's
+retry/ambiguity/idempotency logic (all of the CHFJPY-triple-fill-derived
+safety rules) would need to be re-verified against cTrader's own
+semantics rather than assumed to carry over. Not started. Needs an
+explicit decision, not a unilateral rewrite, once the two incidents above
+are actually root-caused -- fixing MT5 stability and then discovering
+cTrader was unnecessary is a much cheaper mistake than migrating broker
+APIs and discovering the real bug was never MT5 at all.
