@@ -30,6 +30,8 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import sys
+import time
 
 from ..engine.runner import run_backtest
 from ..engine.trade_log import summarize
@@ -37,13 +39,24 @@ from ..engine.trade_log import summarize
 DEFAULT_VALUES = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
 
 
-def sweep(instruments: list[str], entry_style: str, stop_anchor: str,
-          cancel_at: float, min_reward_r: float, avoid_rollover: bool,
-          values: list[float], start_date=None, end_date=None) -> list[dict]:
-    rows = []
+def sweep_rows(instruments: list[str], entry_style: str, stop_anchor: str,
+               cancel_at: float, min_reward_r: float, avoid_rollover: bool,
+               values: list[float], start_date=None, end_date=None,
+               progress=None):
+    """Yields one result dict per departure value, as soon as ALL
+    instruments have been run for it -- not buffered until the whole
+    sweep finishes. At ~60s/instrument and up to 25 instruments per
+    value, a full grid can run for hours; a caller piping this to a log
+    file (this is meant to run detached, unattended, for exactly that
+    long) needs to see progress as it happens, not one table dump at the
+    very end after nothing appeared to happen for hours.
+
+    `progress`, if given, is called as progress(value, instrument, i, n)
+    after each instrument finishes -- for a finer-grained heartbeat than
+    one line per value, without polluting the actual result rows."""
     for v in values:
         all_records = []
-        for instrument in instruments:
+        for i, instrument in enumerate(instruments, 1):
             records = run_backtest(
                 instrument, entry_style,
                 avoid_rollover_entries=avoid_rollover,
@@ -55,29 +68,31 @@ def sweep(instruments: list[str], entry_style: str, stop_anchor: str,
                 start_date=start_date, end_date=end_date,
             )
             all_records.extend(records)
+            if progress is not None:
+                progress(v, instrument, i, len(instruments))
 
         stats = summarize(all_records)
         closed = [r for r in all_records if r.status in ("closed_win", "closed_loss", "closed_breakeven")]
         med_stop = statistics.median(r.risk_pips for r in closed) if closed else None
-        rows.append({
+        yield {
             "departure": v,
             "trades": stats["total_trades"],
             "win_rate": stats["win_rate"],
             "total_r": stats["total_r"],
             "avg_r": stats["avg_r"],
             "med_stop_pips": med_stop,
-        })
-    return rows
+        }
 
 
-def _print_table(rows: list[dict]) -> None:
-    print(f"{'departure':>9}  {'trades':>6}  {'win%':>6}  {'totalR':>8}  {'avgR':>6}  {'medStop':>8}")
-    for row in rows:
-        win_pct = f"{row['win_rate'] * 100:.1f}%" if row["win_rate"] is not None else "n/a"
-        med_stop = f"{row['med_stop_pips']:.1f}" if row["med_stop_pips"] is not None else "n/a"
-        avg_r = f"{row['avg_r']:.3f}" if row["avg_r"] is not None else "n/a"
-        print(f"{row['departure']:>9.2f}  {row['trades']:>6}  {win_pct:>6}  "
-              f"{row['total_r']:>8.1f}  {avg_r:>6}  {med_stop:>8}")
+def _format_row(row: dict) -> str:
+    win_pct = f"{row['win_rate'] * 100:.1f}%" if row["win_rate"] is not None else "n/a"
+    med_stop = f"{row['med_stop_pips']:.1f}" if row["med_stop_pips"] is not None else "n/a"
+    avg_r = f"{row['avg_r']:.3f}" if row["avg_r"] is not None else "n/a"
+    return (f"{row['departure']:>9.2f}  {row['trades']:>6}  {win_pct:>6}  "
+            f"{row['total_r']:>8.1f}  {avg_r:>6}  {med_stop:>8}")
+
+
+_HEADER = f"{'departure':>9}  {'trades':>6}  {'win%':>6}  {'totalR':>8}  {'avgR':>6}  {'medStop':>8}"
 
 
 def main():
@@ -98,13 +113,22 @@ def main():
     instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
     values = [float(v) for v in args.values.split(",") if v.strip() != ""]
 
-    rows = sweep(
+    start = time.monotonic()
+
+    def _progress(value, instrument, i, n):
+        elapsed = time.monotonic() - start
+        print(f"# [{elapsed / 60:6.1f}m elapsed] departure={value:.2f}: "
+              f"{instrument} done ({i}/{n})", file=sys.stderr, flush=True)
+
+    print(_HEADER, flush=True)
+    for row in sweep_rows(
         instruments, args.entry_style, args.stop_anchor,
         args.cancel_at, args.min_reward_r,
         avoid_rollover=not args.no_avoid_rollover,
         values=values, start_date=args.start_date, end_date=args.end_date,
-    )
-    _print_table(rows)
+        progress=_progress,
+    ):
+        print(_format_row(row), flush=True)
 
 
 if __name__ == "__main__":
