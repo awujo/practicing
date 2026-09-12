@@ -4243,3 +4243,77 @@ night). Give it real time and real signals, then compare
 `aggressive_shadow_0.0.db` against `aggressive_audit.db` -- same schema,
 directly comparable win rate / total R / fill timing, no backtest
 assumptions in between.
+
+## 2026-09-12 -- min_departure_r SWITCHED TO 0.8 (from 1.0), AND A
+## STANDALONE STALE-CACHE WATCHDOG.
+
+The finer sweep (finally) completed -- full 25-instrument grid, `.00` to
+`1.00` in 0.1 steps, aggressive/trigger_wick/avoid_rollover/min_reward_r=1.0
+(exactly live's real parameters):
+
+  departure  trades   win%   totalR   avgR  medStop
+       0.00    9034   41.9%   5814.3  0.644      8.2
+       0.10    8910   44.9%   6748.5  0.757      8.2
+       0.20    8881   45.3%   6872.7  0.774      8.2
+       0.30    8840   46.0%   7071.1  0.800      8.1
+       0.40    8785   46.5%   7195.4  0.819      8.0
+       0.50    8692   47.3%   7407.8  0.852      8.0
+       0.60    8560   47.9%   7504.9  0.877      7.8
+       0.70    8398   48.6%   7613.3  0.907      7.6
+       0.80    8213   49.1%   7663.8  0.933      7.5
+       0.90    8031   49.5%   7646.5  0.952      7.3
+       1.00    7837   50.1%   7663.8  0.978      7.1
+
+Two findings, both against the operator's original two claims:
+
+1. Operator was right that 1.0 was stricter than necessary: total R goes
+   completely FLAT from 0.80 to 1.00 (7663.8 both times, identical to one
+   decimal), while trade count keeps falling the whole way (8213 -> 7837,
+   -376 trades) for that flat stretch. 0.80 strictly dominates 1.00 --
+   same profit, more entries taken. No reason to keep 1.0.
+2. The operator's original ask ("immediate," 0.0) was still the worst
+   point on the whole curve, and by a lot -- 0.00 to 0.10 alone is the
+   single biggest jump on the table (totalR 5814.3 -> 6748.5, +16.1%,
+   for a 1.4% trade-count cost). Immediate placement is confirmed bad at
+   full scale (25 instruments, up to 23 years of history per instrument
+   -- EURUSD/XAUUSD cache back to 2003, US30 to 2012), not just the
+   earlier 3-instrument spot check.
+
+Deployed: `launch_bot2.sh`'s `--min-departure-r` changed 1.0 -> 0.8,
+confirmed live via `ps aux` showing the new value in the running process
+command line. `min_departure_r=0.0` continues running in parallel as a
+`ShadowBook` (paper only, per the entry above) so the operator's original
+idea keeps getting validated against live data going forward, not just
+this one backtest.
+
+Also built, per direct request ("is there a way we have a clock that
+checks if any pair is stale... if any stale is detected it sends it to
+Telegram"): `bot/check_staleness.py`, a standalone cron-fired watchdog.
+Explicitly told the operator up front this does NOT fix staleness -- it
+is a smoke detector for it, so the next stale-candle incident is caught
+immediately instead of discovered after a bad trade attempt, the way
+every prior one was.
+
+Deliberately a SEPARATE process, not a method on LiveBot: if a hung or
+crash-looping bot process is what caused the staleness, a check living
+inside that same process could get stuck with it. Reads the cache files
+directly (`cache.last_cached_time()`), holds no MT5 connection, and knows
+the weekend market-closed window (duplicated from
+`orchestrator._market_closed_for_weekend`'s exact rule rather than
+imported, so this stays independent of orchestrator.py's MT5-facing
+imports) so it doesn't false-alarm every Friday night through Sunday.
+12 new tests, full suite 439 passed / 6 skipped.
+
+Also flagged directly to the operator: their own pasted `ps aux` output
+this session included the live MT5 password and Telegram bot token in
+plaintext. The MT5 one is a demo account; the Telegram bot token is a
+live credential and worth rotating via @BotFather regardless.
+
+Deploy: a wrapper script (`/srv/slk-bot/check_staleness.sh`), not a raw
+crontab line -- crontab entries can't span multiple lines, and this
+command needs both an env var and a nested command substitution for the
+instrument list. Cron just calls the script every 15 minutes.
+
+NOT done tonight: nothing about this watchdog reduces the algorithmic 60%
+of run_backtest()'s cost, or adds concurrency -- both still open, both
+still deferred to a dedicated session (see the last several entries).

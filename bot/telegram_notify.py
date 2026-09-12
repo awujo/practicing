@@ -165,6 +165,27 @@ class TelegramHandler(logging.Handler):
         super().close()
 
 
+def send_message(token: str, chat_id: str, text: str) -> bool:
+    """One-shot best-effort Telegram send for callers that are NOT a
+    long-running process attaching a logging.Handler -- a cron-fired
+    script like check_staleness.py, which starts, sends at most one
+    message, and exits, so TelegramHandler's queue/rate-limit/backoff
+    state (meant to survive across many calls over a long-lived process)
+    would be pure overhead here. Never raises; returns whether it
+    appeared to succeed. A failure is not retried -- the next cron tick
+    is the retry."""
+    payload = json.dumps({"chat_id": chat_id, "text": text}).encode()
+    req = urllib.request.Request(
+        TELEGRAM_API.format(token=token), data=payload,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        urllib.request.urlopen(req, timeout=10).read()
+        return True
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        _internal_logger.warning("failed to deliver one-shot Telegram notification: %s", exc)
+        return False
+
+
 def attach_if_configured(level=logging.WARNING) -> TelegramHandler | None:
     """Wires a TelegramHandler onto the "bot" logger if TELEGRAM_BOT_TOKEN
     and TELEGRAM_CHAT_ID are both set in the environment; otherwise a
