@@ -4060,3 +4060,76 @@ multiple instruments' searches run concurrently within one run_once()
 iteration instead of strictly sequentially. Not started -- this changes
 the live loop's core scheduling and deserves a clear decision point
 before writing it, not a unilateral change.
+
+## 2026-09-11, 23:55 -- Shipped the safe 29%: candle caching. The other
+## 60% (and the actual multi-instrument pileup from tonight's diagram)
+## is still open, and honestly scoped as such
+
+From the profile: `load_candles()` (candles.py) cost 34.5s of a
+120s-under-cProfile / 73s-real call -- ~29% -- entirely spent re-reading
+and re-parsing D/H4/H1/W CSV files that had not changed since the
+previous call. `sync_recent_from_mt5()` only appends to these files once
+an hour; nothing justified paying `pandas.read_csv` plus a
+half-million-row `Candle(...)` listcomp again on every call in between.
+
+Added an in-process cache to `load_candles()`, keyed by the resolved file
+PATH (not by source/symbol/granularity -- tests monkeypatch DATA_ROOT per
+test, so the same symbol name can resolve to a different file across
+tests, and keying by the tuple alone would leak one test's cache into
+another's) and invalidated by (size, mtime) -- one cheap `os.stat()` per
+call, a full re-read only when the file has actually changed. Returns a
+fresh list on every call (a shallow copy when served from the cache) so
+no caller can corrupt what the next one sees by mutating what it got
+back.
+
+Verified two ways: 6 new tests in `backtest/engine/tests/test_candles.py`
+covering the caching behavior itself (skips re-parsing when unchanged,
+picks up a real change, never leaks a mutation between calls, missing
+files still raise), and the FULL existing suite (431 tests across
+backtest/engine, backtest/data_pipeline, bot) passes bit-identical --
+proof this changes nothing about which trades get selected, only how
+often the same unchanged bytes get re-parsed. The bit-identical-output
+standard matches how the 2026-08-26 optimization was verified.
+
+WHAT THIS DOES NOT FIX, stated plainly so it isn't mistaken for solving
+tonight's diagram: `run_backtest()`'s own once-per-hour call for a given
+instrument still pays full price, because by the time it's called the
+underlying file HAS genuinely changed that hour (a new candle was
+synced) -- the cache correctly detects that and re-parses; that is not
+wasted work. So the exact mechanism the "Why Signals Arrive Late"
+diagram named -- several instruments' Daily/H4 bias aligning in the SAME
+poll, each needing its own ~40-70s-post-fix (was 54-73s) fresh replay,
+stacked sequentially on one thread -- is UNTOUCHED by tonight's fix. That
+remains open, and deliberately so: fixing it means either reducing the
+OTHER ~60% of the profiled cost (`_unswept_period_extremes`,
+`is_swing_high` and its 1.4M calls to `all()`, `detect_confirmations`,
+`bias_at` -- real strategy logic whose cost scales with accumulated
+history, not incidental waste) or running multiple instruments'
+replays concurrently (safe w.r.t. the MT5 connection specifically,
+since run_backtest() makes no bridge calls at all -- see the previous
+entry -- but real strategy-adjacent code and a scheduling change,
+neither of which belongs in a 1am add-on to tonight's session).
+
+The clearest immediate beneficiary of tonight's fix is a path that did
+NOT exist before this session: `_candles_since()` (used by
+`_reconcile_pending_entries` and the new `_reconcile_awaiting_departure`)
+re-reads the SAME H1 file on EVERY 5-SECOND POLL for every resting or
+awaiting-departure signal. Before tonight's min_departure_r feature, that
+was one extra reload per pending order; now that signals can sit in
+`awaiting_departure` for hours, that same file could have been
+re-parsed from scratch every 5 seconds for as long as it waited. This
+fix removes essentially all of that cost, and it matters more now than
+it would have last week specifically because of the feature built
+earlier tonight.
+
+NEXT (both un-started, both need a clear-headed session, not this one):
+  1. Profile-guided reduction of the algorithmic 60% -- is_swing_high's
+     458,082 calls (1.4M calls to builtins.all()) looks like the
+     single most promising target, but touching trade-selection logic
+     needs the full test suite plus a bit-identical-output check the
+     same way this fix and the 2026-08-26 optimization were verified,
+     not a guess.
+  2. A small process pool so multiple instruments' full replays can run
+     concurrently within one run_once() iteration, bounded by vCPU count
+     (2 today -> at most 2 at once; more if the VPS is resized, which is
+     already being evaluated for the swap/load question).
