@@ -4133,3 +4133,44 @@ NEXT (both un-started, both need a clear-headed session, not this one):
      concurrently within one run_once() iteration, bounded by vCPU count
      (2 today -> at most 2 at once; more if the VPS is resized, which is
      already being evaluated for the swap/load question).
+
+## 2026-09-12 -- OPERATOR PUSHED BACK ON min_departure_r=1.0: FINER SWEEP
+## TOOL BUILT, NOT YET RUN ON REAL DATA.
+
+Operator's objection, in their own words: requiring a full 1R travel
+before a limit order even rests refuses real "sniper" entries -- their
+experience is that price often retraces to the level on the very next
+candle, well under 1R away, and a hard 1.0 requirement throws those out.
+This is a specific, checkable claim, not a vibe -- it deserves a real
+sweep, not a rerun of last night's yes/no comparison.
+
+The 2026-09-02 entry (above) only sampled four points under the OLD
+stop-anchor pairing: 0.0 (738R, 42.0%), 0.5 (948.5R, 47.6%), 1.0 (991.3R,
+50.6%), 1.5 (929.3R, 52.7%). That 0.5 point already suggests a middle
+ground -- 1082 trades (vs 1137 at 0.0, vs 991 at 1.0) capturing MOST of
+0.0's entry volume while recovering most of 1.0's quality gain -- but it
+was never re-measured against the CURRENT live pairing (trigger_wick +
+avoid_rollover_entries=True + min_reward_r=1.0, i.e. exactly what
+orchestrator.py's run_backtest() call actually uses day to day).
+
+Built `backtest/tools/sweep_departure.py`: sweeps min_departure_r at
+0.0-1.0 in steps of 0.1 (finer than the four spot-checks), using that
+exact live parameter set, entry_fill="limit", cancel_at_target_fraction
+matching TARGET_ACHIEVED_FRACTION (0.8). Reuses `run_backtest()` and
+`trade_log.summarize()` as-is -- no new backtest logic, just a wider grid
+over the existing, already-validated one.
+
+NOT YET RUN against real data: this sandbox's `backtest/data/dukascopy/`
+holds only `.lock` sidecar files, no actual cached CSVs (same limitation
+hit twice already this week for the timing scripts) -- `run_backtest()`
+silently returns zero trades rather than erroring, which is expected here,
+not a bug in the new tool. Needs to run on the VPS, where the real cache
+lives:
+
+    docker exec -u abc -w /config/trading mt5 python3 -m backtest.tools.sweep_departure \
+        --instruments $(grep -oP '(?<=--instruments )\S+' /srv/slk-bot/launch_bot2.sh) \
+        --stop-anchor trigger_wick
+
+Until that comes back, no config change follows from this -- the operator
+has not yet been shown data at finer resolution than 0.5 vs 1.0, so
+"revert to immediate" and "keep 1.0" are both premature calls right now.
