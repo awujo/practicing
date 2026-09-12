@@ -4174,3 +4174,72 @@ lives:
 Until that comes back, no config change follows from this -- the operator
 has not yet been shown data at finer resolution than 0.5 vs 1.0, so
 "revert to immediate" and "keep 1.0" are both premature calls right now.
+
+## 2026-09-12 -- SHADOW BOOK: PAPER-TRADE THE OPERATOR'S OWN IDEA LIVE,
+## NEVER TOUCHING MT5, SIDE BY SIDE WITH THE REAL DEPLOYED BEHAVIOR.
+
+Operator, verbatim, after the backtest-sweep response: "I never hit mt5
+for a real trade because im finding it hard to believe your numbers with
+my experience with SLK already." Fair -- a backtest's own assumptions
+(H1 resolution, no intrabar sequencing, per the 2026-09-02 entry's own
+caveat) are exactly the kind of thing a live comparison can catch that a
+backtest cannot. Direct request: track the operator's own idea (immediate
+placement) forward on real incoming candles, storing it in a DB and
+posting to Telegram exactly like a real trade -- entry, fill or no fill,
+stop or target -- but never actually placing anything at the broker.
+
+Built `bot/shadow_book.py` (`ShadowBook`), wired into `LiveBot` via a new
+`shadow_books` field (empty tuple by default -- opt-in only) and a new
+`--shadow-departure-r` flag on `run_live.py`. Design constraints, in order
+of how much they mattered:
+
+  1. MUST NOT be able to reach MT5. A ShadowBook holds no reference to
+     mt5_exec or mt5_client at all -- not "doesn't call it," CANNOT call
+     it, there is no such attribute on the object. Verified by a test
+     that asserts neither attribute exists.
+  2. MUST NOT add to the CPU cost `run_backtest()` already spends (54-73s/
+     instrument, see the last two log entries). Achieved by hooking the
+     shadow book onto the `fresh` signal list `_check_instrument()`
+     already computes from the ONE real `run_backtest()` call -- no
+     second call, ever. Per-poll reconciliation after that is a plain
+     Python loop over "candles since the signal," not a strategy replay,
+     and skips `load_candles()` entirely for any instrument with nothing
+     being tracked.
+  3. MUST reuse tested fill/outcome logic rather than re-derive it.
+     Reuses `_resting_limit_outcome()` and `_resolve_trade_outcome()`
+     from `backtest/engine/runner.py` verbatim -- the exact functions the
+     backtest itself already relies on to simulate a resting limit's fill
+     point and a filled trade's stop/target race. `check_setup()` was
+     considered instead and rejected: its `revisited` flag doesn't
+     distinguish "revisited before departure" from "revisited after,"
+     which is exactly the ambiguity that would matter most for a
+     min_departure_r=0.0 vs 1.0 comparison.
+  4. MUST be directly comparable to the real audit data. Writes through
+     the SAME `AuditLog`/`DecisionRecord` schema real trades use, to a
+     separate db (`<audit-db-stem>_shadow_<value>.db`), and logs via
+     `logging.getLogger("bot.shadow_book")` -- a child of the "bot"
+     logger telegram_notify.py already listens on, so it reaches the
+     same Telegram chat automatically, tagged `[SHADOW:<value>]`. No new
+     Telegram wiring needed.
+
+NOT modeled, documented rather than silently wrong: an already-"filled"
+shadow trade is not force-closed at the weekend flatten the way a real
+position would be -- it keeps walking forward through Monday's candles.
+Rare (weekly at most) and visible in the data (an open shadow trade
+spanning a weekend gap), not hidden.
+
+11 new tests (`bot/tests/test_shadow_book.py`), all synthetic candles, no
+real cache needed. Full suite: 427 passed, 6 skipped (pre-existing).
+
+Deploy (adds ONE flag to bot2's existing launch command -- no new
+process, no new systemd unit, since this runs inside the same LiveBot
+that already produces the signals):
+
+    --shadow-departure-r 0.0
+
+Runs the operator's own idea (immediate placement) forward for real,
+next to whatever --min-departure-r is actually deployed (1.0 as of last
+night). Give it real time and real signals, then compare
+`aggressive_shadow_0.0.db` against `aggressive_audit.db` -- same schema,
+directly comparable win rate / total R / fill timing, no backtest
+assumptions in between.

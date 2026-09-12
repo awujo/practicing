@@ -216,6 +216,11 @@ class LiveBot:
     # Where the stop is anchored -- passed straight through to
     # run_backtest(). Default keeps the long-standing behavior.
     stop_anchor: str = "trigger_wick"
+    # Paper-traded alternate-parameter variants, run on the exact signals
+    # this bot already produces -- see shadow_book.py's module docstring.
+    # Empty by default (opt-in at the wiring site, same convention as
+    # entry_order_type/min_departure_r above). Never touches mt5_exec.
+    shadow_books: tuple = ()
 
     risk_manager: RiskManager = field(init=False)
     day_start_balance: float = field(init=False)
@@ -354,6 +359,10 @@ class LiveBot:
             self._reconcile_awaiting_departure(state)
         except Exception:
             logger.exception("awaiting-departure reconcile failed; continuing")
+        try:
+            self._reconcile_shadow_books()
+        except Exception:
+            logger.exception("shadow-book reconcile failed; continuing")
 
         # Flatten before the health gate too: a halt stops new entries, it
         # does not license carrying positions through a closed weekend.
@@ -522,6 +531,16 @@ class LiveBot:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:
             fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
+
+        # Shadow variants watch every fresh signal regardless of what the
+        # real path below decides to do with it -- including one this bot
+        # is about to decline as stale, since a variant with a different
+        # cutoff or departure requirement disagreeing with that decision
+        # is exactly the comparison they exist to surface.
+        for book in self.shadow_books:
+            for record in fresh:
+                book.consider(instrument, record)
+
         # A resting limit does not care how late it was placed, so the
         # time-based gate relaxes to a backstop and check_setup() decides
         # -- see STALE_ENTRY_CUTOFF_LIMIT.
@@ -879,6 +898,18 @@ class LiveBot:
                 continue
             self._place_limit_entry(instrument, awaiting.record, state, awaiting.risk,
                                     awaiting.lot_size, awaiting.direction, awaiting.base_fields)
+
+    def _reconcile_shadow_books(self):
+        """Advance every paper-traded variant by whatever candles have
+        newly arrived. No-op (does not even read the cache) when
+        shadow_books is empty -- the default -- so this costs nothing
+        for every bot that hasn't opted in."""
+        if not self.shadow_books:
+            return
+        weekend = self._weekend_is_close()
+        for book in self.shadow_books:
+            for instrument in self.instruments:
+                book.reconcile(instrument, weekend)
 
     def _weekend_close_at(self, now) -> datetime:
         """The next Friday 17:00 New York, as UTC.

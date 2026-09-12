@@ -56,7 +56,8 @@ from .config import load_personal_profile, load_prop_firm_profile
 from .audit_log import AuditLog
 from .mt5_data import MT5Client
 from .mt5_execution import MT5Execution
-from .orchestrator import LiveBot
+from .orchestrator import LiveBot, STALE_ENTRY_CUTOFF_LIMIT
+from .shadow_book import ShadowBook
 from .telegram_notify import attach_if_configured
 
 POLL_SECONDS = 5  # how often run_once() checks for a new candle close -- cheap when nothing's happened
@@ -134,6 +135,17 @@ def main():
                               "without it, mt5.initialize() falls back to whatever terminal MT5 finds by default, "
                               "which silently connects to the WRONG account rather than failing loudly. Not needed "
                               "when only one terminal is installed.")
+    parser.add_argument("--shadow-departure-r", default="",
+                         help="comma-separated min_departure_r values to PAPER-TRADE alongside "
+                              "the real --min-departure-r above, on the exact same signals this "
+                              "bot already produces -- NEVER sent to MT5, no order is ever placed, "
+                              "cancelled or closed for these. e.g. '0.0' tracks what would have "
+                              "happened if the order rested immediately, side by side with "
+                              "whatever --min-departure-r actually does. Each value gets its own "
+                              "'<audit-db-stem>_shadow_<value>.db' (same schema as --audit-db, "
+                              "directly comparable) and logs through the same Telegram channel, "
+                              "tagged [SHADOW:<value>] so it can never be mistaken for a real "
+                              "trade. See shadow_book.py.")
     parser.add_argument("--audit-db", default="bot_audit_log.db")
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument("--telegram-level", default="WARNING", choices=("INFO", "WARNING", "ERROR"),
@@ -205,11 +217,26 @@ def main():
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 
+    db_stem = os.path.splitext(args.audit_db)[0]
+    shadow_books = []
+    for raw in args.shadow_departure_r.split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        shadow_books.append(ShadowBook(
+            name=raw, min_departure_r=float(raw),
+            audit_log=AuditLog(f"{db_stem}_shadow_{raw}.db"),
+            stale_cutoff=STALE_ENTRY_CUTOFF_LIMIT,
+        ))
+        logger.info("shadow variant enabled: min_departure_r=%s -> %s_shadow_%s.db "
+                    "(paper only, never reaches MT5)", raw, db_stem, raw)
+
     bot = LiveBot(profile=profile, mt5_client=mt5_client, mt5_exec=mt5_exec,
                    audit_log=audit_log, instruments=instruments, entry_style=args.style,
                    entry_order_type=args.entry_order_type,
                    min_departure_r=args.min_departure_r,
-                   stop_anchor=args.stop_anchor)
+                   stop_anchor=args.stop_anchor,
+                   shadow_books=tuple(shadow_books))
 
     logger.info("starting live loop: %s, instruments=%s", args.account_type, instruments)
     try:
@@ -228,6 +255,8 @@ def main():
     finally:
         mt5_client.disconnect()
         audit_log.close()
+        for book in shadow_books:
+            book.audit_log.close()
 
 
 if __name__ == "__main__":
