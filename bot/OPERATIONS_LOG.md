@@ -4317,3 +4317,77 @@ instrument list. Cron just calls the script every 15 minutes.
 NOT done tonight: nothing about this watchdog reduces the algorithmic 60%
 of run_backtest()'s cost, or adds concurrency -- both still open, both
 still deferred to a dedicated session (see the last several entries).
+
+## 2026-09-13 -- TESTING (not yet deciding) A BOUNDED TRAILING HISTORY
+## WINDOW, PER OPERATOR SUGGESTION.
+
+Operator's own proposal, verbatim: "we don't need data up to 2003 to
+know what a pair is currently on... 2 years [of Weekly/Daily] can tell
+you what you want unless it doesn't, [then] the system can add an extra
+year... For the 4H to the 1H... a year worth... if it doesn't, add extra
+6 months." Direct, correct read of the actual bottleneck: EURUSD/XAUUSD's
+cache goes back to 2003 (155k/144k H1 candles), and the ~60% algorithmic
+share of run_backtest()'s cost that's been deferred all week scales with
+exactly that.
+
+This is not a new idea in this project -- an earlier fix's own writeup
+already said "no check needs 2003's H1 candles re-walked to know what
+the current H1 just did" and sketched "warm up once from full history,
+checkpoint to disk, then feed one candle at a time," but never built it.
+What shipped instead (the storyline gate) only skips CALLING
+run_backtest() when not hunting -- it does nothing to the replay's own
+cost once it does run.
+
+There is also an explicit standing warning against the naive version of
+this, in run_backtest()'s own docstring: start_date/end_date "is NOT a
+data-loading window... narrowing the loaded data itself would silently
+break bias-building, alignment, and stacking context." So this is being
+TESTED, not assumed safe or unsafe either way, per direct instruction
+("test firstly and also compare it if you started from 2003... see what
+the 2 results will look like").
+
+Found supporting evidence the idea is at least directionally sound: key
+level/liquidity search is ALREADY bounded to "the current structural leg
+since the previous breakout" -- an explicit existing comment reads "a
+level from years before the market's last major direction change was
+never really 'still in play' for this setup." The strategy's own logic
+already agrees old history mostly doesn't matter; the open question is
+only how far back the BIAS CASCADE genuinely needs to walk to bootstrap
+the CORRECT current state, not whether it needs 2003.
+
+Built `backtest/tools/compare_history_window.py`: monkeypatches the
+candle loader `run_backtest()` calls so it serves only a trailing window
+per granularity (Daily/Weekly get one window, H4/H1 another, matching
+the operator's own split), runs full-history and windowed variants of
+the SAME instrument, and diffs every trade whose entry falls in a
+"recent" period (default last 2 years -- the only period a live decision
+actually is) between the two. Identical trades = safe at that window
+size. Any mismatch is printed with the full trade detail on both sides,
+not just a count, so a real divergence is diagnosable, not just
+detected.
+
+10 new tests (`backtest/tools/tests/test_compare_history_window.py`),
+including two genuine end-to-end runs against test_runner.py's own
+synthetic_cache fixture: a generous window reproduces the fixture's one
+trade bit-for-bit (proves the patch mechanism is inert when it should
+be), and a deliberately too-short window (1 day) loses the trade
+entirely (proves the tool can actually detect a real divergence, not
+just always report "identical"). Full suite: 449 passed, 6 skipped.
+
+NOT YET RUN against real data -- needs the VPS. Deploy:
+
+    docker exec -u abc -w /config/trading mt5 nice -n 19 python3 -m backtest.tools.compare_history_window \
+        --instruments EURUSD,GBPJPY,US30 \
+        --dw-years 2 --h-years 1 --recent-years 2
+
+Starting with 3 instruments (one very long history, one mid, one
+index-limited to 2012) rather than all 25 -- this is a correctness
+check first, not the full sweep; broaden once the shape of the answer
+is known. NOT yet implementing the operator's adaptive "add more time if
+it doesn't confirm" escalation -- that requires deciding what "doesn't
+confirm" means algorithmically (run_backtest() already signals ONE clear
+case, returning [] when no confirmed structure exists to bootstrap a
+bias from, but a truncated window could also produce a WRONG bias
+non-emptily, which an empty-check alone would not catch) -- exactly the
+kind of silent failure mode this comparison is meant to surface before
+any escalation logic gets built on top of an unverified assumption.
