@@ -33,14 +33,14 @@ def make_profile():
                            phases={"phase1": PhaseConfig(rules=RULES, credentials=CREDS)})
 
 
-def make_bot(fake, tmp_path, instruments=("EURUSD",)):
+def make_bot(fake, tmp_path, instruments=("EURUSD",), **extra):
     fake.symbols.setdefault("EURUSD", make_symbol_info(point=0.0001))
     client = MT5Client(fake, login=1, password="pw", server="Demo", server_utc_offset=pd.Timedelta(0))
     client.connect()
     execu = MT5Execution(fake)
     audit = AuditLog(str(tmp_path / "audit.db"))
     return LiveBot(profile=make_profile(), mt5_client=client, mt5_exec=execu,
-                    audit_log=audit, instruments=instruments), audit, client
+                    audit_log=audit, instruments=instruments, **extra), audit, client
 
 
 @contextmanager
@@ -353,6 +353,49 @@ def test_check_instrument_always_asks_run_backtest_for_both_live_safety_filters(
     mock_rb.assert_called_once()
     assert mock_rb.call_args.kwargs.get("avoid_rollover_entries") is True
     assert mock_rb.call_args.kwargs.get("min_reward_r") == 1.0
+
+
+def test_check_instrument_passes_default_origin_and_history_settings(tmp_path):
+    """Defaults must reach run_backtest() unchanged -- matches every
+    behavior before 2026-09-13."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": entry_time})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]) as mock_rb:
+        bot.run_once()
+
+    assert mock_rb.call_args.kwargs.get("origin_kind") == "sweep_break"
+    assert mock_rb.call_args.kwargs.get("close_based_sweep_break") is False
+    assert mock_rb.call_args.kwargs.get("max_history_years") is None
+
+
+def test_check_instrument_passes_configured_origin_and_history_settings(tmp_path):
+    """A configured origin_kind/close_based_sweep_break/history_window_years
+    must actually reach run_backtest() -- and the per-instrument window
+    lookup must be keyed by the instrument being checked, not passed
+    wholesale (an instrument missing from the dict gets None, i.e.
+    uncapped, not a KeyError)."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(
+        fake, tmp_path, origin_kind="any", close_based_sweep_break=True,
+        history_window_years={"EURUSD": {"D": 8, "W": 8, "H4": 4, "H1": 4},
+                               "GBPJPY": {"D": 10, "W": 10, "H4": 5, "H1": 5}},
+    )
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": entry_time})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]) as mock_rb:
+        bot.run_once()
+
+    assert mock_rb.call_args.kwargs.get("origin_kind") == "any"
+    assert mock_rb.call_args.kwargs.get("close_based_sweep_break") is True
+    assert mock_rb.call_args.kwargs.get("max_history_years") == {"D": 8, "W": 8, "H4": 4, "H1": 4}
 
 
 # ---- health-based circuit breaker ----

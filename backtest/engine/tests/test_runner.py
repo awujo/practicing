@@ -11,6 +11,7 @@ from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
     _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme, _bootstrap_origin,
+    _trim_to_recent_years,
 )
 from ..structure import StructureEvent
 from ..bias import Confirmation, ConfirmationKind
@@ -1312,3 +1313,56 @@ def test_run_backtest_close_based_sweep_break_true_runs_end_to_end(synthetic_cac
     records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
                             close_based_sweep_break=True)
     assert isinstance(records, list)
+
+
+# --- max_history_years -------------------------------------------------
+#
+# The production version of compare_history_window.py's monkeypatched
+# windowed_loader() -- see bot/OPERATIONS_LOG.md, 2026-09-13, for the
+# per-instrument escalation search that has to confirm any real value
+# used here before it's trusted.
+
+def test_trim_to_recent_years_keeps_only_the_trailing_window():
+    candles = [D(i, 1, 1, 1, 1) for i in range(5 * 365)]   # D() from this file: one candle/day
+    trimmed = _trim_to_recent_years(candles, 1.0)
+    assert trimmed[0].time == candles[-1].time - pd.Timedelta(days=365)
+    assert trimmed[-1].time == candles[-1].time
+
+
+def test_trim_to_recent_years_is_a_noop_for_none_or_zero():
+    candles = [D(i, 1, 1, 1, 1) for i in range(10)]
+    assert _trim_to_recent_years(candles, None) == candles
+    assert _trim_to_recent_years(candles, 0) == candles
+
+
+def test_trim_to_recent_years_handles_an_empty_list():
+    assert _trim_to_recent_years([], 2.0) == []
+
+
+def test_run_backtest_max_history_years_none_matches_default(synthetic_cache):
+    """None is the default -- passing it explicitly must be a no-op."""
+    default = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    explicit_none = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                                  max_history_years=None)
+    assert default == explicit_none
+
+
+def test_run_backtest_max_history_years_generous_window_matches_default(synthetic_cache):
+    """The fixture's whole span is under a month -- a 5-year cap on every
+    granularity can't possibly cut anything, so this must reproduce the
+    unpatched baseline bit-for-bit."""
+    default = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    generous = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                             max_history_years={"D": 5, "W": 5, "H4": 5, "H1": 5})
+    assert default == generous
+
+
+def test_run_backtest_max_history_years_too_short_loses_the_origin(synthetic_cache):
+    """Same fixture used in test_a_window_too_short_to_see_the_origin_breakout_loses_the_trade
+    (compare_history_window.py's own tests) -- capping Daily to 1 day cannot
+    see the day-8 breakout, so this must return no trades, the same way
+    `if first_origin is None: return []` already does for real."""
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                            max_history_years={"D": 1 / 365, "W": 1 / 365,
+                                                "H4": 1 / 365, "H1": 1 / 365})
+    assert records == []

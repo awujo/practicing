@@ -4630,3 +4630,99 @@ compare_origin_kind.py and/or compare_history_window.py with the new
 flag). Safe to run alongside the origin_kind-only comparisons already
 in flight -- same read-only, shared-lock, niced pattern as every other
 tool tonight.
+
+## 2026-09-13 -- FULL 25-INSTRUMENT RESULTS, THREE OUTLIERS ESCALATED,
+## AND max_history_years SHIPPED TO PRODUCTION.
+
+Ran the fixed 2y/1y window (origin_kind=any, close_based_sweep_break=True)
+across all 25 real instruments (not just the 3 sampled before). Zero
+instruments returned zero trades -- the origin_kind fix's catastrophic
+failure mode is confirmed gone across the board. 4 converged perfectly
+at 2y/1y outright: USDJPY, EURJPY, US30, JP225. Most of the rest landed
+84-98% match with a handful of near-boundary edge trades, same character
+as EURUSD/GBPJPY's earlier results. One real outlier: GBPNZD, only 71%
+match AND 29 extra fabricated trades not in real history (73 vs 62 real)
+-- qualitatively different from everything else, not just noisier.
+GBPAUD (84%) and NAS100 (85%) were the next-worst, worth individual
+escalation.
+
+Escalated all three outliers individually (same method, same
+origin_kind=any + close_based_sweep_break=True):
+
+  GBPAUD:  converged at D/W=9y,  H4/H1=4.5y -- clean.
+  NAS100:  converged at D/W=11y, H4/H1=5.5y -- clean.
+  GBPNZD:  NEVER converged, even at the 15y cap. Plateaus at 61/62
+           (98.4%) from 10y onward and stays there -- one single trade
+           (2025-03-31) needs more than 15 years to resolve. Not broken,
+           just genuinely needs more runway than any other tested
+           instrument, indefinitely.
+
+Decision: GBPNZD is excluded from the production config entirely (runs
+on full, uncapped history, same as any instrument not yet individually
+confirmed) rather than deployed at a known-imperfect 15y cap. One
+instrument staying slow does not meaningfully hurt the overall
+staleness goal; deploying a value known not to fully converge, on live
+capital, is not worth the marginal speedup.
+
+**Shipped to production** (previously this was all backtest-only
+tooling; this is the first change that touches the live bot's own
+decision path):
+
+  - `run_backtest()` gains `max_history_years` -- a real (not
+    monkeypatched) trailing-window cap per granularity, applied right
+    after loading candles and before any replay begins. None (default)
+    is fully unbounded, unchanged from every behavior before tonight.
+  - `LiveBot` gains `origin_kind`, `close_based_sweep_break`, and
+    `history_window_years` (an instrument -> window dict), all
+    defaulting to today's exact behavior, threaded straight through to
+    the one `run_backtest()` call in `_check_instrument()`.
+  - `run_live.py` gains `--origin-kind`, `--close-based-sweep-break`,
+    and `--history-windows-config PATH` (a JSON file, instrument ->
+    {D,W,H4,H1: years}).
+  - `bot/history_windows.json`: the 8 instruments actually confirmed by
+    an escalation search tonight (EURUSD 8y/4y, GBPJPY 10y/5y, US30
+    2y/1y, GBPAUD 9y/4.5y, NAS100 11y/5.5y, USDJPY/EURJPY/JP225 2y/1y).
+    The other 17 real instruments are deliberately NOT in this file --
+    their individual escalations haven't been run yet, so they stay on
+    full history (safe by construction) until they are.
+
+9 new tests (3 in test_runner.py for `_trim_to_recent_years`/
+`max_history_years`, 2 in test_orchestrator.py confirming the new
+LiveBot fields actually reach the `run_backtest()` call with the right
+per-instrument lookup, 5 guarding `history_windows.json`'s own shape
+against a bad hand-edit -- not a claim its values are correct, that's
+what the escalation search is for). 478 passed, 6 skipped.
+
+**THESE THREE THINGS MUST BE DEPLOYED TOGETHER, NOT max_history_years
+ALONE.** The safe windows in history_windows.json were only ever
+measured under origin_kind=any + close_based_sweep_break=True. Deploying
+the window caps against today's live sweep_break/wick-based settings
+would be running a configuration nobody has actually tested.
+
+**THIS DATA IS NOT PERMANENT -- RECHECK PERIODICALLY.** Every number in
+`history_windows.json` was measured against real cached history up to
+2026-09-13. Nothing about the mechanism prevents these from silently
+becoming insufficient as real time moves forward and new market
+structure accumulates -- GBPJPY needing 10 years today doesn't
+guarantee 10 years stays enough in a year, the same way a naive first
+guess of 2 years wasn't enough for it today. Concretely:
+  - Re-run `compare_history_window.py`'s escalation search for every
+    instrument in `history_windows.json` at least every 6 months.
+  - Also re-run it immediately after ANY change to the strategy logic
+    in `structure.py`, `bias.py`, or `runner.py` -- a logic change can
+    shift where the origin/break events fall, invalidating a
+    previously-confirmed window without any calendar time passing at
+    all.
+  - The 17 instruments NOT yet in the file should have their own
+    escalation run before being added -- do not extrapolate another
+    instrument's confirmed window onto a new one.
+  - GBPNZD specifically should be re-tried periodically too: it may
+    simply need a higher cap than 15y (untested), or it may never
+    converge to a bounded window at all -- worth knowing either way
+    before assuming it's permanently stuck on full history.
+
+NOT YET DONE: actually deploying this to the live bots (adding
+`--origin-kind any --close-based-sweep-break --history-windows-config
+bot/history_windows.json` to launch_bot1.sh/launch_bot2.sh) -- built and
+tested, not yet turned on live. That's a deliberate separate step given
+how much shipped in this one session already.

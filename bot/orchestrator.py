@@ -221,6 +221,22 @@ class LiveBot:
     # Empty by default (opt-in at the wiring site, same convention as
     # entry_order_type/min_departure_r above). Never touches mt5_exec.
     shadow_books: tuple = ()
+    # How the first Daily/Weekly bias is bootstrapped and whether a
+    # sweep+break's own level is wick- or close-based -- passed straight
+    # through to run_backtest(). Defaults match every behavior before
+    # 2026-09-13; see run_backtest()'s own docstrings for the full
+    # reasoning and the A/B data behind changing either one.
+    origin_kind: str = "sweep_break"
+    close_based_sweep_break: bool = False
+    # Per-instrument {"D": years, "W": years, "H4": years, "H1": years}
+    # trailing-history caps, passed straight through to run_backtest()'s
+    # max_history_years -- see that parameter's own docstring for why
+    # each entry must come from an actual escalation search, never a
+    # guess, and why these need periodic re-confirmation as real time
+    # moves forward. Empty by default: an instrument with no entry here
+    # runs on full, uncapped history -- safe by construction, just not
+    # sped up yet.
+    history_window_years: dict = field(default_factory=dict)
 
     risk_manager: RiskManager = field(init=False)
     day_start_balance: float = field(init=False)
@@ -526,7 +542,10 @@ class LiveBot:
         # worth the risk").
         records = run_backtest(instrument, self.entry_style, source=self.source,
                                 avoid_rollover_entries=True, min_reward_r=1.0,
-                                stop_anchor=self.stop_anchor)
+                                stop_anchor=self.stop_anchor,
+                                origin_kind=self.origin_kind,
+                                close_based_sweep_break=self.close_based_sweep_break,
+                                max_history_years=self.history_window_years.get(instrument))
         if watermark is None:
             fresh = [r for r in records if r.entry_time == new_candle.time]
         else:

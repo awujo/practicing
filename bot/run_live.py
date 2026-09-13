@@ -119,6 +119,31 @@ def main():
                               "immediately, matching every behavior before 2026-09-11. Backtested "
                               "at 1.0: 738R -> 991R, win rate 42.0%% -> 50.6%% -- see "
                               "check_setup()'s docstring in setup_validity.py.")
+    parser.add_argument("--origin-kind", default="sweep_break", choices=("sweep_break", "any"),
+                         help="how the first Daily/Weekly bias is bootstrapped -- see "
+                              "run_backtest()'s own docstring in backtest/engine/runner.py. "
+                              "'sweep_break' (default) matches every behavior before 2026-09-13. "
+                              "'any' also accepts a plain breakout, matching bias.py's own "
+                              "confirmation rule ('both are valid') -- confirmed via full-history "
+                              "A/B not to hurt performance (see OPERATIONS_LOG.md, 2026-09-13) and "
+                              "required for the --history-windows-config values below, which were "
+                              "measured under this setting.")
+    parser.add_argument("--close-based-sweep-break", action="store_true",
+                         help="read the level a sweep+break must close beyond off the swing "
+                              "candle's CLOSE instead of its wick -- see StructureTracker's own "
+                              "close_based_break docstring. Off by default (wick, unchanged). "
+                              "Required for the --history-windows-config values below, which were "
+                              "measured with this on.")
+    parser.add_argument("--history-windows-config", default=None,
+                         help="path to a JSON file mapping instrument -> {\"D\":years,\"W\":years,"
+                              "\"H4\":years,\"H1\":years} trailing-history caps, passed through to "
+                              "run_backtest()'s max_history_years per instrument. An instrument "
+                              "missing from the file runs on full, uncapped history. See "
+                              "bot/history_windows.json and its own values ONLY confirmed safe "
+                              "under --origin-kind any --close-based-sweep-break -- do not use "
+                              "this file with different settings than the ones it was measured "
+                              "under. Not set by default (every instrument uncapped, unchanged "
+                              "behavior).")
     parser.add_argument("--symbol-suffix", default=os.environ.get("MT5_SYMBOL_SUFFIX", ""),
                          help="broker's Market Watch suffix, e.g. .a")
     parser.add_argument("--symbol-overrides", default=os.environ.get("MT5_SYMBOL_OVERRIDES", "{}"),
@@ -178,6 +203,16 @@ def main():
     except json.JSONDecodeError as exc:
         parser.error(f"--symbol-overrides is not valid JSON: {exc}")
 
+    history_window_years = {}
+    if args.history_windows_config:
+        try:
+            with open(args.history_windows_config) as f:
+                history_window_years = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            parser.error(f"--history-windows-config could not be read: {exc}")
+        logger.info("loaded history window caps for %d instrument(s) from %s",
+                    len(history_window_years), args.history_windows_config)
+
     mt5 = _connect_mt5(args.bridge, args.bridge_host, args.bridge_port)
 
     creds = profile.active_credentials
@@ -236,6 +271,9 @@ def main():
                    entry_order_type=args.entry_order_type,
                    min_departure_r=args.min_departure_r,
                    stop_anchor=args.stop_anchor,
+                   origin_kind=args.origin_kind,
+                   close_based_sweep_break=args.close_based_sweep_break,
+                   history_window_years=history_window_years,
                    shadow_books=tuple(shadow_books))
 
     logger.info("starting live loop: %s, instruments=%s", args.account_type, instruments)

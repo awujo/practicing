@@ -954,6 +954,22 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
     return "still_open", None, None, -adverse / risk, favorable / risk
 
 
+def _trim_to_recent_years(candles: list, years: float | None) -> list:
+    """The production version of what
+    backtest/tools/compare_history_window.py's windowed_loader() only ever
+    did to a monkeypatch for testing -- here it's the real behavior.
+    Deliberately simpler than the test tool's version: that one added a
+    `recent_days` runway specifically so a comparison against full history
+    stayed fair for trades near the edge of the tested period. Live
+    replay has no such "tested period" to protect -- it always wants the
+    trailing `years` ending at the newest candle actually available,
+    continuously, forever. `years` of 0/None is a no-op (unbounded)."""
+    if not years or not candles:
+        return candles
+    cutoff = candles[-1].time - pd.Timedelta(days=years * 365)
+    return [c for c in candles if c.time >= cutoff]
+
+
 def _bootstrap_origin(structure_events: list, confirmations: list, origin_kind: str):
     """The first confirmed direction to seed BiasCascade's initial state
     from. See run_backtest()'s own origin_kind docstring for the two
@@ -979,7 +995,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   limit_lookahead: int = LIMIT_FILL_LOOKAHEAD,
                   min_departure_r: float = 0.0,
                   origin_kind: str = "sweep_break",
-                  close_based_sweep_break: bool = False) -> list[TradeRecord]:
+                  close_based_sweep_break: bool = False,
+                  max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -1108,6 +1125,31 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     break off the line chart. The sweep itself is unaffected either way
     -- it stays wick-based, since a sweep is legitimately a wick event.
     Compare against the default before trusting it as the new normal.
+    max_history_years: optional {"D": years, "W": years, "H4": years,
+    "H1": years} trailing-window cap applied to each granularity's loaded
+    candles before any replay begins. None (default) loads everything
+    the cache has -- unchanged behavior, and every value on record before
+    2026-09-13.
+
+    DO NOT set this from a guess. Each entry must come from
+    backtest/tools/compare_history_window.py's escalation search actually
+    confirming, for THAT SPECIFIC instrument, that the capped window
+    reproduces every trade full history produces in a recent comparison
+    period -- confirmed live 2026-09-13 that this varies enormously
+    per instrument (2 years for US30/USDJPY/EURJPY/JP225; 8-11 years for
+    EURUSD/GBPAUD/GBPJPY/NAS100; GBPNZD never fully converged even at 15
+    years and should not be capped at all). See bot/history_windows.json
+    for the live values and bot/OPERATIONS_LOG.md (2026-09-13) for the
+    full methodology.
+
+    THESE NUMBERS ARE NOT PERMANENT. They were measured against real
+    history up to 2026-09-13 and must be re-escalated periodically --
+    market structure that develops after that date could plausibly need
+    more trailing history than what was confirmed safe on this date, the
+    same way GBPJPY needed more than a naive first guess. Re-run the
+    escalation search (recommended: every 6 months, or immediately after
+    any change to the strategy logic this file implements) rather than
+    assuming a value confirmed once stays safe forever.
     """
     _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
@@ -1128,6 +1170,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         weekly = load_candles(source, instrument, "W")
     except FileNotFoundError:
         weekly = []  # Weekly is optional -- see module docstring
+
+    if max_history_years:
+        daily = _trim_to_recent_years(daily, max_history_years.get("D"))
+        weekly = _trim_to_recent_years(weekly, max_history_years.get("W"))
+        h4 = _trim_to_recent_years(h4, max_history_years.get("H4"))
+        h1 = _trim_to_recent_years(h1, max_history_years.get("H1"))
 
     daily_tracker = StructureTracker(n, close_based_break=close_based_sweep_break)
     daily_structure_events = daily_tracker.run(daily)
