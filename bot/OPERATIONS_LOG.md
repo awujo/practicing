@@ -4726,3 +4726,46 @@ NOT YET DONE: actually deploying this to the live bots (adding
 bot/history_windows.json` to launch_bot1.sh/launch_bot2.sh) -- built and
 tested, not yet turned on live. That's a deliberate separate step given
 how much shipped in this one session already.
+
+## 2026-09-13 -- CORRECTED, SAME NIGHT: THE 17 UNCONFIRMED INSTRUMENTS
+## SHOULD NOT SIMPLY STAY ON FULL HISTORY.
+
+Operator caught this directly, and it was a real gap: the entry above
+left the 17 real instruments without their OWN individually-escalated
+window fully uncapped ("safe by construction, just not sped up yet").
+That's wrong given the actual goal (reduce replay time to stop
+staleness) -- the full 25-instrument flat-2y/1y run from earlier
+tonight already measured all 17 at 90-100% match with no fabricated
+trades, the same non-catastrophic character as EURUSD/GBPJPY before
+their own precise numbers existed. That's real, already-collected data,
+not a guess -- leaving them uncapped throws away an already-earned
+speedup for no corresponding safety gain.
+
+`history_windows.json` restructured to two tiers: `"default"` (2y/2y/1y/1y,
+empirically grounded across those 24 real instruments) applies to any
+instrument without its own entry; `"instruments"` holds per-instrument
+overrides, where an explicit `null` (GBPNZD only) means "confirmed NOT
+safe to cap," which must NOT silently inherit the default just because
+one exists. All 24 real instruments other than GBPNZD are now listed
+explicitly (8 with their own escalation-confirmed precise window, 16 on
+the flat default) so the file itself is the record of what has and
+hasn't been individually confirmed.
+
+New `resolve_history_window_years()` in `run_live.py` turns this
+two-tier file into the flat dict `LiveBot` already expects -- no change
+needed to `LiveBot`/`orchestrator.py`, which keep treating "absent from
+the dict" as "uncapped" exactly as already built and tested.
+
+One thing this surfaces for the future, not urgent now: an instrument
+added to the live bot later that isn't in this file's "instruments"
+section AT ALL still inherits the flat default -- reasonable today
+because the file explicitly lists all 24 currently-tracked instruments,
+but a genuinely NEW instrument would inherit a default validated on
+OTHER instruments, not itself. Worth an explicit escalation run before
+trusting the default for anything added later, not just relying on it
+silently applying.
+
+10 new tests (6 for `resolve_history_window_years()`'s resolution logic
+in the new `bot/tests/test_run_live.py`, `history_windows.json`'s own
+guard tests updated for the two-tier shape). Full suite: 484 passed, 6
+skipped.

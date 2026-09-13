@@ -73,6 +73,48 @@ METAQUOTES_DEMO_OVERRIDES = {
 }
 
 
+def resolve_history_window_years(config: dict, instruments: tuple) -> dict:
+    """Turns the two-tier structure in a --history-windows-config file
+    into the flat {instrument: window} dict LiveBot actually wants.
+
+    config: {"default": window | None, "instruments": {name: window | None}}.
+    `window` is {"D": years, "W": years, "H4": years, "H1": years}.
+
+    For each instrument actually being run: an explicit entry in
+    "instruments" wins outright, INCLUDING an explicit null -- that's
+    "confirmed NOT safe to cap" (e.g. GBPNZD, which never converged even
+    at a 15-year search ceiling; see OPERATIONS_LOG.md 2026-09-13),
+    deliberately different from "no data yet," and must stay uncapped
+    even if a "default" is configured. An instrument with no entry at
+    all falls back to "default" if one is set. Either way, "uncapped"
+    means the instrument is simply absent from the returned dict --
+    matches run_backtest()'s own None-means-unbounded convention for
+    max_history_years, no separate sentinel needed.
+
+    Why a default is worth having at all: a flat window loses bit-exact
+    convergence for the trades right at its own boundary, but that is a
+    fundamentally different risk than an instrument openly returning
+    ZERO trades or fabricating extra ones -- see OPERATIONS_LOG.md
+    2026-09-13's full 25-instrument run, where every instrument except
+    GBPNZD scored 90-100% at a flat 2y/1y window under these settings.
+    Leaving those instruments fully uncapped over that difference throws
+    away a real, already-measured speedup for no corresponding safety
+    gain, which is the whole point of this mechanism existing."""
+    default_window = config.get("default")
+    overrides = config.get("instruments", {})
+    resolved = {}
+    for instrument in instruments:
+        if instrument in overrides:
+            window = overrides[instrument]
+            if window is not None:
+                resolved[instrument] = window
+            # else: explicit null -- deliberately excluded, stays uncapped
+        elif default_window is not None:
+            resolved[instrument] = default_window
+        # else: no override and no default configured -- stays uncapped
+    return resolved
+
+
 def _connect_mt5(bridge: str, bridge_host: str, bridge_port: int):
     """Returns an object exposing the same method/attribute surface as
     the real `MetaTrader5` module -- either the module itself (native) or
@@ -203,15 +245,13 @@ def main():
     except json.JSONDecodeError as exc:
         parser.error(f"--symbol-overrides is not valid JSON: {exc}")
 
-    history_window_years = {}
+    history_windows_raw = None
     if args.history_windows_config:
         try:
             with open(args.history_windows_config) as f:
-                history_window_years = json.load(f)
+                history_windows_raw = json.load(f)
         except (OSError, json.JSONDecodeError) as exc:
             parser.error(f"--history-windows-config could not be read: {exc}")
-        logger.info("loaded history window caps for %d instrument(s) from %s",
-                    len(history_window_years), args.history_windows_config)
 
     mt5 = _connect_mt5(args.bridge, args.bridge_host, args.bridge_port)
 
@@ -251,6 +291,12 @@ def main():
                              max_entry_drift_fraction=1.0)
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
+
+    history_window_years = {}
+    if history_windows_raw is not None:
+        history_window_years = resolve_history_window_years(history_windows_raw, instruments)
+        logger.info("history window caps: %d of %d instrument(s) capped from %s (rest uncapped)",
+                    len(history_window_years), len(instruments), args.history_windows_config)
 
     db_stem = os.path.splitext(args.audit_db)[0]
     shadow_books = []
