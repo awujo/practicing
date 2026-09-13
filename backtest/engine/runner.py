@@ -954,6 +954,17 @@ def _resolve_trade_outcome(entry_price: float, stop_loss: float, target_price: f
     return "still_open", None, None, -adverse / risk, favorable / risk
 
 
+def _bootstrap_origin(structure_events: list, confirmations: list, origin_kind: str):
+    """The first confirmed direction to seed BiasCascade's initial state
+    from. See run_backtest()'s own origin_kind docstring for the two
+    modes and why "any" exists -- kept as a free function, shared between
+    the Daily and Weekly bootstraps, so there is exactly one definition
+    of "first confirmed origin," not two that could quietly drift apart."""
+    if origin_kind == "any":
+        return confirmations[0] if confirmations else None
+    return next((e for e in structure_events if e.kind == "valid_sweep_break"), None)
+
+
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
@@ -966,7 +977,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   entry_fill: str = "instant",
                   cancel_at_target_fraction: float | None = None,
                   limit_lookahead: int = LIMIT_FILL_LOOKAHEAD,
-                  min_departure_r: float = 0.0) -> list[TradeRecord]:
+                  min_departure_r: float = 0.0,
+                  origin_kind: str = "sweep_break") -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -1060,6 +1072,30 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     wick -- direct user correction, matching how A/V-shape key levels
     already work. When False, uses the wick instead (pre-correction
     behavior) -- kept only for comparing the two against each other.
+    origin_kind: how the FIRST Daily/Weekly bias direction is bootstrapped,
+    before BiasCascade's own flip logic ever runs.
+    "sweep_break" (default) requires StructureTracker's specific
+    reversal signature -- sweep a prior low/high, then close back through
+    the structural level on the other side. Matches every behavior before
+    2026-09-13.
+    "any" instead accepts the FIRST entry of detect_confirmations()'s own
+    merged stream -- a plain breakout (a direct close beyond a prior
+    swing extreme, no sweep required) OR a sweep+break, whichever comes
+    first. Direct operator question (2026-09-13): SLK's own confirmation
+    rule (this module's docstring, point 1) already says "EITHER a plain
+    breakout... OR a sweep+break... both are valid" for confirming
+    ongoing bias -- run_backtest()'s bootstrap was requiring the stricter
+    one for the FIRST bias only, an inconsistency with the engine's own
+    stated rule rather than a considered choice (nothing in this file's
+    "further MVP simplifications" notes justifies it). A plain breakout
+    needs only one swing pivot to exist before it can fire, versus a full
+    sweep-then-reversal cycle -- expected to find a confirmed origin much
+    more recently for instruments whose current structural leg began as a
+    clean breakout rather than a textbook reversal (see
+    compare_history_window.py's GBPJPY finding, 2026-09-13: zero trades
+    at up to several years of trailing Daily/Weekly history under
+    "sweep_break" alone). Compare against the default before trusting it
+    as the new normal -- same as every other experimental variant here.
     """
     _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
@@ -1083,12 +1119,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
     daily_tracker = StructureTracker(n)
     daily_structure_events = daily_tracker.run(daily)
-    first_origin = next((e for e in daily_structure_events if e.kind == "valid_sweep_break"), None)
+    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
+    first_origin = _bootstrap_origin(daily_structure_events, daily_confirmations, origin_kind)
     if first_origin is None:
         return []  # no confirmed structure to bootstrap a bias from
 
     daily_levels = detect_key_levels(daily, n)
-    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
     weekly_confirmations = detect_confirmations(weekly, n, close_based_breakout=close_based_breakout) if weekly else []
     h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
     h4_levels = detect_key_levels(h4, n)
@@ -1104,9 +1140,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     if weekly:
         weekly_tracker = StructureTracker(n)
         weekly_structure_events = weekly_tracker.run(weekly)
-        weekly_first_origin = next(
-            (e for e in weekly_structure_events if e.kind == "valid_sweep_break"), None
-        )
+        weekly_first_origin = _bootstrap_origin(weekly_structure_events, weekly_confirmations, origin_kind)
         if weekly_first_origin is not None:
             weekly_levels = detect_key_levels(weekly, n)
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,

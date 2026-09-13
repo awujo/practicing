@@ -227,10 +227,17 @@ def main():
                               "the live bot would decide differently today")
     parser.add_argument("--min-reward-r", type=float, default=1.0)
     parser.add_argument("--no-avoid-rollover", action="store_true")
+    parser.add_argument("--origin-kind", default="sweep_break", choices=("sweep_break", "any"),
+                         help="how the first Daily/Weekly bias is bootstrapped -- see "
+                              "run_backtest()'s own docstring. 'any' (accepts a plain breakout, "
+                              "not just a full sweep+break reversal) is expected to need much "
+                              "less trailing history for instruments like GBPJPY whose current "
+                              "structural leg began as a breakout.")
     args = parser.parse_args()
 
     instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
-    common_kwargs = dict(avoid_rollover_entries=not args.no_avoid_rollover, min_reward_r=args.min_reward_r)
+    common_kwargs = dict(avoid_rollover_entries=not args.no_avoid_rollover, min_reward_r=args.min_reward_r,
+                          origin_kind=args.origin_kind)
 
     for instrument in instruments:
         print(f"=== {instrument} ===", flush=True)

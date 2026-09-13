@@ -4469,3 +4469,85 @@ deliberately sequenced AFTER validating the history-window change lands
 somewhere sane -- landing both architecture changes on the hot path at
 once would make it hard to attribute any surprising behavior to the
 right one.
+
+## 2026-09-13 -- FOUND AND FIXED A REAL INCONSISTENCY: run_backtest()'s
+## ORIGIN BOOTSTRAP REQUIRED SWEEP+BREAK ONLY, CONTRADICTING THE ENGINE'S
+## OWN DOCUMENTED RULE.
+
+Operator looked at a GBPJPY weekly chart (clean, obvious uptrend since
+mid-2024) and asked why the engine couldn't find a confirmed origin
+within several years of trailing history when the trend looks completely
+unambiguous to the eye. Right question. Traced it to the actual code
+rather than guessing from the chart.
+
+`bias.py`'s own module docstring (point 1, unchanged since it was
+written): "EITHER a plain breakout (a direct close beyond a prior swing
+extreme, no prior sweep-and-reverse -- the MORE common pattern) OR a
+sweep+break of structure (...the LESS common, 'textbook' pattern)
+confirms directional order flow. Both are valid; a confirmation check
+should accept either shape." `detect_confirmations()` correctly
+implements exactly this, merging both into one stream.
+
+But `run_backtest()`'s Daily AND Weekly origin bootstrap -- the one
+thing standing between an instrument and zero trades -- read directly
+from `StructureTracker.run()`'s raw events filtered to
+`kind == "valid_sweep_break"`, ignoring the breakout half entirely, even
+though `detect_confirmations()` (which merges both) was being computed
+a few lines later anyway. Nothing in this file's own "further MVP
+simplifications" notes justifies the restriction -- it reads as an
+oversight, not a considered choice, and it directly contradicts the
+engine's own stated rule. A plain breakout needs only one swing pivot
+to exist before it can fire; a sweep+break needs a full reversal cycle
+first. That gap is a plausible, mechanical explanation for GBPJPY's
+zero-trades result: its current leg may well have begun as a breakout
+with no clean preceding sweep, invisible to the old bootstrap no matter
+how much history it was given.
+
+Added `origin_kind` to `run_backtest()` (`"sweep_break"` default,
+unchanged behavior; `"any"` uses the first entry of
+`detect_confirmations()`'s own merged stream instead). New shared
+`_bootstrap_origin()` helper used by both the Daily and Weekly bootstrap,
+so there is exactly one definition of "first confirmed origin." 6 new
+tests: `_bootstrap_origin()` tested directly against fabricated events
+(each mode picks correctly, "any" prefers an earlier breakout when one
+exists, falls back to sweep+break when it doesn't), plus a real
+end-to-end check that "any" mode reproduces the existing fixture
+bit-for-bit when there's no earlier breakout to prefer (there isn't, in
+that fixture -- checked directly against detect_confirmations() before
+writing the test, not assumed). Full suite: 460 passed, 6 skipped,
+EXISTING 132 runner tests unchanged and passing -- default behavior is
+provably untouched by this change.
+
+Built two comparison tools rather than assume "any" is better just
+because it's more permissive:
+  - `compare_history_window.py` gains `--origin-kind any` -- does it
+    actually shrink the required trailing window for GBPJPY-shaped
+    instruments?
+  - New `backtest/tools/compare_origin_kind.py` -- a straight full-
+    history A/B (matching sweep_departure.py's streaming-per-instrument
+    style): does "any" change total R / win rate across the whole
+    backtest, for better or worse? A different bootstrap direction
+    changes what BiasCascade replays from, which can cascade into
+    different trades for the ENTIRE backtest, not just recent ones --
+    this needs its own answer, separate from the window question.
+
+NOT YET RUN against real data -- needs the VPS. Deploy:
+
+    cd /srv/slk-bot/mt5data/trading && git pull
+
+    # Does "any" change overall performance?
+    nohup docker exec -u abc -w /config/trading mt5 nice -n 19 python3 -m backtest.tools.compare_origin_kind \
+        --instruments EURUSD,GBPJPY,US30 --stop-anchor trigger_wick \
+        > /srv/slk-bot/origin_kind_compare.log 2>&1 &
+    disown
+
+    # Does "any" fix GBPJPY's window-convergence problem?
+    nohup docker exec -u abc -w /config/trading mt5 nice -n 19 python3 -m backtest.tools.compare_history_window \
+        --instruments EURUSD,GBPJPY,US30 --origin-kind any \
+        --dw-years 2 --h-years 1 --dw-step-years 1 --h-step-years 0.5 --max-years 15 \
+        > /srv/slk-bot/history_window_any_origin.log 2>&1 &
+    disown
+
+Both can run at once (different log files, read-only against the cache,
+same as every other comparison tool tonight) alongside the
+sweep_break-mode escalation run already in flight.

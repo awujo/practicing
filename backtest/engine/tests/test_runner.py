@@ -10,8 +10,10 @@ from ..entries import imbalance_stop_loss
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
-    _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme,
+    _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme, _bootstrap_origin,
 )
+from ..structure import StructureEvent
+from ..bias import Confirmation, ConfirmationKind
 
 SOURCE = "test"
 SYMBOL = "RUNNERPAIR"
@@ -1228,3 +1230,67 @@ def test_zone_anchor_imposes_no_width_limit():
     huge = imbalance_stop_loss(57.2402, 60.4838, Direction.BEARISH, pip_size=0.001)
     assert tiny == pytest.approx(0.85289 - 0.0001)
     assert huge == pytest.approx(60.4838 + 0.001)
+
+
+# --- _bootstrap_origin() / origin_kind ------------------------------------
+#
+# bias.py's own module docstring: "EITHER a plain breakout... OR a
+# sweep+break of structure... Both are valid; a confirmation check should
+# accept either shape." run_backtest()'s origin bootstrap required the
+# stricter sweep+break alone for the very FIRST bias -- an inconsistency
+# with the engine's own stated rule, raised directly by the operator
+# (2026-09-13) after compare_history_window.py found GBPJPY producing
+# zero trades at any tested window: a plain breakout needs only one swing
+# pivot to exist, a sweep+break needs a full reversal cycle, so requiring
+# the latter for the bootstrap alone can silently need much more history
+# than the engine's own confirmation rule would otherwise require.
+
+_SWEEP_BREAK_EVENT = StructureEvent(pd.Timestamp("2026-01-10"), "valid_sweep_break", Direction.BEARISH, 1.05)
+_EARLIER_BREAKOUT_CONFIRMATION = Confirmation(pd.Timestamp("2026-01-05"), Direction.BULLISH,
+                                               ConfirmationKind.BREAKOUT, 1.10)
+_SWEEP_BREAK_CONFIRMATION = Confirmation(pd.Timestamp("2026-01-10"), Direction.BEARISH,
+                                          ConfirmationKind.SWEEP_BREAK, 1.05)
+
+
+def test_bootstrap_origin_default_uses_sweep_break_only():
+    result = _bootstrap_origin([_SWEEP_BREAK_EVENT], [_EARLIER_BREAKOUT_CONFIRMATION, _SWEEP_BREAK_CONFIRMATION],
+                                origin_kind="sweep_break")
+    assert result is _SWEEP_BREAK_EVENT
+
+
+def test_bootstrap_origin_sweep_break_mode_ignores_confirmations_entirely():
+    """A breakout-only confirmations list (no sweep_break present) still
+    yields no origin under the default mode, even though "any" mode
+    would find one -- confirms the two modes are genuinely independent
+    code paths, not one silently falling back to the other."""
+    result = _bootstrap_origin([], [_EARLIER_BREAKOUT_CONFIRMATION], origin_kind="sweep_break")
+    assert result is None
+
+
+def test_bootstrap_origin_any_mode_prefers_the_earlier_breakout():
+    result = _bootstrap_origin([_SWEEP_BREAK_EVENT], [_EARLIER_BREAKOUT_CONFIRMATION, _SWEEP_BREAK_CONFIRMATION],
+                                origin_kind="any")
+    assert result is _EARLIER_BREAKOUT_CONFIRMATION
+    assert result.direction == Direction.BULLISH   # the earlier breakout's direction, not the later sweep+break's
+
+
+def test_bootstrap_origin_any_mode_falls_back_to_sweep_break_when_no_breakout_exists():
+    result = _bootstrap_origin([_SWEEP_BREAK_EVENT], [_SWEEP_BREAK_CONFIRMATION], origin_kind="any")
+    assert result is _SWEEP_BREAK_CONFIRMATION
+
+
+def test_bootstrap_origin_any_mode_with_no_confirmations_at_all_is_none():
+    result = _bootstrap_origin([_SWEEP_BREAK_EVENT], [], origin_kind="any")
+    assert result is None
+
+
+def test_run_backtest_any_origin_matches_default_when_no_earlier_breakout_exists(synthetic_cache):
+    """The fixture's own daily series has exactly one confirmation of any
+    kind (the day-8/9 sweep+break itself -- verified directly against
+    detect_confirmations()), so "any" mode has nothing earlier to prefer
+    and must reproduce the default bit-for-bit. A genuine regression
+    check: the new code path is inert when it should be."""
+    default = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    any_mode = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, origin_kind="any")
+    assert len(default) == 1
+    assert default == any_mode
