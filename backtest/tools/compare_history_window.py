@@ -27,6 +27,17 @@ matters live) between the two runs. Identical trades in that period means
 the truncation is safe at that window size; any mismatch shows exactly
 which decision changed and why -- not just that something did.
 
+`find_minimum_safe_window()` runs the operator's own proposed process for
+real: start at the given windows; if they don't reproduce full history's
+recent trades, extend both by their step size and try again, stopping at
+the first window size that matches (or a max-years cap, to admit defeat
+rather than loop forever). Confirmed live 2026-09-13 that a FIXED window
+is not safe across instruments: perfect for US30 at 2y/1y, subtly wrong
+for EURUSD (same trade COUNT, 6 different trades from a bias that quietly
+drifted -- a bare empty-check would have missed this entirely), and
+completely empty for GBPJPY (no confirmed structure found at all within
+that window) -- exactly the case escalation exists for.
+
 Needs real cached data (the VPS); this repo checkout has none, so running
 it here always reports "0 trades in either run" rather than a real
 answer.
@@ -138,15 +149,78 @@ def _fmt_trade(r) -> str:
             f"stop={r.stop_loss} target={r.primary_target} -> {r.exit_reason}/{r.r_multiple}")
 
 
+def find_minimum_safe_window(instrument: str, entry_style: str, stop_anchor: str,
+                              dw_years: float, h_years: float,
+                              dw_step_years: float, h_step_years: float,
+                              max_years: float, recent_years: float,
+                              baseline=None, baseline_secs: float = 0.0, **kwargs) -> dict:
+    """Runs the operator's own proposed process for real: start at
+    (dw_years, h_years); if the truncated run does not reproduce every
+    recent-period trade full history produces, extend both windows by
+    their step size and try again; stop once it matches, or once
+    dw_years exceeds max_years (give up rather than loop forever).
+
+    Critically, "does not reproduce" is judged against full history's
+    ACTUAL trades, not just whether the truncated run produced anything
+    at all -- a bare empty-check cannot catch a truncated window that
+    produces the SAME COUNT of trades but different ones (confirmed
+    live, EURUSD, 2026-09-13: 78 trades both ways, 6 of them not the
+    same trades). Convergence here means genuinely identical, not
+    merely non-empty.
+
+    `baseline`/`baseline_secs` let a caller iterating several configs
+    reuse one already-computed full-history run instead of recomputing
+    the expensive part every time; omit them to compute it here."""
+    if baseline is None:
+        baseline, baseline_secs = run_variant(instrument, entry_style, stop_anchor, None, **kwargs)
+    if not baseline:
+        return {"instrument": instrument, "baseline_secs": baseline_secs, "baseline_count": 0,
+                "converged": False, "dw_years": None, "h_years": None, "steps": []}
+
+    source = kwargs.get("source", "dukascopy")
+    newest = max(c.time for c in real_load_candles(source, instrument, "H1"))
+    recent_cutoff = newest - pd.Timedelta(days=recent_years * 365)
+
+    steps = []
+    dw, h = dw_years, h_years
+    while dw <= max_years:
+        windows_days = {"D": dw * 365, "W": dw * 365, "H4": h * 365, "H1": h * 365}
+        variant, variant_secs = run_variant(instrument, entry_style, stop_anchor, windows_days,
+                                             recent_days=recent_years * 365, **kwargs)
+        result = diff_recent(baseline, variant, recent_cutoff)
+        converged = not result["only_in_baseline"] and not result["only_in_variant"]
+        steps.append({"dw_years": dw, "h_years": h, "variant_secs": variant_secs,
+                       "converged": converged, **result})
+        if converged:
+            return {"instrument": instrument, "baseline_secs": baseline_secs,
+                     "baseline_count": len(baseline), "converged": True,
+                     "dw_years": dw, "h_years": h, "steps": steps}
+        dw += dw_step_years
+        h += h_step_years
+
+    return {"instrument": instrument, "baseline_secs": baseline_secs,
+             "baseline_count": len(baseline), "converged": False,
+             "dw_years": None, "h_years": None, "steps": steps}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--instruments", required=True, help="comma-separated, e.g. EURUSD,GBPJPY")
     parser.add_argument("--entry-style", default="aggressive", choices=("aggressive", "conservative"))
     parser.add_argument("--stop-anchor", default="trigger_wick", choices=("trigger_wick", "structural"))
     parser.add_argument("--dw-years", type=float, default=2.0,
-                         help="trailing window, in years, for Daily/Weekly candles in the truncated run")
+                         help="starting trailing window, in years, for Daily/Weekly candles")
     parser.add_argument("--h-years", type=float, default=1.0,
-                         help="trailing window, in years, for H4/H1 candles in the truncated run")
+                         help="starting trailing window, in years, for H4/H1 candles")
+    parser.add_argument("--dw-step-years", type=float, default=1.0,
+                         help="how much to extend the Daily/Weekly window by, per escalation step, "
+                              "when the current one does not reproduce full history's recent trades")
+    parser.add_argument("--h-step-years", type=float, default=0.5,
+                         help="how much to extend the H4/H1 window by, per escalation step")
+    parser.add_argument("--max-years", type=float, default=15.0,
+                         help="give up escalating once the Daily/Weekly window would exceed this -- "
+                              "a safety bound against looping forever on an instrument that never "
+                              "converges within a sane amount of history")
     parser.add_argument("--recent-years", type=float, default=2.0,
                          help="only trades whose entry falls within this many years of the newest "
                               "cached candle are compared -- older history is irrelevant to whether "
@@ -156,43 +230,39 @@ def main():
     args = parser.parse_args()
 
     instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
-    windows_days = {
-        "D": args.dw_years * 365, "W": args.dw_years * 365,
-        "H4": args.h_years * 365, "H1": args.h_years * 365,
-    }
     common_kwargs = dict(avoid_rollover_entries=not args.no_avoid_rollover, min_reward_r=args.min_reward_r)
 
     for instrument in instruments:
         print(f"=== {instrument} ===", flush=True)
 
-        baseline, baseline_secs = run_variant(instrument, args.entry_style, args.stop_anchor,
-                                               None, **common_kwargs)
-        print(f"  full history:      {len(baseline):5d} trades in {baseline_secs:6.1f}s", flush=True)
-        if not baseline:
+        report = find_minimum_safe_window(
+            instrument, args.entry_style, args.stop_anchor,
+            args.dw_years, args.h_years, args.dw_step_years, args.h_step_years,
+            args.max_years, args.recent_years, **common_kwargs,
+        )
+        print(f"  full history:      {report['baseline_count']:5d} trades in {report['baseline_secs']:6.1f}s",
+              flush=True)
+        if report["baseline_count"] == 0:
             print("  (no trades at all -- skipping, nothing to compare)", flush=True)
             continue
 
-        variant, variant_secs = run_variant(instrument, args.entry_style, args.stop_anchor,
-                                             windows_days, recent_days=args.recent_years * 365,
-                                             **common_kwargs)
-        speedup = f"{baseline_secs / variant_secs:.1f}x faster" if variant_secs > 0 else "effectively instant"
-        print(f"  D/W={args.dw_years}y H4/H1={args.h_years}y: {len(variant):5d} trades in "
-              f"{variant_secs:6.1f}s ({speedup})", flush=True)
+        for step in report["steps"]:
+            status = "CONVERGED" if step["converged"] else "not yet -- escalating"
+            print(f"  D/W={step['dw_years']:.1f}y H4/H1={step['h_years']:.1f}y: "
+                  f"{step['variant_count']:4d} trades in {step['variant_secs']:5.1f}s, "
+                  f"{step['matched']}/{step['baseline_count']} match -- {status}", flush=True)
+            if not step["converged"]:
+                for r in step["only_in_baseline"]:
+                    print(f"      only in FULL history:      {_fmt_trade(r)}", flush=True)
+                for r in step["only_in_variant"]:
+                    print(f"      only in TRUNCATED window:  {_fmt_trade(r)}", flush=True)
 
-        newest = max(c.time for c in real_load_candles("dukascopy", instrument, "H1"))
-        recent_cutoff = newest - pd.Timedelta(days=args.recent_years * 365)
-        result = diff_recent(baseline, variant, recent_cutoff)
-        print(f"  recent ({args.recent_years}y) window: {result['baseline_count']} baseline trades, "
-              f"{result['variant_count']} truncated trades, {result['matched']} match exactly", flush=True)
-
-        if result["only_in_baseline"] or result["only_in_variant"]:
-            print("  MISMATCHES:", flush=True)
-            for r in result["only_in_baseline"]:
-                print(f"    only in FULL history:      {_fmt_trade(r)}", flush=True)
-            for r in result["only_in_variant"]:
-                print(f"    only in TRUNCATED window:  {_fmt_trade(r)}", flush=True)
+        if report["converged"]:
+            print(f"  RESULT: D/W={report['dw_years']:.1f}y, H4/H1={report['h_years']:.1f}y "
+                  f"reproduces every recent trade exactly.", flush=True)
         else:
-            print("  IDENTICAL -- the truncated window reproduces every recent trade exactly.", flush=True)
+            print(f"  RESULT: never converged within the {args.max_years}y cap -- "
+                  f"this instrument needs more history than the escalation ceiling allows.", flush=True)
         print(flush=True)
 
 

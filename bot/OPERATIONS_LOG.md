@@ -4407,3 +4407,65 @@ checked still gets its full configured runway. New regression test
 corrected math. Full suite: 450 passed, 6 skipped. This would have
 produced a silently wrong (falsely worse) comparison if it had run
 before being caught.
+
+## 2026-09-13 -- FIRST REAL RESULT: A FIXED HISTORY WINDOW IS NOT SAFE
+## ACROSS INSTRUMENTS. ESCALATION LOGIC BUILT.
+
+Ran the fixed 2yr(D/W)/1yr(H4/H1) comparison against real VPS data --
+EURUSD, GBPJPY, US30. Results:
+
+  US30:    81/81 recent trades matched exactly. Safe at 2y/1y.
+  EURUSD:  71/78 matched. 6 genuine divergences from ~Jan 2025 onward
+           (bias state quietly drifted; downstream signals differ, not
+           just missing/extra) + 1 floating-point-level target rounding
+           difference (0.00002, an ERL-candidate artifact, not a real
+           behavioral difference). NOT safe at exactly 2y/1y.
+  GBPJPY:  0 of 62 recent trades reproduced -- the truncated run found
+           NO confirmed structure to bootstrap a bias from at all
+           (run_backtest()'s own `if first_origin is None: return []`),
+           and finished in 0.5s. Completely unsafe at 2y/1y.
+
+This is exactly why the operator's own proposal included "if it doesn't
+confirm, add more time" as a REQUIRED clause, not an optional nicety --
+a fixed window silently fails depending on the instrument's own history
+shape, and GBPJPY proves it concretely rather than hypothetically.
+
+Built `find_minimum_safe_window()`: starts at the given windows, and if
+the truncated run does not reproduce EVERY recent trade full history
+produces (not just "produces something"), extends both windows by their
+configured step and retries, up to a max-years cap. Deliberately
+compares against full history's ACTUAL trades every step, not a bare
+emptiness check -- EURUSD's case (same trade COUNT, different trades)
+proves an emptiness check alone is not sufficient; something can look
+non-empty and still be quietly wrong.
+
+5 new tests on top of the earlier ones (15 total in the file): two pure
+logic tests against a mocked run_variant (stops at the first convergent
+step; gives up cleanly past the max-years cap), one confirming the
+zero-baseline short-circuit doesn't escalate pointlessly, and one
+genuine end-to-end escalation against test_runner.py's real fixture
+(deliberately starts far too small to see the fixture's own origin
+breakout, and must actually escalate to find it -- not a test that only
+ever converges immediately). Full suite: 454 passed, 6 skipped.
+
+NOT YET RUN against real data with escalation enabled -- needs the VPS.
+Deploy (same tool, same instruments, now with escalation parameters --
+defaults match the operator's own proposed steps, 1y for D/W and 6mo for
+H4/H1, capped at 15 years so a genuinely pathological instrument fails
+loud rather than looping for hours):
+
+    cd /srv/slk-bot/mt5data/trading && git pull
+    nohup docker exec -u abc -w /config/trading mt5 nice -n 19 python3 -m backtest.tools.compare_history_window \
+        --instruments EURUSD,GBPJPY,US30 \
+        --dw-years 2 --h-years 1 --dw-step-years 1 --h-step-years 0.5 --max-years 15 \
+        > /srv/slk-bot/history_window_escalation.log 2>&1 &
+    disown
+
+Expect this to answer: does GBPJPY converge at all within 15 years, and
+at what size? Does EURUSD's drift resolve at a modest escalation, or
+does it also need much more? Parallelizing the per-instrument replay
+across the VPS's 2 vCPUs is the logical next piece after this, but
+deliberately sequenced AFTER validating the history-window change lands
+somewhere sane -- landing both architecture changes on the hot path at
+once would make it hard to attribute any surprising behavior to the
+right one.

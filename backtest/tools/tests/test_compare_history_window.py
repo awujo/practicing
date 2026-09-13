@@ -17,7 +17,10 @@ from backtest.engine.candles import Candle
 from backtest.engine.structure import Direction
 from backtest.engine.trade_log import TradeRecord
 from backtest.engine.tests.test_runner import SOURCE, SYMBOL, synthetic_cache  # noqa: F401 -- fixture
-from backtest.tools.compare_history_window import diff_recent, run_variant, windowed_loader
+from backtest.tools import compare_history_window as chw
+from backtest.tools.compare_history_window import (
+    diff_recent, find_minimum_safe_window, run_variant, windowed_loader,
+)
 
 
 def _candle(day_offset, o=1.0, h=1.0, l=1.0, c=1.0):
@@ -151,3 +154,85 @@ def test_a_window_too_short_to_see_the_origin_breakout_loses_the_trade(synthetic
                               {"D": 1, "W": 1, "H4": 1, "H1": 1},
                               source=SOURCE, pip_size=0.0001)
     assert variant == []
+
+
+def _fake_run_variant_sequence(baseline, variant_sequence):
+    """A stand-in for run_variant(): the first call (windows_days=None,
+    the baseline) returns `baseline`; each subsequent call returns the
+    next entry of `variant_sequence`, in order -- one per escalation
+    step, regardless of what window size was actually asked for. Lets
+    the escalation LOGIC be tested without needing real windows to
+    produce those exact results."""
+    calls = iter(variant_sequence)
+
+    def _fake(instrument, entry_style, stop_anchor, windows_days, recent_days=0, **kwargs):
+        if windows_days is None:
+            return baseline, 10.0
+        return next(calls), 1.0
+    return _fake
+
+
+def test_find_minimum_safe_window_stops_at_the_first_convergent_step(monkeypatch):
+    baseline = [_trade(pd.Timestamp("2026-06-01"))]
+    # Step 1 (1y/1y): misses the trade. Step 2 (2y/1.5y): matches.
+    monkeypatch.setattr(chw, "run_variant", _fake_run_variant_sequence(baseline, [[], baseline]))
+    monkeypatch.setattr(chw, "real_load_candles",
+                         lambda *a, **k: [Candle(pd.Timestamp("2026-09-01"), 1, 1, 1, 1, 1)])
+
+    report = find_minimum_safe_window(
+        "EURUSD", "aggressive", "trigger_wick",
+        dw_years=1.0, h_years=1.0, dw_step_years=1.0, h_step_years=0.5,
+        max_years=10.0, recent_years=1.0,
+    )
+    assert report["converged"] is True
+    assert report["dw_years"] == 2.0
+    assert report["h_years"] == 1.5
+    assert len(report["steps"]) == 2
+    assert report["steps"][0]["converged"] is False
+    assert report["steps"][1]["converged"] is True
+
+
+def test_find_minimum_safe_window_gives_up_past_the_max_years_cap(monkeypatch):
+    baseline = [_trade(pd.Timestamp("2026-06-01"))]
+    # Every attempt comes back empty -- never converges.
+    monkeypatch.setattr(chw, "run_variant",
+                         _fake_run_variant_sequence(baseline, [[] for _ in range(20)]))
+    monkeypatch.setattr(chw, "real_load_candles",
+                         lambda *a, **k: [Candle(pd.Timestamp("2026-09-01"), 1, 1, 1, 1, 1)])
+
+    report = find_minimum_safe_window(
+        "EURUSD", "aggressive", "trigger_wick",
+        dw_years=1.0, h_years=1.0, dw_step_years=1.0, h_step_years=0.5,
+        max_years=3.0, recent_years=1.0,
+    )
+    assert report["converged"] is False
+    assert report["dw_years"] is None
+    # Steps at dw=1,2,3 all attempted (3 <= max_years=3), stops before dw=4.
+    assert [s["dw_years"] for s in report["steps"]] == [1.0, 2.0, 3.0]
+
+
+def test_find_minimum_safe_window_reports_zero_trades_without_escalating(monkeypatch):
+    monkeypatch.setattr(chw, "run_variant", _fake_run_variant_sequence([], []))
+    report = find_minimum_safe_window(
+        "EURUSD", "aggressive", "trigger_wick",
+        dw_years=1.0, h_years=1.0, dw_step_years=1.0, h_step_years=0.5,
+        max_years=3.0, recent_years=1.0,
+    )
+    assert report["baseline_count"] == 0
+    assert report["converged"] is False
+    assert report["steps"] == []
+
+
+def test_find_minimum_safe_window_converges_on_the_real_fixture(synthetic_cache):
+    """Genuine end-to-end escalation against test_runner.py's fixture,
+    not a mock -- starts far too small to see the Daily day-8 breakout,
+    and must escalate until it does."""
+    report = find_minimum_safe_window(
+        SYMBOL, "conservative", "trigger_wick",
+        dw_years=0.01, h_years=0.01, dw_step_years=0.02, h_step_years=0.02,
+        max_years=1.0, recent_years=0.01,
+        source=SOURCE, pip_size=0.0001,
+    )
+    assert report["baseline_count"] == 1
+    assert report["converged"] is True
+    assert len(report["steps"]) > 1   # actually had to escalate, not converge immediately
