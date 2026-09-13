@@ -4769,3 +4769,26 @@ silently applying.
 in the new `bot/tests/test_run_live.py`, `history_windows.json`'s own
 guard tests updated for the two-tier shape). Full suite: 484 passed, 6
 skipped.
+
+### PENDING -- 16 instruments on the flat default, not yet individually escalated
+
+Running on the empirically-grounded 2y/1y default (90-100% match, no
+fabricated trades, confirmed in the 2026-09-13 full-25 run), but NOT
+YET given their own precise convergence window the way EURUSD/GBPJPY/
+GBPAUD/NAS100 were. Each of these should get its own
+`compare_history_window.py` escalation run when there's time, the same
+process already used for the other four, so they can move from "safe
+default" to "individually confirmed":
+
+    GBPUSD, USDCHF, USDCAD, AUDUSD, NZDUSD, EURGBP, EURCHF, EURCAD,
+    EURNZD, GBPCHF, GBPCAD, AUDCAD, AUDJPY, CHFJPY, XAUUSD, XAGUSD
+
+Suggested command per instrument (or a few at a time), same as the
+GBPNZD/GBPAUD/NAS100 run:
+
+    docker exec -u abc -w /config/trading mt5 nice -n 19 python3 -m backtest.tools.compare_history_window \
+        --instruments <NAME> --origin-kind any --close-based-sweep-break \
+        --dw-years 2 --h-years 1 --dw-step-years 1 --h-step-years 0.5 --max-years 15
+
+Once confirmed, add the result to `history_windows.json`'s
+`"instruments"` section and remove it from this pending list.
