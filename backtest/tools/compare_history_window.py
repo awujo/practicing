@@ -55,31 +55,52 @@ COMPARE_FIELDS = (
 )
 
 
-def windowed_loader(windows_days: dict):
-    """Returns a stand-in for candles.load_candles() that serves only the
-    trailing `windows_days[granularity]` days of a real load, anchored to
-    the DATA's own newest candle (not wall-clock "now") -- this must
-    reproduce what a rolling live window would actually see, and a real
-    cache's newest candle is always close to now anyway. A granularity
-    with no configured window (or fewer candles than the window) passes
-    through untouched."""
+def windowed_loader(windows_days: dict, recent_days: float = 0):
+    """Returns a stand-in for candles.load_candles() that serves only a
+    trailing slice of a real load, anchored to the DATA's own newest
+    candle (not wall-clock "now").
+
+    `recent_days` extends every configured window further back by the
+    length of the comparison period itself, and it is NOT optional for a
+    correct test. Without it, a trade whose entry is `recent_days` old
+    would only see `windows_days[gran]` days of history ending AT TODAY
+    -- (today - window) to today -- most of which POSTDATES that trade
+    and none of which it could actually have seen at the time. What it
+    needs is a `window`-day runway ending AT ITS OWN entry time --
+    (entry - window) to entry. Caught directly by the operator (2026-09-13):
+    "for a trade 2 years ago it will start from 4 years ago" -- i.e. the
+    window PLUS the recency of the trade being checked, not the window
+    alone. Retaining (window + recent_days) and letting run_backtest()
+    walk the whole slice CONTINUOUSLY from that one bootstrap point
+    onward gives every trade in the comparison period at least its full
+    window's worth of real prior history, and is also the more realistic
+    thing to simulate: a live bot given a bounded initial backfill that
+    then keeps growing forward normally (this codebase's cache only ever
+    appends, never prunes), not a bot that continuously forgets old
+    candles as it goes -- nobody has asked for that, and it would need
+    the confirmation/bias state machines to periodically reset, a much
+    bigger change than this test is checking.
+
+    A granularity with no configured window (or fewer candles than the
+    combined slice) passes through untouched."""
     def _load(source: str, symbol: str, granularity: str) -> list[Candle]:
         candles = real_load_candles(source, symbol, granularity)
         window = windows_days.get(granularity)
         if not window or not candles:
             return candles
-        cutoff = candles[-1].time - pd.Timedelta(days=window)
+        cutoff = candles[-1].time - pd.Timedelta(days=window + recent_days)
         return [c for c in candles if c.time >= cutoff]
     return _load
 
 
 def run_variant(instrument: str, entry_style: str, stop_anchor: str,
-                 windows_days: dict | None, **kwargs):
+                 windows_days: dict | None, recent_days: float = 0, **kwargs):
     """Runs run_backtest() once, patched to the given trailing windows if
     any (None/{} = the real, full-history behavior, unpatched). Returns
-    (records, elapsed_seconds)."""
+    (records, elapsed_seconds). See windowed_loader() for why recent_days
+    must match whatever comparison period the caller will diff against."""
     if windows_days:
-        with mock.patch.object(runner_module, "load_candles", windowed_loader(windows_days)):
+        with mock.patch.object(runner_module, "load_candles", windowed_loader(windows_days, recent_days)):
             start = time.monotonic()
             records = run_backtest(instrument, entry_style, stop_anchor=stop_anchor, **kwargs)
             elapsed = time.monotonic() - start
@@ -152,7 +173,8 @@ def main():
             continue
 
         variant, variant_secs = run_variant(instrument, args.entry_style, args.stop_anchor,
-                                             windows_days, **common_kwargs)
+                                             windows_days, recent_days=args.recent_years * 365,
+                                             **common_kwargs)
         speedup = f"{baseline_secs / variant_secs:.1f}x faster" if variant_secs > 0 else "effectively instant"
         print(f"  D/W={args.dw_years}y H4/H1={args.h_years}y: {len(variant):5d} trades in "
               f"{variant_secs:6.1f}s ({speedup})", flush=True)

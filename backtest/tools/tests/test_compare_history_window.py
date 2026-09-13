@@ -38,6 +38,25 @@ def test_windowed_loader_trims_to_the_trailing_window():
     assert len(result) == 366  # inclusive of both ends
 
 
+def test_windowed_loader_extends_the_cutoff_by_recent_days():
+    """The regression this test locks in: a trade dated `recent_days` old
+    must still see a full `window`-day runway ending AT ITS OWN time, not
+    a `window`-day runway ending at TODAY (which would leave it with
+    almost nothing). Caught directly by the operator: "for a trade 2
+    years ago it will start from 4 years ago" -- window (2y) + recency
+    (2y), not window alone."""
+    series = _long_series(days=5 * 365)
+    with patch("backtest.tools.compare_history_window.real_load_candles", return_value=series):
+        loader = windowed_loader({"D": 365 * 2}, recent_days=365 * 2)
+        result = loader("dukascopy", "EURUSD", "D")
+
+    oldest_time_in_comparison_period = series[-1].time - pd.Timedelta(days=365 * 2)
+    runway_before_it = [c for c in result if c.time <= oldest_time_in_comparison_period]
+    # A full 2-year runway ending exactly at that trade's own time.
+    assert runway_before_it[0].time == oldest_time_in_comparison_period - pd.Timedelta(days=365 * 2)
+    assert runway_before_it[-1].time == oldest_time_in_comparison_period
+
+
 def test_windowed_loader_passes_through_a_granularity_with_no_configured_window():
     series = _long_series()
     with patch("backtest.tools.compare_history_window.real_load_candles", return_value=series):
