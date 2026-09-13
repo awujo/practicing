@@ -76,6 +76,30 @@ def test_sweep_break_not_double_counted_as_breakout():
     assert at_break_candle[0].kind == ConfirmationKind.SWEEP_BREAK
 
 
+def test_close_based_sweep_break_confirms_where_wick_based_does_not_yet():
+    """Same line-chart-vs-wick question as the plain breakout, applied to
+    the sweep+break half instead -- passed through from detect_confirmations()
+    into StructureTracker's own close_based_break."""
+    candles = [
+        C(0, 1.100, 1.105, 1.098, 1.102),
+        C(1, 1.102, 1.108, 1.100, 1.106),
+        C(2, 1.106, 1.112, 1.104, 1.107),  # swing high: wick 1.112, close 1.107
+        C(3, 1.107, 1.109, 1.102, 1.104),
+        C(4, 1.104, 1.106, 1.095, 1.096),  # swing low: 1.095
+        C(5, 1.096, 1.099, 1.097, 1.098),
+        C(6, 1.098, 1.101, 1.097, 1.099),
+        C(7, 1.099, 1.100, 1.090, 1.097),  # sweeps below 1.095
+        C(8, 1.097, 1.110, 1.096, 1.109),  # closes 1.109: past the swing's close, not its wick
+    ]
+    default_confirmations = detect_confirmations(candles, n=2)
+    assert not any(c.kind == ConfirmationKind.SWEEP_BREAK and c.direction == Direction.BULLISH
+                    for c in default_confirmations)
+
+    close_based = detect_confirmations(candles, n=2, close_based_sweep_break=True)
+    assert any(c.kind == ConfirmationKind.SWEEP_BREAK and c.direction == Direction.BULLISH
+               for c in close_based)
+
+
 def test_bias_flips_when_rejection_and_no_lower_tf_continuation():
     cascade = BiasCascade("Daily")
     cascade.set_initial_bias(Direction.BEARISH, T(0))

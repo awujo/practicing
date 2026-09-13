@@ -4551,3 +4551,82 @@ NOT YET RUN against real data -- needs the VPS. Deploy:
 Both can run at once (different log files, read-only against the cache,
 same as every other comparison tool tonight) alongside the
 sweep_break-mode escalation run already in flight.
+
+Interim result while the above ran: the sweep_break-mode escalation
+finished. EURUSD converged at D/W=8y, H4/H1=4y. GBPJPY converged at
+D/W=10y, H4/H1=5y -- but the path there was NOT monotonic: 0 trades at
+2y, 60/62 at 3y, back to 0 AGAIN at 4y, 60/62 at 5-7y, 0 AGAIN at 8y,
+then 62/62 at 10y. That flicker (not a smooth "more data helps" curve)
+is itself evidence the sweep_break-only bootstrap is fragile, not just
+data-hungry -- depending on exactly where the window happens to cut
+off, it can land somewhere with no confirmed sweep+break visible at
+all, even though neighboring window sizes are fine. US30 converged
+immediately at 2y/1y, unaffected throughout.
+
+## 2026-09-13 -- SECOND INDEPENDENT INCONSISTENCY FOUND, SAME CLASS AS
+## origin_kind: StructureTracker'S BREAK LEVEL WAS ALWAYS WICK-BASED,
+## NEVER CLOSE-BASED, EVEN THOUGH THE PLAIN-BREAKOUT HALF ALREADY HAD
+## THIS AS A TOGGLE.
+
+Operator pushed back on the origin_kind work: "even the sweep and break
+uses line chart" -- questioning whether "any" mode's plain-breakout half
+was even reading breakouts correctly, and whether sweep+break itself
+should also be reading its own break level off the line chart. Checked
+directly against the source material rather than argue from memory:
+
+  STRATEGY.md: "Uses both candlestick AND line charts -- line chart
+  specifically preferred for spotting clean liquidity sweeps / BOS
+  (candlestick wicks can obscure it)."
+  video-07/notes.md: "Confirmed again: uses line chart specifically to
+  verify break/no-break of a level (candlestick wicks can visually
+  mislead)." Also: "a mere sweep without a close-through does not
+  invalidate it" -- confirming the SWEEP itself is legitimately a wick
+  event; it's specifically the BREAK verification that should be
+  close-based.
+
+Checked the actual code: `detect_confirmations()`'s plain-breakout half
+already had this exactly right (`close_based_breakout`, defaulting to
+close-based). But `StructureTracker.run()` -- which detects the
+sweep+break half, feeding BOTH `detect_confirmations()`'s merged stream
+AND (as of tonight) `origin_kind`'s bootstrap -- read the level a break
+must close beyond off `last_swing_high`/`last_swing_low`, which is
+always built from the swing candle's WICK (`p.high`/`p.low`), with no
+toggle at all. Same class of bug as origin_kind: one part of the engine
+already had the correct, source-material-backed convention, and a
+DIFFERENT part that feeds into it did not.
+
+Fixed as a toggle, same rigor as everything else tonight:
+  - `SwingPoint` gains an optional `close` field, populated alongside
+    the existing wick-based `price` wherever `last_swing_high`/
+    `last_swing_low` are built in `StructureTracker.run()`.
+  - `StructureTracker(n, close_based_break: bool = False)` -- False
+    (default) preserves every existing behavior exactly; True reads the
+    break level off the swing candle's close instead. The SWEEP test
+    itself is untouched either way -- still always wick-based.
+  - `detect_confirmations(..., close_based_sweep_break: bool = False)`
+    and `run_backtest(..., close_based_sweep_break: bool = False)`
+    thread it through to both the Daily and Weekly trackers/
+    confirmation calls.
+
+7 new tests: two in test_structure.py (a constructed candle sequence
+where close-based confirms a break the wick-based default does not yet
+see, plus an explicit default-matches-False regression check), one in
+test_bias.py (same divergence, at the detect_confirmations() level),
+two in test_runner.py (default-unchanged regression, end-to-end
+smoke test for True). Full suite: 465 passed, 6 skipped -- all 138
+pre-existing structure/bias/runner tests still pass bit-for-bit.
+
+Extended both comparison tools rather than assume close-based is
+better: `compare_origin_kind.py` now sweeps the full 2x2 grid
+(origin_kind x close_based_sweep_break, 4 configs) instead of just
+origin_kind; `compare_history_window.py` gains
+`--close-based-sweep-break` to check whether it further helps
+GBPJPY-shaped instruments converge, on top of what origin_kind alone
+does.
+
+NOT YET RUN against real data with this new toggle -- needs the VPS,
+same deploy pattern as before (git pull, then re-run
+compare_origin_kind.py and/or compare_history_window.py with the new
+flag). Safe to run alongside the origin_kind-only comparisons already
+in flight -- same read-only, shared-lock, niced pattern as every other
+tool tonight.

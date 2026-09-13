@@ -1294,3 +1294,21 @@ def test_run_backtest_any_origin_matches_default_when_no_earlier_breakout_exists
     any_mode = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001, origin_kind="any")
     assert len(default) == 1
     assert default == any_mode
+
+
+def test_run_backtest_close_based_sweep_break_false_matches_default(synthetic_cache):
+    """False is the default -- passing it explicitly must be a no-op."""
+    default = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    explicit_false = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                                   close_based_sweep_break=False)
+    assert default == explicit_false
+
+
+def test_run_backtest_close_based_sweep_break_true_runs_end_to_end(synthetic_cache):
+    """Precise wick-vs-close divergence is covered directly at the
+    structure.py/bias.py unit level (see test_structure.py and
+    test_bias.py); this just confirms the parameter actually reaches
+    run_backtest() end to end without crashing."""
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                            close_based_sweep_break=True)
+    assert isinstance(records, list)

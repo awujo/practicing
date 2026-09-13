@@ -71,3 +71,58 @@ def test_wick_only_sweep_does_not_confirm_break():
 
     assert all(e.kind != "valid_sweep_break" for e in events)
     assert tracker.strong_low is None
+
+
+# --- close_based_break -----------------------------------------------------
+#
+# Same class of line-chart-vs-wick question already settled for the plain
+# breakout (detect_confirmations' close_based_breakout): the SWEEP stays
+# wick-based either way (a sweep is legitimately a wick event -- video-07's
+# notes: "a mere sweep without a close-through does not invalidate it"),
+# but the LEVEL a break is measured against can be read off the swing
+# candle's close (line chart) instead of its wick.
+
+def test_close_based_break_confirms_where_wick_based_does_not_yet():
+    """idx2's swing high has a big upper wick (1.112) but closes much
+    lower (1.107). idx8 closes at 1.109 -- beyond the swing's CLOSE but
+    still short of its WICK -- so close_based_break=True must confirm
+    the break right there while the default (wick-based) does not."""
+    candles = [
+        C(0, 1.100, 1.105, 1.098, 1.102),
+        C(1, 1.102, 1.108, 1.100, 1.106),
+        C(2, 1.106, 1.112, 1.104, 1.107),  # swing high: wick 1.112, close 1.107
+        C(3, 1.107, 1.109, 1.102, 1.104),
+        C(4, 1.104, 1.106, 1.095, 1.096),  # swing low: 1.095
+        C(5, 1.096, 1.099, 1.097, 1.098),
+        C(6, 1.098, 1.101, 1.097, 1.099),
+        C(7, 1.099, 1.100, 1.090, 1.097),  # sweeps below 1.095
+        C(8, 1.097, 1.110, 1.096, 1.109),  # closes 1.109: past the swing's close, not its wick
+    ]
+
+    def _kinds(events):
+        return [(e.kind, e.direction) for e in events]
+
+    wick_events = StructureTracker(n=2, close_based_break=False).run(candles)
+    assert ("valid_sweep_break", Direction.BULLISH) not in _kinds(wick_events)
+
+    close_events = StructureTracker(n=2, close_based_break=True).run(candles)
+    assert ("valid_sweep_break", Direction.BULLISH) in _kinds(close_events)
+
+
+def test_close_based_break_default_is_unchanged_wick_behavior():
+    """close_based_break defaults to False -- omitting it entirely must
+    reproduce the exact same result as passing False explicitly."""
+    candles = [
+        C(0, 1.100, 1.105, 1.098, 1.102),
+        C(1, 1.102, 1.108, 1.100, 1.106),
+        C(2, 1.106, 1.112, 1.104, 1.107),
+        C(3, 1.107, 1.109, 1.102, 1.104),
+        C(4, 1.104, 1.106, 1.095, 1.096),
+        C(5, 1.096, 1.099, 1.097, 1.098),
+        C(6, 1.098, 1.101, 1.097, 1.099),
+        C(7, 1.099, 1.100, 1.090, 1.097),
+        C(8, 1.097, 1.120, 1.096, 1.115),
+    ]
+    default_events = StructureTracker(n=2).run(candles)
+    explicit_events = StructureTracker(n=2, close_based_break=False).run(candles)
+    assert default_events == explicit_events

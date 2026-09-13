@@ -978,7 +978,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   cancel_at_target_fraction: float | None = None,
                   limit_lookahead: int = LIMIT_FILL_LOOKAHEAD,
                   min_departure_r: float = 0.0,
-                  origin_kind: str = "sweep_break") -> list[TradeRecord]:
+                  origin_kind: str = "sweep_break",
+                  close_based_sweep_break: bool = False) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
     separately and compare; this function doesn't mix them in one pass).
@@ -1096,6 +1097,17 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     at up to several years of trailing Daily/Weekly history under
     "sweep_break" alone). Compare against the default before trusting it
     as the new normal -- same as every other experimental variant here.
+    close_based_sweep_break: a second, separate line-chart-vs-wick
+    question found while investigating the one above -- see
+    StructureTracker's own close_based_break docstring for the full
+    reasoning. False (default) reads the level a sweep+break must close
+    beyond off the swing candle's WICK, matching every behavior before
+    2026-09-13. True reads it off the swing candle's CLOSE instead,
+    matching how close_based_breakout already treats the plain-breakout
+    half and the source material's own stated preference for verifying a
+    break off the line chart. The sweep itself is unaffected either way
+    -- it stays wick-based, since a sweep is legitimately a wick event.
+    Compare against the default before trusting it as the new normal.
     """
     _reset_sweep_cache()
     if entry_style not in ("aggressive", "conservative"):
@@ -1117,18 +1129,23 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     except FileNotFoundError:
         weekly = []  # Weekly is optional -- see module docstring
 
-    daily_tracker = StructureTracker(n)
+    daily_tracker = StructureTracker(n, close_based_break=close_based_sweep_break)
     daily_structure_events = daily_tracker.run(daily)
-    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
+    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout,
+                                                close_based_sweep_break=close_based_sweep_break)
     first_origin = _bootstrap_origin(daily_structure_events, daily_confirmations, origin_kind)
     if first_origin is None:
         return []  # no confirmed structure to bootstrap a bias from
 
     daily_levels = detect_key_levels(daily, n)
-    weekly_confirmations = detect_confirmations(weekly, n, close_based_breakout=close_based_breakout) if weekly else []
-    h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
+    weekly_confirmations = detect_confirmations(
+        weekly, n, close_based_breakout=close_based_breakout,
+        close_based_sweep_break=close_based_sweep_break) if weekly else []
+    h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout,
+                                             close_based_sweep_break=close_based_sweep_break)
     h4_levels = detect_key_levels(h4, n)
-    h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout)
+    h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout,
+                                             close_based_sweep_break=close_based_sweep_break)
     h1_imbalances = detect_imbalances(h1)
     h1_imbalance_times = [im.time for im in h1_imbalances]
 
@@ -1138,7 +1155,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
     weekly_breakpoints = []
     if weekly:
-        weekly_tracker = StructureTracker(n)
+        weekly_tracker = StructureTracker(n, close_based_break=close_based_sweep_break)
         weekly_structure_events = weekly_tracker.run(weekly)
         weekly_first_origin = _bootstrap_origin(weekly_structure_events, weekly_confirmations, origin_kind)
         if weekly_first_origin is not None:

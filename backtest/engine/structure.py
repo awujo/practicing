@@ -52,6 +52,13 @@ class SwingPoint:
     price: float
     kind: str  # "high" | "low"
     confirmed_at: object = None
+    # The pivot candle's own CLOSE, distinct from `price` (its wick
+    # extreme). Only populated where it's actually needed (StructureTracker's
+    # last_swing_high/low, used as a sweep+break's structural level) --
+    # see StructureTracker's close_based_break for why the two must be
+    # tracked separately: a sweep is legitimately a wick event, but
+    # SLK reads the level it's tested against off the line chart.
+    close: float | None = None
 
 
 def known_at(point: SwingPoint) -> object:
@@ -112,10 +119,27 @@ class StructureTracker:
         tracker = StructureTracker(n=2)
         events = tracker.run(candles)
         tracker.strong_low, tracker.strong_high   # current values after the run
+
+    close_based_break: the swing high/low a sweep must close back through
+    to confirm a "valid_sweep_break" is, by default (False), that swing
+    candle's own WICK extreme -- matches every behavior before 2026-09-13.
+    When True, the level is the swing candle's CLOSE instead (line chart),
+    matching how detect_confirmations()'s plain-breakout half already
+    reads breakouts (close_based_breakout) and the source material's own
+    stated preference: "line chart specifically to verify break/no-break
+    of a level (candlestick wicks can visually mislead)" (video-07's
+    notes). The SWEEP itself stays wick-based either way -- a sweep is
+    legitimately a wick event ("a mere sweep without a close-through does
+    not invalidate it," video-07) -- only the level the BREAK is measured
+    against changes. Direct operator question (2026-09-13), raised after
+    the origin_kind fix surfaced the same class of inconsistency here:
+    compare against the default before trusting it as the new normal,
+    same as every other experimental variant in this engine.
     """
 
-    def __init__(self, n: int = 2):
+    def __init__(self, n: int = 2, close_based_break: bool = False):
         self.n = n
+        self.close_based_break = close_based_break
         self.strong_low: SwingPoint | None = None
         self.strong_high: SwingPoint | None = None
 
@@ -142,13 +166,15 @@ class StructureTracker:
             # only WHEN this loop starts treating it as known moves.
             if i - self.n in swing_high_idxs:
                 p = candles[i - self.n]
-                last_swing_high = SwingPoint(p.time, p.high, "high")
+                last_swing_high = SwingPoint(p.time, p.high, "high", close=p.close)
             if i - self.n in swing_low_idxs:
                 p = candles[i - self.n]
-                last_swing_low = SwingPoint(p.time, p.low, "low")
+                last_swing_low = SwingPoint(p.time, p.low, "low", close=p.close)
 
             # --- Bullish sequence: sweep a prior low, then close back above the
             # structural high that was in place when the sweep happened. ---
+            # The SWEEP test always reads the wick (last_swing_low.price) --
+            # a sweep is a wick event regardless of close_based_break.
             if pending_sweep_low is None and last_swing_low is not None and c.low < last_swing_low.price:
                 pending_sweep_low = SwingPoint(c.time, c.low, "low")
                 structural_high_at_sweep = last_swing_high
@@ -156,8 +182,10 @@ class StructureTracker:
             elif pending_sweep_low is not None and c.low < pending_sweep_low.price:
                 pending_sweep_low = SwingPoint(c.time, c.low, "low")  # deeper sweep before confirmation
 
+            _high_break_level = (structural_high_at_sweep.close if self.close_based_break
+                                 else structural_high_at_sweep.price) if structural_high_at_sweep else None
             if (pending_sweep_low is not None and structural_high_at_sweep is not None
-                    and body_closes_beyond(c, structural_high_at_sweep.price, Direction.BULLISH)):
+                    and body_closes_beyond(c, _high_break_level, Direction.BULLISH)):
                 self.strong_low = pending_sweep_low
                 events.append(StructureEvent(c.time, "valid_sweep_break", Direction.BULLISH, self.strong_low.price))
                 pending_sweep_low = None
@@ -171,8 +199,10 @@ class StructureTracker:
             elif pending_sweep_high is not None and c.high > pending_sweep_high.price:
                 pending_sweep_high = SwingPoint(c.time, c.high, "high")
 
+            _low_break_level = (structural_low_at_sweep.close if self.close_based_break
+                                else structural_low_at_sweep.price) if structural_low_at_sweep else None
             if (pending_sweep_high is not None and structural_low_at_sweep is not None
-                    and body_closes_beyond(c, structural_low_at_sweep.price, Direction.BEARISH)):
+                    and body_closes_beyond(c, _low_break_level, Direction.BEARISH)):
                 self.strong_high = pending_sweep_high
                 events.append(StructureEvent(c.time, "valid_sweep_break", Direction.BEARISH, self.strong_high.price))
                 pending_sweep_high = None

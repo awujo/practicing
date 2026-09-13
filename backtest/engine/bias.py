@@ -59,7 +59,8 @@ class Confirmation:
     price: float
 
 
-def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout: bool = True) -> list[Confirmation]:
+def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout: bool = True,
+                          close_based_sweep_break: bool = False) -> list[Confirmation]:
     """Merge plain breakouts and sweep+break-of-structure events into one
     confirmation stream, each tagged with which visual pattern it was.
 
@@ -69,8 +70,13 @@ def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout
     correction) -- the same convention A/V-shape key levels already use.
     When False, the level is the swing candle's wick extreme instead (the
     pre-correction behavior) -- kept only so the two can be compared
-    against each other, not because the wick-based reading is preferred."""
-    tracker = StructureTracker(n)
+    against each other, not because the wick-based reading is preferred.
+
+    close_based_sweep_break: the SAME line-chart-vs-wick question, but
+    for the sweep+break half instead of the plain-breakout half -- see
+    StructureTracker's own close_based_break docstring. False (default)
+    matches every behavior before 2026-09-13."""
+    tracker = StructureTracker(n, close_based_break=close_based_sweep_break)
     sweep_events = [e for e in tracker.run(candles) if e.kind == "valid_sweep_break"]
     sweep_break_keys = {(e.time, e.direction) for e in sweep_events}
 

@@ -233,11 +233,15 @@ def main():
                               "not just a full sweep+break reversal) is expected to need much "
                               "less trailing history for instruments like GBPJPY whose current "
                               "structural leg began as a breakout.")
+    parser.add_argument("--close-based-sweep-break", action="store_true",
+                         help="read the level a sweep+break must close beyond off the swing "
+                              "candle's CLOSE instead of its wick -- see StructureTracker's own "
+                              "close_based_break docstring. Off by default (wick, unchanged).")
     args = parser.parse_args()
 
     instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
     common_kwargs = dict(avoid_rollover_entries=not args.no_avoid_rollover, min_reward_r=args.min_reward_r,
-                          origin_kind=args.origin_kind)
+                          origin_kind=args.origin_kind, close_based_sweep_break=args.close_based_sweep_break)
 
     for instrument in instruments:
         print(f"=== {instrument} ===", flush=True)
