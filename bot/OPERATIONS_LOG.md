@@ -4391,3 +4391,19 @@ bias from, but a truncated window could also produce a WRONG bias
 non-emptily, which an empty-check alone would not catch) -- exactly the
 kind of silent failure mode this comparison is meant to surface before
 any escalation logic gets built on top of an unverified assumption.
+
+CAUGHT BY THE OPERATOR before this ever ran against real data: the first
+version's cutoff was `newest_cached_candle - window`, anchored to TODAY
+regardless of which trade in the comparison period was being checked. A
+trade dated 2 years old, with a 2-year window configured, would have
+seen history only from (today - 2y) to today -- almost none of which
+predates the trade itself -- instead of a real 2-year runway ending AT
+ITS OWN entry time. Operator's own words: "for a trade 2 years ago it
+will start from 4 years ago from today" -- exactly right, and exactly
+what the fix does: extend the cutoff by the comparison period's own
+length (recent_days) on top of the window, so the OLDEST trade being
+checked still gets its full configured runway. New regression test
+(`test_windowed_loader_extends_the_cutoff_by_recent_days`) locks in the
+corrected math. Full suite: 450 passed, 6 skipped. This would have
+produced a silently wrong (falsely worse) comparison if it had run
+before being caught.
