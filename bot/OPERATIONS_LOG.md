@@ -4792,3 +4792,75 @@ GBPNZD/GBPAUD/NAS100 run:
 
 Once confirmed, add the result to `history_windows.json`'s
 `"instruments"` section and remove it from this pending list.
+
+### 2026-09-14 -- FIXED: reference signal feed silently drifted from the live bots' new strategy settings
+
+**Symptom (reported by the operator):** Telegram showed nothing but
+routine MT5 reconnect noise, but the hourly GitHub Actions "signal feed"
+(`.github/workflows/hourly-signal-check.yml`, published to the
+`signal-feed` branch and consumed by `bot/reconcile_signals.py`) listed
+real-looking entry signals for USDCAD, EURJPY, XAUUSD and EURCHF dated
+the same day that the live bots apparently never took or mentioned.
+Question asked: "who is wrong with this setup."
+
+**Root cause:** neither tool was wrong about the market -- they were no
+longer computing the same strategy. When `origin_kind`,
+`close_based_sweep_break` and `max_history_years` were added to
+`run_backtest()` and wired into the live bots (this file, "SHIP
+max_history_years TO PRODUCTION" and the origin/close-based entries
+above), `backtest/engine/check_recent_signals.py` -- the script behind
+the GitHub Actions reference feed -- was never updated to pass the new
+`origin_kind`/`close_based_sweep_break` values. Its own top-of-loop
+comment already documented the invariant ("must match
+orchestrator.py's `_check_instrument()` call exactly") for
+`avoid_rollover_entries`/`min_reward_r`, but that invariant wasn't
+extended to the two new parameters when they were added. So the
+reference feed kept computing signals under the OLD bootstrap logic
+(`origin_kind="sweep_break"`, wick-based break levels) while the live
+bots, freshly redeployed, compute under the NEW logic
+(`origin_kind="any"`, close-based break levels) -- two different
+strategies producing two different sets of entries, one of them
+mislabeled as ground truth for the other.
+
+**Not the cause:** `max_history_years`. That parameter is a live-only
+CPU/time optimization (the whole point of the multi-week escalation-
+search project above), not a strategy-logic setting -- the reference
+feed runs in GitHub Actions, not the CPU-starved VPS, so it was
+correctly left on full/unbounded history and deliberately was NOT
+changed to match. That's intentional: for the 16 still-pending
+instruments (only 90-100% match confirmed against their capped
+default, not full convergence), the feed running on unbounded history
+is a *stronger* ground truth than the live bots' shortcut, not a
+weaker one. Threading `max_history_years` through here would have
+defeated that purpose.
+
+**Fix:** `check_recent_signals.py` now takes `--origin-kind` (default
+`"any"`) and `--wick-based-sweep-break` (opt-out flag; close-based is
+the default) and passes both through to its `run_backtest()` call,
+matching the live bots' current launch-script flags. Added a
+regression test
+(`test_default_origin_kind_and_close_based_sweep_break_match_the_live_bots`
+in `backtest/engine/tests/test_check_recent_signals.py`) asserting the
+defaults specifically, plus one confirming the opt-out flag still
+works, so this exact drift trips CI the next time either side's default
+changes without the other.
+
+**Not yet done / operator follow-up:** the *next* scheduled run of
+`hourly-signal-check.yml` will use the fixed defaults automatically
+(no workflow-file change needed, since the new CLI flags default to
+the current live values). But every signal already published under the
+stale logic -- including the USDCAD/EURJPY/XAUUSD/EURCHF ones pasted by
+the operator -- was computed under the OLD strategy and should be
+treated as not-comparable to what the live bots actually run now; no
+action needed on those specific "MISSING" reports once the next feed
+publish overwrites them. Also: this is the second time a live-only
+`run_backtest()` parameter change didn't get propagated to this
+script on the first pass (the first, `avoid_rollover_entries`/
+`min_reward_r`, is why the original comment exists at all) -- worth
+treating "does check_recent_signals.py need updating too" as a
+standing checklist item any time `orchestrator.py`'s `run_backtest()`
+call gains or changes a parameter, not just something to remember.
+
+Full suite after the fix: 513 passed, 6 skipped (`backtest/webapp`
+tests excluded in this sandbox -- unrelated pre-existing missing
+`flask` dependency, not touched by this change).

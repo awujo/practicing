@@ -44,6 +44,32 @@ def main():
                               "VPS consumes (bot/reconcile_signals.py) to tell whether a signal the "
                               "strategy produced ever reached an audit database -- the VPS can't "
                               "compute these itself without stealing CPU from the running bots.")
+    # These two MUST track whatever the live launch scripts currently pass
+    # (see bot/OPERATIONS_LOG.md, "SHIP max_history_years TO PRODUCTION",
+    # 2026-09-13) -- unlike max_history_years below, they change which
+    # entries the strategy produces at all, not just how much history it
+    # takes to reproduce them. Defaulting them wrong doesn't make this
+    # feed empty or error; it makes it confidently report a *different*
+    # strategy's signals as if they were the live bots' ground truth,
+    # which is exactly the "who is wrong" confusion this feed exists to
+    # prevent, not cause.
+    parser.add_argument("--origin-kind", default="any", choices=("sweep_break", "any"),
+                         help="Passed through to run_backtest(); must match the live bots' "
+                              "--origin-kind. Default 'any' matches production since 2026-09-13.")
+    parser.add_argument("--wick-based-sweep-break", action="store_true",
+                         help="Use wick-based (not close-based) sweep+break levels, matching "
+                              "pre-2026-09-13 behavior. The live bots currently pass "
+                              "--close-based-sweep-break, so leave this off unless deliberately "
+                              "checking against a rolled-back live configuration.")
+    # Deliberately NOT threaded through to run_backtest(): this is a live-
+    # only performance shortcut (see run_backtest()'s max_history_years
+    # docstring), not a strategy-logic setting. This feed runs in GitHub
+    # Actions, not on the CPU-starved VPS, so it stays on full/unbounded
+    # history on purpose -- that is what makes it a meaningful ground
+    # truth for instruments whose capped window is only 90-100% confirmed
+    # to match (see OPERATIONS_LOG.md's pending-instruments list) rather
+    # than just mirroring the same shortcut it would otherwise be used to
+    # validate.
     args = parser.parse_args()
 
     since = args.since or (datetime.now(timezone.utc) - timedelta(hours=24))
@@ -62,18 +88,21 @@ def main():
         for instrument in instruments:
             try:
                 # Must match orchestrator.py's _check_instrument() call
-                # exactly (avoid_rollover_entries=True, min_reward_r=1.0,
-                # both enabled 2026-09-01) -- otherwise this reference
-                # feed includes signals the live bots now deliberately
-                # skip BEFORE run_backtest() even returns them as
-                # candidates, meaning no audit row (not even a decline)
-                # is ever logged for them. reconcile_signals.py would
-                # then report every one of those as MISSING -- identical
-                # in appearance to the real "the bot never saw it" bug
-                # this whole feed exists to catch, permanently drowning
-                # out genuine misses in predictable, non-actionable noise.
+                # exactly: avoid_rollover_entries=True, min_reward_r=1.0
+                # (enabled 2026-09-01), and origin_kind/close_based_sweep_break
+                # (live default flipped to "any"/close-based on 2026-09-13 --
+                # see the --origin-kind/--wick-based-sweep-break flags above).
+                # Any of these drifting out of sync makes this feed compute a
+                # DIFFERENT strategy's signals and present them as the live
+                # bots' ground truth -- either manufacturing MISSING reports
+                # for signals the live bots correctly never produced, or (as
+                # happened 2026-09-14) hiding a real drift by mislabeling it
+                # as "the bot never saw it" when actually neither tool was
+                # wrong, they were just no longer configured the same.
                 records = run_backtest(instrument, style,
-                                        avoid_rollover_entries=True, min_reward_r=1.0)
+                                        avoid_rollover_entries=True, min_reward_r=1.0,
+                                        origin_kind=args.origin_kind,
+                                        close_based_sweep_break=not args.wick_based_sweep_break)
             except Exception as exc:
                 errors.append((instrument, style, str(exc)))
                 continue
