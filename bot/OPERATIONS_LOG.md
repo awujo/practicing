@@ -4864,3 +4864,79 @@ call gains or changes a parameter, not just something to remember.
 Full suite after the fix: 513 passed, 6 skipped (`backtest/webapp`
 tests excluded in this sandbox -- unrelated pre-existing missing
 `flask` dependency, not touched by this change).
+
+### 2026-09-14 -- INVESTIGATED, NOT A BUG: XAUUSD candle cache "stale" alarm was a temporary broker-side gap
+
+**Symptom:** same operator report as above, continued -- after the
+reference-feed fix, `bot/check_staleness.py` still fired on XAUUSD
+specifically (`120 min stale, last cached candle: 19:00:00`), repeatedly,
+while every other instrument was current. Also worried the operator
+that both `slk-bot1`/`slk-bot2` had gone quiet on Telegram for ~40+
+minutes.
+
+**Ruled out, in order:**
+- Hung/crashed live bot processes -- `ps aux` showed both real
+  `python3 -m bot.run_live` processes alive since 2026-09-13 with
+  genuine, growing cumulative CPU time. The Telegram quiet stretch was
+  just because most of the 25 x 2 style instrument checks produce no
+  INFO-level line when nothing changed that cycle -- not every
+  instrument logs every iteration.
+- MT5 Market Watch / live quote subscription for XAUUSD -- a direct
+  `symbol_info_tick('XAUUSD')` call against the already-connected
+  mt5linux bridge (port 18812) showed a live, currently-updating bid/ask.
+  The symbol's tick feed was never the problem.
+- A silent exception in `sync_recent_from_mt5()`/`fetch_candles()` --
+  none was ever logged (would show as `logger.warning("cache sync
+  failed for %s...")` in `orchestrator.py`), and the journal confirms
+  `_check_instrument()` completed full `run_backtest()` calls for
+  XAUUSD at 22:08 without one.
+
+**Actual cause, confirmed by querying `copy_rates_from_pos('XAUUSD',
+TIMEFRAME_H1, 0, 8)` directly** (bypassing all of this repo's code):
+MT5's own OHLC history for XAUUSD has a genuine ~3-hour hole,
+2026-09-14 20:00-21:00 UTC (two H1 bars that were simply never formed
+at the broker), while bars immediately before AND after that window are
+present and the live tick feed never dropped. By the time this was
+checked (23:15 UTC), the terminal's own history had already recovered
+(last closed bar 22:00 UTC, matching "now"). Remember MT5's raw
+`copy_rates_from_pos()` timestamps are in the BROKER's server clock
+(confirmed +3h on MetaQuotes-Demo, per `_detect_server_utc_offset()`'s
+docstring in `bot/mt5_data.py`) -- subtract that offset before comparing
+against real UTC, or a perfectly healthy feed looks like it's returning
+future-dated bars.
+
+This also fully explains the XAUUSD `decline_sizing_entry_price_drifted`
+entries seen earlier the same evening ("34.47 away from this signal's
+entry"): `run_backtest()` was correctly working off the last data it
+actually had (stopped at 19:00 UTC) while three real, unaccounted hours
+of price movement had occurred. That was the bot correctly declining to
+trade on a picture it knew was incomplete, not a bug.
+
+**Resolution:** none needed in this codebase. `check_staleness.py` did
+exactly its job -- surfaced a real data gap within the hour, before it
+could cause a bad live decision, per its own stated purpose (see its
+module docstring). The gap self-cleared once the broker's feed for gold
+recovered; `sync_recent_from_mt5()`'s next regular cycle picked up the
+newly-available bars automatically (`cache.append()` needs no special
+handling for a gap -- it just appends whatever's newer than what's
+already cached). The 20:00-21:00 UTC hole in XAUUSD's H1 history is
+permanent unless deliberately backfilled from another source later;
+`structure.py`'s swing/sweep logic has no trouble with an occasional
+missing bar, it just sees one larger step there.
+
+**Diagnostic pattern worth reusing** if `check_staleness.py` fires
+again on any instrument: don't assume a code bug immediately.
+1. Confirm the live bots aren't hung (`ps aux`, real growing CPU time).
+2. Check the terminal's live tick feed directly (`symbol_info_tick`) --
+   if that's fresh, the problem is isolated to bar/history formation,
+   not the connection.
+3. Query `copy_rates_from_pos()` directly against the mt5linux bridge
+   (same host/port the live bot already uses, e.g. 18812 for
+   conservative) from a SEPARATE one-off script -- no need to re-login,
+   a second client can attach to the same already-authenticated
+   terminal. Remember to subtract the broker's UTC offset before
+   reading the timestamps.
+4. Only after that points at genuinely missing broker-side history is
+   it worth escalating further (e.g. to the broker, or by trying to
+   force a resync via `symbol_select` / opening the symbol's chart) --
+   in this case it had already self-resolved by the time step 3 ran.
