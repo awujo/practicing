@@ -29,7 +29,11 @@ def H4(i, o, h, l, c):
 
 
 def W(i, o, h, l, c):
-    return Candle(pd.Timestamp("2023-01-01") + pd.Timedelta(weeks=i), o, h, l, c, 1000)
+    # 2023-01-02 is a Monday -- candles.py's _is_valid_boundary() rejects
+    # weekly bars that don't open on one (see its own docstring), and
+    # "2023-01-01" (a Sunday) used to silently produce candles this test
+    # never noticed were on the wrong weekday.
+    return Candle(pd.Timestamp("2023-01-02") + pd.Timedelta(weeks=i), o, h, l, c, 1000)
 
 
 H1_BASE = pd.Timestamp("2024-01-01") + pd.Timedelta(days=20)  # well past the daily series' own

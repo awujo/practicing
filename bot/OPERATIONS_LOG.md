@@ -5082,3 +5082,75 @@ rather than "never called") and the two rescue tests (now expect
 `allow_pending`/`decline_setup_stop_breached`, matching
 `_place_limit_entry()`'s own decision labels, not `allow`/
 `decline_stale_signal`). Full suite: 526 passed, 6 skipped.
+
+### 2026-09-15 -- FOUND AND FIXED: systemic off-boundary D/W/H4 candles across the whole cache
+
+**Symptom:** operator noticed JP225's H4 bias flip bullish/bearish twice
+within 30 seconds in the Telegram log -- e.g. `bash[1182790]` (bot1)
+logged "hunting" (H4 bearish, confirmed 09-13) at 19:01:31, then
+"waiting_htf" (H4 bullish, confirmed 09-15 09:00) at 19:01:45, on the
+SAME already-running process. H4 can only actually change once every 4
+hours; nothing should be able to flip it twice in 14 seconds.
+
+**Ruled out:** a race between the two bots' concurrent writes to the
+shared cache file -- `cache.py`'s `append()`/`_merge_rewrite()` already
+write atomically (temp file + `os.replace()`, per that function's own
+comment, confirmed live previously when a plain in-place `to_csv()`
+crashed a bot mid-truncation) and take an exclusive lock; reads take a
+shared lock against the same file. This machinery is sound.
+
+**Actual cause, confirmed by directly inspecting the cache files:**
+JP225's H4 cache had a stretch of bars on 2026-09-11 spaced every 2
+hours (05:00, 07:00, 09:00, ... UTC) instead of every 4 hours on the
+correct 00/04/08/12/16/20 grid, followed by a 48-hour gap, then clean
+correctly-spaced data resuming 09-14 onward. Scanning EVERY instrument's
+D/W/H4 cache found the exact same pattern almost everywhere: ~189-199
+off-grid H4 rows, ~175-176 off-midnight D rows, ~166 off-Monday W rows,
+in nearly every one of 25+ instruments, regardless of each instrument's
+total history length. That consistency across totally unrelated
+instruments rules out random corruption -- it's a shared historical
+stretch where something produced off-boundary bars for every symbol
+alike.
+
+H4/D/W are fetched as Dukascopy-NATIVE granularities
+(`dukascopy_client.py` calls the third-party `dukascopy-python`
+package directly; nothing in this repo resamples them -- `resample.py`
+only derives H2/H3/M45 from H1/M15). So the off-boundary bars are an
+upstream artifact of that package's own resampling for some historical
+period (a DST-adjacent quirk is the leading guess, unconfirmed), not a
+bug in anything this codebase wrote. Not worth chasing further upstream
+-- what matters is that live structure/bias detection
+(`StructureTracker`, `live_strategy.py`'s storyline gate,
+`_last_completed_open()`'s own 00/04/08/12/16/20 assumption) has always
+assumed every bar sits where it claims to, and a bar that doesn't
+produces exactly the instability observed: two DIFFERENT off-grid H4
+bars sitting a few hours apart in the underlying series can each look
+like "the most recent H4 close" depending on subtle timing, flipping
+the computed bias back and forth as different parts of the analysis
+land on one or the other.
+
+**Fix:** `backtest/engine/candles.py`'s `load_candles()` -- the single
+shared read path for run_backtest() AND every live bias/structure
+check -- now drops any H4/D/W row that doesn't land on a valid UTC
+boundary (H4: hour in {0,4,8,12,16,20}; D: midnight; W: Monday
+midnight; minute/second must be exactly 0). H1 is deliberately exempt
+-- any hour is a legitimate H1 open. Non-destructive: the raw cache
+files are untouched, so this is fully reversible and requires no VPS
+data surgery, just a code deploy. New tests in
+`backtest/engine/tests/test_candles.py` cover each granularity's
+boundary rule and confirm H1 is unaffected. Also fixed a latent bug this
+surfaced in `backtest/engine/tests/test_runner.py`: the `W()` test
+helper anchored synthetic weekly candles to `"2023-01-01"`, a Sunday --
+harmless before this fix since nothing checked weekday, but now
+correctly rejected. Re-anchored to `"2023-01-02"` (an actual Monday).
+
+**Not yet done:** no attempt made to clean the ~150-200 bad rows per
+instrument out of the actual cache files on the VPS -- unnecessary,
+since `load_candles()` filters them on every read regardless of what's
+on disk. If cache file size or a future direct-pandas read (bypassing
+`load_candles()`) ever matters, revisit; not needed for now. Also
+unconfirmed: the exact upstream cause inside `dukascopy-python`'s own
+resampling -- flagged as a "leading guess, unconfirmed" above rather
+than asserted.
+
+Full suite: 530 passed, 6 skipped.
