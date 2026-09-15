@@ -929,6 +929,44 @@ def test_a_fresh_process_reconstructs_its_watermark_from_the_audit_log_not_a_col
         "the t2 signal must have been evaluated (accepted or declined), not silently dropped"
 
 
+def test_a_restart_does_not_redecline_the_exact_signal_it_already_logged(tmp_path):
+    """Confirmed live 2026-09-15: JP225's decline_stale_signal for the
+    same signal_time (2026-09-15 02:00:00+00:00) was logged TWICE,
+    exactly bracketing that day's two bot restarts (07:38 and 15:49) --
+    byte-identical entry_time both times. The watermark-reconstruction
+    fix above (2026-08-30/31) is supposed to prevent exactly this: it
+    reconstructs the watermark from the MOST RECENT entry_attempt this
+    instrument ever logged, precisely so a restart can't re-see a signal
+    it has already evaluated. If the reconstructed watermark is set from
+    a row whose OWN entry_time is signal_time, and run_backtest() (a
+    fresh process replays its whole history from scratch, so it
+    legitimately re-derives the same historical signal) hands back that
+    SAME signal_time again, it must not be re-logged."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    signal_time = pd.Timestamp("2026-01-13T02:00:00+00:00")
+    new_candle_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    # The OLD process already declined this exact signal as stale and
+    # logged it durably -- this is the row a restart must reconstruct
+    # its watermark from.
+    audit.append(DecisionRecord(event_type="entry_attempt", decision="decline_stale_signal",
+                                 reason="stale", instrument="EURUSD", entry_time=str(signal_time)))
+    assert bot._last_entry_time.get("EURUSD") is None  # genuinely nothing in memory -- a fresh process
+
+    same_signal_again = a_trade_record(signal_time, trade_id=99)
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": new_candle_time})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[same_signal_again]):
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert not any(r["trade_id"] == "99" for r in rows), \
+        "the already-logged signal must not be re-evaluated (and re-declined) after a restart"
+
+
 def test_a_genuinely_new_instrument_still_starts_cold(tmp_path):
     # The audit log has never seen this instrument -- there is nothing
     # to reconstruct, so this must still be exact-match-only, same as
