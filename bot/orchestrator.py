@@ -75,6 +75,25 @@ STORYLINE_GAP_LOOKBACK_CANDLES = 72
 # 2026-08-29 request: "leave the trade if it have passed" -- declined,
 # not silently dropped: still logged with the full reasoning, just
 # tagged decline_stale_signal instead of executed.
+#
+# 2026-09-15 REVISED: this cutoff is no longer the decision by itself for
+# market orders -- it is the trigger for asking the real question, via
+# `_stale_signal_verdict()` (setup_validity.check_setup(), the same
+# price-based check the limit path already used). It was originally
+# written as a proxy for "has the market moved past this level" (see the
+# limit-order comment below, written the very next week) but was never
+# actually checked against price for market orders -- only measured
+# against the clock. Operator, 2026-09-15, on discovering this: "I think
+# I have gotten mixed up with what 3h stale means" -- they had assumed
+# from the start that "stale" meant the LEVEL was invalidated, not that
+# the confirmation merely arrived late. Measured against
+# `backtest.tools.analyze_stale_declines.py` on live audit history: of
+# 38 declines on this exact cutoff, only 42% had genuinely been
+# invalidated (stop breached); 47% had already run most of the way to
+# TARGET without the bot in the trade (the thesis was right, just found
+# too late to act on now); 11% were still fully intact and simply thrown
+# away on the clock alone. This cutoff now only decides WHEN to ask
+# check_setup() the real question, not the answer itself.
 STALE_ENTRY_CUTOFF = timedelta(hours=3)
 
 # The same cutoff, but for `--entry-order-type limit`. Much longer on
@@ -583,19 +602,58 @@ class LiveBot:
         for record in fresh:
             staleness = new_candle.time - record.entry_time
             if staleness > cutoff:
-                # See STALE_ENTRY_CUTOFF's own comment. Declined, not
-                # silently dropped -- full reasoning still logged/audited,
-                # just never reaches the risk manager or MT5.
+                if self.entry_order_type == "limit":
+                    # The limit path already re-checks price for real
+                    # inside _place_limit_entry() below -- this cutoff is
+                    # only a backstop for a signal old enough not to be
+                    # worth checking at all. See STALE_ENTRY_CUTOFF_LIMIT.
+                    reason = (f"signal candle is {staleness} old (cutoff {cutoff}) -- "
+                              f"too old to be worth resting a limit against at all")
+                else:
+                    # Market path: age alone never answered the real
+                    # question. Ask check_setup() whether price has
+                    # ACTUALLY invalidated this setup since it fired --
+                    # see STALE_ENTRY_CUTOFF's own comment, 2026-09-15.
+                    verdict = self._stale_signal_verdict(instrument, record)
+                    if verdict is not None and verdict.alive:
+                        # Still alive by price, just old by the clock.
+                        # _consider_entry()'s own price-drift check still
+                        # protects against a market fill at a since-
+                        # drifted price with a ruined risk:reward.
+                        self._consider_entry(instrument, record, state)
+                        continue
+                    reason = (verdict.reason if verdict is not None else
+                              "could not read the H1 cache to check whether price has "
+                              "actually invalidated this setup since it fired -- declining "
+                              "rather than trading a thesis nobody has verified")
+                # Declined, not silently dropped -- full reasoning still
+                # logged/audited, just never reaches the risk manager or MT5.
                 self._log_event(
-                    "entry_attempt", "decline_stale_signal",
-                    f"signal candle is {staleness} old (cutoff {cutoff}) -- "
-                    f"market has likely moved past this level, not attempting it late",
-                    state, instrument=instrument, trade_id=str(record.trade_id),
+                    "entry_attempt", "decline_stale_signal", reason, state,
+                    instrument=instrument, trade_id=str(record.trade_id),
                     **_audit_fields_from_trade_record(record),
                 )
                 continue
             self._consider_entry(instrument, record, state)
         self._last_entry_time[instrument] = new_candle.time
+
+    def _stale_signal_verdict(self, instrument: str, record: TradeRecord):
+        """Is a market-order signal older than STALE_ENTRY_CUTOFF actually
+        DEAD, per price -- or just old by the clock? Reuses the exact same
+        setup_validity.check_setup() the limit-order path has always used
+        for this; age was only ever meant as a crude proxy for "has price
+        moved past this level" (see STALE_ENTRY_CUTOFF's own comment), and
+        this asks that question directly instead of guessing from elapsed
+        time.
+
+        Returns None when the candle cache can't answer -- callers must
+        fail closed (decline) on that, exactly like _place_limit_entry()
+        already does; "can't tell" must never read as "still alive"."""
+        candles_since = self._candles_since(instrument, record.entry_time)
+        if candles_since is None:
+            return None
+        return check_setup(record.entry_price, record.stop_loss, record.primary_target,
+                            record.direction, candles_since)
 
     def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
         """Is this instrument in the hunting stage (Daily and H4 aligned,

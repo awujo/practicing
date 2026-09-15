@@ -853,6 +853,79 @@ def test_a_caught_up_signal_still_within_the_cutoff_is_traded_normally(tmp_path)
     assert rows[0]["decision"] == "allow"
 
 
+def test_a_stale_market_signal_still_alive_by_price_is_traded_not_declined(tmp_path):
+    """2026-09-15 fix: age alone must never be the verdict for a market
+    order -- only whether price has actually invalidated the setup since
+    it fired. A signal well past STALE_ENTRY_CUTOFF, with price still
+    sitting between entry and stop (never breached, never near target),
+    must reach _consider_entry() and be allowed, not thrown away on the
+    clock."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    watermark_time = pd.Timestamp("2026-01-12T20:00:00+00:00")
+    stale_signal = pd.Timestamp("2026-01-12T22:00:00+00:00")   # 16h before recovery
+    recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": watermark_time})()
+        bot.run_once()
+
+    # a_trade_record(): bullish, entry 1.17374, stop 1.17290, target
+    # 1.17626 -- these candles never dip to the stop nor climb 80% of
+    # the way to target, so check_setup() reads ALIVE.
+    quiet_candles = [_bar(1.17410, 1.17360, time=stale_signal + timedelta(hours=1)),
+                     _bar(1.17420, 1.17370, time=stale_signal + timedelta(hours=2))]
+    stale_record = a_trade_record(stale_signal, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[stale_record]), \
+         patch.object(LiveBot, "_candles_since", return_value=quiet_candles):
+        mock_new_candle.return_value = type("C", (), {"time": recovery_time})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["decision"] == "allow"
+
+
+def test_a_stale_market_signal_genuinely_stopped_out_is_still_declined(tmp_path):
+    """The other half of the 2026-09-15 fix: age is no longer the
+    verdict, but a setup that price has actually invalidated must still
+    be declined -- just for the real reason (stop breached), not a
+    clock guess."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    watermark_time = pd.Timestamp("2026-01-12T20:00:00+00:00")
+    stale_signal = pd.Timestamp("2026-01-12T22:00:00+00:00")
+    recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": watermark_time})()
+        bot.run_once()
+
+    # bullish, stop 1.17290 -- this candle's low trades straight through it.
+    breached = [_bar(1.17380, 1.17250, time=stale_signal + timedelta(hours=1))]
+    stale_record = a_trade_record(stale_signal, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[stale_record]), \
+         patch.object(LiveBot, "_candles_since", return_value=breached):
+        mock_new_candle.return_value = type("C", (), {"time": recovery_time})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
+    assert rows[0]["decision"] == "decline_stale_signal"
+    assert "invalidation point" in rows[0]["reason"]  # check_setup()'s own STOP_BREACHED wording
+    assert fake.order_send_calls == []
+
+
 def test_a_signal_whose_gate_closed_before_the_recovery_poll_is_still_caught(tmp_path):
     # Confirmed live 2026-08-29: NZDUSD's 13:00 UTC candle passed the
     # storyline gate (Daily/H4 aligned) at the time. A reconnect storm
