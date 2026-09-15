@@ -602,58 +602,43 @@ class LiveBot:
         for record in fresh:
             staleness = new_candle.time - record.entry_time
             if staleness > cutoff:
-                if self.entry_order_type == "limit":
-                    # The limit path already re-checks price for real
-                    # inside _place_limit_entry() below -- this cutoff is
-                    # only a backstop for a signal old enough not to be
-                    # worth checking at all. See STALE_ENTRY_CUTOFF_LIMIT.
-                    reason = (f"signal candle is {staleness} old (cutoff {cutoff}) -- "
-                              f"too old to be worth resting a limit against at all")
-                else:
-                    # Market path: age alone never answered the real
-                    # question. Ask check_setup() whether price has
-                    # ACTUALLY invalidated this setup since it fired --
-                    # see STALE_ENTRY_CUTOFF's own comment, 2026-09-15.
-                    verdict = self._stale_signal_verdict(instrument, record)
-                    if verdict is not None and verdict.alive:
-                        # Still alive by price, just old by the clock.
-                        # _consider_entry()'s own price-drift check still
-                        # protects against a market fill at a since-
-                        # drifted price with a ruined risk:reward.
-                        self._consider_entry(instrument, record, state)
-                        continue
-                    reason = (verdict.reason if verdict is not None else
-                              "could not read the H1 cache to check whether price has "
-                              "actually invalidated this setup since it fired -- declining "
-                              "rather than trading a thesis nobody has verified")
+                if self.entry_order_type != "limit" and staleness <= STALE_ENTRY_CUTOFF_LIMIT:
+                    # 2026-09-15 REVISED: a market fill this late can land
+                    # far from the entry_price the stop/target were sized
+                    # for -- current price drift that setup_validity.
+                    # check_setup() cannot see (it only asks "has price
+                    # killed the thesis", never "is current price still
+                    # near enough to trade at"). An earlier version of
+                    # this fix let a check_setup()-ALIVE stale signal
+                    # through to a market fill anyway, relying on
+                    # compute_lot_size()'s drift guard to catch a bad
+                    # price -- correctly rejected: that guard allows up to
+                    # 100% of the stop distance, nowhere near tight enough
+                    # to guarantee the backtested risk:reward survives.
+                    # Instead, rest a LIMIT at the setup's own entry level
+                    # -- the exact mechanism the limit-order bot already
+                    # uses for this, which sidesteps drift entirely: it
+                    # only ever fills AT the intended price or not at all.
+                    # _place_limit_entry() re-checks bias and check_setup()
+                    # itself, so a genuinely dead or bias-flipped setup
+                    # still declines correctly from there -- nothing here
+                    # bypasses those checks, it only changes HOW a still-
+                    # good setup gets acted on once too old to fill at
+                    # market. Bounded by the same STALE_ENTRY_CUTOFF_LIMIT
+                    # backstop the limit bot itself uses, for consistency.
+                    self._consider_entry(instrument, record, state, force_limit=True)
+                    continue
                 # Declined, not silently dropped -- full reasoning still
                 # logged/audited, just never reaches the risk manager or MT5.
                 self._log_event(
-                    "entry_attempt", "decline_stale_signal", reason, state,
-                    instrument=instrument, trade_id=str(record.trade_id),
+                    "entry_attempt", "decline_stale_signal",
+                    f"signal candle is {staleness} old (cutoff {cutoff}) -- too old to act on at all",
+                    state, instrument=instrument, trade_id=str(record.trade_id),
                     **_audit_fields_from_trade_record(record),
                 )
                 continue
             self._consider_entry(instrument, record, state)
         self._last_entry_time[instrument] = new_candle.time
-
-    def _stale_signal_verdict(self, instrument: str, record: TradeRecord):
-        """Is a market-order signal older than STALE_ENTRY_CUTOFF actually
-        DEAD, per price -- or just old by the clock? Reuses the exact same
-        setup_validity.check_setup() the limit-order path has always used
-        for this; age was only ever meant as a crude proxy for "has price
-        moved past this level" (see STALE_ENTRY_CUTOFF's own comment), and
-        this asks that question directly instead of guessing from elapsed
-        time.
-
-        Returns None when the candle cache can't answer -- callers must
-        fail closed (decline) on that, exactly like _place_limit_entry()
-        already does; "can't tell" must never read as "still alive"."""
-        candles_since = self._candles_since(instrument, record.entry_time)
-        if candles_since is None:
-            return None
-        return check_setup(record.entry_price, record.stop_loss, record.primary_target,
-                            record.direction, candles_since)
 
     def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
         """Is this instrument in the hunting stage (Daily and H4 aligned,
@@ -741,7 +726,15 @@ class LiveBot:
                 return True
         return False
 
-    def _consider_entry(self, instrument: str, record: TradeRecord, state):
+    def _consider_entry(self, instrument: str, record: TradeRecord, state, force_limit: bool = False):
+        """force_limit: rest a limit at record.entry_price even on a
+        market-order bot, instead of firing an immediate market order.
+        Used only for a signal past STALE_ENTRY_CUTOFF (see the caller):
+        current price may have drifted from entry_price by the time a
+        market order would fill, which check_setup() cannot see and
+        compute_lot_size()'s drift guard (100% of stop distance) is far
+        too loose to rule out -- a limit sidesteps this by only ever
+        filling at the intended price."""
         risk = self.risk_manager.risk_for_next_trade(state)
         decision = self.risk_manager.check_new_entry(state)
 
@@ -771,7 +764,7 @@ class LiveBot:
 
         direction = record.direction.value if hasattr(record.direction, "value") else record.direction
 
-        if self.entry_order_type == "limit":
+        if self.entry_order_type == "limit" or force_limit:
             self._place_limit_entry(instrument, record, state, risk, sizing.lot_size,
                                      direction, base_fields)
             return
@@ -851,8 +844,11 @@ class LiveBot:
         # 24h window, a signal could rest against Weekly/Daily/H4
         # alignment that has since flipped, and check_setup() would never
         # notice because it only compares price against stop and target.
-        # Market mode is unaffected -- it fires once and is done, so a
-        # stale bias cannot keep costing anything.
+        # A market-order bot's OWN prompt (non-stale) entries never reach
+        # here at all -- they fire once via place_market_order() and are
+        # done -- but a stale signal rescued via force_limit (see
+        # _check_instrument()) rests here exactly like the limit bot's
+        # own signals, so it needs this same re-check too.
         as_of = self._current_candle_time.get(instrument)
         if as_of is not None and not self._storyline_says_hunt(instrument, as_of):
             self.awaiting_departure.pop((instrument, record.entry_time), None)

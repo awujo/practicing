@@ -5027,3 +5027,58 @@ that was never real.
 
 Full suite after the fix: 514 passed, 6 skipped (same pre-existing
 `flask`-dependency exclusion as above, unrelated to this change).
+
+### 2026-09-15 -- CORRECTED: the stale-signal fix above was wrong for market orders
+
+**The mistake:** the fix above let a market-order signal past
+`STALE_ENTRY_CUTOFF` through to an immediate market order whenever
+`setup_validity.check_setup()` said the setup was still `ALIVE` (stop not
+breached, target not mostly achieved), relying on
+`compute_lot_size()`'s existing entry-drift guard to catch a bad fill
+price. **Operator, immediately on reading the deploy summary: "No this
+can't work with market order."** Correct catch: `check_setup()` answers
+"has the LEVEL been invalidated", never "is CURRENT price still close
+enough to the level to fill at market with anything like the intended
+risk:reward." A market order fills at whatever price exists right now,
+with the stop/target still fixed at the ORIGINAL numbers -- "ALIVE" says
+nothing about how far current price has drifted from entry in the
+meantime. The existing drift guard (`max_entry_drift_fraction=1.0` in
+`run_live.py`) allows drift up to **100% of the stop distance** before
+declining -- nowhere near tight enough to guarantee the trade taken
+resembles anything the backtest validated. The original fix would have
+let genuinely bad fills through disguised as a good decision.
+
+**The actual fix:** a market-order signal past `STALE_ENTRY_CUTOFF` (but
+within `STALE_ENTRY_CUTOFF_LIMIT`, 24h) is no longer routed toward a
+market order at all. It's routed to `_consider_entry(..., force_limit=
+True)`, which rests a LIMIT at the setup's own `entry_price` via the
+EXISTING `_place_limit_entry()` -- the exact mechanism the limit-order
+bot (`--entry-order-type limit`) already uses for this, unmodified. A
+resting limit sidesteps the entire drift problem by construction: it
+only ever fills at the intended price, or not at all. `_place_limit_entry()`
+already re-checks bias alignment and `check_setup()` on every call, so a
+genuinely dead or bias-flipped setup still declines correctly
+(`decline_setup_stop_breached` / `decline_setup_target_achieved` /
+`decline_bias_no_longer_aligned` / `decline_setup_unverifiable`) --
+nothing about this fix bypasses those checks, it only changes HOW a
+still-good setup gets acted on once too old to fill at market. Beyond
+the 24h backstop, still hard-declined exactly as before
+(`decline_stale_signal`, "too old to act on at all").
+
+Net effect: a market-order bot's own prompt (non-stale) signals are
+completely unaffected -- they still fire an immediate market order the
+same as always. Only signals that would previously have been thrown
+away purely for being old now get a real chance via a limit rest
+instead, with zero new execution-price risk introduced.
+
+`_consider_entry()` gained a `force_limit: bool = False` parameter;
+`_check_instrument()`'s market-path staleness branch now calls it with
+`force_limit=True` instead of either declining outright or (the
+corrected-away wrong version) calling it plain. Removed the interim
+`_stale_signal_verdict()` helper entirely -- `_place_limit_entry()`
+already does everything it was duplicating. Updated
+`test_market_mode_keeps_the_3h_cutoff` (now asserts `force_limit=True`
+rather than "never called") and the two rescue tests (now expect
+`allow_pending`/`decline_setup_stop_breached`, matching
+`_place_limit_entry()`'s own decision labels, not `allow`/
+`decline_stale_signal`). Full suite: 526 passed, 6 skipped.

@@ -783,22 +783,27 @@ def test_a_signal_from_before_the_watermark_is_not_reconsidered(tmp_path):
     assert len(audit.recent(10)) == 1  # still just the one row -- t1 was not re-logged
 
 
-def test_a_caught_up_signal_past_the_staleness_cutoff_is_declined_not_traded(tmp_path):
+def test_a_caught_up_signal_past_the_staleness_cutoff_rests_a_limit_not_a_market_order(tmp_path):
     # Confirmed live 2026-08-29: EURJPY's 16:00/17:00 UTC candles from the
-    # PREVIOUS day were still attempted as live market orders 14-15 hours
-    # later. The watermark-widening catch-up (2026-08-28) exists so a
-    # missed signal is never silently dropped -- but trading it that
-    # stale, against a materially different current price, is a separate
-    # and much worse problem than just reporting it. Direct request:
-    # "leave the trade if it have passed" -- still logged with full
-    # reasoning (declined, not silently dropped), just never reaches
-    # _consider_entry/the risk manager/MT5.
+    # PREVIOUS day were still attempted as live MARKET orders 14-15 hours
+    # later, against a materially different current price than the stop/
+    # target were sized for. 2026-09-15 REVISED: a market fill this late
+    # is never safe (check_setup() can't see current-price drift, and
+    # compute_lot_size()'s drift guard allows up to 100% of the stop
+    # distance -- nowhere near tight enough), so a signal in this window
+    # (past STALE_ENTRY_CUTOFF but within STALE_ENTRY_CUTOFF_LIMIT) now
+    # rests a LIMIT at its own entry price instead of firing at market --
+    # same mechanism the limit-order bot already uses, which only ever
+    # fills at the intended price or not at all. Here the H1 cache can't
+    # be read (unmocked), so _place_limit_entry() itself fails closed
+    # (decline_setup_unverifiable) rather than resting against an
+    # unverified thesis -- still never reaching a market order.
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
 
     # Watermark established BEFORE the stale signal's own candle, then
     # recovery lands 16h after it -- inside the watermark-widening catch-up
-    # window, but well past the 3-hour staleness cutoff.
+    # window, past the 3-hour market cutoff but within the 24h backstop.
     watermark_time = pd.Timestamp("2026-01-12T20:00:00+00:00")
     stale_signal = pd.Timestamp("2026-01-12T22:00:00+00:00")
     recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
@@ -819,8 +824,38 @@ def test_a_caught_up_signal_past_the_staleness_cutoff_is_declined_not_traded(tmp
 
     rows = audit.recent(10)
     assert len(rows) == 1
+    assert rows[0]["decision"] == "decline_setup_unverifiable"
+    assert fake.order_send_calls == []  # never reached market execution
+
+
+def test_a_signal_past_the_limit_backstop_too_is_declined_outright(tmp_path):
+    """Beyond STALE_ENTRY_CUTOFF_LIMIT (24h), even the limit-rescue isn't
+    attempted -- same hard backstop the limit-order bot itself uses."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(fake, tmp_path)
+
+    watermark_time = pd.Timestamp("2026-01-12T08:00:00+00:00")
+    ancient_signal = pd.Timestamp("2026-01-12T10:00:00+00:00")
+    recovery_time = pd.Timestamp("2026-01-13T14:00:00+00:00")  # 28h later
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        mock_new_candle.return_value = type("C", (), {"time": watermark_time})()
+        bot.run_once()
+
+    ancient_record = a_trade_record(ancient_signal, trade_id=1)
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[ancient_record]):
+        mock_new_candle.return_value = type("C", (), {"time": recovery_time})()
+        bot.run_once()
+
+    rows = audit.recent(10)
+    assert len(rows) == 1
     assert rows[0]["decision"] == "decline_stale_signal"
-    assert fake.order_send_calls == []  # never reached execution
+    assert "too old to act on at all" in rows[0]["reason"]
+    assert fake.order_send_calls == []
 
 
 def test_a_caught_up_signal_still_within_the_cutoff_is_traded_normally(tmp_path):
@@ -853,13 +888,14 @@ def test_a_caught_up_signal_still_within_the_cutoff_is_traded_normally(tmp_path)
     assert rows[0]["decision"] == "allow"
 
 
-def test_a_stale_market_signal_still_alive_by_price_is_traded_not_declined(tmp_path):
-    """2026-09-15 fix: age alone must never be the verdict for a market
-    order -- only whether price has actually invalidated the setup since
-    it fired. A signal well past STALE_ENTRY_CUTOFF, with price still
-    sitting between entry and stop (never breached, never near target),
-    must reach _consider_entry() and be allowed, not thrown away on the
-    clock."""
+def test_a_stale_market_signal_still_alive_by_price_rests_a_limit(tmp_path):
+    """2026-09-15 fix (revised): age alone must never be the verdict for
+    a market order -- but a market FILL this late isn't safe either
+    (current price may have drifted from entry_price with the stop/
+    target still sized for the original level). A signal well past
+    STALE_ENTRY_CUTOFF, with price still sitting between entry and stop
+    (never breached, never near target), must rest a LIMIT at its own
+    entry price via force_limit -- never an immediate market order."""
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
 
@@ -888,14 +924,17 @@ def test_a_stale_market_signal_still_alive_by_price_is_traded_not_declined(tmp_p
 
     rows = audit.recent(10)
     assert len(rows) == 1
-    assert rows[0]["decision"] == "allow"
+    assert rows[0]["decision"] == "allow_pending"  # rested, not filled
+    assert fake.order_send_calls == [] or all(
+        c.get("action") != fake.TRADE_ACTION_DEAL for c in fake.order_send_calls
+    ), "must never be an immediate market fill"
 
 
 def test_a_stale_market_signal_genuinely_stopped_out_is_still_declined(tmp_path):
     """The other half of the 2026-09-15 fix: age is no longer the
     verdict, but a setup that price has actually invalidated must still
-    be declined -- just for the real reason (stop breached), not a
-    clock guess."""
+    be declined -- just for the real reason (stop breached, via the same
+    check_setup() the limit-order rescue path uses), not a clock guess."""
     fake = FakeMT5()
     bot, audit, client = make_bot(fake, tmp_path)
 
@@ -921,7 +960,7 @@ def test_a_stale_market_signal_genuinely_stopped_out_is_still_declined(tmp_path)
 
     rows = audit.recent(10)
     assert len(rows) == 1
-    assert rows[0]["decision"] == "decline_stale_signal"
+    assert rows[0]["decision"] == "decline_setup_stop_breached"
     assert "invalidation point" in rows[0]["reason"]  # check_setup()'s own STOP_BREACHED wording
     assert fake.order_send_calls == []
 
@@ -1596,6 +1635,13 @@ def test_limit_mode_does_not_discard_signals_the_3h_market_cutoff_would(tmp_path
 
 
 def test_market_mode_keeps_the_3h_cutoff(tmp_path):
+    """A market-mode signal past STALE_ENTRY_CUTOFF must never take the
+    PLAIN path to _consider_entry() (the one that can fire an immediate
+    market order at a since-drifted price) -- 2026-09-15 revised: it is
+    still routed to _consider_entry(), but with force_limit=True, which
+    rests a limit at the original entry price instead of filling at
+    market. See test_a_stale_market_signal_still_alive_by_price_rests_a_limit
+    for the full behavioral test of that path."""
     fake = FakeMT5()
     bot, _, _ = make_bot(fake, tmp_path)          # market, the default
     signal_time = pd.Timestamp("2026-09-02T07:00Z")
@@ -1613,7 +1659,7 @@ def test_market_mode_keeps_the_3h_cutoff(tmp_path):
             time=signal_time + pd.Timedelta(hours=7))
         bot._check_instrument("EURUSD", state)
 
-    considered.assert_not_called()
+    considered.assert_called_once_with("EURUSD", record, state, force_limit=True)
 
 
 def test_limit_entry_declines_when_bias_no_longer_aligns_now(tmp_path):
