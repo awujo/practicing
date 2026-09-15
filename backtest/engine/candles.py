@@ -14,37 +14,6 @@ import pandas as pd
 from ..data_pipeline import cache
 
 
-# Fixed-interval granularities can only legitimately OPEN at specific UTC
-# boundaries -- H4 at 00/04/08/12/16/20, D at midnight, W at Monday
-# midnight (matching bot/mt5_data.py's _last_completed_open(), which
-# assumes the same). Confirmed live 2026-09-15: every one of 25+
-# instruments' D/W/H4 cache files carries a consistent ~150-200 rows that
-# do NOT land on a valid boundary (e.g. H4 bars at 05:00/07:00/09:00
-# instead of 04:00/08:00/12:00) -- same count regardless of instrument or
-# total history length, which points at a shared historical stretch where
-# dukascopy-python's own upstream resampling (not this pipeline -- H4/D/W
-# are fetched as Dukascopy-native granularities, see dukascopy_client.py)
-# produced off-boundary bars, likely a DST-adjacent quirk. Live structure/
-# bias detection assumes every bar sits where it claims to
-# (StructureTracker, live_strategy.py's storyline gate); feeding it one
-# that doesn't produces visibly unstable output -- confirmed live: JP225's
-# H4 bias flipped bullish/bearish twice within 30 seconds on the SAME
-# already-running process, with no real H4 candle having closed in
-# between. H1 has no such concept (any hour is a valid H1 open), so it is
-# deliberately not in this set.
-_VALID_BOUNDARY_HOURS = {"H4": {0, 4, 8, 12, 16, 20}, "D": {0}, "W": {0}}
-
-
-def _is_valid_boundary(time: pd.Timestamp, granularity: str) -> bool:
-    if granularity not in _VALID_BOUNDARY_HOURS:
-        return True
-    if time.minute != 0 or time.second != 0:
-        return False
-    if granularity == "W" and time.weekday() != 0:  # Monday
-        return False
-    return time.hour in _VALID_BOUNDARY_HOURS[granularity]
-
-
 @dataclass(frozen=True)
 class Candle:
     time: pd.Timestamp
@@ -104,7 +73,6 @@ def load_candles(source: str, symbol: str, granularity: str) -> list[Candle]:
     candles = [
         Candle(row.time, row.open, row.high, row.low, row.close, row.volume)
         for row in df.itertuples(index=False)
-        if _is_valid_boundary(row.time, granularity)
     ]
     if fingerprint is not None:
         _cache[path] = (fingerprint, candles)
