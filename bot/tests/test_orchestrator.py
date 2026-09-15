@@ -1386,8 +1386,36 @@ def test_a_genuine_daily_breach_still_halts(tmp_path):
 
     fake.account = SimpleNamespace(balance=94000.0, equity=94000.0)  # -6% today
     bot.run_once()
-
     assert bot.halted
+
+
+def test_day_roll_snapshots_from_a_fresh_read_not_a_stale_first_one(tmp_path):
+    """Confirmed live 2026-09-15: the bot had been disconnected from
+    before midnight UTC through a reconnect at 01:07:52. That reconnect's
+    OWN first account read -- the one that detects the day changed and
+    used to be trusted as the snapshot -- returned a stale/cached balance
+    ($103,499.33); a second read taken 8 seconds later in the SAME
+    iteration correctly showed $92,860.85, the account's real, unchanged
+    balance (confirmed against its actual trade history: zero deals in
+    that entire window). Snapshotting from the first read manufactured a
+    false 10.28% "daily drawdown" and halted the bot for the rest of the
+    day on an account that hadn't moved at all.
+
+    `_roll_day_if_needed()` must never trust the read that DETECTED the
+    day change for the snapshot itself -- it has to re-fetch."""
+    fake = FakeMT5()
+    readings = iter([
+        SimpleNamespace(balance=103499.33, equity=103499.33),  # stale, detects the roll
+        SimpleNamespace(balance=92860.85, equity=92860.85),    # fresh re-fetch, the true value
+    ])
+    fallback = SimpleNamespace(balance=92860.85, equity=92860.85)
+    fake.account_info = lambda: next(readings, fallback)
+    bot, _, _ = make_bot(fake, tmp_path)
+
+    bot.run_once()
+
+    assert not bot.halted
+    assert bot.day_start_balance == 92860.85
 
 
 def test_limit_entry_declines_when_the_setup_cannot_be_verified(tmp_path):

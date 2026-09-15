@@ -304,32 +304,40 @@ class LiveBot:
         self.phase_start_balance = self.profile.starting_balance
         self.day_start_balance = self.profile.starting_balance
 
-    def _roll_day_if_needed(self, state) -> bool:
-        """Snapshot today's opening balance. Returns True if it changed,
-        so the caller can rebuild any state built against the old one.
-
-        That return value is not cosmetic. `__post_init__` seeds
-        `day_start_balance` with the PHASE starting balance (100,000),
-        because on a cold start there is no account reading yet -- so the
-        first `_account_state()` of a fresh process carries that seed, and
-        anything measured against it reads the account's CUMULATIVE
-        drawdown as if it were today's.
+    def _roll_day_if_needed(self) -> bool:
+        """Returns True if today's UTC date has changed since the last
+        check. Deliberately does NOT snapshot `day_start_balance` itself
+        (it used to, from a `state` the caller passed in) -- the caller
+        must re-fetch a FRESH account read and snapshot from THAT, not
+        from any state already in hand. See `run_once()`'s rollover
+        branch for why.
 
         Confirmed live 2026-09-02: bot1 restarted at 12:18:54 and logged
         "HALTED: daily drawdown breach: 6.86% >= 4%" one second later, on
         an account that had lost nothing that day -- 6.86% was its total
-        loss since the phase began. It cleared itself on the next poll
-        (five seconds), because by then the snapshot had been taken, so
-        nothing was actually blocked; but it fires a false ERROR and a
-        Telegram alert on every single restart, and a false halt alert is
-        exactly the kind of thing that gets ignored right up until it is
-        real.
+        loss since the phase began (`__post_init__` seeds
+        `day_start_balance` with the PHASE starting balance on a cold
+        start, since there's no account reading yet). Fixed by having
+        `run_once()` rebuild `state` when the baseline moves.
+
+        Confirmed live 2026-09-15, a DIFFERENT way the same symptom can
+        reappear: the account had been disconnected from before midnight
+        UTC through a reconnect at 01:07:52. That reconnect's OWN first
+        account read -- the one that would have detected the day change
+        and been used as the snapshot -- returned a stale/cached balance
+        ($103,499.33), while a second read taken 8 seconds later in the
+        same iteration correctly showed $92,860.85 (confirmed against
+        the account's real history: zero trades happened in that entire
+        window). Snapshotting from the first read manufactured a false
+        10.28% "daily drawdown" and halted the bot for the rest of the
+        day, on an account that hadn't moved at all. A day only rolls
+        over once every 24h, so always re-reading fresh before trusting
+        this number costs nothing.
         """
         today = datetime.now(timezone.utc).date()
         if self.today == today:
             return False
         self.today = today
-        self.day_start_balance = state.balance
         return True
 
     def _account_state(self):
@@ -350,17 +358,24 @@ class LiveBot:
             logger.warning("account_state fetch failed, skipping this iteration: %s", exc)
             return
 
-        if self._roll_day_if_needed(state):
-            # The baseline just moved, and `state` was built against the
-            # old one -- rebuild before anything reads it, or the health
-            # gate below judges today against yesterday's (or the phase's)
-            # opening balance. See _roll_day_if_needed()'s docstring.
+        if self._roll_day_if_needed():
+            # The baseline just moved. Re-fetch rather than trust the
+            # `state` already in hand -- that read is what DETECTED the
+            # day change, but it can itself be a stale/cached value
+            # immediately after a reconnect (see _roll_day_if_needed()'s
+            # docstring, 2026-09-15). Snapshot day_start_balance from
+            # THIS fresh read, then patch it into `state` so downstream
+            # code (the health gate right below) sees today's baseline
+            # equal to today's actual current balance, not yesterday's
+            # (or a stale reading's) leftover state.
             try:
                 state = self._account_state()
             except MT5ConnectionError as exc:
                 logger.warning("account_state refetch after day-roll failed, "
                                 "skipping this iteration: %s", exc)
                 return
+            self.day_start_balance = state.balance
+            state = replace(state, day_start_balance=self.day_start_balance)
 
         self._reconcile_closed_positions(state)
         # Before the health gate: resting orders must still be cancelled

@@ -4940,3 +4940,90 @@ again on any instrument: don't assume a code bug immediately.
    it worth escalating further (e.g. to the broker, or by trying to
    force a resync via `symbol_select` / opening the symbol's chart) --
    in this case it had already self-resolved by the time step 3 ran.
+
+### 2026-09-15 -- FIXED: false "10.28% daily drawdown" halt from a stale post-reconnect account read
+
+**Symptom:** bot1 (conservative) logged, 8 seconds after reconnecting to
+MT5 following an overnight outage:
+
+    01:07:52  INFO  reconnected to MT5
+    01:08:00  INFO  health_halt (decline_daily_equity_breach) -- daily
+                    drawdown breach: 10.28% >= 4%
+    01:08:03  ERROR HALTED: daily drawdown breach: 10.28% >= 4%
+
+The account_state at that halt: `balance=92860.85, equity=92860.85,
+day_start_balance=103499.33, open_positions_count=0`. Balance exactly
+equals equity with zero open positions, ruling out a floating-P&L/
+carried-position explanation outright.
+
+**Confirmed NOT a real loss, two independent ways:**
+- `mt5.history_deals_get()` queried directly against the account for
+  the entire outage window returned **zero deals**.
+- The operator independently checked the MT5 mobile app: no trades at
+  all this week: the account's real balance has been flat at $92,860.85
+  since its last trade on 2026-09-07, matching exactly what the bot
+  itself read as "current" at the halt.
+
+Both point at the same conclusion: `day_start_balance` (103,499.33) is
+the number that was wrong, not `balance`/`equity` (92,860.85, which was
+correct both times it was read). The account never moved; the "10.28%
+drawdown" existed only in a bad baseline.
+
+**Root cause:** the bot had been disconnected from before UTC midnight
+straight through to the 01:07:52 reconnect -- confirmed by
+`journalctl --since "2026-09-14 23:30:00" --until "2026-09-15 01:10:00"`
+showing literally nothing else in that window. That reconnect's own
+FIRST account read was therefore also the first read of the new UTC
+day, so `_roll_day_if_needed()` (bot/orchestrator.py) used it to
+snapshot `day_start_balance` -- and that first read returned a stale/
+cached balance. A SECOND read taken 8 seconds later, in the very same
+`run_once()` iteration (the existing post-rollover "rebuild" step),
+correctly showed the true, unchanged balance. Same general failure
+shape already seen elsewhere in this codebase (`copy_rates_from_pos()`
+returning stale cached candles immediately post-reconnect, see the
+XAUUSD entry above and `_detect_server_utc_offset()`'s docstring in
+`bot/mt5_data.py`) -- MT5/mt5linux can return a not-yet-resynced value
+for a brief window right after `mt5.initialize()`/`login()` succeeds,
+and nothing before this fix protected `day_start_balance` from it.
+
+This is a DIFFERENT root cause from the already-fixed 2026-09-02 false
+halt (a process-restart ordering bug, seeding day_start_balance from
+the PHASE start before any real read existed) even though the
+observable symptom is identical -- see `_roll_day_if_needed()`'s
+docstring for both incidents side by side. That fix's own rebuild-state
+mechanism is what accidentally captured the TRUE balance 8 seconds
+later here, which is what made this diagnosable at all, but it didn't
+stop the false halt because the snapshot itself still happened one
+step too early, from the read that detected the rollover rather than a
+fresh one.
+
+**Fix:** `_roll_day_if_needed()` no longer takes or reads from a
+`state` at all -- it only tells the caller whether the UTC date
+changed. `run_once()` now snapshots `day_start_balance` from the
+FRESH read it takes in its existing rebuild branch (previously that
+rebuild only served the health-gate check; the snapshot itself was
+still coming from the earlier, potentially-stale read). A day only
+rolls over once every 24h, so this costs nothing extra on every other
+day. New regression test,
+`test_day_roll_snapshots_from_a_fresh_read_not_a_stale_first_one` in
+`bot/tests/test_orchestrator.py`, replays exactly this incident's two
+readings (stale first, true second) via `FakeMT5.account_info`
+returning different values on successive calls, and asserts
+`day_start_balance` ends up matching the SECOND (true) read, not the
+first.
+
+**Operator remedy applied:** restarted `slk-bot1`, which reset
+`self.today`/`day_start_balance` and forced a fresh (correct) snapshot
+on the next check -- confirmed back to normal (`hunting`/
+`decline_stale_signal`/`waiting_htf` activity resumed). This was
+necessary because, absent the code fix, the false halt would otherwise
+have persisted for the rest of that UTC day (nothing un-halts it on its
+own with zero open positions and no new trades permitted while
+halted). Demo account, so no real capital was at risk, but the same
+bug on a real funded account could have meant losing a full trading
+day to a phantom drawdown -- or worse, on a firm that terminates
+accounts for a daily-drawdown breach, a false TERMINATION over data
+that was never real.
+
+Full suite after the fix: 514 passed, 6 skipped (same pre-existing
+`flask`-dependency exclusion as above, unrelated to this change).
