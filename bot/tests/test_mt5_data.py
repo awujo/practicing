@@ -423,6 +423,53 @@ def test_still_asks_the_broker_when_a_candle_could_have_closed():
     assert len(fake.copy_rates_calls) > before
 
 
+def test_a_future_shifted_seen_value_does_not_block_forever():
+    """Confirmed live 2026-09-15: JP225 produced zero activity for ~5.5
+    hours while its own broker candle history was later confirmed
+    completely continuous over that whole window -- the shortcut believed
+    candles it had never fetched were already seen. The likely cause was
+    a transiently wrong _server_utc_offset (re-detected on every
+    reconnect, only sanity-bounded, not guaranteed correct) shifting
+    `_last_closed_time` into the future relative to the real wall clock.
+    This reproduces that directly: _last_closed_time set ahead of what
+    _last_completed_open() (real UTC) currently says, as if a bad offset
+    had written a later time than really exists yet. Without the
+    wall-clock backstop this would skip forever, since the seen value can
+    never appear "old" relative to a clock computation it is offset from
+    incorrectly; MAX_SKIP_WITHOUT_REAL_CHECK must force a real check
+    anyway once the client's own clock says enough real time has passed."""
+    fake = FakeMT5()
+    now = pd.Timestamp.now(tz="UTC")
+    real_last_closed = now.floor("h") - pd.Timedelta(hours=1)
+    future_shifted = real_last_closed + pd.Timedelta(hours=6)  # wrongly "ahead"
+    client = _client_with_candles(fake, [real_last_closed - pd.Timedelta(hours=1),
+                                          real_last_closed])
+    client._last_closed_time[("EURUSD", "H1")] = future_shifted
+    client._last_real_check[("EURUSD", "H1")] = now - MT5Client.MAX_SKIP_WITHOUT_REAL_CHECK \
+        - pd.Timedelta(minutes=1)
+
+    before = len(fake.copy_rates_calls)
+    result = client.new_candle_closed("EURUSD", "H1")
+
+    assert len(fake.copy_rates_calls) > before, \
+        "must force a real check once overdue, regardless of what the (possibly wrong) seen value says"
+    assert result is not None and result.time == real_last_closed
+
+
+def test_a_recent_real_check_still_skips_normally():
+    """The backstop must not defeat the whole point of the shortcut on
+    the common path -- only force a real check once genuinely overdue."""
+    fake = FakeMT5()
+    now = pd.Timestamp.now(tz="UTC")
+    last_closed = now.floor("h") - pd.Timedelta(hours=1)
+    client = _client_with_candles(fake, [last_closed - pd.Timedelta(hours=1), last_closed])
+    client.new_candle_closed("EURUSD", "H1")  # establishes seen + last_real_check
+    calls_after_first = len(fake.copy_rates_calls)
+
+    assert client.new_candle_closed("EURUSD", "H1") is None
+    assert len(fake.copy_rates_calls) == calls_after_first
+
+
 def test_last_completed_open_is_the_bar_that_must_have_finished():
     now = pd.Timestamp.now(tz="UTC")
     assert MT5Client._last_completed_open("H1") == now.floor("h") - pd.Timedelta(hours=1)

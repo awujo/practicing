@@ -105,6 +105,32 @@ class MT5Client:
     responsible for catching MT5ConnectionError and going fail-closed
     (stop opening new trades) rather than assuming a retry will succeed."""
 
+    # Bounds how long new_candle_closed()'s clock-shortcut is allowed to
+    # skip real broker checks, using THIS PROCESS's own wall clock rather
+    # than anything derived from a candle. The shortcut trusts
+    # `_last_closed_time` (built from candle timestamps, which depend on
+    # `_server_utc_offset`) against `_last_completed_open()` (built from
+    # real UTC) -- if the offset is ever transiently wrong (it re-detects
+    # on every reconnect, and only has a +/-6h plausibility bound, not a
+    # correctness guarantee), every candle time computed afterward shifts,
+    # and a shifted-INTO-THE-FUTURE `_last_closed_time` makes the shortcut
+    # believe candles it has never actually fetched are already seen --
+    # skipping real checks until the true wall clock catches up.
+    #
+    # Confirmed live 2026-09-15: JP225 produced zero log activity for
+    # ~5.5 hours (00:00-07:38 stretch) while its own broker candle history
+    # was later confirmed completely continuous over that whole window --
+    # the data was never missing, the bot simply never asked. That gap
+    # coincided with a reconnect at 01:07:52 (the same one that produced
+    # that day's false daily-drawdown halt, bot/OPERATIONS_LOG.md) and
+    # ended shortly after the next reconnect at 05:23:06 -- consistent
+    # with a transient bad offset detected at the first reconnect, silently
+    # correcting itself at the second. 90 minutes comfortably exceeds one
+    # H1 candle interval (so a healthy client essentially never hits this
+    # path) while bounding the worst case of this entire bug CLASS to
+    # under two hours of blindness instead of an unbounded one.
+    MAX_SKIP_WITHOUT_REAL_CHECK = pd.Timedelta(minutes=90)
+
     def __init__(self, mt5_module, login: int, password: str, server: str, symbol_suffix: str = "",
                  symbol_overrides: dict[str, str] | None = None, terminal_path: str | None = None,
                  server_utc_offset: "pd.Timedelta | None" = None):
@@ -126,6 +152,13 @@ class MT5Client:
         # used to detect "a new candle just closed" without re-processing
         # the same bar twice.
         self._last_closed_time: dict[tuple[str, str], pd.Timestamp] = {}
+        # Wall-clock time of the last REAL broker check per (symbol,
+        # granularity) -- see MAX_SKIP_WITHOUT_REAL_CHECK's own comment.
+        # Deliberately a separate clock from _last_closed_time: that one
+        # is derived from candle data (and so shares any offset bug with
+        # it); this one is this process's own clock, so it can catch that
+        # exact failure mode instead of being blind to it the same way.
+        self._last_real_check: dict[tuple[str, str], pd.Timestamp] = {}
         # MT5's copy_rates_from_pos() reports candle times in the broker's
         # OWN server clock (e.g. EET/EEST), not true UTC, despite the raw
         # value looking like a plain Unix timestamp -- confirmed live:
@@ -322,9 +355,14 @@ class MT5Client:
         """
         key_check = (internal_symbol, granularity)
         seen = self._last_closed_time.get(key_check)
-        if seen is not None and seen >= self._last_completed_open(granularity):
+        now = pd.Timestamp.now(tz="UTC")
+        last_real_check = self._last_real_check.get(key_check)
+        overdue = (last_real_check is None
+                   or now - last_real_check > self.MAX_SKIP_WITHOUT_REAL_CHECK)
+        if seen is not None and seen >= self._last_completed_open(granularity) and not overdue:
             return None
 
+        self._last_real_check[key_check] = now
         candles = self.fetch_candles(internal_symbol, granularity, count=2)
         if not candles:
             return None
