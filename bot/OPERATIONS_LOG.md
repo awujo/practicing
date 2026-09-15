@@ -5082,3 +5082,65 @@ rather than "never called") and the two rescue tests (now expect
 `allow_pending`/`decline_setup_stop_breached`, matching
 `_place_limit_entry()`'s own decision labels, not `allow`/
 `decline_stale_signal`). Full suite: 526 passed, 6 skipped.
+
+### 2026-09-15 -- REVERTED: a boundary-validation "fix" shipped on a wrong assumption, twice in a row
+
+**Symptom that started this:** operator noticed JP225's H4 bias flip
+bullish/bearish twice within 30 seconds in the Telegram log, on the SAME
+already-running bot process -- H4 can only actually change once every 4
+hours, so nothing should be able to flip it twice in 14 seconds.
+
+**First (wrong) diagnosis:** direct inspection of JP225's H4 cache file
+found a stretch of bars around 2026-09-11 spaced every 2 hours instead
+of 4, at hours 05/07/09/11/13/15/17 -- assumed these were corrupt
+because they didn't land on 00/04/08/12/16/20 UTC, which
+`bot/mt5_data.py`'s `_last_completed_open()` (written for LIVE MT5
+data) assumes. Scanning every instrument's D/W/H4 cache found the same
+pattern almost everywhere, which looked like confirmation of a shared
+upstream artifact. Shipped a fix (`candles.py`'s `load_candles()`
+filtering out any H4/D/W row that didn't land on that grid) and
+deployed it.
+
+**Operator caught it immediately: "I don't think all instruments using
+that."** Directly checking the RECENT, already-known-clean data (not
+the suspect Sept 11 stretch) proved the assumption wrong for literally
+every instrument checked: real H4 bars land on **[1, 5, 9, 13, 17,
+21]**, not [0, 4, 8, 12, 16, 20] -- a uniform 1-hour shift from what was
+assumed. The deployed fix was therefore rejecting **every genuine H4
+candle for every instrument**, not just the actual bad Sept 11 stretch
+-- a far worse bug than the one it was meant to fix. Immediately
+reverted on the VPS (`git checkout <prior-commit> -- backtest/engine/
+candles.py` as a stopgap, then a proper `git revert` in this repo) and
+both bots restarted back onto the known-good commit within minutes.
+
+**Checking D and W made it clear this needs real research, not another
+guess:** Daily bars land on hours **[3, 4, 5, 21, 22, 23]** -- not one
+fixed hour at all, consistent with a New-York-session-relative rollover
+(the classic "trading day starts 5pm NY", which itself shifts between
+21:00/22:00 UTC across the EST/EDT boundary) rather than UTC midnight.
+Weekly bars land on **Saturday 21:00 UTC** (`weekday()==5`), not Monday
+-- also NY-session-relative, and also not what was assumed. Getting
+this right would mean properly modeling a DST-aware New York session
+boundary (this codebase already does that elsewhere -- see
+`WEEKEND_CLOSE_ZONE = ZoneInfo("America/New_York")` in
+`bot/orchestrator.py` -- so the pattern exists, it just wasn't applied
+here), not a fixed UTC-hour set. Reverted rather than guess a third
+time.
+
+**Status: reverted, original JP225 flip-flop symptom NOT yet fixed.**
+The Sept 11 off-2h-spacing anomaly in JP225's H4 data may well still be
+real and worth understanding, but "doesn't match an assumed grid" is
+not sufficient evidence on its own after being wrong twice -- any
+future attempt at this needs to derive the ACTUAL correct boundary rule
+per granularity from real, verified data (or from Dukascopy's own
+documented convention, if it has one) before writing a filter, not
+infer it from what looks like a plausible round-number grid. A spacing-
+consistency check (reject a candle only if its gap from the previous
+one isn't a whole multiple of the granularity's interval, which needs
+no assumption about WHERE the grid starts, only that it should be
+regular) was considered as a safer alternative but not attempted this
+session -- worth it as a starting point next time, verified against
+real data before shipping, not instead of that verification.
+
+Full suite after the revert: 526 passed, 6 skipped (back to the
+`cedd67f` baseline).
