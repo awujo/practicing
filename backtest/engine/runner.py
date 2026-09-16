@@ -718,16 +718,22 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
                 break
             if p.kind != retracement_side:
                 continue
-            # The pool must be left behind by a candle that formed AFTER
-            # the breakout candle, not by the breakout candle itself.
-            # Bisecting on known_at alone lets the breakout candle's own
-            # low through (it closes one bar later), and that low is
-            # precisely the too-deep level the legacy swing path kept
-            # arming -- price has no reason to return to the extreme it
-            # just broke away from. Applied in "single_candle" mode only,
-            # so "swing" stays bit-identical to the pre-2026-09-16 path.
-            if liquidity_mode == "single_candle" and p.time <= brk.time:
-                continue
+            # The BREAKOUT CANDLE'S OWN LOW COUNTS. An earlier version of
+            # this loop excluded it, on my reasoning that "price has no
+            # reason to return to the extreme it just broke away from."
+            # That reasoning was wrong, and the operator corrected it
+            # directly (2026-09-16): "it must not be the next candle
+            # after the breakout -- it might even be the breakout candle
+            # low. All we just want to see is, after the breakout, do we
+            # have a 4H single liquidity sweep."
+            #
+            # It was also expensive. The swing path's first qualifying
+            # point is very often exactly that low -- on GBPUSD 2026-08-10
+            # it was the ONLY low the fractal detector could return --
+            # so excluding it meant "single_candle" was not the superset
+            # of "swing" I claimed it was. It was a DIFFERENT set with the
+            # most-traded pool removed, which is the likeliest reason it
+            # scored 0.25 R/trade against swing's 0.79 at every cap.
             breakout_pools.append(p)
             if len(breakout_pools) >= cap:
                 break
@@ -1270,9 +1276,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     "single_candle" is the correction, and all three parts of it move
     together because measuring them apart is meaningless -- the
     self-sweep only matters once the pools are the right pools:
-      * pools from `single_candle_liquidity()`: every post-breakout
-        candle leaves its low (bullish) or high (bearish) behind. This
-        is what SLK's "single candle liquidity" actually means. The
+      * pools from `single_candle_liquidity()`: the breakout candle and
+        every candle after it leaves its low (bullish) or high (bearish)
+        behind. The breakout candle's own extreme counts -- operator,
+        2026-09-16: "it must not be the next candle after the breakout,
+        it might even be the breakout candle low. All we just want to
+        see is, after the breakout, do we have a 4H single liquidity
+        sweep." This is what SLK's "single candle liquidity" means. The
         swing detector cannot express it -- `is_swing_low` needs the low
         <= both neighbours, so a post-breakout pullback of higher lows
         registers nothing and the search falls back to the breakout
@@ -1290,18 +1300,23 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     `backtest/tools/compare_liquidity_modes.py` says the corrected path
     is actually better on real history, and not before.
 
-    First measured run (2026-09-16, GBPUSD/NZDUSD/XAUUSD/JP225/USDCHF,
-    conservative, full history) said it is NOT yet better at
-    single_candle_max_pools=6:
+    Measured 2026-09-16 (GBPUSD/NZDUSD/XAUUSD/JP225/USDCHF,
+    conservative, full history). At max_pools=6:
 
         swing           2991 trades  43.9% win  1979.0R  (0.66 R/trade)
         single_candle   6955 trades  32.4% win  1680.0R  (0.24 R/trade)
 
-    2.3x the trades at a third of the quality, and less total R despite
-    it. That is a SELECTION failure, not a refutation of the concept --
-    the annotated charts this was built from mark one pool after the
-    breakout, occasionally two, never six. See
-    `single_candle_max_pools`.
+    A cap sweep then showed R/trade FLAT at ~0.25 (GBPUSD) and ~0.18
+    (NZDUSD) across caps 1, 2 and 3, against swing's 0.79 and 0.64 --
+    and at cap=1 GBPUSD took 686 trades against swing's 681. Same
+    volume, a third of the quality. So it was never a noise problem.
+
+    The cause was a real defect since fixed: this path excluded the
+    breakout candle's own low, which is very often the exact pool the
+    swing path trades (on GBPUSD 2026-08-10 it was the only low the
+    fractal detector could return). "single_candle" was therefore not a
+    superset of "swing" but a different set with the most-traded pool
+    removed. Those numbers predate that fix and must be re-measured.
 
     single_candle_max_pools: how many post-breakout candles may supply a
     pool in "single_candle" mode. The default of 6 is what produced the

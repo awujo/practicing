@@ -1012,7 +1012,7 @@ def test_single_candle_mode_arms_every_post_breakout_low_not_just_the_swing():
     levels = detect_key_levels(h4, n)
     setups = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle")
 
-    assert [s.liquidity_price for s in setups] == pytest.approx([1.1025, 1.1015, 1.1018])
+    assert [s.liquidity_price for s in setups] == pytest.approx([1.101, 1.1025, 1.1015, 1.1018])
     assert all(s.direction == Direction.BULLISH for s in setups)
     # The swing path's single pool is still among them -- this is a
     # superset, not a different set.
@@ -1021,11 +1021,16 @@ def test_single_candle_mode_arms_every_post_breakout_low_not_just_the_swing():
     assert len({s.setup_id for s in setups}) == len(setups)
 
 
-def test_single_candle_mode_excludes_the_breakout_candles_own_low():
-    """The pool must be left behind by a candle that formed AFTER the
-    breakout. The breakout candle's own low (1.1010 here) is the extreme
-    price just broke away from -- arming it is what left the legacy path
-    waiting on levels price never revisited."""
+def test_the_breakout_candles_own_low_is_a_valid_pool():
+    """Operator correction, 2026-09-16: "it must not be the next candle
+    after the breakout -- it might even be the breakout candle low."
+
+    An earlier version excluded it on the reasoning that price has no
+    reason to return to the extreme it just broke away from. That was
+    wrong, and costly: the swing path's first qualifying point is very
+    often exactly this low, so excluding it made "single_candle" a
+    different set rather than a superset -- with the most-traded pool
+    missing."""
     h4 = _liquidity_setup_h4()
     n = 2
     confs = detect_confirmations(h4, n)
@@ -1033,8 +1038,27 @@ def test_single_candle_mode_excludes_the_breakout_candles_own_low():
     breakout_time = confs[0].time
     setups = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle")
 
-    assert all(s.liquidity_time > breakout_time for s in setups)
-    assert pytest.approx(1.1010) not in [s.liquidity_price for s in setups]
+    prices = [s.liquidity_price for s in setups]
+    assert pytest.approx(1.1010) in prices, "the breakout candle's own low must be armed"
+    assert setups[0].liquidity_time == breakout_time
+    # Still nothing from BEFORE the breakout.
+    assert all(s.liquidity_time >= breakout_time for s in setups)
+
+
+def test_single_candle_is_a_true_superset_of_swing():
+    """The claim that failed silently before: every pool the swing path
+    finds must also be armed here. When it was not, the A/B was comparing
+    two different sets, not a tighter rule against a looser one."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    swing = {s.liquidity_price for s in
+             _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")}
+    sc = {s.liquidity_price for s in
+          _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle",
+                                  max_pools=99)}
+    assert swing <= sc, f"swing pools missing from single_candle: {swing - sc}"
 
 
 def test_pool_is_never_swept_by_the_candle_that_formed_it():
@@ -1056,7 +1080,9 @@ def test_max_pools_caps_how_many_setups_one_breakout_can_produce():
     capped = _find_liquidity_setups(h4, confs, levels, n,
                                      liquidity_mode="single_candle", max_pools=1)
     assert len(capped) == 1
-    assert capped[0].liquidity_price == pytest.approx(1.1025)  # oldest first
+    # Oldest first, and the oldest is now the breakout candle itself.
+    assert capped[0].liquidity_price == pytest.approx(1.101)
+    assert capped[0].liquidity_time == confs[0].time
 
 
 def test_find_liquidity_setups_rejects_an_unknown_mode():
