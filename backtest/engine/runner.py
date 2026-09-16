@@ -1444,23 +1444,41 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     `backtest/tools/compare_liquidity_modes.py` says the corrected path
     is actually better on real history, and not before.
 
-    Measured 2026-09-16 (GBPUSD/NZDUSD/XAUUSD/JP225/USDCHF,
-    conservative, full history). At max_pools=6:
+    MEASURED 2026-09-16, USDCHF, conservative, full history, on the
+    REPAIRED cache and with the rule as the operator finally stated it
+    (breakout candle counts, no pool cap, leg runs to the opposite
+    breakout, sweep and key-level rejection both read on the 4H):
 
-        swing           2991 trades  43.9% win  1979.0R  (0.66 R/trade)
-        single_candle   6955 trades  32.4% win  1680.0R  (0.24 R/trade)
+        swing              736 trades  43.2% win  469.8R  0.64 R/trade
+        single_candle/all 2290 trades  32.4% win  546.0R  0.24 R/trade
+        sc_h4/all         1428 trades  35.2% win  501.1R  0.35 R/trade
 
-    A cap sweep then showed R/trade FLAT at ~0.25 (GBPUSD) and ~0.18
-    (NZDUSD) across caps 1, 2 and 3, against swing's 0.79 and 0.64 --
-    and at cap=1 GBPUSD took 686 trades against swing's 681. Same
-    volume, a third of the quality. So it was never a noise problem.
+    The 4H rejection requirement does real work: against single_candle
+    it cut trades 2290 -> 1428 and lifted R/trade 0.24 -> 0.35. It is
+    still well short of swing.
 
-    The cause was a real defect since fixed: this path excluded the
-    breakout candle's own low, which is very often the exact pool the
-    swing path trades (on GBPUSD 2026-08-10 it was the only low the
-    fractal detector could return). "single_candle" was therefore not a
-    superset of "swing" but a different set with the most-traded pool
-    removed. Those numbers predate that fix and must be re-measured.
+    Both new modes beat swing on TOTAL R, and that is the number not to
+    be fooled by. This engine does not model spread. USDCHF stops in
+    these runs are ~8-15 pips against a ~1.5 pip spread, so roughly
+    0.12R per round trip is uncharged. Applying it:
+
+        swing              469.8 - 736*0.12  = 382
+        single_candle/all  546.0 - 2290*0.12 = 271
+        sc_h4/all          501.1 - 1428*0.12 = 330
+
+    A fixed per-trade cost takes 19% of the edge at 0.64 R/trade and 50%
+    at 0.24, so the high-frequency modes' total-R advantage is the most
+    fragile figure in the table. The default stays "swing".
+
+    Read this as a measurement of the liquidity rule ON TOP OF the
+    current leg structure, not of the rule alone. detect_confirmations
+    produces ~11 breakouts in 8 days on EURCHF, including three
+    direction changes inside twelve hours on 2026-09-16. Every mode
+    inherits that. Swing's advantage may be that arming one pool per
+    breakout is accidentally conservative when the leg direction is
+    unreliable -- the modes that commit harder to the leg lose more when
+    it is wrong. Fix the breakout frequency before trusting any of these
+    numbers as a verdict on the liquidity concept.
 
     single_candle_max_pools: how many post-breakout candles may supply a
     pool in "single_candle" mode. The default of 6 is what produced the
