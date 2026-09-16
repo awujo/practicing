@@ -76,3 +76,92 @@ def test_gap_produces_no_synthetic_candle():
     assert pd.Timestamp("2024-01-01T00:00:00Z") in times
     assert pd.Timestamp("2024-01-01T10:00:00Z") in times
     assert len(out) == 2  # not 6 -- the empty bins in between are dropped, not filled
+
+
+# ---------------------------------------------------------------------------
+# REPAIRABLE_GRANULARITIES -- deriving H4/D/W from H1.
+#
+# These exist to repair a cache whose H4/D/W tail was polluted by MT5
+# bars on a different anchor (2026-08; see resample.py's own note). The
+# whole point is that the derived series lands on ONE grid -- the same
+# grid the clean Dukascopy history uses -- so these tests pin the
+# anchoring, not just the aggregation.
+# ---------------------------------------------------------------------------
+
+def _hourly(start, hours, **overrides):
+    idx = pd.date_range(start, periods=hours, freq="h", tz="UTC")
+    data = {"time": idx, "open": 1.0, "high": 1.1, "low": 0.9,
+            "close": 1.05, "volume": 1.0}
+    data.update(overrides)
+    return pd.DataFrame(data)
+
+
+def test_h4_lands_on_the_clean_utc_grid():
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["H4"]
+    out = resample_ohlcv(_hourly("2026-08-03", 24 * 14), rule, **kw)
+    assert sorted(out.time.dt.hour.unique()) == [0, 4, 8, 12, 16, 20]
+
+
+def test_daily_lands_on_midnight():
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["D"]
+    out = resample_ohlcv(_hourly("2026-08-03", 24 * 14), rule, **kw)
+    assert sorted(out.time.dt.hour.unique()) == [0]
+
+
+def test_weekly_opens_on_monday_midnight():
+    """Dukascopy's weekly bars are stamped on Mondays at 00:00 -- GBPUSD
+    W starts 2003-04-28, a Monday, every row at hour 0. A derived weekly
+    series that labelled the closing Sunday instead would silently shift
+    every weekly bias decision by a week."""
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["W"]
+    out = resample_ohlcv(_hourly("2026-08-03", 24 * 21), rule, **kw)
+    assert sorted(out.time.dt.hour.unique()) == [0]
+    assert sorted(out.time.dt.dayofweek.unique()) == [0]  # Monday
+
+
+def test_a_bar_is_stamped_when_it_opened_not_when_it_closed():
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    df = _hourly("2026-08-03", 8)
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["H4"]
+    out = resample_ohlcv(df, rule, **kw)
+    assert out.time.iloc[0] == pd.Timestamp("2026-08-03 00:00", tz="UTC")
+
+
+def test_ohlc_aggregates_across_the_whole_bin():
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    df = _hourly("2026-08-03", 4,
+                 open=[1.0, 2.0, 3.0, 4.0], high=[1.5, 9.0, 3.5, 4.5],
+                 low=[0.5, 1.5, 0.1, 3.5], close=[1.2, 2.2, 3.2, 4.2],
+                 volume=[1.0, 2.0, 3.0, 4.0])
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["H4"]
+    out = resample_ohlcv(df, rule, **kw)
+    assert len(out) == 1
+    row = out.iloc[0]
+    assert row.open == 1.0 and row.close == 4.2
+    assert row.high == 9.0 and row.low == 0.1
+    assert row.volume == 10.0
+
+
+def test_deriving_never_reproduces_the_broken_multi_grid_shape():
+    """The bug's signature was H4 bars on 24 distinct hours. A derived
+    series cannot do that by construction -- this pins that it doesn't,
+    even across a weekend gap where bins go empty."""
+    from ..resample import REPAIRABLE_GRANULARITIES, resample_ohlcv
+    df = _hourly("2026-08-03", 24 * 14)
+    df = df[~df.time.dt.dayofweek.isin([5, 6])]  # drop the weekend
+    _src, rule, kw = REPAIRABLE_GRANULARITIES["H4"]
+    out = resample_ohlcv(df, rule, **kw)
+    assert len(sorted(out.time.dt.hour.unique())) == 6
+    gaps = out.time.diff().dropna().dt.total_seconds() / 3600
+    assert (gaps >= 4).all(), "no derived bar may sit closer than one bar to the previous"
+
+
+def test_repairable_and_derived_granularities_do_not_overlap():
+    """H4/D/W are fetched natively. If they ever appeared in
+    DERIVED_GRANULARITIES, derive_granularities.py --all would silently
+    overwrite a fetched series with a computed one."""
+    from ..resample import DERIVED_GRANULARITIES, REPAIRABLE_GRANULARITIES
+    assert not set(DERIVED_GRANULARITIES) & set(REPAIRABLE_GRANULARITIES)
