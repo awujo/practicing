@@ -11,7 +11,7 @@ from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
     _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme, _bootstrap_origin,
-    _trim_to_recent_years,
+    _trim_to_recent_years, LiquiditySetup,
 )
 from ..structure import StructureEvent
 from ..bias import Confirmation, ConfirmationKind
@@ -964,8 +964,8 @@ def test_run_backtest_skips_erl_cap_entirely_when_disabled(synthetic_cache, monk
     assert trade.primary_target == trade.raw_target
 
 
-def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level():
-    h4 = [
+def _liquidity_setup_h4():
+    return [
         H4(0, 1.1000, 1.1010, 1.0995, 1.1005),
         H4(1, 1.1005, 1.1015, 1.1000, 1.1010),
         H4(2, 1.1010, 1.1030, 1.1005, 1.1020),
@@ -976,10 +976,17 @@ def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level
         H4(7, 1.1030, 1.1032, 1.1015, 1.1020),
         H4(8, 1.1020, 1.1028, 1.1018, 1.1025),
     ]
+
+
+def test_find_liquidity_setups_swing_mode_finds_breakout_then_liquidity_then_reaction_level():
+    """The pre-2026-09-16 path, pinned. liquidity_mode="swing" exists only
+    so the corrected single-candle path can be A/B'd against it, so it
+    must keep producing exactly what it always produced."""
+    h4 = _liquidity_setup_h4()
     n = 2
     confs = detect_confirmations(h4, n)
     levels = detect_key_levels(h4, n)
-    setups = _find_liquidity_setups(h4, confs, levels, n)
+    setups = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")
 
     assert len(setups) == 1
     setup = setups[0]
@@ -991,6 +998,74 @@ def test_find_liquidity_setups_finds_breakout_then_liquidity_then_reaction_level
     # no pick, it just orders the candidates for _find_entry_candidates()
     # to try in sequence.
     assert [lvl.price for lvl in setup.reaction_level_candidates] == pytest.approx([1.1012, 1.101, 1.1005])
+
+
+def test_single_candle_mode_arms_every_post_breakout_low_not_just_the_swing():
+    """The corrected concept. The swing path can only ever return 1.1015
+    here (the one local extreme); the candles either side of it left
+    1.1025 and 1.1018 sitting there too, and which one price comes back
+    for is not knowable in advance -- the trader's own JP225 chart had
+    two marked at once."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    setups = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle")
+
+    assert [s.liquidity_price for s in setups] == pytest.approx([1.1025, 1.1015, 1.1018])
+    assert all(s.direction == Direction.BULLISH for s in setups)
+    # The swing path's single pool is still among them -- this is a
+    # superset, not a different set.
+    assert pytest.approx(1.1015) in [s.liquidity_price for s in setups]
+    # Distinct setup_ids, so the trade loop can cap each at one trade.
+    assert len({s.setup_id for s in setups}) == len(setups)
+
+
+def test_single_candle_mode_excludes_the_breakout_candles_own_low():
+    """The pool must be left behind by a candle that formed AFTER the
+    breakout. The breakout candle's own low (1.1010 here) is the extreme
+    price just broke away from -- arming it is what left the legacy path
+    waiting on levels price never revisited."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    breakout_time = confs[0].time
+    setups = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle")
+
+    assert all(s.liquidity_time > breakout_time for s in setups)
+    assert pytest.approx(1.1010) not in [s.liquidity_price for s in setups]
+
+
+def test_pool_is_never_swept_by_the_candle_that_formed_it():
+    """liquidity_known_at is the forming candle's CLOSE, so a sweep scan
+    starting there can never count that candle as taking its own low."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    for s in _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle"):
+        assert s.liquidity_known_at > s.liquidity_time
+
+
+def test_max_pools_caps_how_many_setups_one_breakout_can_produce():
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    capped = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle", max_pools=1)
+    assert len(capped) == 1
+    assert capped[0].liquidity_price == pytest.approx(1.1025)  # oldest first
+
+
+def test_find_liquidity_setups_rejects_an_unknown_mode():
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    with pytest.raises(ValueError):
+        _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="fractal")
 
 
 def test_find_liquidity_setups_yields_nothing_without_a_breakout():
@@ -1366,3 +1441,130 @@ def test_run_backtest_max_history_years_too_short_loses_the_origin(synthetic_cac
                             max_history_years={"D": 1 / 365, "W": 1 / 365,
                                                 "H4": 1 / 365, "H1": 1 / 365})
     assert records == []
+
+
+# ---------------------------------------------------------------------------
+# One setup may now offer several reactions.
+#
+# Why: _find_entry_candidates() picks BEFORE any of the trade loop's gates
+# run (entry-time bias re-check, alignment, IRL/ERL, rollover window, zone
+# fill, R:R). USDCHF 2026-09-15 is the case that exposed it -- the single
+# candidate was an engulfing at 22:00, thrown out by avoid_rollover_entries
+# because 22:00 is the rollover hour, while two genuine 4th-man reactions
+# off the same 0.81842 level followed at 04:00->05:00 and 05:00->06:00 the
+# next morning and were never looked at.
+# ---------------------------------------------------------------------------
+
+def _h1(i, o, h, l, c):
+    return Candle(pd.Timestamp("2024-01-01") + pd.Timedelta(hours=i), o, h, l, c, 1000)
+
+
+def _two_reaction_series():
+    """H1 where, after the sweep, the SAME level produces two separate
+    4th-man reactions. Level sits at 1.1000."""
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.1000, "V", Direction.BULLISH)
+    h1 = [
+        _h1(0, 1.1020, 1.1025, 1.1015, 1.1020),
+        _h1(1, 1.1020, 1.1022, 1.1004, 1.1010),   # sweeps the 1.1005 pool
+        _h1(2, 1.1010, 1.1014, 1.1002, 1.1008),   # prev for reaction A
+        _h1(3, 1.1008, 1.1012, 1.0998, 1.1006),   # 4th man: takes 1.1002, reclaims
+        _h1(4, 1.1006, 1.1010, 1.1001, 1.1004),   # prev for reaction B
+        _h1(5, 1.1004, 1.1008, 1.0997, 1.1003),   # 4th man again, same level
+        _h1(6, 1.1003, 1.1030, 1.1002, 1.1028),
+    ]
+    setup = LiquiditySetup(
+        direction=Direction.BULLISH,
+        breakout_time=pd.Timestamp("2023-12-31"),
+        liquidity_price=1.1005,
+        liquidity_time=pd.Timestamp("2023-12-31 20:00"),
+        liquidity_known_at=h1[1].time,
+        sweep_from=h1[1].time,
+        reaction_level_candidates=[level],
+        setup_id=7,
+    )
+    return h1, setup
+
+
+def test_a_setup_can_offer_more_than_one_reaction():
+    h1, setup = _two_reaction_series()
+    found = _find_entry_candidates(h1, [setup])
+    assert len(found) >= 2, "a rejected first pick must not be the end of the setup"
+    assert all(c.setup_id == 7 for c in found)
+    assert [c.index for c in found] == sorted(c.index for c in found)
+
+
+def test_max_per_setup_caps_the_reactions_returned():
+    h1, setup = _two_reaction_series()
+    assert len(_find_entry_candidates(h1, [setup], max_per_setup=1)) == 1
+
+
+def test_a_pool_is_not_swept_by_its_own_forming_candle():
+    """The self-sweep bug, directly. The pool sits at 1.0990, which ONLY
+    the forming candle ever traded through -- no later candle comes close.
+    Scanning from liquidity_time would call that a sweep; scanning from
+    liquidity_known_at correctly finds none, so there is no setup."""
+    from ..key_levels import KeyLevel as KL
+    h1 = [
+        _h1(0, 1.1000, 1.1005, 1.0990, 1.1000),   # forms the low
+        _h1(1, 1.1000, 1.1010, 1.0998, 1.1008),
+        _h1(2, 1.1008, 1.1015, 1.1002, 1.1012),
+        _h1(3, 1.1012, 1.1020, 1.1008, 1.1018),
+    ]
+    setup = LiquiditySetup(
+        direction=Direction.BULLISH, breakout_time=pd.Timestamp("2023-12-31"),
+        liquidity_price=1.0990, liquidity_time=h1[0].time,
+        liquidity_known_at=h1[1].time,
+        sweep_from=h1[1].time,   # the fix: from the pool's CLOSE
+        reaction_level_candidates=[KL(pd.Timestamp("2023-12-31"), 1.1000, "V",
+                                       Direction.BULLISH)],
+        setup_id=1,
+    )
+    assert _find_entry_candidates(h1, [setup]) == []
+    # And the only reason it is empty is the start of the scan: the
+    # forming candle really did trade through 1.0990, nothing else did.
+    assert h1[0].low <= 1.0990
+    assert min(c.low for c in h1[1:]) > 1.0990
+
+
+def test_the_legacy_scan_start_really_was_the_thing_causing_self_sweeps():
+    """Companion to the test above: same candles, same pool, only
+    `sweep_from` differs. Starting at the pool's own open (the legacy
+    behavior) DOES produce a candidate off a sweep that never happened.
+    Without this, the assertion that the fixed version returns nothing
+    proves nothing -- an empty list can come from anywhere."""
+    from ..key_levels import KeyLevel as KL
+    h1 = [
+        _h1(0, 1.1000, 1.1005, 1.0990, 1.1000),
+        _h1(1, 1.1000, 1.1010, 1.0996, 1.1002),
+        _h1(2, 1.1002, 1.1006, 1.0994, 1.1004),   # 4th man off 1.1000
+        _h1(3, 1.1004, 1.1020, 1.1000, 1.1018),
+    ]
+    level = KL(pd.Timestamp("2023-12-31"), 1.1000, "V", Direction.BULLISH)
+    common = dict(direction=Direction.BULLISH, breakout_time=pd.Timestamp("2023-12-31"),
+                  liquidity_price=1.0990, liquidity_time=h1[0].time,
+                  liquidity_known_at=h1[1].time,
+                  reaction_level_candidates=[level], setup_id=1)
+
+    legacy = LiquiditySetup(sweep_from=h1[0].time, **common)
+    fixed = LiquiditySetup(sweep_from=h1[1].time, **common)
+
+    assert _find_entry_candidates(h1, [legacy]), "legacy self-sweeps, by construction"
+    assert _find_entry_candidates(h1, [fixed]) == []
+    assert min(c.low for c in h1[1:]) > 1.0990  # nothing ever really took it
+
+
+def test_swing_mode_keeps_the_legacy_scan_start_as_the_ab_baseline():
+    """"swing" is not "the new path with old pools" -- it is the whole
+    pre-2026-09-16 entry path, self-sweep included. A baseline carrying
+    half the fix would understate what the fix is worth."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+
+    for s in _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing"):
+        assert s.sweep_from == s.liquidity_time
+    for s in _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle"):
+        assert s.sweep_from == s.liquidity_known_at
+        assert s.sweep_from > s.liquidity_time

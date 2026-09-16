@@ -192,7 +192,7 @@ import pandas as pd
 from .candles import Candle, load_candles
 from .structure import Direction, StructureTracker, known_at as point_known_at
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
-from .liquidity import structural_liquidity_points
+from .liquidity import single_candle_liquidity, structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
 from .entries import (
@@ -267,6 +267,23 @@ LIQUIDITY_SWEEP_LOOKAHEAD = 120
 # LIQUIDITY_SWEEP_LOOKAHEAD since a genuine reaction should follow the
 # sweep fairly quickly.
 REACTION_LOOKAHEAD = 40
+
+# How many post-breakout H4 candles may each supply a single candle
+# liquidity pool (liquidity_mode="single_candle"). Every chart sample
+# studied had the pool that mattered within a few candles of the
+# breakout, and more than one could be live at once -- the JP225 sample
+# had two drawn simultaneously. The cap is what keeps the downstream
+# sweep/reaction search from growing without bound over pools no trader
+# would ever have marked.
+SINGLE_CANDLE_LIQUIDITY_MAX_POOLS = 6
+
+# How many qualifying reactions off a setup's winning key level
+# `_find_entry_candidates()` may return. More than one because the
+# downstream gates (rollover window, alignment, IRL/ERL, zone fill, R:R)
+# all run after the pick, so the first reaction being rejected must not
+# silently kill the setup. The trade loop still opens at most one trade
+# per setup_id.
+MAX_CANDIDATES_PER_SETUP = 3
 
 # How long a resting entry at a zone's near edge stays live waiting for
 # price to come back to it (stop_anchor="zone_entry"). Bishop's deck
@@ -553,12 +570,35 @@ class LiquiditySetup:
     real reaction (a genuine touch-and-confirm, not just proximity or a
     score), falling through to the next candidate if the nearer one never
     holds. The extreme (last) candidate is the last resort, not the
-    default."""
+    default.
+
+    `liquidity_known_at` is the earliest moment the pool can legitimately
+    be swept -- the close of the candle that FORMED it. Scanning for the
+    sweep from `liquidity_time` instead (which is that candle's OPEN)
+    lets the forming candle count as sweeping its own low, which is not a
+    sweep at all: nobody came back for anything. That bug made setups
+    look instantly-triggered and burned them before price ever returned.
+
+    `setup_id` identifies the breakout+pool this candidate came from, so
+    the trade loop can let a REJECTED candidate fall through to the next
+    qualifying reaction from the same setup while still opening at most
+    one trade per setup.
+
+    `sweep_from` is where the sweep scan actually starts, which is NOT
+    always `liquidity_known_at`. In liquidity_mode="single_candle" it is
+    -- that is the fix. In liquidity_mode="swing" it is deliberately set
+    back to `liquidity_time`, self-sweep and all, because that mode's
+    only job is to reproduce the pre-2026-09-16 entry path exactly so
+    the corrected one has an honest baseline to be measured against. A
+    baseline that quietly carries half the fix measures nothing."""
     direction: Direction
     breakout_time: object
     liquidity_price: float
     liquidity_time: object
+    liquidity_known_at: object
+    sweep_from: object
     reaction_level_candidates: list[KeyLevel]
+    setup_id: int = 0
 
 
 @dataclass(frozen=True)
@@ -585,23 +625,62 @@ class EntryCandidate:
     reaction_level: KeyLevel
     liquidity_price: float
     trigger: str
+    setup_id: int = 0
+
+
+def _pool_known_at(point):
+    """When a liquidity pool becomes usable, for either pool type.
+
+    SingleCandleLiquidity carries `known_at` (its forming candle's close);
+    a SwingPoint carries `confirmed_at` (formation + n bars), which is
+    what `point_known_at()` reads."""
+    known = getattr(point, "known_at", None)
+    return known if known is not None else point_known_at(point)
 
 
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
-                            n: int = 2) -> list[LiquiditySetup]:
-    """For each confirmed H4 breakout, find the first single-candle
-    liquidity point (structural_liquidity_points with n=1 -- Bishop's
-    primary/simplest case, see the module docstring for the not-yet-built
-    structural/multi-candle generalization) that forms afterward on the
-    retracement side, and every same-direction H4 key level price still in
-    play once that liquidity is swept, ordered nearest-to-extreme so
+                            n: int = 2, liquidity_mode: str = "single_candle",
+                            max_pools: int = SINGLE_CANDLE_LIQUIDITY_MAX_POOLS
+                            ) -> list[LiquiditySetup]:
+    """For each confirmed H4 breakout, find the single candle liquidity
+    that forms afterward on the retracement side, and every
+    same-direction H4 key level price could react from once that
+    liquidity is swept, ordered nearest-to-extreme so
     `_find_entry_candidates()` can try them in that order ("we don't
     predict, we react" -- see LiquiditySetup's docstring). A breakout that
     never produces both simply yields no setup -- consistent with Section
-    5B's "requires patience, don't force it" guidance."""
-    liquidity_points = structural_liquidity_points(h4, n=1)
+    5B's "requires patience, don't force it" guidance.
+
+    `liquidity_mode` selects where the pools come from:
+
+      "single_candle" (default) -- `single_candle_liquidity()`: every
+          post-breakout candle leaves its low (bullish) or high (bearish)
+          behind as a pool. This is the concept SLK actually means.
+
+      "swing" -- the legacy path, `structural_liquidity_points(h4, n=1)`.
+          Kept only so the two can be A/B'd on real history. It is a
+          fractal SWING detector, which is a different concept: it needs
+          low <= both neighbours, so during a post-breakout pullback of
+          higher lows it finds nothing and falls back to the breakout
+          candle's own extreme -- a level price has no reason to revisit.
+          See `single_candle_liquidity()`'s docstring for the worked
+          GBPUSD case where this provably armed the wrong level.
+
+    In "single_candle" mode a breakout yields up to `max_pools` setups,
+    not one: the trader's own charts mark several unswept lows at once
+    (the JP225 sample had two), and which one price comes back for is not
+    knowable in advance. Each gets its own `setup_id` so the trade loop
+    can still open at most one trade per pool."""
+    if liquidity_mode == "single_candle":
+        liquidity_points = (single_candle_liquidity(h4, "low")
+                            + single_candle_liquidity(h4, "high"))
+    elif liquidity_mode == "swing":
+        liquidity_points = structural_liquidity_points(h4, n=1)
+    else:
+        raise ValueError(f"unknown liquidity_mode: {liquidity_mode!r}")
     breakouts = sorted(h4_confirmations, key=lambda c: c.time)
     setups = []
+    next_setup_id = 0
 
     # Pre-indexed, time-sorted views so each breakout's searches below are
     # bisect lookups into a bounded slice rather than a linear scan of the
@@ -618,8 +697,8 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     # known_at == time + a constant n-bar offset within each of these two
     # lists (one n per structural_liquidity_points/detect_key_levels
     # call), so sorting by it preserves the same relative order as .time.
-    points_sorted = sorted(liquidity_points, key=lambda p: point_known_at(p))
-    point_known_ats = [point_known_at(p) for p in points_sorted]
+    points_sorted = sorted(liquidity_points, key=lambda p: _pool_known_at(p))
+    point_known_ats = [_pool_known_at(p) for p in points_sorted]
     levels_sorted = sorted(h4_key_levels, key=lambda lvl: level_known_at(lvl))
     level_known_ats = [level_known_at(lvl) for lvl in levels_sorted]
 
@@ -628,17 +707,31 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
         retracement_side = "low" if brk.direction == Direction.BULLISH else "high"
 
-        # Only the FIRST qualifying point is ever used, so stop at it
-        # rather than materializing every match first.
-        liquidity_point = None
+        # Collect the pools this breakout left behind, oldest first,
+        # capped at `max_pools`. In "swing" mode the cap is 1, preserving
+        # the legacy first-qualifying-point-only behavior exactly.
+        cap = max_pools if liquidity_mode == "single_candle" else 1
+        breakout_pools = []
         for idx in range(bisect.bisect_right(point_known_ats, brk.time), len(points_sorted)):
             p = points_sorted[idx]
-            if next_breakout_time is not None and point_known_at(p) >= next_breakout_time:
+            if next_breakout_time is not None and _pool_known_at(p) >= next_breakout_time:
                 break
-            if p.kind == retracement_side:
-                liquidity_point = p
+            if p.kind != retracement_side:
+                continue
+            # The pool must be left behind by a candle that formed AFTER
+            # the breakout candle, not by the breakout candle itself.
+            # Bisecting on known_at alone lets the breakout candle's own
+            # low through (it closes one bar later), and that low is
+            # precisely the too-deep level the legacy swing path kept
+            # arming -- price has no reason to return to the extreme it
+            # just broke away from. Applied in "single_candle" mode only,
+            # so "swing" stays bit-identical to the pre-2026-09-16 path.
+            if liquidity_mode == "single_candle" and p.time <= brk.time:
+                continue
+            breakout_pools.append(p)
+            if len(breakout_pools) >= cap:
                 break
-        if liquidity_point is None:
+        if not breakout_pools:
             continue
 
         # Bounded to the CURRENT structural leg (since the previous breakout,
@@ -652,22 +745,31 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # hang, not just a slowdown (see backtest/README.md's changelog).
         lo = (bisect.bisect_left(level_known_ats, prev_breakout_time)
               if prev_breakout_time is not None else 0)
-        hi = bisect.bisect_right(level_known_ats, point_known_at(liquidity_point))
-        candidate_levels = [
-            lvl for lvl in levels_sorted[lo:hi] if lvl.default_bias == brk.direction
-        ]
-        if not candidate_levels:
-            continue
 
-        reaction_level_candidates = sorted(
-            candidate_levels, key=lambda lvl: abs(lvl.price - liquidity_point.price)
-        )
+        for liquidity_point in breakout_pools:
+            hi = bisect.bisect_right(level_known_ats, _pool_known_at(liquidity_point))
+            candidate_levels = [
+                lvl for lvl in levels_sorted[lo:hi] if lvl.default_bias == brk.direction
+            ]
+            if not candidate_levels:
+                continue
 
-        setups.append(LiquiditySetup(
-            direction=brk.direction, breakout_time=brk.time,
-            liquidity_price=liquidity_point.price, liquidity_time=liquidity_point.time,
-            reaction_level_candidates=reaction_level_candidates,
-        ))
+            reaction_level_candidates = sorted(
+                candidate_levels, key=lambda lvl: abs(lvl.price - liquidity_point.price)
+            )
+
+            setups.append(LiquiditySetup(
+                direction=brk.direction, breakout_time=brk.time,
+                liquidity_price=liquidity_point.price,
+                liquidity_time=liquidity_point.time,
+                liquidity_known_at=_pool_known_at(liquidity_point),
+                sweep_from=(_pool_known_at(liquidity_point)
+                            if liquidity_mode == "single_candle"
+                            else liquidity_point.time),
+                reaction_level_candidates=reaction_level_candidates,
+                setup_id=next_setup_id,
+            ))
+            next_setup_id += 1
 
     return setups
 
@@ -686,24 +788,52 @@ def _reaction_trigger(prev: Candle, curr: Candle, direction: Direction) -> str |
     return None
 
 
-def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> list[EntryCandidate]:
+def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
+                            max_per_setup: int = MAX_CANDIDATES_PER_SETUP
+                            ) -> list[EntryCandidate]:
     """For each setup: bounded forward-scan H1 for the sweep of
     `liquidity_price`, then -- "we don't predict, we react" -- try each of
     `reaction_level_candidates` in nearest-to-extreme order, each scanning
     the same bounded REACTION_LOOKAHEAD window from the sweep for a
     genuine touch-and-react (`_reaction_trigger()`: engulfing or 4th-man
-    confirmation). The first candidate that actually produces one wins;
-    if the nearest candidate never gets touched-and-confirmed, price may
-    still run to the next one down the list, with the extreme candidate
-    as the last resort. At most one candidate per setup (the first
-    qualifying reaction), deduped by H1 index in case two setups converge
-    on the same candle."""
+    confirmation). The first LEVEL that actually produces a reaction wins;
+    if the nearest level never gets touched-and-confirmed, price may still
+    run to the next one down the list, with the extreme level as the last
+    resort.
+
+    From that winning level this returns up to `max_per_setup` reactions,
+    not just the first. The first one is not necessarily the one that
+    gets traded: every downstream gate in the trade loop (bias re-check
+    at entry time, alignment, IRL/ERL, the rollover window, zone fill,
+    R:R) runs AFTER this function has already picked, so a rejected first
+    pick used to kill the whole setup even when price went on to give
+    another clean reaction off the same pool minutes later. USDCHF
+    2026-09-15 is the case that exposed it: the single candidate was an
+    engulfing at 22:00, thrown out by `avoid_rollover_entries` because
+    22:00 is the rollover hour, while two genuine 4th-man reactions off
+    the same 0.81842 level followed at 04:00->05:00 and 05:00->06:00 the
+    next morning -- inside the window, never looked at.
+
+    Every candidate carries its `setup_id`, and the trade loop opens at
+    most one trade per setup_id. So this widens WHICH reaction a setup
+    may be traded on; it does not let one setup produce several trades.
+
+    Deduped by H1 index so two setups converging on the same candle
+    cannot both claim it."""
     times = [c.time for c in h1]
     candidates: list[EntryCandidate] = []
     seen_indices: set[int] = set()
 
     for setup in setups:
-        start_idx = bisect.bisect_left(times, setup.liquidity_time)
+        # From the pool's CLOSE, not its open. Starting at
+        # `liquidity_time` puts the scan inside the very candle that
+        # formed the low, so that candle trivially "sweeps" its own low
+        # and the setup fires on a sweep that never happened -- nobody
+        # came back for anything. Verified on USDCHF 2026-09-15: a pool
+        # at 0.81781 formed by the 21:00 candle was recorded as swept by
+        # that same 21:00 candle, while the next 18 candles never got
+        # closer than 0.81791.
+        start_idx = bisect.bisect_left(times, setup.sweep_from)
 
         sweep_idx = None
         for idx in range(start_idx, min(start_idx + LIQUIDITY_SWEEP_LOOKAHEAD, len(h1))):
@@ -718,21 +848,23 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup]) -> li
 
         for level in setup.reaction_level_candidates:
             level_price = level.price
-            found_idx = None
-            found_trigger = None
+            found: list[EntryCandidate] = []
             for idx in range(sweep_idx + 1, min(sweep_idx + 1 + REACTION_LOOKAHEAD, len(h1))):
                 prev, curr = h1[idx - 1], h1[idx]
-                touched = (prev.low <= level_price <= prev.high) or (curr.low <= level_price <= curr.high)
+                touched = ((prev.low <= level_price <= prev.high)
+                           or (curr.low <= level_price <= curr.high))
                 if not touched or idx in seen_indices:
                     continue
                 trigger = _reaction_trigger(prev, curr, setup.direction)
                 if trigger is not None:
-                    found_idx, found_trigger = idx, trigger
-                    break
-            if found_idx is not None:
-                candidates.append(EntryCandidate(found_idx, setup.direction, level,
-                                                  setup.liquidity_price, found_trigger))
-                seen_indices.add(found_idx)
+                    found.append(EntryCandidate(idx, setup.direction, level,
+                                                setup.liquidity_price, trigger,
+                                                setup.setup_id))
+                    seen_indices.add(idx)
+                    if len(found) >= max_per_setup:
+                        break
+            if found:
+                candidates.extend(found)
                 break
 
     return sorted(candidates, key=lambda ec: ec.index)
@@ -996,6 +1128,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   min_departure_r: float = 0.0,
                   origin_kind: str = "sweep_break",
                   close_based_sweep_break: bool = False,
+                  liquidity_mode: str = "swing",
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1125,6 +1258,36 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     break off the line chart. The sweep itself is unaffected either way
     -- it stays wick-based, since a sweep is legitimately a wick event.
     Compare against the default before trusting it as the new normal.
+    liquidity_mode: which ENTRY PATH to run. Two bundles, not one knob.
+
+    "swing" (default) is the path as it ran live before 2026-09-16, kept
+    byte-for-byte so the corrected path has an honest baseline: pools
+    from `structural_liquidity_points(h4, n=1)`, the sweep scan starting
+    at the pool's own open (so the candle that forms a low can "sweep"
+    it), and one reaction per setup.
+
+    "single_candle" is the correction, and all three parts of it move
+    together because measuring them apart is meaningless -- the
+    self-sweep only matters once the pools are the right pools:
+      * pools from `single_candle_liquidity()`: every post-breakout
+        candle leaves its low (bullish) or high (bearish) behind. This
+        is what SLK's "single candle liquidity" actually means. The
+        swing detector cannot express it -- `is_swing_low` needs the low
+        <= both neighbours, so a post-breakout pullback of higher lows
+        registers nothing and the search falls back to the breakout
+        candle's own extreme, a level price has no reason to revisit.
+        See `single_candle_liquidity()` for the worked GBPUSD case.
+      * the sweep scan starts at the pool's CLOSE, so a candle can no
+        longer take its own low.
+      * a setup may offer up to MAX_CANDIDATES_PER_SETUP reactions, so a
+        candidate rejected by a downstream gate (rollover window,
+        alignment, IRL/ERL, zone fill, R:R) does not kill the setup.
+        Still at most one trade per setup.
+
+    The default stays "swing" deliberately. The live bots call this
+    function, so flipping the default flips live trading; it flips when
+    `backtest/tools/compare_liquidity_modes.py` says the corrected path
+    is actually better on real history, and not before.
     max_history_years: optional {"D": years, "W": years, "H4": years,
     "H1": years} trailing-window cap applied to each granularity's loaded
     candles before any replay begins. None (default) loads everything
@@ -1221,14 +1384,30 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     }
     h1_lookup = _direction_lookup(h1_confirmations)
 
-    liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n)
-    entry_candidates = _find_entry_candidates(h1, liquidity_setups)
+    liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n,
+                                               liquidity_mode=liquidity_mode)
+    # "swing" is the A/B baseline and must behave exactly as the live
+    # path did before 2026-09-16, which included taking only the FIRST
+    # reaction per setup. The fall-through fix ships with the corrected
+    # mode, not with the thing it is being measured against.
+    entry_candidates = _find_entry_candidates(
+        h1, liquidity_setups,
+        max_per_setup=1 if liquidity_mode == "swing" else MAX_CANDIDATES_PER_SETUP,
+    )
 
     mgr = PositionManager()
     records: list[TradeRecord] = []
     trade_id = 0
+    # setup_ids that already produced a trade. A setup may now offer
+    # several reactions so a rejected one falls through to the next (see
+    # `_find_entry_candidates()`), but only the first that survives every
+    # gate below is traded -- the rest of that setup's candidates are
+    # skipped here.
+    traded_setups: set[int] = set()
 
     for candidate in entry_candidates:
+        if candidate.setup_id in traded_setups:
+            continue
         i = candidate.index
         prev, curr = h1[i - 1], h1[i]
 
@@ -1607,6 +1786,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         entry_idx = i if zone_fill_idx is None else zone_fill_idx
         entry_candle = h1[entry_idx]
 
+        traded_setups.add(candidate.setup_id)
         concurrent = len(mgr.open_positions(effective))
         pos = mgr.open_position(effective, entry_price, stop_loss, entry_candle.time, "H1", target)
 
