@@ -69,6 +69,9 @@ def test_variants_puts_the_baseline_first_and_one_entry_per_cap():
     v = variants([1, 3])
     assert [name for name, _ in v] == ["swing", "single_candle/1", "single_candle/3",
                                        "sc_h4/1", "sc_h4/3"]
+    unbounded = variants([None])
+    assert [name for name, _ in unbounded] == ["swing", "single_candle/all", "sc_h4/all"]
+    assert unbounded[1][1]["single_candle_max_pools"] is None
     assert v[0][1] == {"liquidity_mode": "swing"}
     assert v[2][1] == {"liquidity_mode": "single_candle", "single_candle_max_pools": 3}
     assert v[4][1] == {"liquidity_mode": "single_candle_h4", "single_candle_max_pools": 3}

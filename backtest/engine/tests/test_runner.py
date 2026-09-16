@@ -1710,3 +1710,120 @@ def test_h4_mode_is_a_subset_of_single_candle():
     strict = {s.liquidity_price for s in _find_liquidity_setups(
         h4, confs, levels, n, liquidity_mode="single_candle_h4", max_pools=99)}
     assert strict <= loose
+
+
+# ---------------------------------------------------------------------------
+# The pool window: every 4H candle in the leg, until the trend changes.
+#
+# Operator, 2026-09-16: "all the 4H candles are still valid to be tested
+# as the single candle liquidity low until the trend has changed -- that
+# is, we now have a new 4H breakout to the downside." And on a pool being
+# taken with nothing happening: "price can still do its own thing, come
+# down, take that first 4H candle low and still keep selling. The setup
+# is still valid. Maybe the second candle is the thing that will form the
+# truly single candle liquidity."
+# ---------------------------------------------------------------------------
+
+def _legged_h4():
+    """Three rising impulse/pullback cycles then a collapse, which yields
+    TWO bullish breakouts (so there is a continuation break inside the
+    bullish leg) followed by a bearish one (a real trend change). Both
+    are needed: a fixture with only one breakout would let the
+    window-boundary tests pass without exercising anything."""
+    rows = []
+    price = 1.1000
+    for _cycle in range(3):
+        for _ in range(2):   # pullback -- leaves a swing low behind
+            rows.append((price, price + 0.0005, price - 0.0020, price - 0.0018))
+            price -= 0.0018
+        for _ in range(3):   # impulse -- closes beyond the prior swing high
+            rows.append((price, price + 0.0060, price - 0.0003, price + 0.0055))
+            price += 0.0055
+    for _ in range(5):       # trend change, downward
+        rows.append((price, price + 0.0004, price - 0.0070, price - 0.0065))
+        price -= 0.0065
+    return [H4(i, *r) for i, r in enumerate(rows)]
+
+
+def test_the_legged_fixture_really_has_a_continuation_and_a_reversal():
+    """Guards the fixture itself. Every window test below is vacuous if
+    this shape ever stops holding."""
+    confs = sorted(detect_confirmations(_legged_h4(), 2), key=lambda c: c.time)
+    dirs = [c.direction for c in confs]
+    assert dirs.count(Direction.BULLISH) >= 2, "need a continuation break"
+    assert Direction.BEARISH in dirs, "need a trend change"
+    assert dirs.index(Direction.BEARISH) > 1, "the reversal must come last"
+
+
+def test_pools_are_unbounded_by_default():
+    """A numeric cap is an experiment, not the rule. The default must arm
+    every candle in the leg."""
+    h4 = _legged_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    uncapped = _find_liquidity_setups(h4, confs, levels, n,
+                                       liquidity_mode="single_candle")
+    capped = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle", max_pools=1)
+    assert len(uncapped) > len(capped)
+
+
+def test_a_continuation_breakout_does_not_close_the_window():
+    """Closing at the next breakout of ANY direction discarded every pool
+    formed after a same-direction continuation break."""
+    h4 = _legged_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    bull = [c for c in sorted(confs, key=lambda c: c.time)
+            if c.direction == Direction.BULLISH]
+    assert len(bull) >= 2, "fixture guard should have caught this"
+    setups = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle")
+    bullish = [s for s in setups if s.direction == Direction.BULLISH]
+    # Pools exist on BOTH sides of the continuation break, from the leg
+    # that started at the first bullish breakout.
+    after_continuation = [s for s in bullish if s.liquidity_time >= bull[1].time]
+    assert after_continuation, "pools after a continuation break were dropped"
+
+
+def test_the_same_pool_is_never_emitted_twice_for_one_direction():
+    """An unbounded window plus continuation breakouts would otherwise
+    re-emit every pool once per breakout in the leg."""
+    h4 = _legged_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    setups = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle")
+    seen = [(s.direction, s.liquidity_time) for s in setups]
+    assert len(seen) == len(set(seen))
+
+
+def test_a_swept_pool_with_no_reaction_does_not_retire_the_later_pools():
+    """The behaviour the operator described directly: the first candle's
+    low gets taken and price keeps selling, and the SECOND candle's low is
+    the one that matters. Each pool is its own setup, so a dead one
+    cannot consume the others."""
+    h4 = _legged_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    setups = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle")
+    bullish = sorted([s for s in setups if s.direction == Direction.BULLISH],
+                     key=lambda s: s.liquidity_time)
+    assert len(bullish) >= 2
+    assert len({s.setup_id for s in bullish}) == len(bullish)
+
+
+def test_swing_mode_keeps_the_any_direction_window():
+    """The baseline's bounds are part of what is being measured against."""
+    h4 = _legged_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    swing = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")
+    # One pool per breakout at most, exactly as before.
+    assert len(swing) <= len(confs)

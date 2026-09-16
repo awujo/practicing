@@ -654,7 +654,8 @@ def _pool_known_at(point):
 
 def _h4_sweep_and_rejection(h4: list[Candle], pool_price: float, pool_known_at,
                              direction: Direction, levels: list[KeyLevel],
-                             lookahead: int = H4_SWEEP_LOOKAHEAD):
+                             lookahead: int = H4_SWEEP_LOOKAHEAD,
+                             until=None):
     """Find the 4H candle that sweeps `pool_price` AND rejects off a key
     level, as the operator reads it off the chart.
 
@@ -683,6 +684,10 @@ def _h4_sweep_and_rejection(h4: list[Candle], pool_price: float, pool_known_at,
     start = bisect.bisect_left([c.time for c in h4], pool_known_at)
     for idx in range(start, min(start + lookahead, len(h4))):
         c = h4[idx]
+        if until is not None and c.time >= until:
+            # Past the trend change this pool belonged to. A sweep after
+            # the 4H has broken the other way is not this setup's sweep.
+            break
         if direction == Direction.BULLISH:
             if c.low > pool_price:
                 continue  # the resting low is still untouched
@@ -704,7 +709,7 @@ def _h4_sweep_and_rejection(h4: list[Candle], pool_price: float, pool_known_at,
 
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
                             n: int = 2, liquidity_mode: str = "single_candle",
-                            max_pools: int = SINGLE_CANDLE_LIQUIDITY_MAX_POOLS
+                            max_pools: int | None = None
                             ) -> list[LiquiditySetup]:
     """For each confirmed H4 breakout, find the single candle liquidity
     that forms afterward on the retracement side, and every
@@ -745,6 +750,10 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     breakouts = sorted(h4_confirmations, key=lambda c: c.time)
     setups = []
     next_setup_id = 0
+    # (direction, pool candle time) already turned into a setup. Without
+    # this, an unbounded window plus continuation breakouts re-emits the
+    # same pools once per breakout in the leg.
+    emitted_pools: set = set()
 
     # Pre-indexed, time-sorted views so each breakout's searches below are
     # bisect lookups into a bounded slice rather than a linear scan of the
@@ -768,13 +777,39 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
 
     for i, brk in enumerate(breakouts):
         prev_breakout_time = breakouts[i - 1].time if i > 0 else None
-        next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
+        # The pool window closes when the TREND CHANGES, not at the next
+        # breakout of any direction. Operator, 2026-09-16: "all the 4H
+        # candles are still valid to be tested as the single candle
+        # liquidity low until the trend has changed -- that is, we now
+        # have a new 4H breakout to the downside."
+        #
+        # A same-direction breakout is a continuation of this leg, not
+        # the end of it, so it must not close the window. Closing on the
+        # next breakout of ANY direction (the previous behavior) threw
+        # away every pool formed after a continuation break. Kept as-is
+        # for "swing", whose bounds are part of the A/B baseline.
+        if liquidity_mode == "swing":
+            next_breakout_time = breakouts[i + 1].time if i + 1 < len(breakouts) else None
+        else:
+            next_breakout_time = next(
+                (b.time for b in breakouts[i + 1:] if b.direction != brk.direction), None)
         retracement_side = "low" if brk.direction == Direction.BULLISH else "high"
 
         # Collect the pools this breakout left behind, oldest first,
         # capped at `max_pools`. In "swing" mode the cap is 1, preserving
         # the legacy first-qualifying-point-only behavior exactly.
-        cap = max_pools if liquidity_mode in ("single_candle", "single_candle_h4") else 1
+        # None = unbounded, which is the rule as stated: every 4H candle
+        # in this leg is a candidate, and one being swept without a KL
+        # reaction or an H1 confirmation retires that candle, not the
+        # setup -- "price can still do its own thing, come down, take
+        # that first 4H candle low and still keep selling. The setup is
+        # still valid. Maybe the second candle is the thing that will
+        # form the truly single candle liquidity." A numeric cap is kept
+        # only so the A/B can ask whether bounding it helps.
+        if liquidity_mode in ("single_candle", "single_candle_h4"):
+            cap = max_pools
+        else:
+            cap = 1
         breakout_pools = []
         for idx in range(bisect.bisect_right(point_known_ats, brk.time), len(points_sorted)):
             p = points_sorted[idx]
@@ -798,8 +833,15 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
             # of "swing" I claimed it was. It was a DIFFERENT set with the
             # most-traded pool removed, which is the likeliest reason it
             # scored 0.25 R/trade against swing's 0.79 at every cap.
+            if (brk.direction, p.time) in emitted_pools:
+                # Same leg reached through a continuation breakout. The
+                # pool is the same pool; emitting it twice would multiply
+                # the setup count by the number of continuation breaks
+                # without adding a single new candidate.
+                continue
+            emitted_pools.add((brk.direction, p.time))
             breakout_pools.append(p)
-            if len(breakout_pools) >= cap:
+            if cap is not None and len(breakout_pools) >= cap:
                 break
         if not breakout_pools:
             continue
@@ -833,7 +875,8 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
                 # "whichever level is nearest", which is what the other
                 # modes do and is not a claim about price at all.
                 sweep_candle, level = _h4_sweep_and_rejection(
-                    h4, liquidity_point.price, known, brk.direction, candidate_levels)
+                    h4, liquidity_point.price, known, brk.direction, candidate_levels,
+                    until=next_breakout_time)
                 if sweep_candle is None:
                     continue
                 setups.append(LiquiditySetup(
@@ -1236,7 +1279,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   origin_kind: str = "sweep_break",
                   close_based_sweep_break: bool = False,
                   liquidity_mode: str = "swing",
-                  single_candle_max_pools: int = SINGLE_CANDLE_LIQUIDITY_MAX_POOLS,
+                  single_candle_max_pools: int | None = None,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both

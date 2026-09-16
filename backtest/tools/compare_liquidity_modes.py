@@ -79,10 +79,12 @@ def variants(max_pools_list):
     Only the sweep tells them apart."""
     out = [("swing", {"liquidity_mode": "swing"})]
     for p in max_pools_list:
-        out.append((f"single_candle/{p}",
+        label = "all" if p is None else str(p)
+        out.append((f"single_candle/{label}",
                     {"liquidity_mode": "single_candle", "single_candle_max_pools": p}))
     for p in max_pools_list:
-        out.append((f"sc_h4/{p}",
+        label = "all" if p is None else str(p)
+        out.append((f"sc_h4/{label}",
                     {"liquidity_mode": "single_candle_h4", "single_candle_max_pools": p}))
     return out
 
@@ -141,13 +143,18 @@ def main():
                         help="only REPORT trades entered on/after this date "
                              "(full history still loads and drives bias)")
     parser.add_argument("--end", default=None)
-    parser.add_argument("--max-pools", default="6",
-                        help="comma-separated caps to sweep for single_candle mode, "
-                             "e.g. 1,2,3,6. Each runs as its own variant against the "
-                             "same swing baseline.")
+    parser.add_argument("--max-pools", default="0",
+                        help="comma-separated pool caps to sweep for the single_candle "
+                             "modes, e.g. 0,1,3. 0 means UNBOUNDED, which is the rule as "
+                             "stated -- every 4H candle in the leg stays a candidate "
+                             "until the trend changes. A numeric cap is an experiment, "
+                             "not the rule. Each value runs as its own variant against "
+                             "the same swing baseline.")
     args = parser.parse_args()
 
-    pool_caps = [int(x) for x in args.max_pools.split(",") if x.strip()]
+    # 0 on the command line means unbounded; run_backtest takes None.
+    pool_caps = [(None if int(x) == 0 else int(x))
+                 for x in args.max_pools.split(",") if x.strip()]
     MODES = variants(pool_caps)
     mode_names = [name for name, _ in MODES]
 
