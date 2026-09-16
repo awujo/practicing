@@ -81,6 +81,9 @@ def variants(max_pools_list):
     for p in max_pools_list:
         out.append((f"single_candle/{p}",
                     {"liquidity_mode": "single_candle", "single_candle_max_pools": p}))
+    for p in max_pools_list:
+        out.append((f"sc_h4/{p}",
+                    {"liquidity_mode": "single_candle_h4", "single_candle_max_pools": p}))
     return out
 
 

@@ -1594,3 +1594,119 @@ def test_swing_mode_keeps_the_legacy_scan_start_as_the_ab_baseline():
     for s in _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle"):
         assert s.sweep_from == s.liquidity_known_at
         assert s.sweep_from > s.liquidity_time
+
+
+# ---------------------------------------------------------------------------
+# liquidity_mode="single_candle_h4" -- the sweep AND the rejection off the
+# key level both read on the 4H, as the operator reads them off a chart:
+# "I want to see a 4H candle come and sweep another 4H candle's low...
+# price gets to a KL and on the 4H the candle starts rejecting off it as
+# if it is buying. Then the 1H has to give us what we want."
+# ---------------------------------------------------------------------------
+
+def test_h4_sweep_and_rejection_needs_both_halves_on_one_candle():
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.0950, "V", Direction.BULLISH)
+
+    # Takes the 1.1000 pool, wicks into 1.0950, closes back above it.
+    good = [H4(0, 1.1050, 1.1060, 1.1010, 1.1040),
+            H4(1, 1.1040, 1.1045, 1.0940, 1.1030)]
+    c, lvl = _h4_sweep_and_rejection(good, 1.1000, good[0].time,
+                                     Direction.BULLISH, [level])
+    assert c is good[1] and lvl is level
+
+
+def test_no_rejection_means_no_setup_rather_than_a_nearest_level_guess():
+    """The other modes fall back to whichever level is nearest the pool,
+    which is not a claim about price. Here, if no 4H candle closed back
+    out of a level, there is nothing to trade."""
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.0950, "V", Direction.BULLISH)
+    # Sweeps the pool and the level, but closes BELOW the level -- broke
+    # through it, did not reject off it.
+    broke = [H4(0, 1.1050, 1.1060, 1.1010, 1.1040),
+             H4(1, 1.1040, 1.1045, 1.0900, 1.0920)]
+    c, lvl = _h4_sweep_and_rejection(broke, 1.1000, broke[0].time,
+                                     Direction.BULLISH, [level])
+    assert c is None and lvl is None
+
+
+def test_a_candle_that_never_reaches_the_pool_is_not_a_sweep():
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.0950, "V", Direction.BULLISH)
+    never = [H4(0, 1.1050, 1.1060, 1.1010, 1.1040),
+             H4(1, 1.1040, 1.1070, 1.1020, 1.1060)]
+    c, _lvl = _h4_sweep_and_rejection(never, 1.1000, never[0].time,
+                                      Direction.BULLISH, [level])
+    assert c is None
+
+
+def test_the_pool_is_never_swept_by_its_own_candle_on_h4_either():
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.0950, "V", Direction.BULLISH)
+    # Candle 0 both forms the 1.1010 low and would "reject" off the
+    # level. Scanning from its own time would return it; scanning from
+    # pool_known_at (candle 1's open) cannot.
+    candles = [H4(0, 1.1050, 1.1060, 1.0940, 1.1040),
+               H4(1, 1.1040, 1.1050, 1.1030, 1.1045)]
+    c, _lvl = _h4_sweep_and_rejection(candles, 1.1010, candles[1].time,
+                                      Direction.BULLISH, [level])
+    assert c is None
+
+
+def test_bearish_is_the_mirror():
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    level = KL(pd.Timestamp("2023-12-31"), 1.1050, "A", Direction.BEARISH)
+    candles = [H4(0, 1.0950, 1.0990, 1.0940, 1.0960),
+               H4(1, 1.0960, 1.1060, 1.0955, 1.0970)]
+    c, lvl = _h4_sweep_and_rejection(candles, 1.1000, candles[0].time,
+                                     Direction.BEARISH, [level])
+    assert c is candles[1] and lvl is level
+
+
+def test_the_deepest_level_actually_rejected_from_wins():
+    """Two levels both reached and closed back above -- the one price ran
+    furthest into is the one it reacted from."""
+    from ..runner import _h4_sweep_and_rejection
+    from ..key_levels import KeyLevel as KL
+    shallow = KL(pd.Timestamp("2023-12-31"), 1.0980, "V", Direction.BULLISH)
+    deep = KL(pd.Timestamp("2023-12-31"), 1.0950, "V", Direction.BULLISH)
+    candles = [H4(0, 1.1050, 1.1060, 1.1010, 1.1040),
+               H4(1, 1.1040, 1.1045, 1.0940, 1.1030)]
+    _c, lvl = _h4_sweep_and_rejection(candles, 1.1000, candles[0].time,
+                                      Direction.BULLISH, [shallow, deep])
+    assert lvl is deep
+
+
+def test_h4_mode_marks_its_setups_validated_and_carries_one_level():
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    setups = _find_liquidity_setups(h4, confs, levels, n,
+                                     liquidity_mode="single_candle_h4")
+    for s in setups:
+        assert s.h4_validated is True
+        # Exactly the level price rejected from -- not a ranked list of
+        # guesses for the H1 search to try in turn.
+        assert len(s.reaction_level_candidates) == 1
+
+
+def test_h4_mode_is_a_subset_of_single_candle():
+    """Same pools, strictly more required of them. If it ever produced a
+    setup single_candle does not, the two are not measuring the same
+    concept and the A/B means nothing."""
+    h4 = _liquidity_setup_h4()
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    loose = {s.liquidity_price for s in _find_liquidity_setups(
+        h4, confs, levels, n, liquidity_mode="single_candle", max_pools=99)}
+    strict = {s.liquidity_price for s in _find_liquidity_setups(
+        h4, confs, levels, n, liquidity_mode="single_candle_h4", max_pools=99)}
+    assert strict <= loose

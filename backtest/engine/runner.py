@@ -285,6 +285,12 @@ SINGLE_CANDLE_LIQUIDITY_MAX_POOLS = 6
 # per setup_id.
 MAX_CANDIDATES_PER_SETUP = 3
 
+# How many 4H candles after a pool forms to wait for the sweep-and-
+# rejection that liquidity_mode="single_candle_h4" requires. 30 H4
+# candles is about a trading week -- past that the breakout that created
+# the pool is stale enough that a return is a different story.
+H4_SWEEP_LOOKAHEAD = 30
+
 # How long a resting entry at a zone's near edge stays live waiting for
 # price to come back to it (stop_anchor="zone_entry"). Bishop's deck
 # shows the retest happening within the same local move, so this is
@@ -599,6 +605,13 @@ class LiquiditySetup:
     sweep_from: object
     reaction_level_candidates: list[KeyLevel]
     setup_id: int = 0
+    # True when the sweep AND the rejection off the key level were both
+    # already confirmed on the 4H (liquidity_mode="single_candle_h4").
+    # `_find_entry_candidates()` then skips its own H1 sweep scan and
+    # goes straight to looking for the confirmation, because the thing
+    # that scan was approximating has already happened, on the timeframe
+    # it is actually read on.
+    h4_validated: bool = False
 
 
 @dataclass(frozen=True)
@@ -638,6 +651,57 @@ def _pool_known_at(point):
     return known if known is not None else point_known_at(point)
 
 
+
+def _h4_sweep_and_rejection(h4: list[Candle], pool_price: float, pool_known_at,
+                             direction: Direction, levels: list[KeyLevel],
+                             lookahead: int = H4_SWEEP_LOOKAHEAD):
+    """Find the 4H candle that sweeps `pool_price` AND rejects off a key
+    level, as the operator reads it off the chart.
+
+    "I want to see a 4H candle come and sweep another 4H candle's low...
+    and I want to see it react from a key level" -- and separately, on
+    what "react" means: "price gets to a KL and on the 4H the candle
+    starts rejecting off it as if it is buying. Then the 1H has to give
+    us what we want." (2026-09-16, voice, plus a hand drawing of the 4H
+    picture beside a zoomed lower-timeframe one.)
+
+    So both events are 4H events, and they are the SAME candle: it wicks
+    through the resting low, trades into the level, and closes back out
+    of it. Bullish: low <= pool, low <= level, close > level. Bearish
+    mirrored.
+
+    The pre-existing path tested neither on 4H. It scanned H1 for any
+    hour whose wick dipped below the pool, then for any H1 candle merely
+    TOUCHING the level while an engulfing/4th-man fired. "Some hour
+    touched this level" is a far weaker claim than "a 4H candle rejected
+    off it", and fusing the touch into the confirmation meant the 4H
+    rejection was never required at all.
+
+    Returns (sweep_candle, level) or (None, None). The level returned is
+    the one price actually rejected from -- not a guess, not the nearest
+    by distance."""
+    start = bisect.bisect_left([c.time for c in h4], pool_known_at)
+    for idx in range(start, min(start + lookahead, len(h4))):
+        c = h4[idx]
+        if direction == Direction.BULLISH:
+            if c.low > pool_price:
+                continue  # the resting low is still untouched
+            rejected = [lvl for lvl in levels
+                        if c.low <= lvl.price and c.close > lvl.price]
+            # Deepest level actually reached and closed back above -- the
+            # one price ran furthest into before turning.
+            best = min(rejected, key=lambda lvl: lvl.price, default=None)
+        else:
+            if c.high < pool_price:
+                continue
+            rejected = [lvl for lvl in levels
+                        if c.high >= lvl.price and c.close < lvl.price]
+            best = max(rejected, key=lambda lvl: lvl.price, default=None)
+        if best is not None:
+            return c, best
+    return None, None
+
+
 def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: list[KeyLevel],
                             n: int = 2, liquidity_mode: str = "single_candle",
                             max_pools: int = SINGLE_CANDLE_LIQUIDITY_MAX_POOLS
@@ -671,7 +735,7 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     (the JP225 sample had two), and which one price comes back for is not
     knowable in advance. Each gets its own `setup_id` so the trade loop
     can still open at most one trade per pool."""
-    if liquidity_mode == "single_candle":
+    if liquidity_mode in ("single_candle", "single_candle_h4"):
         liquidity_points = (single_candle_liquidity(h4, "low")
                             + single_candle_liquidity(h4, "high"))
     elif liquidity_mode == "swing":
@@ -710,7 +774,7 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # Collect the pools this breakout left behind, oldest first,
         # capped at `max_pools`. In "swing" mode the cap is 1, preserving
         # the legacy first-qualifying-point-only behavior exactly.
-        cap = max_pools if liquidity_mode == "single_candle" else 1
+        cap = max_pools if liquidity_mode in ("single_candle", "single_candle_h4") else 1
         breakout_pools = []
         for idx in range(bisect.bisect_right(point_known_ats, brk.time), len(points_sorted)):
             p = points_sorted[idx]
@@ -753,11 +817,42 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
               if prev_breakout_time is not None else 0)
 
         for liquidity_point in breakout_pools:
-            hi = bisect.bisect_right(level_known_ats, _pool_known_at(liquidity_point))
+            known = _pool_known_at(liquidity_point)
+            hi = bisect.bisect_right(level_known_ats, known)
             candidate_levels = [
                 lvl for lvl in levels_sorted[lo:hi] if lvl.default_bias == brk.direction
             ]
             if not candidate_levels:
+                continue
+
+            if liquidity_mode == "single_candle_h4":
+                # Both halves must be visible on the 4H: the candle that
+                # takes the resting low is the same candle that trades
+                # into a key level and closes back out of it. No 4H
+                # rejection, no setup -- rather than falling back to
+                # "whichever level is nearest", which is what the other
+                # modes do and is not a claim about price at all.
+                sweep_candle, level = _h4_sweep_and_rejection(
+                    h4, liquidity_point.price, known, brk.direction, candidate_levels)
+                if sweep_candle is None:
+                    continue
+                setups.append(LiquiditySetup(
+                    direction=brk.direction, breakout_time=brk.time,
+                    liquidity_price=liquidity_point.price,
+                    liquidity_time=liquidity_point.time,
+                    liquidity_known_at=known,
+                    # The confirmation is looked for from the START of the
+                    # rejecting 4H candle, not after it closes: the whole
+                    # point of dropping to a lower timeframe is to catch
+                    # the turn as it happens, and the operator's own
+                    # drawing puts the 4H picture and the zoomed one side
+                    # by side, not one after the other.
+                    sweep_from=sweep_candle.time,
+                    reaction_level_candidates=[level],
+                    setup_id=next_setup_id,
+                    h4_validated=True,
+                ))
+                next_setup_id += 1
                 continue
 
             reaction_level_candidates = sorted(
@@ -768,9 +863,8 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
                 direction=brk.direction, breakout_time=brk.time,
                 liquidity_price=liquidity_point.price,
                 liquidity_time=liquidity_point.time,
-                liquidity_known_at=_pool_known_at(liquidity_point),
-                sweep_from=(_pool_known_at(liquidity_point)
-                            if liquidity_mode == "single_candle"
+                liquidity_known_at=known,
+                sweep_from=(known if liquidity_mode == "single_candle"
                             else liquidity_point.time),
                 reaction_level_candidates=reaction_level_candidates,
                 setup_id=next_setup_id,
@@ -841,16 +935,23 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
         # closer than 0.81791.
         start_idx = bisect.bisect_left(times, setup.sweep_from)
 
-        sweep_idx = None
-        for idx in range(start_idx, min(start_idx + LIQUIDITY_SWEEP_LOOKAHEAD, len(h1))):
-            c = h1[idx]
-            swept = (c.low <= setup.liquidity_price if setup.direction == Direction.BULLISH
-                     else c.high >= setup.liquidity_price)
-            if swept:
-                sweep_idx = idx
-                break
-        if sweep_idx is None:
-            continue
+        if setup.h4_validated:
+            # The sweep and the rejection off the level were both already
+            # established on the 4H. Re-deriving the sweep from H1 here
+            # would only re-approximate what is already known, and could
+            # disagree with it.
+            sweep_idx = start_idx
+        else:
+            sweep_idx = None
+            for idx in range(start_idx, min(start_idx + LIQUIDITY_SWEEP_LOOKAHEAD, len(h1))):
+                c = h1[idx]
+                swept = (c.low <= setup.liquidity_price if setup.direction == Direction.BULLISH
+                         else c.high >= setup.liquidity_price)
+                if swept:
+                    sweep_idx = idx
+                    break
+            if sweep_idx is None:
+                continue
 
         for level in setup.reaction_level_candidates:
             level_price = level.price

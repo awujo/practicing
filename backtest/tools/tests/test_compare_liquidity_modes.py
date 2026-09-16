@@ -66,11 +66,12 @@ def test_fmt_price_handles_a_missing_value():
 
 def test_variants_puts_the_baseline_first_and_one_entry_per_cap():
     from ..compare_liquidity_modes import variants
-    v = variants([1, 3, 6])
-    assert [name for name, _ in v] == ["swing", "single_candle/1",
-                                       "single_candle/3", "single_candle/6"]
+    v = variants([1, 3])
+    assert [name for name, _ in v] == ["swing", "single_candle/1", "single_candle/3",
+                                       "sc_h4/1", "sc_h4/3"]
     assert v[0][1] == {"liquidity_mode": "swing"}
     assert v[2][1] == {"liquidity_mode": "single_candle", "single_candle_max_pools": 3}
+    assert v[4][1] == {"liquidity_mode": "single_candle_h4", "single_candle_max_pools": 3}
 
 
 def test_variants_with_no_caps_is_just_the_baseline():
