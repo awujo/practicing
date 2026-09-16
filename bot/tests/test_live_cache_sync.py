@@ -206,3 +206,86 @@ def test_repeated_syncs_never_accumulate_overlapping_bars(tmp_path, monkeypatch)
     t = pd.to_datetime(after["time"], utc=True).sort_values()
     gaps = t.diff().dropna().dt.total_seconds() / 3600
     assert (gaps >= 4).all(), "no H4 bar may sit closer than 4h to the previous"
+
+
+# ---------------------------------------------------------------------------
+# A derived bar must never be written before its period has finished.
+#
+# Found live 2026-09-16 from the Telegram feed: JP225 reported
+# "H4 (bullish) ... H4@2026-09-15 20:00" and then, 19 seconds later from
+# the same process, "aligned bearish ... H4@2026-09-14 08:00" -- the
+# confirmation moved BACKWARDS in time and flipped direction. _derive_tail
+# dropped the first derived bar but not the last, so the in-progress 4H
+# bin was being written as though complete and rewritten with different
+# OHLC on every sync as its remaining hours arrived.
+#
+# The MT5 path this replaced fetched with start=1, which skips the
+# forming bar. Deriving has to do the equivalent explicitly.
+# ---------------------------------------------------------------------------
+
+def _sync_with_h1_ending(tmp_path, monkeypatch, last_hour):
+    """Seed H1 up to and including `last_hour`, then sync."""
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    idx = pd.date_range("2026-08-03", last_hour, freq="h", tz="UTC")
+    cache_module.append("dukascopy", "EURUSD", "H1",
+                        [{"time": t.isoformat().replace("+00:00", "Z"), "open": 1.10,
+                          "high": 1.11, "low": 1.09, "close": 1.105, "volume": 1.0}
+                         for t in idx])
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+    h4 = cache_module.load("dukascopy", "EURUSD", "H4")
+    return pd.to_datetime(h4["time"], utc=True).max()
+
+
+def test_an_unfinished_h4_bin_is_not_written(tmp_path, monkeypatch):
+    """H1 ends at 21:00, which covers through 22:00 -- so the 20:00 4H bin
+    (20:00-00:00) is only half done and must not appear."""
+    newest = _sync_with_h1_ending(tmp_path, monkeypatch, "2026-08-20 21:00")
+    assert newest < pd.Timestamp("2026-08-20 20:00", tz="UTC")
+
+
+def test_a_finished_h4_bin_is_written(tmp_path, monkeypatch):
+    """H1 ends at 23:00, covering through 00:00, so the 20:00 bin is
+    complete and must appear -- the guard has to stop at incomplete bars,
+    not at recent ones."""
+    newest = _sync_with_h1_ending(tmp_path, monkeypatch, "2026-08-20 23:00")
+    assert newest == pd.Timestamp("2026-08-20 20:00", tz="UTC")
+
+
+def test_the_newest_derived_bar_stops_changing_once_written(tmp_path, monkeypatch):
+    """The actual failure: the same bar meaning something different on
+    each sync. Sync at 21:00 and again at 23:00; any bar present in both
+    must be byte-identical."""
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+
+    def seed_and_sync(last_hour):
+        idx = pd.date_range("2026-08-03", last_hour, freq="h", tz="UTC")
+        cache_module.append("dukascopy", "EURUSD", "H1",
+                            [{"time": t.isoformat().replace("+00:00", "Z"),
+                              "open": 1.10 + i * 1e-5, "high": 1.11 + i * 1e-5,
+                              "low": 1.09 + i * 1e-5, "close": 1.105 + i * 1e-5,
+                              "volume": 1.0} for i, t in enumerate(idx)])
+        fake = FakeMT5()
+        fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+            make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+            make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+        ]
+        client = MT5Client(fake, login=1, password="pw", server="Demo",
+                           server_utc_offset=pd.Timedelta(0))
+        sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+        df = cache_module.load("dukascopy", "EURUSD", "H4")
+        df["time"] = pd.to_datetime(df["time"], utc=True)
+        return df.set_index("time")
+
+    first = seed_and_sync("2026-08-20 21:00")
+    second = seed_and_sync("2026-08-20 23:00")
+
+    shared = first.index.intersection(second.index)
+    assert len(shared) > 0
+    pd.testing.assert_frame_equal(first.loc[shared], second.loc[shared])

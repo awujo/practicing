@@ -78,6 +78,22 @@ SYNC_GRANULARITIES = ("H1",)
 # a partial week.
 DERIVE_LOOKBACK = pd.Timedelta(days=21)
 
+# How long each derived bar spans, used to drop the trailing INCOMPLETE
+# one. A 4H bin whose period has not finished yet is built from one, two
+# or three closed H1 candles instead of four, and its high/low/close
+# change every hour as the rest arrive -- so the same bar means something
+# different on each sync, and bias computed from it flips underneath the
+# strategy. The MT5 path this replaced avoided that by fetching with
+# start=1, which skips the still-forming bar; deriving has to do the
+# equivalent explicitly. See mt5_data.fetch_candles: "a strategy decision
+# must never be made against an incomplete candle -- structure.py's
+# swing/sweep logic assumes every candle it sees is finished."
+DERIVED_PERIODS = {
+    "H4": pd.Timedelta(hours=4),
+    "D": pd.Timedelta(days=1),
+    "W": pd.Timedelta(days=7),
+}
+
 
 def bootstrap_historical_cache(instrument: str, source: str = "dukascopy") -> str:
     return data_access.ensure_instrument_cache(instrument, source=source)
@@ -99,12 +115,21 @@ def _derive_tail(instrument: str, source: str, lookback: pd.Timedelta) -> dict[s
 
     cut = h1["time"].max() - lookback
     window = h1[h1["time"] >= cut]
+    # The newest H1 row covers [last_h1, last_h1 + 1h), so a derived bin
+    # is finished only once its whole period falls inside that.
+    last_h1 = window["time"].max()
     for granularity, (_src, rule, kwargs) in REPAIRABLE_GRANULARITIES.items():
         out = resample_ohlcv(window, rule, **kwargs)
         # Drop the first derived bar: its bin starts before `cut`, so it
         # is aggregated from a partial set of H1 rows and would overwrite
         # a correct bar with a truncated one.
         out = out.iloc[1:]
+        # Drop any trailing bar whose period has not completed. Without
+        # this, every sync rewrites the in-progress bar with different
+        # OHLC and the strategy sees its most recent candle change shape
+        # under it.
+        period = DERIVED_PERIODS[granularity]
+        out = out[out["time"] + period <= last_h1 + pd.Timedelta(hours=1)]
         if out.empty:
             written[granularity] = 0
             continue
