@@ -54,6 +54,7 @@ Then, with the bots stopped so nothing re-poisons the file mid-repair:
 from __future__ import annotations
 
 import argparse
+import sys
 import traceback
 
 import pandas as pd
@@ -137,6 +138,13 @@ def rebuild(source: str, symbol: str, granularity: str, cutoff: str, apply: bool
 
 
 def main():
+    # Python block-buffers stdout when it is redirected to a file rather
+    # than a terminal, so a `nohup ... > log &` run shows nothing until
+    # the buffer fills or the process exits. That is merely annoying for
+    # the dry run and actively bad for --apply, where the log is the only
+    # view of a destructive operation in progress.
+    sys.stdout.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--instruments", required=True,
@@ -201,7 +209,7 @@ def main():
             after = inspect(args.source, symbol, g)
             verdict = "CLEAN" if (after["off_grid"] == 0 and after["overlapping"] == 0) else "STILL DIRTY"
             print(status + f"  -> dropped {result['dropped']}, wrote {result['written']}, "
-                           f"now off_grid={after['off_grid']} overlapping={after['overlapping']} {verdict}")
+                           f"now off_grid={after['off_grid']} overlapping={after['overlapping']} {verdict}", flush=True)
 
     print()
     print(f"off-grid rows found: {totals['off_grid']}, overlapping rows found: {totals['overlapping']}")
