@@ -551,14 +551,29 @@ def main() -> None:
     ap.add_argument("--title", default=None)
     ap.add_argument("--count", type=int, default=12)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--liquidity-mode", default="swing",
+                    choices=("swing", "single_candle", "single_candle_h4"),
+                    help="Which entry path to render trades from. 'swing' is what the "
+                         "live bots run. The other two are the corrected single candle "
+                         "liquidity rules -- rendering those is the only way to see "
+                         "whether the pool, the sweep and the key level it picked are "
+                         "the ones a human would have marked, which no aggregate R "
+                         "table can tell you.")
+    ap.add_argument("--max-pools", type=int, default=0,
+                    help="Pool cap for the single_candle modes. 0 (default) means "
+                         "unbounded, which is the rule as stated.")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     pip_size = default_pip_size(args.instrument)
+    mode_kwargs = {"liquidity_mode": args.liquidity_mode}
+    if args.liquidity_mode != "swing":
+        mode_kwargs["single_candle_max_pools"] = args.max_pools or None
     trades = run_backtest(args.instrument, args.entry_style, source=args.source,
                           stop_anchor=args.stop_anchor, min_reward_r=args.min_reward_r,
                           entry_fill=args.entry_fill,
-                          cancel_at_target_fraction=args.cancel_at)
+                          cancel_at_target_fraction=args.cancel_at,
+                          **mode_kwargs)
     candles = load_candles(args.source, args.instrument, "H1")
     chosen = pick(trades, args.count, args.seed)
     table = fidelity(trades, candles)
@@ -576,7 +591,8 @@ def main() -> None:
                                            source=args.source,
                                            stop_anchor=args.compare_anchor,
                                            entry_fill=args.entry_fill,
-                                           cancel_at_target_fraction=args.cancel_at)}
+                                           cancel_at_target_fraction=args.cancel_at,
+                                           **mode_kwargs)}
 
     page = build_page(
         args.instrument, args.entry_style, chosen, pip_size, candles, table=table,
