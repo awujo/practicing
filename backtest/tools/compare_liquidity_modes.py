@@ -66,7 +66,22 @@ from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from ..engine.runner import run_backtest
 from ..engine.trade_log import summarize
 
-MODES = ("swing", "single_candle")
+MODES_DOC = "swing baseline + one single_candle variant per pool cap"
+
+
+def variants(max_pools_list):
+    """The baseline plus one single_candle variant per pool cap.
+
+    Sweeping the cap matters because an over-permissive cap and a wrong
+    concept produce the same summary row. The first measured run (cap=6)
+    gave 2.3x the trades at a third of the R/trade -- which is what too
+    many armed pools looks like, and also what a bad idea looks like.
+    Only the sweep tells them apart."""
+    out = [("swing", {"liquidity_mode": "swing"})]
+    for p in max_pools_list:
+        out.append((f"single_candle/{p}",
+                    {"liquidity_mode": "single_candle", "single_candle_max_pools": p}))
+    return out
 
 
 def _fmt_price(p):
@@ -81,10 +96,10 @@ def _key(rec):
     return (rec.instrument, str(rec.direction), str(rec.entry_time))
 
 
-def _run(instrument, mode, args):
+def _run(instrument, mode_kwargs, args):
     return run_backtest(
         instrument, args.entry_style,
-        liquidity_mode=mode,
+        **mode_kwargs,
         avoid_rollover_entries=not args.no_avoid_rollover,
         min_reward_r=args.min_reward_r,
         origin_kind=args.origin_kind,
@@ -123,7 +138,15 @@ def main():
                         help="only REPORT trades entered on/after this date "
                              "(full history still loads and drives bias)")
     parser.add_argument("--end", default=None)
+    parser.add_argument("--max-pools", default="6",
+                        help="comma-separated caps to sweep for single_candle mode, "
+                             "e.g. 1,2,3,6. Each runs as its own variant against the "
+                             "same swing baseline.")
     args = parser.parse_args()
+
+    pool_caps = [int(x) for x in args.max_pools.split(",") if x.strip()]
+    MODES = variants(pool_caps)
+    mode_names = [name for name, _ in MODES]
 
     if args.instruments.strip().upper() == "ALL":
         instruments = sorted(DUKASCOPY_INSTRUMENTS)
@@ -133,16 +156,16 @@ def main():
     start = pd.Timestamp(args.start, tz="UTC") if args.start else None
     end = pd.Timestamp(args.end, tz="UTC") if args.end else None
 
-    totals = {m: {"trades": 0, "r": 0.0, "wins": 0} for m in MODES}
+    totals = {m: {"trades": 0, "r": 0.0, "wins": 0} for m in mode_names}
     unique_rows = []
 
     for instrument in instruments:
         per_mode = {}
         failed = False
-        for mode in MODES:
+        for mode, mode_kwargs in MODES:
             t0 = time.time()
             try:
-                recs = _run(instrument, mode, args)
+                recs = _run(instrument, mode_kwargs, args)
             except FileNotFoundError:
                 print(f"{instrument:<9} no cached data, skipped", flush=True)
                 failed = True
@@ -158,7 +181,7 @@ def main():
 
         line = [f"{instrument:<9}"]
         windowed = {}
-        for mode in MODES:
+        for mode in mode_names:
             recs, secs = per_mode[mode]
             s = summarize(recs)
             totals[mode]["trades"] += s.get("closed_trades", 0)
@@ -171,22 +194,29 @@ def main():
         print("  ".join(line), flush=True)
 
         swing_keys = {_key(r) for r in windowed["swing"]}
-        sc_keys = {_key(r) for r in windowed["single_candle"]}
-        for r in windowed["single_candle"]:
-            if _key(r) not in swing_keys:
-                unique_rows.append(("single_candle ONLY", r))
-        for r in windowed["swing"]:
-            if _key(r) not in sc_keys:
-                unique_rows.append(("swing ONLY", r))
+        for mode in mode_names:
+            if mode == "swing":
+                continue
+            sc_keys = {_key(r) for r in windowed[mode]}
+            for r in windowed[mode]:
+                if _key(r) not in swing_keys:
+                    unique_rows.append((f"{mode} ONLY", r))
+            for r in windowed["swing"]:
+                if _key(r) not in sc_keys:
+                    unique_rows.append((f"swing ONLY (vs {mode})", r))
 
     print()
     print("=" * 78)
     print("FULL HISTORY TOTALS")
-    for mode in MODES:
+    for mode in mode_names:
         t = totals[mode]
         win = (100.0 * t["wins"] / t["trades"]) if t["trades"] else 0.0
-        print(f"  {mode:<15} {t['trades']:>6} trades   {win:>5.1f}% win   "
-              f"{t['r']:>9.1f}R")
+        per = (t["r"] / t["trades"]) if t["trades"] else 0.0
+        print(f"  {mode:<18} {t['trades']:>6} trades   {win:>5.1f}% win   "
+              f"{t['r']:>9.1f}R   {per:>6.2f} R/trade")
+    print()
+    print("  R/trade is the column that matters -- more trades at worse quality")
+    print("  is how the cap=6 run lost total R while doubling activity.")
 
     if start is not None or end is not None:
         print()
@@ -202,7 +232,7 @@ def main():
                   f"{'entry':>10} {'stop':>10} {'target':>10} {'trigger':<12} {'outcome'}")
             for tag, r in sorted(unique_rows, key=lambda x: str(x[1].entry_time)):
                 side = str(getattr(r.direction, "value", r.direction))
-                print(f"  {tag:<18} {r.instrument:<9} {str(r.entry_time):<21} {side:<8} "
+                print(f"  {tag:<24} {r.instrument:<9} {str(r.entry_time):<21} {side:<8} "
                       f"{_fmt_price(r.entry_price):>10} {_fmt_price(r.stop_loss):>10} "
                       f"{_fmt_price(r.primary_target):>10} {r.trigger_type:<12} "
                       f"{r.exit_reason or 'still_open'}")

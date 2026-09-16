@@ -62,3 +62,27 @@ def test_key_distinguishes_instrument_side_and_entry_candle():
 def test_fmt_price_handles_a_missing_value():
     assert _fmt_price(None) == "-"
     assert _fmt_price(1.35050) == "1.35050"
+
+
+def test_variants_puts_the_baseline_first_and_one_entry_per_cap():
+    from ..compare_liquidity_modes import variants
+    v = variants([1, 3, 6])
+    assert [name for name, _ in v] == ["swing", "single_candle/1",
+                                       "single_candle/3", "single_candle/6"]
+    assert v[0][1] == {"liquidity_mode": "swing"}
+    assert v[2][1] == {"liquidity_mode": "single_candle", "single_candle_max_pools": 3}
+
+
+def test_variants_with_no_caps_is_just_the_baseline():
+    from ..compare_liquidity_modes import variants
+    assert [name for name, _ in variants([])] == ["swing"]
+
+
+def test_baseline_variant_never_carries_a_pool_cap():
+    """swing must stay the untouched pre-2026-09-16 path -- passing it a
+    single_candle-only knob would quietly make the baseline something
+    else, and every number would be measured against the wrong thing."""
+    from ..compare_liquidity_modes import variants
+    for name, kwargs in variants([1, 2, 6]):
+        if name == "swing":
+            assert "single_candle_max_pools" not in kwargs

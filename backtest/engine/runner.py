@@ -1129,6 +1129,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   origin_kind: str = "sweep_break",
                   close_based_sweep_break: bool = False,
                   liquidity_mode: str = "swing",
+                  single_candle_max_pools: int = SINGLE_CANDLE_LIQUIDITY_MAX_POOLS,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1288,6 +1289,27 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     function, so flipping the default flips live trading; it flips when
     `backtest/tools/compare_liquidity_modes.py` says the corrected path
     is actually better on real history, and not before.
+
+    First measured run (2026-09-16, GBPUSD/NZDUSD/XAUUSD/JP225/USDCHF,
+    conservative, full history) said it is NOT yet better at
+    single_candle_max_pools=6:
+
+        swing           2991 trades  43.9% win  1979.0R  (0.66 R/trade)
+        single_candle   6955 trades  32.4% win  1680.0R  (0.24 R/trade)
+
+    2.3x the trades at a third of the quality, and less total R despite
+    it. That is a SELECTION failure, not a refutation of the concept --
+    the annotated charts this was built from mark one pool after the
+    breakout, occasionally two, never six. See
+    `single_candle_max_pools`.
+
+    single_candle_max_pools: how many post-breakout candles may supply a
+    pool in "single_candle" mode. The default of 6 is what produced the
+    numbers above and is almost certainly too loose; 1 (the candle
+    immediately after the breakout) is what three of the four annotated
+    chart samples actually show. Sweep it before concluding anything
+    about the mode itself -- an over-permissive cap and a wrong concept
+    look identical in a summary row, and only one of them is true here.
     max_history_years: optional {"D": years, "W": years, "H4": years,
     "H1": years} trailing-window cap applied to each granularity's loaded
     candles before any replay begins. None (default) loads everything
@@ -1385,7 +1407,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h1_lookup = _direction_lookup(h1_confirmations)
 
     liquidity_setups = _find_liquidity_setups(h4, h4_confirmations, h4_levels, n,
-                                               liquidity_mode=liquidity_mode)
+                                               liquidity_mode=liquidity_mode,
+                                               max_pools=single_candle_max_pools)
     # "swing" is the A/B baseline and must behave exactly as the live
     # path did before 2026-09-16, which included taking only the FIRST
     # reaction per setup. The fall-through fix ships with the corrected
