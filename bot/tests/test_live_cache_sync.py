@@ -111,3 +111,98 @@ def test_sync_recent_from_mt5_writes_time_in_the_same_iso_format_as_the_rest_of_
         content = f.read()
     assert "+00:00" not in content
     assert content.count("Z") >= 1
+
+
+# ---------------------------------------------------------------------------
+# H4/D/W must never come from MT5 again.
+#
+# They used to. MT5 anchors bars to broker midnight (UTC+3, so H4 on
+# 01/05/09/13/17/21 UTC, D on 21:00, W on Saturday 21:00); Dukascopy
+# anchors to UTC midnight. Appending one series onto the other produced
+# bars covering overlapping spans, and cache.append()'s dedupe-by-
+# timestamp could not see it. Undetected 2026-08-19 to 2026-09-16.
+# ---------------------------------------------------------------------------
+
+def _seed_h1(tmp_path, symbol="EURUSD", start="2026-08-03", days=30):
+    idx = pd.date_range(start, periods=24 * days, freq="h", tz="UTC")
+    rows = [{"time": t.isoformat().replace("+00:00", "Z"), "open": 1.10,
+             "high": 1.11, "low": 1.09, "close": 1.105, "volume": 1.0}
+            for t in idx]
+    cache_module.append("dukascopy", symbol, "H1", rows)
+
+
+def test_only_h1_is_ever_fetched_from_the_broker(tmp_path, monkeypatch):
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path)
+
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    fetched = []
+    real = client.fetch_candles
+
+    def spy(instrument, granularity, count):
+        fetched.append(granularity)
+        return real(instrument, granularity, count=count)
+
+    client.fetch_candles = spy
+    sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+
+    assert fetched == ["H1"], f"H4/D/W must not be fetched from MT5, got {fetched}"
+
+
+def test_derived_h4_lands_on_the_utc_grid_not_the_broker_grid(tmp_path, monkeypatch):
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path)
+
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+
+    h4 = cache_module.load("dukascopy", "EURUSD", "H4")
+    hours = sorted(pd.to_datetime(h4["time"], utc=True).dt.hour.unique())
+    assert hours == [0, 4, 8, 12, 16, 20]
+    assert 1 not in hours and 21 not in hours  # the broker grid, specifically
+
+    d = cache_module.load("dukascopy", "EURUSD", "D")
+    assert sorted(pd.to_datetime(d["time"], utc=True).dt.hour.unique()) == [0]
+    w = cache_module.load("dukascopy", "EURUSD", "W")
+    wt = pd.to_datetime(w["time"], utc=True)
+    assert sorted(wt.dt.hour.unique()) == [0]
+    assert sorted(wt.dt.dayofweek.unique()) == [0]
+
+
+def test_repeated_syncs_never_accumulate_overlapping_bars(tmp_path, monkeypatch):
+    """The failure mode in one assertion: the old path grew the file on
+    every call because each new grid's timestamps looked new. Derived
+    bars are rewritten in place, so the row count must stay put."""
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path)
+
+    fake = FakeMT5()
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    client = MT5Client(fake, login=1, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+
+    sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+    first = len(cache_module.load("dukascopy", "EURUSD", "H4"))
+    for _ in range(3):
+        sync_recent_from_mt5(client, "EURUSD", source="dukascopy", lookback_count=10)
+    after = cache_module.load("dukascopy", "EURUSD", "H4")
+
+    assert len(after) == first
+    t = pd.to_datetime(after["time"], utc=True).sort_values()
+    gaps = t.diff().dropna().dt.total_seconds() / 3600
+    assert (gaps >= 4).all(), "no H4 bar may sit closer than 4h to the previous"

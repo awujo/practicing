@@ -250,6 +250,53 @@ def _merge_rewrite(path: str, rows: list[dict]) -> int:
     return len(new_df)
 
 
+def replace_from(source: str, symbol: str, granularity: str, cutoff: str,
+                  rows: list[dict]) -> tuple[int, int]:
+    """Drop every cached row at or after `cutoff` and put `rows` in their
+    place. Returns (rows_dropped, rows_written).
+
+    `append()` cannot do this. It MERGES, deduping by timestamp -- which
+    is exactly why the 2026-08 damage accumulated silently: bars from a
+    differently-anchored feed carry timestamps that no dedupe can
+    recognise as wrong, because a 16:00 bar and a 17:00 bar really are
+    two different timestamps. Removing them needs a delete, and a delete
+    needs its own function rather than a flag on the merge path.
+
+    `cutoff` is an ISO-8601 UTC string in the same format the cache
+    stores ("...Z"), compared as a string exactly as `append()` compares
+    timestamps -- consistent ordering with the rest of this module, and
+    no timezone parsing to get subtly wrong on a destructive operation.
+
+    Writes atomically via a temp file plus os.replace(), for the same
+    reason `_merge_rewrite()` does: two bot processes read these files
+    concurrently and a plain truncate-then-write lets one of them see an
+    empty file (a real crash, see that function's note)."""
+    path = cache_path(source, symbol, granularity)
+    with _file_lock(path, exclusive=True):
+        if os.path.exists(path):
+            existing = pd.read_csv(path)
+            keep = existing[existing["time"].astype(str) < cutoff]
+            dropped = len(existing) - len(keep)
+        else:
+            keep = pd.DataFrame(columns=COLUMNS)
+            dropped = 0
+
+        new_df = pd.DataFrame(rows, columns=COLUMNS)
+        combined = pd.concat([keep, new_df], ignore_index=True)
+        combined = combined.drop_duplicates(subset="time").sort_values("time")
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+        os.close(tmp_fd)
+        try:
+            combined.to_csv(tmp_path, index=False)
+            os.replace(tmp_path, path)
+        except BaseException:
+            os.remove(tmp_path)
+            raise
+    return dropped, len(new_df)
+
+
 def load(source: str, symbol: str, granularity: str) -> pd.DataFrame:
     path = cache_path(source, symbol, granularity)
     if not os.path.exists(path):
