@@ -89,31 +89,49 @@ def report(instrument, source, start, end, years, mode, n=2):
         print(f"   {c.time}  {c.direction.value:<8} {kind:<12}{shape}")
 
     in_window = [s for s in setups if start <= s.liquidity_time <= end]
-    print()
-    print(f"SINGLE CANDLE LIQUIDITY the engine armed  ({len(in_window)} in this window)")
-    if not in_window:
-        print("   none")
+
+    # Grouped by the 4H candle that did the sweeping, not listed per pool.
+    # When one candle takes a stack of lows it is ONE event on the chart,
+    # and printing it once per pool made a single XAUUSD sweep appear
+    # seven times -- unreadable, and it misrepresents what happened.
+    groups = {}
     for s in in_window:
-        side = "low" if s.direction == Direction.BULLISH else "high"
+        groups.setdefault((s.sweep_from, s.direction), []).append(s)
+
+    print()
+    print(f"SINGLE CANDLE LIQUIDITY  ({len(groups)} sweep events, "
+          f"{len(in_window)} pools)")
+    if not groups:
+        print("   none")
+
+    for (sweep_time, direction), items in sorted(groups.items(), key=lambda kv: str(kv[0][0])):
+        side = "low" if direction == Direction.BULLISH else "high"
+        i = bisect.bisect_left(h4_times, sweep_time)
+        bar = h4[i] if i < len(h4) and h4[i].time == sweep_time else None
         print()
-        print(f"   pool {_fmt(s.liquidity_price, d)} ({side} of the "
-              f"{s.liquidity_time} candle)")
-        print(f"      breakout that armed it: {s.breakout_time} {s.direction.value}")
-        if s.h4_validated:
-            lvl = s.reaction_level_candidates[0]
-            print(f"      swept by the {s.sweep_from} 4H candle, "
-                  f"which rejected off key level {_fmt(lvl.price, d)}")
-        else:
-            print(f"      sweep searched on H1 from {s.sweep_from}")
-            print(f"      key levels it would try: "
-                  + ", ".join(_fmt(l.price, d) for l in s.reaction_level_candidates[:3]))
-        got = by_setup.get(s.setup_id, [])
+        print(f"   4H CANDLE {sweep_time}  swept {direction.value} liquidity")
+        if bar:
+            print(f"      that candle:  o {_fmt(bar.open, d)}  h {_fmt(bar.high, d)}  "
+                  f"l {_fmt(bar.low, d)}  c {_fmt(bar.close, d)}")
+        print(f"      took the {side} of {len(items)} earlier 4H candle(s):")
+        for s in sorted(items, key=lambda s: s.liquidity_time):
+            print(f"         {_fmt(s.liquidity_price, d)}   4H CANDLE {s.liquidity_time}")
+
+        brk = sorted({s.breakout_time for s in items})
+        print(f"      armed by the 4H breakout at {', '.join(str(b) for b in brk)}")
+
+        if items[0].h4_validated:
+            lvl = items[0].reaction_level_candidates[0]
+            rel = "above" if lvl.price > items[0].liquidity_price else "below"
+            print(f"      KEY LEVEL {_fmt(lvl.price, d)}   4H CANDLE {lvl.time}  "
+                  f"({lvl.shape}, sits {rel} the pool)")
+
+        got = [c for s in items for c in by_setup.get(s.setup_id, [])]
         if got:
-            for c in got:
-                print(f"      -> H1 confirmation: {h1[c.index].time} "
-                      f"({c.trigger}) at level {_fmt(c.reaction_level.price, d)}")
+            for c in sorted(got, key=lambda c: c.index):
+                print(f"      H1 confirmation  {h1[c.index].time}  ({c.trigger})")
         else:
-            print("      -> no H1 confirmation followed; nothing was taken")
+            print("      no H1 confirmation -- nothing was taken")
 
 
 def main():
