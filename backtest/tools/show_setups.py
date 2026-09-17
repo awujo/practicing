@@ -38,6 +38,13 @@ from ..engine.runner import (
 )
 
 
+def _when(t):
+    """Narrow and scannable on a phone or an 80-column terminal: weekday
+    included because finding "Mon 14 Sep 12:00" on a chart is faster than
+    counting bars from an ISO timestamp."""
+    return pd.Timestamp(t).strftime("%a %d %b %H:%M") if t is not None else "-"
+
+
 def _fmt(p, digits):
     return f"{p:.{digits}f}"
 
@@ -71,48 +78,43 @@ def report(instrument, source, start, end, years, mode, n=2):
     h4_times = [c.time for c in h4]
 
     print()
-    print("=" * 72)
-    print(f"{instrument}   {start.date()} .. {end.date()}   (mode: {mode})")
-    print("=" * 72)
+    print("=" * 46)
+    print(f"{instrument}   {start.date()} .. {end.date()}")
+    print(f"mode: {mode}")
+    print("=" * 46)
 
     window = [c for c in confs if start <= c.time <= end]
     print()
-    print(f"4H BREAKOUTS the engine found  ({len(window)} in this window)")
+    print(f"4H BREAKOUTS  ({len(window)})")
     if not window:
-        print("   none")
+        print("  none")
     for c in window:
-        i = bisect.bisect_left(h4_times, c.time)
-        bar = h4[i] if i < len(h4) and h4[i].time == c.time else None
-        shape = (f"  candle o {_fmt(bar.open, d)}  h {_fmt(bar.high, d)}  "
-                 f"l {_fmt(bar.low, d)}  c {_fmt(bar.close, d)}") if bar else ""
         kind = str(getattr(c, "kind", "")).split(".")[-1].lower()
-        print(f"   {c.time}  {c.direction.value:<8} {kind:<12}{shape}")
+        print(f"  {_when(c.time)}  {c.direction.value:<7} {kind}")
 
     in_window = sorted([s for s in setups if start <= s.liquidity_time <= end],
                        key=lambda s: (s.liquidity_time, s.liquidity_price))
 
-    def full(t):
-        return pd.Timestamp(t).strftime("%Y-%m-%d %H:%M") if t is not None else "-"
-
     print()
-    print(f"SINGLE CANDLE LIQUIDITY  ({len(in_window)} found)   every time below is a 4H candle, UTC")
-    print()
-    hdr = (f"   {'BREAKOUT':<17} {'SINGLE CANDLE LIQ':<17} {'SWEPT BY':<17} "
-           f"{'KEY LEVEL':<17} {'KL PRICE':>10}  H1 CONFIRMATION ENTRY")
-    print(hdr)
-    print("   " + "-" * (len(hdr) - 3))
+    print(f"SETUPS  ({len(in_window)})   all 4H candles except the confirmation")
     if not in_window:
-        print("   none")
-    for s in in_window:
-        lvl = s.reaction_level_candidates[0] if s.reaction_level_candidates else None
-        got = sorted(by_setup.get(s.setup_id, []), key=lambda c: c.index)
-        # H1, not 4H -- the confirmation is the one step read on the lower
-        # timeframe, so its time will not sit on a 4H boundary.
-        conf = ("  |  ".join(f"{full(h1[c.index].time)} {c.trigger}" for c in got)
-                if got else "none -- nothing taken")
-        print(f"   {full(s.breakout_time):<17} {full(s.liquidity_time):<17} "
-              f"{full(s.sweep_from):<17} {full(lvl.time) if lvl else '-':<17} "
-              f"{_fmt(lvl.price, d) if lvl else '-':>10}  {conf}")
+        print("  none")
+
+    for i, s_ in enumerate(in_window, 1):
+        lvl = s_.reaction_level_candidates[0] if s_.reaction_level_candidates else None
+        got = sorted(by_setup.get(s_.setup_id, []), key=lambda c: c.index)
+        print()
+        print(f"[{i}] {s_.direction.value}")
+        print(f"    breakout      {_when(s_.breakout_time)}")
+        print(f"    SC liquidity  {_when(s_.liquidity_time)}   {_fmt(s_.liquidity_price, d)}")
+        print(f"    swept by      {_when(s_.sweep_from)}")
+        if lvl:
+            print(f"    key level     {_when(lvl.time)}   {_fmt(lvl.price, d)}")
+        if got:
+            for c in got:
+                print(f"    confirmation  {_when(h1[c.index].time)}   {c.trigger}")
+        else:
+            print(f"    confirmation  none -- nothing taken")
 
 
 def main():
@@ -144,8 +146,8 @@ def main():
             print(f"{instrument}: no cached data")
 
     print()
-    print("Times are UTC. Set your TradingView chart to UTC before comparing,")
-    print("or the candles will not line up with these.")
+    print("All times UTC -- set your chart to UTC")
+    print("or the candles will not line up.")
 
 
 if __name__ == "__main__":
