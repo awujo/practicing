@@ -88,50 +88,35 @@ def report(instrument, source, start, end, years, mode, n=2):
         kind = str(getattr(c, "kind", "")).split(".")[-1].lower()
         print(f"   {c.time}  {c.direction.value:<8} {kind:<12}{shape}")
 
-    in_window = [s for s in setups if start <= s.liquidity_time <= end]
+    in_window = sorted([s for s in setups if start <= s.liquidity_time <= end],
+                       key=lambda s: (s.liquidity_time, s.liquidity_price))
 
-    # Grouped by the 4H candle that did the sweeping, not listed per pool.
-    # When one candle takes a stack of lows it is ONE event on the chart,
-    # and printing it once per pool made a single XAUUSD sweep appear
-    # seven times -- unreadable, and it misrepresents what happened.
-    groups = {}
-    for s in in_window:
-        groups.setdefault((s.sweep_from, s.direction), []).append(s)
+    def short(t):
+        return pd.Timestamp(t).strftime("%m-%d %H:%M") if t is not None else "-"
 
     print()
-    print(f"SINGLE CANDLE LIQUIDITY  ({len(groups)} sweep events, "
-          f"{len(in_window)} pools)")
-    if not groups:
+    print(f"SINGLE CANDLE LIQUIDITY  ({len(in_window)} pools)   all times are 4H candles, UTC")
+    print()
+    hdr = (f"   {'side':<8} {'BREAKOUT':<12} {'SCL CANDLE':<12} {'SCL price':>10}  "
+           f"{'SWEPT BY':<12} {'KL CANDLE':<12} {'KL price':>10}  H1 CONFIRMATION")
+    print(hdr)
+    print("   " + "-" * (len(hdr) - 3))
+    if not in_window:
         print("   none")
 
-    for (sweep_time, direction), items in sorted(groups.items(), key=lambda kv: str(kv[0][0])):
-        side = "low" if direction == Direction.BULLISH else "high"
-        i = bisect.bisect_left(h4_times, sweep_time)
-        bar = h4[i] if i < len(h4) and h4[i].time == sweep_time else None
-        print()
-        print(f"   4H CANDLE {sweep_time}  swept {direction.value} liquidity")
-        if bar:
-            print(f"      that candle:  o {_fmt(bar.open, d)}  h {_fmt(bar.high, d)}  "
-                  f"l {_fmt(bar.low, d)}  c {_fmt(bar.close, d)}")
-        print(f"      took the {side} of {len(items)} earlier 4H candle(s):")
-        for s in sorted(items, key=lambda s: s.liquidity_time):
-            print(f"         {_fmt(s.liquidity_price, d)}   4H CANDLE {s.liquidity_time}")
-
-        brk = sorted({s.breakout_time for s in items})
-        print(f"      armed by the 4H breakout at {', '.join(str(b) for b in brk)}")
-
-        if items[0].h4_validated:
-            lvl = items[0].reaction_level_candidates[0]
-            rel = "above" if lvl.price > items[0].liquidity_price else "below"
-            print(f"      KEY LEVEL {_fmt(lvl.price, d)}   4H CANDLE {lvl.time}  "
-                  f"({lvl.shape}, sits {rel} the pool)")
-
-        got = [c for s in items for c in by_setup.get(s.setup_id, [])]
-        if got:
-            for c in sorted(got, key=lambda c: c.index):
-                print(f"      H1 confirmation  {h1[c.index].time}  ({c.trigger})")
-        else:
-            print("      no H1 confirmation -- nothing was taken")
+    for s in in_window:
+        lvl = s.reaction_level_candidates[0] if s.reaction_level_candidates else None
+        got = sorted(by_setup.get(s.setup_id, []), key=lambda c: c.index)
+        conf = (f"{short(h1[got[0].index].time)} {got[0].trigger}"
+                if got else "none -- not taken")
+        print(f"   {s.direction.value:<8} {short(s.breakout_time):<12} "
+              f"{short(s.liquidity_time):<12} {_fmt(s.liquidity_price, d):>10}  "
+              f"{short(s.sweep_from):<12} "
+              f"{short(lvl.time) if lvl else '-':<12} "
+              f"{_fmt(lvl.price, d) if lvl else '-':>10}  {conf}")
+        for extra in got[1:]:
+            print(f"   {'':<8} {'':<12} {'':<12} {'':>10}  {'':<12} {'':<12} {'':>10}  "
+                  f"{short(h1[extra.index].time)} {extra.trigger}")
 
 
 def main():
