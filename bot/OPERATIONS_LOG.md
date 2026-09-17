@@ -12,6 +12,44 @@ say what happened and point at the commit. For the whole project's
 history before this (strategy extraction, backtest engine build-out,
 the live bot's foundation), see [`../PROJECT_HISTORY.md`](../PROJECT_HISTORY.md).
 
+## 2026-09-17 -- OPEN: rpyc timeouts skip an instrument for the iteration
+
+Observed live 09:19:56 UTC:
+
+    ERROR bot.orchestrator: unexpected error checking EURGBP -- skipping
+      this instrument this iteration
+      ... mt5linux copy_rates_from_pos -> rpyc sync_request
+      TimeoutError: result expired
+
+The bridge call did not return before rpyc's default deadline. Caught by
+_check_instrument's per-instrument exception isolation, so the bot
+continues and picks the instrument up next pass. Not corruption, not a
+crash.
+
+Why it is written down rather than shrugged off: every skipped iteration
+pushes that instrument's signal later, and lateness is already the
+dominant cause of declines (decline_stale_signal and
+decline_sizing_entry_price_drifted accounted for 28 of 32 entry attempts
+in the week to 2026-09-16). mt5_execution.py records the same finding
+from 2026-09-02 -- "zero entry attempts in its history landed within 5
+minutes of the candle closing" -- and this is one mechanism that would
+produce it. August's reconnect storms cost real signals outright
+(2026-08-27/28 entry: 6 signals, 0 reaching either audit database).
+
+NOT fixed, because the frequency is unmeasured and both candidate fixes
+are guesses without it:
+
+  * raise the rpyc timeout -- helps if these are slow responses, does
+    nothing if the bridge is genuinely wedged;
+  * retry the fetch in-place rather than letting the whole instrument
+    fall through to the next iteration -- helps either way but adds
+    latency to an already-late path.
+
+Measure first. Count these against total iterations, and check whether
+they cluster per instrument or per time of day, before changing
+anything.
+
+
 ## 2026-09-17 -- Single candle liquidity work: PARKED, not shipped
 
 Built over 2026-09-16/17 across four rounds of operator correction, then
