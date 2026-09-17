@@ -481,3 +481,57 @@ def test_an_unknown_granularity_never_skips():
     """Fail safe: a timeframe added later costs an extra fetch rather than
     silently going blind."""
     assert MT5Client._last_completed_open("M5") == pd.Timestamp.min.tz_localize("UTC")
+
+
+# ---------------------------------------------------------------------------
+# The bridge must never hand us another account's numbers.
+#
+# 2026-09-15 01:08: the conservative bot (login 111379608, balance
+# 92,860.85) recorded day_start_balance 103,499.33 -- the AGGRESSIVE
+# account's balance, a figure that has never existed on the conservative
+# account -- and halted on "daily drawdown breach: 10.28% >= 4%".
+# (103,499.33 - 92,860.85) / 103,499.33 = 10.28% exactly. No account was
+# ever in drawdown. Two portable MT5 installs share one Wine prefix and
+# mt5.initialize() attached to the wrong terminal.
+# ---------------------------------------------------------------------------
+
+def test_account_state_refuses_another_accounts_numbers():
+    import pytest
+    from ..mt5_data import MT5Client, MT5ConnectionError
+    from .fake_mt5 import FakeMT5
+
+    fake = FakeMT5()
+    fake.account = type("A", (), {"login": 5054897845, "balance": 103499.33,
+                                  "equity": 103499.33})()
+    client = MT5Client(fake, login=111379608, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    with pytest.raises(MT5ConnectionError) as e:
+        client.account_state(day_start_balance=92860.85, phase_start_balance=92860.85)
+    assert "wrong terminal" in str(e.value)
+
+
+def test_account_state_accepts_its_own_account():
+    from ..mt5_data import MT5Client
+    from .fake_mt5 import FakeMT5
+
+    fake = FakeMT5()
+    fake.account = type("A", (), {"login": 111379608, "balance": 92860.85,
+                                  "equity": 92860.85})()
+    client = MT5Client(fake, login=111379608, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    state = client.account_state(day_start_balance=92860.85, phase_start_balance=92860.85)
+    assert state.balance == 92860.85
+
+
+def test_a_terminal_that_reports_no_login_is_not_rejected():
+    """Older/odd builds may not expose `login` on account_info. Refusing
+    those would take the bots offline over a missing attribute, which is
+    worse than the thing being guarded against."""
+    from ..mt5_data import MT5Client
+    from .fake_mt5 import FakeMT5
+
+    fake = FakeMT5()
+    fake.account = type("A", (), {"balance": 92860.85, "equity": 92860.85})()
+    client = MT5Client(fake, login=111379608, password="pw", server="Demo",
+                       server_utc_offset=pd.Timedelta(0))
+    assert client.account_state(92860.85, 92860.85).balance == 92860.85

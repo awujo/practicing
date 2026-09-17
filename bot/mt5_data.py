@@ -373,10 +373,47 @@ class MT5Client:
         self._last_closed_time[key] = latest.time
         return latest
 
+    def _assert_right_account(self, info) -> None:
+        """Refuse to use numbers that came from somebody else's account.
+
+        Two portable MT5 installs share one Wine prefix on this VPS, and
+        `mt5.initialize()` without a path attaches to whichever terminal
+        MT5 finds first (see `terminal_path`'s own note). Nothing verified
+        that the terminal answering a call was the one this client logged
+        into, so a misattached read looked exactly like a real number.
+
+        It cost a trading day. On 2026-09-15 01:08 the conservative bot
+        (login 111379608, balance 92,860.85) recorded a day-start balance
+        of 103,499.33 and halted on a "10.28% daily drawdown breach".
+        103,499.33 is the AGGRESSIVE account's balance; that figure has
+        never existed on the conservative account, whose deposit was
+        100,000 against a running loss. (103,499.33 - 92,860.85) /
+        103,499.33 = 10.28% exactly. No account was ever in drawdown --
+        one account's balance was measured against the other's.
+
+        The earlier fix for this (c5224d1) re-read the balance after the
+        day rolls, on the theory that the value was stale. It was not
+        stale, it was somebody else's, and re-reading does not help when
+        the read goes to the wrong terminal.
+
+        Raising is the right response rather than warning and continuing:
+        the caller already treats MT5ConnectionError as "skip this
+        iteration and retry", which is exactly what should happen, and it
+        is strictly safer than sizing or halting off another account's
+        equity."""
+        actual = getattr(info, "login", None)
+        if actual is not None and int(actual) != int(self._login):
+            raise MT5ConnectionError(
+                f"account_info() returned login {actual} but this client is logged in as "
+                f"{self._login} -- the bridge is attached to the wrong terminal. Refusing "
+                f"to use its balance/equity."
+            )
+
     def account_state(self, day_start_balance: float, phase_start_balance: float) -> AccountState:
         info = self._mt5.account_info()
         if info is None:
             raise MT5ConnectionError(f"mt5.account_info() failed: {self._mt5.last_error()}")
+        self._assert_right_account(info)
         positions = self._mt5.positions_get()
         if positions is None:
             positions = ()
