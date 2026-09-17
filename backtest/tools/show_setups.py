@@ -91,32 +91,23 @@ def report(instrument, source, start, end, years, mode, n=2):
     in_window = sorted([s for s in setups if start <= s.liquidity_time <= end],
                        key=lambda s: (s.liquidity_time, s.liquidity_price))
 
-    def short(t):
-        return pd.Timestamp(t).strftime("%m-%d %H:%M") if t is not None else "-"
+    def full(t):
+        return pd.Timestamp(t).strftime("%Y-%m-%d %H:%M") if t is not None else "-"
 
     print()
-    print(f"SINGLE CANDLE LIQUIDITY  ({len(in_window)} pools)   all times are 4H candles, UTC")
+    print(f"SINGLE CANDLE LIQUIDITY  ({len(in_window)} found)   every time below is a 4H candle, UTC")
     print()
-    hdr = (f"   {'side':<8} {'BREAKOUT':<12} {'SCL CANDLE':<12} {'SCL price':>10}  "
-           f"{'SWEPT BY':<12} {'KL CANDLE':<12} {'KL price':>10}  H1 CONFIRMATION")
+    hdr = (f"   {'BREAKOUT':<17} {'SINGLE CANDLE LIQ':<17} {'SWEPT BY':<17} "
+           f"{'KEY LEVEL':<17} {'KL PRICE':>10}")
     print(hdr)
     print("   " + "-" * (len(hdr) - 3))
     if not in_window:
         print("   none")
-
     for s in in_window:
         lvl = s.reaction_level_candidates[0] if s.reaction_level_candidates else None
-        got = sorted(by_setup.get(s.setup_id, []), key=lambda c: c.index)
-        conf = (f"{short(h1[got[0].index].time)} {got[0].trigger}"
-                if got else "none -- not taken")
-        print(f"   {s.direction.value:<8} {short(s.breakout_time):<12} "
-              f"{short(s.liquidity_time):<12} {_fmt(s.liquidity_price, d):>10}  "
-              f"{short(s.sweep_from):<12} "
-              f"{short(lvl.time) if lvl else '-':<12} "
-              f"{_fmt(lvl.price, d) if lvl else '-':>10}  {conf}")
-        for extra in got[1:]:
-            print(f"   {'':<8} {'':<12} {'':<12} {'':>10}  {'':<12} {'':<12} {'':>10}  "
-                  f"{short(h1[extra.index].time)} {extra.trigger}")
+        print(f"   {full(s.breakout_time):<17} {full(s.liquidity_time):<17} "
+              f"{full(s.sweep_from):<17} {full(lvl.time) if lvl else '-':<17} "
+              f"{_fmt(lvl.price, d) if lvl else '-':>10}")
 
 
 def main():
