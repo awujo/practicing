@@ -98,16 +98,21 @@ def report(instrument, source, start, end, years, mode, n=2):
     print(f"SINGLE CANDLE LIQUIDITY  ({len(in_window)} found)   every time below is a 4H candle, UTC")
     print()
     hdr = (f"   {'BREAKOUT':<17} {'SINGLE CANDLE LIQ':<17} {'SWEPT BY':<17} "
-           f"{'KEY LEVEL':<17} {'KL PRICE':>10}")
+           f"{'KEY LEVEL':<17} {'KL PRICE':>10}  H1 CONFIRMATION ENTRY")
     print(hdr)
     print("   " + "-" * (len(hdr) - 3))
     if not in_window:
         print("   none")
     for s in in_window:
         lvl = s.reaction_level_candidates[0] if s.reaction_level_candidates else None
+        got = sorted(by_setup.get(s.setup_id, []), key=lambda c: c.index)
+        # H1, not 4H -- the confirmation is the one step read on the lower
+        # timeframe, so its time will not sit on a 4H boundary.
+        conf = ("  |  ".join(f"{full(h1[c.index].time)} {c.trigger}" for c in got)
+                if got else "none -- nothing taken")
         print(f"   {full(s.breakout_time):<17} {full(s.liquidity_time):<17} "
               f"{full(s.sweep_from):<17} {full(lvl.time) if lvl else '-':<17} "
-              f"{_fmt(lvl.price, d) if lvl else '-':>10}")
+              f"{_fmt(lvl.price, d) if lvl else '-':>10}  {conf}")
 
 
 def main():
