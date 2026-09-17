@@ -861,3 +861,67 @@ def test_open_ticket_query_reports_cannot_tell_when_positions_get_returns_none()
     fake = FakeMT5()
     fake.positions_get_returns_none = True
     assert make_exec(fake)._our_open_tickets("EURUSD") is None
+
+
+# ---------------------------------------------------------------------------
+# An order must never reach the wrong account.
+#
+# 2026-09-15: two portable MT5 installs share one Wine prefix, and one
+# bot read the other's balance (103,499.33 against its own 92,860.85) and
+# halted on a "10.28% drawdown" that never happened. A misrouted READ
+# costs a trading day. A misrouted ORDER puts a live position on an
+# account nobody meant to trade, sized and stopped for a different
+# balance.
+# ---------------------------------------------------------------------------
+
+def _acct(login):
+    return type("A", (), {"login": login, "balance": 100000.0, "equity": 100000.0})()
+
+
+def test_market_order_is_refused_when_the_terminal_is_another_account():
+    fake = FakeMT5()
+    fake.account = _acct(5054897845)
+    ex = MT5Execution(fake, expected_login=111379608)
+    result = ex.place_market_order("EURUSD", "bullish", 0.10, 1.1000, 1.0990, 1.1030)
+
+    assert result.success is False
+    assert "wrong account" in result.reason
+    assert "5054897845" in result.reason and "111379608" in result.reason
+    # The point of the guard: nothing reached the broker at all.
+    assert fake.order_send_calls == []
+
+
+def test_limit_order_is_refused_too():
+    fake = FakeMT5()
+    fake.account = _acct(5054897845)
+    ex = MT5Execution(fake, expected_login=111379608)
+
+    result = ex.place_limit_order("EURUSD", "bullish", 0.10, 1.1000, 1.0990, 1.1030)
+
+    assert result.success is False
+    assert "wrong account" in result.reason
+    assert fake.order_send_calls == []
+
+
+def test_the_right_account_is_not_blocked():
+    """The guard must not be the reason trades stop happening."""
+    fake = FakeMT5()
+    fake.account = _acct(111379608)
+    ex = MT5Execution(fake, expected_login=111379608)
+    assert ex._wrong_account() is None
+
+
+def test_no_expected_login_disables_the_check():
+    fake = FakeMT5()
+    fake.account = _acct(5054897845)
+    assert MT5Execution(fake)._wrong_account() is None
+
+
+def test_an_unreadable_account_does_not_block_the_order():
+    """If account_info() is unavailable we cannot tell, and refusing on
+    "cannot tell" would stop trading during an ordinary reconnect. The
+    order_send that follows fails on its own if the terminal is really
+    unreachable."""
+    fake = FakeMT5()
+    fake.account = None
+    assert MT5Execution(fake, expected_login=111379608)._wrong_account() is None

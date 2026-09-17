@@ -104,8 +104,13 @@ class MT5Execution:
                  max_slippage_points: float = 10, max_spread_points: float | None = None,
                  max_retries: int = 3, retry_backoff_seconds: float = 1.0, magic_number: int = 20260101,
                  recovery_check_settle_seconds: float = 2.0,
-                 max_entry_drift_fraction: float | None = None):
+                 max_entry_drift_fraction: float | None = None,
+                 expected_login: int | None = None):
         self._mt5 = mt5_module
+        # The account this instance is allowed to trade. See
+        # _wrong_account(). None disables the check, which is what the
+        # tests and any single-account deployment get.
+        self._expected_login = expected_login
         self._symbol_map = SymbolMap(suffix=symbol_suffix, overrides=symbol_overrides or {})
         self._max_slippage_points = max_slippage_points
         self._max_spread_points = max_spread_points
@@ -282,10 +287,58 @@ class MT5Execution:
             yield getattr(tick, "bid", None), getattr(tick, "ask", None)
         yield getattr(info, "bid", None), getattr(info, "ask", None)
 
+    def _wrong_account(self) -> str | None:
+        """Returns a reason string if the terminal answering us belongs to
+        a different account than this instance is meant to trade, else
+        None.
+
+        Two portable MT5 installs share one Wine prefix on this VPS and
+        `mt5.initialize()` without a path attaches to whichever terminal
+        MT5 finds first. On 2026-09-15 that put one account's balance in
+        front of the other bot: the conservative bot (login 111379608,
+        balance 92,860.85) took a day-start balance of 103,499.33 -- the
+        aggressive account's balance -- and halted on a "10.28% daily
+        drawdown breach" that never happened.
+
+        mt5_data.MT5Client now refuses balance/equity from the wrong
+        account. This is the same check on the far more expensive side:
+        a misrouted READ costs a trading day, a misrouted ORDER puts a
+        live position on an account nobody meant to trade, with a stop
+        and size computed for a different balance.
+
+        Deliberately returns a reason rather than raising. The callers
+        already turn an unsuccessful ExecutionResult into an
+        `execution_failed` audit row with the reason attached, so this
+        lands in the audit database and on Telegram like any other
+        rejection, instead of taking a code path nothing has exercised.
+        """
+        if self._expected_login is None:
+            return None
+        info = None
+        getter = getattr(self._mt5, "account_info", None)
+        if getter is not None:
+            try:
+                info = getter()
+            except Exception:
+                info = None
+        if info is None:
+            # Can't tell. Not grounds to block a trade on its own -- the
+            # order_send that follows will fail on its own if the
+            # terminal is genuinely unreachable.
+            return None
+        actual = getattr(info, "login", None)
+        if actual is None or int(actual) == int(self._expected_login):
+            return None
+        return (f"refusing to send: terminal is logged in as {actual}, this bot trades "
+                f"{self._expected_login} -- the bridge is attached to the wrong account")
+
     def place_market_order(self, internal_symbol: str, direction: str, lot_size: float,
                             entry_price: float, stop_loss: float, target_price: float) -> ExecutionResult:
         """direction: "bullish" | "bearish" (matches structure.Direction's
         string values used throughout the rest of this codebase)."""
+        wrong = self._wrong_account()
+        if wrong:
+            return ExecutionResult(success=False, reason=wrong)
         symbol = self.broker_symbol(internal_symbol)
         order_type = self._mt5.ORDER_TYPE_BUY if direction == "bullish" else self._mt5.ORDER_TYPE_SELL
 
@@ -432,6 +485,9 @@ class MT5Execution:
         explicitly. Pass it to honour "nothing rests over the weekend"
         without depending on this process being alive to clean up.
         """
+        wrong = self._wrong_account()
+        if wrong:
+            return ExecutionResult(success=False, reason=wrong)
         symbol = self.broker_symbol(internal_symbol)
         order_type = (self._mt5.ORDER_TYPE_BUY_LIMIT if direction == "bullish"
                       else self._mt5.ORDER_TYPE_SELL_LIMIT)

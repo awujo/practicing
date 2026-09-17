@@ -288,7 +288,8 @@ def main():
     # max_entry_drift_fraction=None here to turn the guard back off
     # rather than letting the bot sit idle.
     mt5_exec = MT5Execution(mt5, symbol_suffix=args.symbol_suffix, symbol_overrides=symbol_overrides,
-                             max_entry_drift_fraction=1.0)
+                             max_entry_drift_fraction=1.0,
+                             expected_login=creds.login)
     audit_log = AuditLog(args.audit_db)
     instruments = tuple(s.strip().upper() for s in args.instruments.split(","))
 
