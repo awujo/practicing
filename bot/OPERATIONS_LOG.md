@@ -12,6 +12,62 @@ say what happened and point at the commit. For the whole project's
 history before this (strategy extraction, backtest engine build-out,
 the live bot's foundation), see [`../PROJECT_HISTORY.md`](../PROJECT_HISTORY.md).
 
+## 2026-09-17 -- Single candle liquidity work: PARKED, not shipped
+
+Built over 2026-09-16/17 across four rounds of operator correction, then
+parked at the operator's instruction. `liquidity_mode` defaults to
+"swing" and always has; the live bots never ran any of it and there is
+nothing to roll back.
+
+What exists, behind the flag:
+
+  * `liquidity.single_candle_liquidity()` -- pools as candle highs/lows
+    rather than fractal swing points.
+  * `liquidity_mode="single_candle"` -- those pools, unbounded, leg
+    running to the next opposite breakout, self-sweep fixed, several
+    reactions offered per setup.
+  * `liquidity_mode="single_candle_h4"` -- the above plus the sweep AND
+    the key-level rejection both required on one 4H candle.
+  * `tools/compare_liquidity_modes.py`, `tools/show_setups.py`.
+
+Measured (USDCHF, conservative, full history, repaired cache):
+
+    swing              736 trades  43.2% win  469.8R  0.64 R/trade
+    single_candle/all 2290 trades  32.4% win  546.0R  0.24 R/trade
+    sc_h4/all         1428 trades  35.2% win  501.1R  0.35 R/trade
+
+Both new modes beat swing on total R and lose badly on R per trade;
+charging an unmodelled ~0.12R spread per round trip puts swing ahead
+outright. Nothing justified shipping.
+
+WHY IT IS PARKED, and it is not the numbers. The operator's judgement,
+which I think is correct: the concept was taught to me through a video
+transcript and a handful of screenshots. I never saw the charts. Single
+candle liquidity is a visual pattern -- you learn it by watching
+someone mark a screen, and every round of correction here
+("it can be the breakout candle's own low", "there is no cap", "the
+leg runs until the trend flips", "the sweep and the rejection are both
+read on the 4H") was me discovering by being told what would have been
+obvious from watching. Four corrections in, the output still did not
+look like what the operator recognises.
+
+Do not resume this by reasoning harder about it. It needs someone who
+has actually seen the pattern to either mark up real charts for the
+engine to be fitted against, or to state the rule in a form that does
+not depend on having seen it.
+
+Two defects were identified but not fixed, noted so they are not
+rediscovered from scratch:
+
+  * The key level chosen is often on the WRONG SIDE of the pool -- on a
+    buy it names levels ABOVE the swept low (GBPUSD pool 1.35291 ->
+    level 1.35398, 10.7 pips above), where the charts have the level
+    sitting beneath the low that gets taken. `_h4_sweep_and_rejection()`
+    accepts any level inside the sweeping candle's range.
+  * One sweep that takes a stack of pools becomes one setup per pool
+    rather than one event.
+
+
 ## Current deployment topology (as of 2026-08-26)
 
 - **VPS**: one Docker container named `mt5` (image `gmag11/metatrader5_vnc`),
