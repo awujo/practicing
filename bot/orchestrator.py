@@ -279,6 +279,9 @@ class LiveBot:
     # restart only by being re-detected as untracked.
     awaiting_departure: dict[tuple[str, object], AwaitingEntry] = field(init=False, default_factory=dict)
     halted: bool = field(init=False, default=False)
+    # Why we are halted, carried so every setup declined while halted can
+    # say so rather than just vanishing. See run_once()'s health gate.
+    halt_reason: str = field(init=False, default="")
     # Cached Weekly/Daily/H4 bias context per instrument, plus the last
     # storyline stage logged for it -- see _storyline_says_hunt().
     _htf_contexts: dict[str, HTFContext] = field(init=False, default_factory=dict)
@@ -430,9 +433,31 @@ class LiveBot:
                 self.halted = True
                 self._log_event("health_halt", health.decision.value, health.reason, state)
                 logger.error("HALTED: %s", health.reason)
-            return
-        elif self.halted:
-            self.halted = False  # equity recovered above the limit on its own -- log the all-clear implicitly via the next normal decision
+            self.halt_reason = health.reason
+            # NOT a `return`. This used to skip the whole instrument loop,
+            # so a halt made the bot silent for the rest of the day -- no
+            # setups evaluated, nothing logged, nothing on Telegram. On
+            # 2026-09-15 that silence followed a drawdown breach that
+            # never happened (see mt5_data._assert_right_account), and the
+            # only way to discover a whole day had been skipped was to go
+            # looking in the audit database.
+            #
+            # Direct request: "once it has seen a setup you should always
+            # send the setup to my Telegram, even if it cannot take the
+            # setup because of the account limits... I want to be seeing
+            # the thought process of everything that is going on."
+            #
+            # So the loop still runs and still reports. `self.halted` now
+            # blocks the ORDER instead of the ANALYSIS -- see
+            # _consider_entry(), which is the only path to either
+            # place_market_order or place_limit_order.
+        else:
+            if self.halted:
+                self._log_event("health_clear", "allow",
+                                 f"recovered -- {self.halt_reason}", state)
+                logger.info("halt cleared: %s", self.halt_reason)
+            self.halted = False
+            self.halt_reason = ""
 
         for instrument in self.instruments:
             try:
@@ -751,6 +776,18 @@ class LiveBot:
                              risk=risk, **base_fields)
             return
 
+        # Reported, then refused. The setup and the reason both reach
+        # Telegram; only the order is withheld. Placed after base_fields
+        # is built so the message carries the strategy's full read --
+        # bias per timeframe, the confirmation that fired, entry, stop,
+        # target -- exactly as an allowed entry would.
+        if self.halted:
+            self._log_event("entry_attempt", "decline_account_halted",
+                             f"SETUP FOUND but the account is halted: {self.halt_reason}",
+                             state, instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            return
+
         if decision.decision != Decision.ALLOW:
             self._log_event("entry_attempt", decision.decision.value, decision.reason, state,
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)
@@ -832,6 +869,19 @@ class LiveBot:
         place -- checking it while still waiting would decline a signal
         for today's transient risk headroom instead of tomorrow's.
         """
+        # Also guarded here, not only in _consider_entry(). This method
+        # has a SECOND caller: _reconcile_awaiting_departure(), which
+        # runs BEFORE run_once()'s health gate -- so a signal already
+        # waiting for price to depart its level could otherwise rest an
+        # order while the account is halted, which is the one thing a
+        # halt exists to prevent.
+        if self.halted:
+            self._log_event("entry_attempt", "decline_account_halted",
+                             f"SETUP FOUND but the account is halted: {self.halt_reason}",
+                             state, instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            return
+
         # A resting limit commits to a thesis for as long as it sits
         # there (or, now, for as long as it sits WAITING to be rested), so
         # it needs that thesis to hold NOW -- not merely to have held at

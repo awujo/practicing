@@ -400,20 +400,82 @@ def test_check_instrument_passes_configured_origin_and_history_settings(tmp_path
 
 # ---- health-based circuit breaker ----
 
-def test_run_once_logs_a_health_halt_and_skips_instrument_checks(tmp_path):
+def test_run_once_logs_a_health_halt(tmp_path):
     fake = FakeMT5()
     fake.account.balance = 88000.0
     fake.account.equity = 88000.0  # -12%, past the 10% overall limit
     bot, audit, client = make_bot(fake, tmp_path)
 
-    with patch("bot.orchestrator.run_backtest") as mock_rb:
+    bot.run_once()
+
+    rows = audit.recent(10)
+    assert any(r["event_type"] == "health_halt" for r in rows)
+    assert bot.halted is True
+    assert bot.halt_reason
+
+
+def test_a_halt_still_reports_the_setup_it_could_not_take(tmp_path, caplog):
+    """A halt must stop the ORDER, not the ANALYSIS.
+
+    run_once() used to `return` at the health gate, skipping every
+    instrument -- so a halt made the bot silent for the rest of the day.
+    On 2026-09-15 that silence followed a drawdown breach that never
+    happened, and the only way to find out a whole day had been skipped
+    was to go digging in the audit database.
+
+    Operator: "once it has seen a setup you should always send the setup
+    to my Telegram, even if it cannot take the setup because of the
+    account limits... I want to be seeing the thought process."
+    """
+    fake = FakeMT5()
+    fake.account.balance = 88000.0
+    fake.account.equity = 88000.0  # past the overall limit -> halted
+    bot, audit, client = make_bot(fake, tmp_path)
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]), \
+         caplog.at_level("INFO", logger="bot.orchestrator"):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
         bot.run_once()
 
-    mock_rb.assert_not_called()
-    rows = audit.recent(10)
-    assert len(rows) == 1
-    assert rows[0]["event_type"] == "health_halt"
+    attempts = [r for r in audit.recent(20) if r["event_type"] == "entry_attempt"]
+    assert len(attempts) == 1, "the setup must still be recorded while halted"
+    assert attempts[0]["decision"] == "decline_account_halted"
+
+    text = caplog.text
+    assert "SETUP FOUND but the account is halted" in text
+    # ...and it carries the full read, exactly as an allowed entry would,
+    # so the message is worth receiving rather than a bare refusal.
+    assert "confirmation: engulfing" in text
+    assert "stop 1.1729" in text and "target 1.17626" in text
+
+    # The one thing that must NOT happen.
+    assert fake.order_send_calls == []
+
+
+def test_the_halt_clearing_is_announced(tmp_path, caplog):
+    """The recovery used to be silent -- the flag flipped back with no
+    log line, so from outside there was no way to tell a halt had ended
+    other than trades resuming."""
+    fake = FakeMT5()
+    fake.account.balance = 88000.0
+    fake.account.equity = 88000.0
+    bot, audit, client = make_bot(fake, tmp_path)
+    bot.run_once()
     assert bot.halted is True
+
+    fake.account.balance = 100000.0
+    fake.account.equity = 100000.0
+    with caplog.at_level("INFO", logger="bot.orchestrator"):
+        bot.run_once()
+
+    assert bot.halted is False
+    assert bot.halt_reason == ""
+    assert any(r["event_type"] == "health_clear" for r in audit.recent(20))
+    assert "halt cleared" in caplog.text
 
 
 def test_run_once_clears_halted_flag_once_equity_recovers(tmp_path):
@@ -1843,3 +1905,24 @@ def test_min_departure_r_zero_places_immediately_unchanged(tmp_path):
     assert bot.awaiting_departure == {}
     assert len(bot.pending_entries) == 1
     assert audit.recent(1)[0]["decision"] == "allow_pending"
+
+
+def test_a_resting_entry_is_not_placed_while_halted(tmp_path):
+    """_place_limit_entry has a second caller --
+    _reconcile_awaiting_departure -- which runs BEFORE run_once()'s
+    health gate. Guarding only _consider_entry would leave a signal
+    already waiting for price to depart its level free to rest an order
+    on a halted account, which is the one thing a halt exists to stop."""
+    fake = FakeMT5()
+    bot, audit, client = make_bot(tmp_path=tmp_path, fake=fake)
+    bot.halted = True
+    bot.halt_reason = "daily drawdown breach: 10.28% >= 4%"
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+    state = client.account_state(100000.0, 100000.0)
+
+    bot._place_limit_entry("EURUSD", record, state, 500.0, 0.10, "bullish", {})
+
+    assert fake.order_send_calls == []
+    rows = [r for r in audit.recent(10) if r["event_type"] == "entry_attempt"]
+    assert rows and rows[0]["decision"] == "decline_account_halted"
