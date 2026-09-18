@@ -5,284 +5,340 @@ each fixed something real and changed nothing about the outcome. The
 instruction was to stop patching, read the whole system as if I knew
 nothing about it, and say honestly whether it can work.
 
-This document records findings in the order of severity, each with the
-evidence that establishes it. A finding with no reproduction is marked as
-a suspicion, not a fact.
+Findings are ordered by severity. Each one states the evidence. Anything
+I could not reproduce is labelled a suspicion, not a fact.
+
+**Verdict up front.** The strategy code is careful, well documented and
+genuinely well tested. The problem is not sloppiness. The problem is that
+an engine designed as a *backtest* — a function over a complete history —
+is being used as a *live signal generator*, which is a function over
+history as it stood at one moment. Those are different functions, and
+five separate findings below are all consequences of that one confusion.
+Until it is fixed the bot cannot trade, and the backtest cannot tell you
+whether the strategy is any good.
 
 ---
 
-## 1. ROOT CAUSE: the engine reads higher-timeframe bars before they close
+## 1. CRITICAL — the engine reads higher-timeframe bars before they close
 
-**Severity: critical. This is why the bot does not trade.**
+Candles are stamped at their OPEN. `resample.py` resamples with
+`label="left", closed="left"`, so the H4 row `2026-09-17T12:00Z` is the
+candle covering 12:00–16:00. It does not exist, and cannot be known,
+until 16:00.
 
-Candles are stamped at their OPEN time. `resample.py` resamples with
-`label="left", closed="left"`, so the row `2026-09-17T12:00Z` in the H4
-series is the candle covering 12:00–16:00. It does not exist, and cannot
-be known, until 16:00.
-
-Every downstream consumer compares that stamp directly against the entry
-candle's time, as though the bar were available at its own open:
+Every consumer compares that stamp directly against the entry candle's
+time, as if the bar were available at its own open:
 
 - `_aligned_timeframes()` — `bisect.bisect_right(times, as_of_time)`
 - `_last_direction_at()` — `bisect.bisect_left(times, t)`
 - `bias_at()` — `[bp for bp in breakpoints if bp[0] <= t]`
 
-So an H1 entry candidate at 13:00 is allowed to be confirmed by an H4
-bar that closes at 16:00, a Daily bar that closes at midnight, and a
-Weekly bar that closes the following Monday.
-
-Reproduction (`_aligned_timeframes` with one confirmation per timeframe,
-all still forming at the as-of instant):
+Reproduced, one confirmation per timeframe, all still forming:
 
     entry candidate at 2026-09-17 13:00:00+00:00
     aligned timeframes the engine reports: ['Weekly', 'Daily', 'H4']
 
-    H4      bar stamped 12:00 17 Sep  closes 16:00 17 Sep  known yet? NO
-    Daily   bar stamped 00:00 17 Sep  closes 00:00 18 Sep  known yet? NO
-    Weekly  bar stamped 00:00 14 Sep  closes 00:00 21 Sep  known yet? NO
+    H4      stamped 12:00 17 Sep   closes 16:00 17 Sep   known yet? NO
+    Daily   stamped 00:00 17 Sep   closes 00:00 18 Sep   known yet? NO
+    Weekly  stamped 00:00 14 Sep   closes 00:00 21 Sep   known yet? NO
 
-All three gates pass on information from the future.
+All three gates passed on information from the future.
 
-### What this does to the backtest
+**Effect on the backtest:** it is inflated. Every number this project has
+produced — the 0.64 R/trade swing baseline, the +2,668R totals, every A/B
+— was measured with the engine able to see up to a week ahead at the
+moment it decided to enter.
 
-It inflates it. Every reported figure — the 0.64 R/trade swing baseline,
-the +2,668R totals, every A/B comparison this project has ever run —
-was measured with the engine able to see up to a week ahead at the
-moment it decided to enter. None of those numbers are trustworthy, and
-the comparisons between them are only as valid as the assumption that
-the bias affects each variant equally, which nobody has checked.
+**Effect on live:** this is the direct, sufficient cause of the silence.
+`run_backtest()` replays all history each cycle, so when the bot runs at
+17:00 the 12:00 H4 bar now exists and the engine emits the signal for the
+13:00 H1 candle — four hours late, by its own rules. The orchestrator
+measures that against a three-hour cutoff and declines it as stale.
+Correctly. **Nothing in the live path is broken; it is refusing signals
+the engine can only ever produce late.**
 
-### What this does to live trading
-
-It is the direct, sufficient cause of the two-week silence.
-
-`run_backtest()` replays all history every cycle. When the bot runs at
-17:00, the H4 series contains the 12:00 bar, so the engine now produces
-the signal for the H1 candle at 13:00 — correctly, by its own rules,
-four hours after the fact. The orchestrator compares
-`new_candle.time - record.entry_time`, sees four hours against a
-three-hour cutoff, and declines it as stale. Correctly.
-
-**Nothing is broken in the live path. The live path is refusing signals
-that the engine can only ever produce late.** Every stale decline, and
-every drift decline (price has moved on by the time the signal appears),
-is this same fact seen from a different angle.
-
-### The lag this predicts, against the lag observed
-
-The bound on lateness is the length of the highest-timeframe bar the
-signal depended on:
-
-| depends on | max lateness |
-|---|---|
-| H4 confirmation | 4 hours |
-| Daily confirmation or Daily bias | 24 hours |
-| Weekly bias | 7 days |
-
-Observed staleness in the audit database, 14–18 Sep:
+Lateness is bounded by the longest timeframe the signal depended on — 4h
+for H4, 24h for Daily, 7d for Weekly. Observed staleness, 14–18 Sep:
 
     4h, 5h, 11h, 12h, 17h, 19h          <- Daily-bounded
     1d3h, 1d8h, 2d3h, 2d20h             <- Daily/Weekly
     4d19h, 5d10h, 7d6h                  <- Weekly-bounded
 
-The distribution matches the prediction, including the maximum: the
-worst observed lag is CHFJPY at 7 days 6 hours, against a Weekly bound
-of 7 days.
+The worst case, CHFJPY at 7d 6h, sits on the Weekly bound.
 
-This is not a coincidence and it is not a tuning problem. No cutoff, no
-order type, no drift tolerance and no polling frequency can fix it,
-because the signal genuinely does not exist at the time it is stamped
-for.
-
-### The shape of the fix
-
-The codebase already has the right concept in two places and applies it
-to the wrong lag. `SwingPoint.confirmed_at` and `KeyLevel.confirmed_at`
-exist to model the n-bar FRACTAL lag (a pivot is not knowable until n
-bars later) and there are `known_at()` helpers for both. What is missing
-is the BAR-CLOSE lag: a bar stamped at T is not knowable until T + its
-own length, on every timeframe.
-
-Every object the entry loop consults needs a `known_at` that includes
-the bar-close term, and every lookup needs to filter on it rather than
-on the bar's open stamp:
-
-- `Confirmation` — add `known_at = time + bar_length(timeframe)`
-- `replay_bias()` breakpoints — same
-- `KeyLevel.confirmed_at` — currently `candles[i + n].time`, the OPEN of
-  the confirming bar; should be its CLOSE
-- `SwingPoint.confirmed_at` — same off-by-one-bar
-
-Then re-run every A/B from scratch, because the existing numbers do not
-survive this change.
+**Fix.** The codebase already has the right concept — `confirmed_at` plus
+`known_at()` on `SwingPoint` and `KeyLevel` — and applies it only to the
+n-bar FRACTAL lag. It is missing the BAR-CLOSE lag: a bar stamped T is
+not knowable until T + its own length. Every `Confirmation`, every
+`replay_bias()` breakpoint and both `confirmed_at` values need that term,
+and every lookup must filter on it. Then every A/B has to be re-run,
+because none of the existing numbers survive the change.
 
 ---
 
-## 2. `StructureTracker` latches permanently after an unconfirmed sweep
+## 2. CRITICAL — the storyline gate runs a different strategy than the engine it gates
 
-**Severity: high. Silently disables half of the confirmation stream for
-long stretches.**
+`live_strategy.py` states the property it must have: *"It must have no
+false negatives: if `run_backtest()` would have produced a trade at some
+candle, the gate must have said hunting at that candle's time."*
 
-In `StructureTracker.run()`, a pending sweep blocks all further sweeps in
-that direction:
+It does not hold, because the gate and the engine are configured
+differently. `build_htf_context()`:
+
+```python
+daily_events = StructureTracker(n).run(daily)                      # close_based_break=False
+first_origin = next((e for e in daily_events if e.kind == "valid_sweep_break"), None)
+daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
+```
+
+and the orchestrator calls it as `build_htf_context(instrument, source=self.source)` —
+nothing else passed. Meanwhile both bots launch with `--origin-kind any
+--close-based-sweep-break --history-windows-config bot/history_windows.json`,
+and `run_backtest()` receives all three.
+
+So the gate differs from the engine in three ways at once:
+
+| | gate | engine (as deployed) |
+|---|---|---|
+| origin | hardcoded `valid_sweep_break` | `origin_kind="any"` |
+| sweep break level | wick (`False`) | close (`True`) |
+| history | full, uncapped | capped per `history_windows.json` |
+
+Different bias input produces different breakpoints, which produces a
+different answer to "are we hunting". The gate can — and by construction
+will — say WAITING at candles where `run_backtest()` produces a trade.
+
+**The worst case is total.** If an instrument's Daily history contains no
+`valid_sweep_break` at all, `build_htf_context()` returns `None`, the
+orchestrator logs a debug line and returns `False`, and that instrument
+is gated off permanently — while the engine, bootstrapping from the first
+confirmation under `origin_kind="any"`, would have traded it. Finding 4
+makes `valid_sweep_break` events rarer than they look, so this is not
+hypothetical.
+
+---
+
+## 3. HIGH — the watermark does not advance while the gate is closed, so backlogs flood out dead
+
+In `_check_instrument()` the storyline gate returns early:
+
+```python
+if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
+    return
+...
+self._last_entry_time[instrument] = new_candle.time     # never reached
+```
+
+So during a WAITING stretch the watermark stays where it was. When the
+gate finally opens:
+
+```python
+fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
+```
+
+every signal accumulated over that whole stretch is emitted at once — and
+every one of them is older than the cutoff, so every one is declined as
+stale.
+
+This is exactly the observed pattern. The declines arrive in bursts
+(21:47–22:09 on the 16th, 08:54–08:57 on the 17th, 11:35–11:36 on the
+18th) with 10–27 quiet hours between, and CHFJPY's 09-09 and 09-12
+signals were both discovered in the same burst on 09-16. That is a
+backlog draining, not a poll being missed.
+
+Combined with finding 2, an instrument can sit behind a gate that is
+wrongly closed, accumulate signals, and then discard them all on reopen.
+
+---
+
+## 4. HIGH — `StructureTracker` latches permanently after a sweep that never confirms
 
 ```python
 if pending_sweep_high is None and last_swing_high is not None and c.high > last_swing_high.price:
     pending_sweep_high = SwingPoint(...)
-    structural_low_at_sweep = last_swing_low     # frozen here, never refreshed
+    structural_low_at_sweep = last_swing_low     # captured once, never refreshed
 ```
 
-`pending_sweep_high` is cleared only when the break confirms, and the
-break can only confirm by closing beyond `structural_low_at_sweep` —
-which is captured once, at the moment of the first sweep, and never
-updated as price moves.
+`pending_sweep_high` clears only when the break confirms, and confirming
+requires closing beyond `structural_low_at_sweep` — frozen at the instant
+of the first sweep. In a sustained uptrend the first higher high
+registers a bearish sweep against the low of that moment; price then
+rises for weeks; confirming would require collapsing to a low from the
+start of the trend. It never happens, so the bearish path stays latched
+and no further bearish sweep is ever recorded.
 
-In a sustained uptrend this means: the first higher high registers a
-bearish sweep against the low that existed at that moment; price then
-rises for weeks; confirming a bearish break would require closing below
-a low from the start of the trend. It never happens, so the bearish path
-stays latched for the rest of the series, and no further bearish sweep
-is ever recorded.
-
-Reproduction — 90 candles containing repeated rallies and selloffs
-produced exactly one event and never set `strong_low` or `strong_high`:
+Reproduced — 90 candles of repeated rallies and selloffs:
 
     events: {('sweep', 'bearish'): 1}
     strong_low: None
     strong_high: None
+    i=54 BEAR SWEEP  structural_low_at_sweep=117.7   (still pending 36 candles later)
 
-    i=54 BEAR SWEEP  structural_low_at_sweep=117.69999999999995
-    end state: pending_bull=False  pending_bear=True    (36 candles later)
+A rarer variant: if the opposing swing is `None` when the sweep
+registers, `structural_low_at_sweep` stays `None` forever and the confirm
+branch can never fire, because nothing repopulates it.
 
-There is a second, rarer variant of the same latch: if the opposing swing
-point is `None` when the sweep registers, `structural_low_at_sweep`
-stays `None` forever and the confirm branch can never fire, because
-nothing re-populates it.
+The likely intent is that a break of structure is measured against the
+MOST RECENT opposing structural point. As written the target gets further
+away the longer the trend runs.
 
-The likely intent is that a bearish break of structure is measured
-against the MOST RECENT structural low, not the one from weeks ago. As
-written, the level to break gets further away the longer the trend runs.
-
-Effect: `detect_confirmations()` merges sweep+break events with plain
-breakouts, so the plain-breakout half keeps working and the failure is
-invisible in aggregate. It quietly removes one of the two confirmation
-shapes for long periods.
+Because `detect_confirmations()` merges sweep+break with plain breakouts,
+the plain half keeps working and this failure is invisible in aggregate —
+it quietly removes one of the two confirmation shapes for long stretches.
 
 ---
 
-## 3. `replay_bias()` decides a past flip using a future confirmation
-
-**Severity: high, and a second independent source of retroactive change.**
+## 5. HIGH — `replay_bias()` decides a past flip from a future confirmation
 
 ```python
 start = bisect.bisect_right(confirmation_times, c.time)
 window = confirmations_sorted[start:start + confirmation_window]
-if cascade.check_flip(eligible, c, window):
 ```
 
 Condition (c) of the flip test — "the lower timeframe has stopped
 confirming the old direction" — is evaluated against confirmations
-STRICTLY AFTER the rejection candle. With `confirmation_window=1`, a
-flip at time T depends on the single next lower-timeframe confirmation,
-whenever that happens to arrive.
+STRICTLY AFTER the rejection candle.
 
-This makes the bias at T unstable in a specific and damaging way. At the
-moment T occurs there are no later confirmations, so the window is empty,
-`any([])` is False, and the flip is ALLOWED. Later, once a confirmation
-in the old direction arrives, the same flip is VETOED.
+This makes the bias at T unstable in a damaging direction. At the moment
+T occurs there are no later confirmations, the window is empty, `any([])`
+is False, and the flip is ALLOWED. Later, once a confirmation in the old
+direction arrives, the same flip is VETOED. A bias flip can therefore
+appear in real time and vanish on replay, and signals that depended on it
+appear and then disappear between one hourly cycle and the next.
 
-So a bias flip can appear in real time and then vanish on replay. Signals
-that depended on it appear and then disappear between one hourly cycle
-and the next. This is independent of finding 1 and would survive fixing
-it.
+Independent of finding 1; would survive fixing it.
 
 ---
 
-## 4. `classify_entry_pattern()` needs up to 3 candles after the entry
+## 6. MEDIUM — `classify_entry_pattern()` needs up to 3 candles after the entry
 
-**Severity: medium. Guarantees every signal is at least one hour late,
-and makes the classification itself time-dependent.**
+`FOLLOWING_LOOKAHEAD = 3`, and the function returns `None` for an empty
+`following`, so the newest H1 candle can never produce a signal — a
+one-hour minimum lag by construction, before finding 1 is considered.
 
-`FOLLOWING_LOOKAHEAD = 3`, and:
+Worse, its answer changes as candles arrive: with one following candle it
+falls through to `FRESH_IRL_REQUIRED`; with three it may return
+`NESTED_DISRESPECT`, which carries a different reference level and
+therefore a different entry, stop and target. The same candle yields a
+different trade depending on when it is evaluated.
+
+---
+
+## 7. MEDIUM — the anomaly halt trips on ordinary swap and commission
+
+`RiskManager._check_anomaly()` halts when floating P&L is worse than
+minus the sum of open positions' stop distances, with a **$1** tolerance:
 
 ```python
-following = h1[i + 1: i + 1 + FOLLOWING_LOOKAHEAD]
-classification = classify_entry_pattern(new_key_level, following)
-if classification is None:
-    continue
+if floating_today < -open_risk - 1.0:
 ```
 
-`classify_entry_pattern()` returns `None` for an empty `following`, so
-the newest H1 candle can never produce a signal — a minimum one-hour lag
-by construction, before finding 1 is even considered.
+`floating_today` is `equity - balance`, which includes swap and
+commission. `open_risk` is pure `|entry - stop| x value`. A book sitting
+near its stops overnight will show floating slightly worse than
+`open_risk` from financing alone, with no stop having slipped anywhere.
 
-Worse, the answer changes with how many candles have arrived. With one
-following candle the function falls through to `FRESH_IRL_REQUIRED`;
-with three it may instead return `NESTED_DISRESPECT`, which carries a
-DIFFERENT reference level, and therefore a different entry price, stop
-and target. The same entry candle yields a different trade depending on
-when it is evaluated.
+The 2026-09-07 incident is consistent with exactly that: the first halt
+fired at floating `-2,005` against `open_risk` `1,998` — a $7 excess on a
+$2,000 book, 0.35%. Fourteen halts were logged that morning; it is the
+last date real trades appear in the account history.
+
+The later events in that sequence (`-2,543` against `1,388`) are a much
+larger excess and may be a genuine stop failure. That deserves its own
+investigation and has never had one.
+
+The tolerance should scale with the book — a fraction of `open_risk`, or
+an explicit financing allowance — not a flat dollar.
 
 ---
 
-## 5. Both bots share one cache, written from two different brokers
+## 8. MEDIUM (process) — the safety test validates a configuration nobody runs
 
-**Severity: unknown, currently unproven. Recorded as a suspicion.**
+`test_gate_never_suppresses_a_trade_the_real_backtest_produces` is the
+test that finding 2 should have been caught by. It calls:
+
+```python
+ctx = build_htf_context(instrument)          # defaults
+run_backtest(instrument, style)              # defaults
+```
+
+Both with default flags — so it proves the gate agrees with an engine
+configured `origin_kind="sweep_break"`, `close_based_sweep_break=False`,
+no rollover filter, no `min_reward_r`, no history caps. Production runs
+none of those. The test passes; the deployed pairing is untested.
+
+This is systemic, not a one-off. I made the identical mistake earlier the
+same day in `count_signals`, pinning its defaults to `LiveBot`'s
+dataclass fields and writing a test asserting they matched — while the
+real overrides live at the launch site. `live_flags.py` now exists for
+this; the same treatment should be applied to this test, and to
+`check_recent_signals.py`, which has a documented history of the same
+bug.
+
+---
+
+## 9. SUSPICION (not established) — both bots share one cache, written from two brokers
 
 Neither launch command passes `--source`, so both processes read and
-write `dukascopy` cache files. Each syncs H1 from its OWN MT5 terminal —
-two accounts on two brokers — into the same CSVs, then re-derives
+write the same `dukascopy` files. Each syncs H1 from its OWN MT5 terminal
+— two accounts on two brokers — into the same CSVs, then re-derives
 H4/D/W from the result.
 
-Sampling XAUUSD's H1 and H4 files three times over three minutes showed
-no churn: identical size, mtime and rows. So they are not visibly
-fighting, and the hypothesis is NOT established. It remains a design
-hazard worth removing rather than a diagnosed fault.
+I sampled XAUUSD's H1 and H4 three times over three minutes and saw no
+churn: identical size, mtime and rows. **The hypothesis is not
+established.** It is a design hazard worth removing, not a diagnosed
+fault.
 
-The observation that prompted it is still unexplained: two processes 41
-seconds apart reported different H4 bias for XAUUSD, the later one
-anchored at an EARLIER time (`H4@2026-09-18 04:00` then
-`H4@2026-09-15 04:00`). Findings 1 and 3 can both produce exactly this,
-so it may already be accounted for.
-
----
-
-## 6. Infrastructure: the VPS was out of memory (fixed 2026-09-18)
-
-Not a code fault, but it was actively degrading the system and it masked
-everything above.
-
-`ollama` held 2.9 GB on a 7.8 GB box shared with two trading bots and two
-MT5 terminals. Swap was 100% consumed (36 KiB free of 2 GB). Both bots
-had roughly 450 MB each paged out to disk, and the hourly cycle could not
-finish its 25 instruments inside the hour — the Telegram staleness alert
-named exactly instruments 17 through 25 of the list, the contiguous tail,
-which is the signature of a loop running out of time rather than a data
-problem.
-
-Stopping ollama freed 2.9 GB; the tail-staleness alert stopped. This was
-real and worth fixing. It is NOT the reason there were no trades:
-findings 1 and 4 produce late signals on an idle machine.
+The observation that prompted it — two processes 41 seconds apart
+reporting different H4 bias for XAUUSD, the later one anchored EARLIER
+(`H4@2026-09-18 04:00` then `H4@2026-09-15 04:00`) — is fully explained
+by findings 1 and 5 without needing any cache conflict.
 
 ---
 
-## Bottom line so far
+## 10. FIXED 2026-09-18 — the VPS was out of memory
 
-The strategy code is careful, well-documented, and extensively tested.
-The tests are honest about their own limits and several of them encode
-real lessons. That is not the problem.
+Not a code fault, but it was degrading everything and masking the rest.
+`ollama` held 2.9 GB on a 7.8 GB box shared with two bots and two MT5
+terminals; swap was 100% consumed (36 KiB free of 2 GB); both bots had
+~450 MB each paged to disk. The hourly cycle could not finish 25
+instruments inside the hour, and the staleness alert named exactly
+instruments 17–25 — the contiguous tail of the list, the signature of a
+loop running out of time.
 
-The problem is that the whole engine was designed as a backtest — a
-function over a complete history — and is being used as a live signal
-generator, which is a function over history AS IT WAS AT A GIVEN MOMENT.
-Those are different functions. The code has the concept needed to
-reconcile them (`known_at`) and applies it only to the fractal lag,
-missing the much larger bar-close lag.
-
-Until that is fixed, the live bot cannot trade, and the backtest cannot
-tell you whether the strategy is any good.
+Stopping ollama freed 2.9 GB and the tail-staleness alert stopped. Real,
+worth fixing, and **not** the reason there were no trades: findings 1, 3
+and 6 produce late signals on a completely idle machine.
 
 ---
 
-*Review in progress: engine reviewed; bot/ (orchestrator, execution,
-risk, sizing, reconciliation) not yet covered.*
+## What I would do, in order
+
+1. **Add the bar-close term to `known_at` everywhere and re-run every
+   A/B.** Nothing else can be evaluated until the backtest stops seeing
+   the future. Expect the numbers to get worse — that is the point.
+2. **Make the storyline gate take the same flags as the engine**, and
+   make the safety test run the deployed configuration. Until then the
+   gate is an unmeasured strategy change.
+3. **Advance the watermark even when the gate is closed**, or expire the
+   backlog deliberately, so a reopening gate does not dump days of dead
+   signals into the decline log.
+4. **Fix the `StructureTracker` latch** — refresh the opposing structural
+   point, or expire an unconfirmed sweep.
+5. **Make `replay_bias` condition (c) causal** — look backwards from the
+   rejection, not forwards.
+6. **Widen the anomaly tolerance** to a fraction of the book, and
+   separately investigate the 2026-09-07 `-2,543 vs 1,388` event, which
+   has never been explained.
+
+Items 1 and 2 are the ones that decide whether this bot trades. The rest
+are real but secondary.
+
+## What this review did not cover
+
+`mt5_execution.py` beyond `compute_lot_size`, the reconciliation paths
+(`reconcile_signals.py`, `_reconcile_closed_positions`,
+`_reconcile_pending_entries`), `shadow_book.py`, `audit_log.py`, the
+webapp, and the data pipeline beyond `resample.py` and `cache.py`. None
+of those can explain an absence of trades, which is why they were
+deprioritised — not because they are known to be clean.
