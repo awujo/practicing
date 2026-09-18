@@ -65,6 +65,7 @@ import pandas as pd
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from ..engine.runner import run_backtest
 from ..engine.trade_log import summarize
+from .live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
 
 MODES_DOC = "swing baseline + one single_candle variant per pool cap"
 
@@ -134,11 +135,27 @@ def main():
                         help="comma-separated, or ALL for every Dukascopy instrument")
     parser.add_argument("--entry-style", default="conservative",
                         choices=("aggressive", "conservative"))
-    parser.add_argument("--stop-anchor", default="trigger_wick")
-    parser.add_argument("--min-reward-r", type=float, default=1.0)
+    # Defaults wired to live_flags.py rather than written out here.
+    #
+    # They already matched the deployment -- but by coincidence of two
+    # lists agreeing, not by construction, which is the same setup that
+    # produced findings 2 and 8. Note also that the sweep-break flag is
+    # INVERTED relative to every other tool and to the bot's own launch
+    # command: `--wick-based-sweep-break` turns OFF what the bots run
+    # with. That naming cost a wasted VPS run on 2026-09-18, when the
+    # obvious-looking `--close-based-sweep-break` was rejected by
+    # argparse and the job died instantly. Kept (renaming it would break
+    # anyone's saved command lines) but now stated, and the value is
+    # printed with the results.
+    parser.add_argument("--stop-anchor", default=LIVE_LAUNCH_FLAGS["stop_anchor"])
+    parser.add_argument("--min-reward-r", type=float,
+                        default=LIVE_FIXED_FLAGS["min_reward_r"])
     parser.add_argument("--no-avoid-rollover", action="store_true")
-    parser.add_argument("--origin-kind", default="any", choices=("sweep_break", "any"))
-    parser.add_argument("--wick-based-sweep-break", action="store_true")
+    parser.add_argument("--origin-kind", default=LIVE_LAUNCH_FLAGS["origin_kind"],
+                        choices=("sweep_break", "any"))
+    parser.add_argument("--wick-based-sweep-break", action="store_true",
+                        help="turn OFF close-based sweep breaks, which the live bots "
+                             "run WITH and which is therefore the default here")
     parser.add_argument("--start", default=None,
                         help="only REPORT trades entered on/after this date "
                              "(full history still loads and drives bias)")
@@ -165,6 +182,13 @@ def main():
 
     start = pd.Timestamp(args.start, tz="UTC") if args.start else None
     end = pd.Timestamp(args.end, tz="UTC") if args.end else None
+
+    # Printed with the numbers: a result whose flags you cannot see is
+    # not checkable, and these have been wrong before.
+    print(f"flags: origin_kind={args.origin_kind}  "
+          f"close_based_sweep_break={not args.wick_based_sweep_break}  "
+          f"stop_anchor={args.stop_anchor}  min_reward_r={args.min_reward_r}  "
+          f"avoid_rollover_entries={not args.no_avoid_rollover}", flush=True)
 
     totals = {m: {"trades": 0, "r": 0.0, "wins": 0} for m in mode_names}
     unique_rows = []

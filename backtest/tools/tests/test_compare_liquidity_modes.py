@@ -90,3 +90,40 @@ def test_baseline_variant_never_carries_a_pool_cap():
     for name, kwargs in variants([1, 2, 6]):
         if name == "swing":
             assert "single_candle_max_pools" not in kwargs
+
+
+def test_defaults_match_the_deployed_launch_flags():
+    """Same guard as count_signals'. These already agreed with the
+    deployment, but by two lists happening to match rather than by
+    construction -- which is exactly the setup behind review findings 2
+    and 8, where a gate and a test each validated a configuration nobody
+    ran."""
+    import argparse
+    import sys
+    from unittest import mock
+    from ..live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
+    from ..compare_liquidity_modes import main
+
+    parsed = {}
+    real = argparse.ArgumentParser.parse_args
+
+    def capture(self, *a, **k):
+        parsed.update(vars(real(self, *a, **k)))
+        raise SystemExit(0)
+
+    argv = ["compare_liquidity_modes", "--instruments", "NONE_AT_ALL"]
+    with mock.patch.object(argparse.ArgumentParser, "parse_args", capture), \
+            mock.patch.object(sys, "argv", argv):
+        with pytest.raises(SystemExit):
+            main()
+
+    assert parsed["origin_kind"] == LIVE_LAUNCH_FLAGS["origin_kind"]
+    assert parsed["stop_anchor"] == LIVE_LAUNCH_FLAGS["stop_anchor"]
+    assert parsed["min_reward_r"] == LIVE_FIXED_FLAGS["min_reward_r"]
+    # Both of these are INVERTED flags: absent means the behaviour is ON,
+    # which is what the bots run. Asserted as plain `is False` -- the
+    # first version of this line read `not x is False or True`, which is
+    # a tautology and would have passed on any value at all.
+    assert parsed["wick_based_sweep_break"] is False   # -> close-based ON
+    assert parsed["no_avoid_rollover"] is False        # -> rollover avoidance ON
+    assert LIVE_FIXED_FLAGS["avoid_rollover_entries"] is True
