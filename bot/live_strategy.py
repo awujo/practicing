@@ -55,8 +55,8 @@ from backtest.engine.bias import (
 )
 from backtest.engine.key_levels import detect_key_levels
 from backtest.engine.runner import (
-    ALIGNMENT_LOOKBACK, BIAS_CONFIRMATION_WINDOW, _direction_lookup, _last_direction_at,
-    load_candles,
+    ALIGNMENT_LOOKBACK, BIAS_CONFIRMATION_WINDOW, _bootstrap_origin, _direction_lookup,
+    _last_direction_at, _trim_to_recent_years, load_candles,
 )
 from backtest.engine.structure import Direction, StructureTracker
 
@@ -115,14 +115,40 @@ def _latest_time(candles):
 
 def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
                        close_based_breakout: bool = True,
-                       confirmation_window: int = BIAS_CONFIRMATION_WINDOW) -> HTFContext | None:
+                       confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
+                       origin_kind: str = "sweep_break",
+                       close_based_sweep_break: bool = False,
+                       max_history_years: dict | None = None) -> HTFContext | None:
     """Derive the Weekly/Daily/H4 bias context. Returns None when there
     isn't enough structure to bootstrap a bias from -- the same condition
     that makes `run_backtest()` return no trades at all, so a None here
     is a legitimate "nothing to hunt", not an error.
 
     Costs roughly the Daily + H4 portion of a full run_backtest and, by
-    design, touches no H1 data at all."""
+    design, touches no H1 data at all.
+
+    `origin_kind`, `close_based_sweep_break` and `max_history_years` exist
+    because the gate MUST compute bias the same way the engine it gates
+    does. Until 2026-09-18 they did not: this function hardcoded a
+    `valid_sweep_break` origin, wick-based sweep breaks, and uncapped
+    history, while both live bots launch with `--origin-kind any
+    --close-based-sweep-break --history-windows-config`. Different bias
+    input, different answer -- so the gate could say WAITING at a candle
+    where run_backtest produced a trade, which is exactly the false
+    negative this module's own docstring says it must never have.
+
+    The hardcoded origin had a worse failure mode than a disagreement.
+    An instrument whose Daily history contained no `valid_sweep_break` at
+    all returned None here and was gated off PERMANENTLY, while the
+    engine under `origin_kind="any"` would have bootstrapped from the
+    first confirmation and traded it. Before the 2026-09-18 structure
+    latch fix, `valid_sweep_break` events were far rarer than they looked
+    -- one direction could be dead for years -- so that was not a remote
+    possibility.
+
+    Defaults match the pre-2026-09-18 behavior so nothing changes for a
+    caller that has not been updated; the orchestrator passes its real
+    values."""
     try:
         daily = load_candles(source, instrument, "D")
         h4 = load_candles(source, instrument, "H4")
@@ -136,16 +162,30 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
     except FileNotFoundError:
         weekly = []
 
-    daily_events = StructureTracker(n).run(daily)
-    first_origin = next((e for e in daily_events if e.kind == "valid_sweep_break"), None)
+    # Same trailing-history caps run_backtest applies, for the same
+    # reason: a bias built from a different amount of history is a
+    # different bias.
+    if max_history_years:
+        daily = _trim_to_recent_years(daily, max_history_years.get("D"))
+        weekly = _trim_to_recent_years(weekly, max_history_years.get("W"))
+        h4 = _trim_to_recent_years(h4, max_history_years.get("H4"))
+        if not daily or not h4:
+            return None
+
+    _confs = dict(close_based_breakout=close_based_breakout,
+                  close_based_sweep_break=close_based_sweep_break)
+
+    daily_events = StructureTracker(n, close_based_break=close_based_sweep_break).run(daily)
+    daily_confirmations = detect_confirmations(daily, n, **_confs)
+    # runner's own bootstrap, not a second copy of the rule -- see this
+    # module's docstring on drift being worse than coupling.
+    first_origin = _bootstrap_origin(daily_events, daily_confirmations, origin_kind)
     if first_origin is None:
         return None
 
     daily_levels = detect_key_levels(daily, n)
-    daily_confirmations = detect_confirmations(daily, n, close_based_breakout=close_based_breakout)
-    weekly_confirmations = (detect_confirmations(weekly, n, close_based_breakout=close_based_breakout)
-                             if weekly else [])
-    h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout)
+    weekly_confirmations = detect_confirmations(weekly, n, **_confs) if weekly else []
+    h4_confirmations = detect_confirmations(h4, n, **_confs)
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
@@ -153,8 +193,8 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
 
     weekly_breakpoints = []
     if weekly:
-        weekly_events = StructureTracker(n).run(weekly)
-        weekly_first_origin = next((e for e in weekly_events if e.kind == "valid_sweep_break"), None)
+        weekly_events = StructureTracker(n, close_based_break=close_based_sweep_break).run(weekly)
+        weekly_first_origin = _bootstrap_origin(weekly_events, weekly_confirmations, origin_kind)
         if weekly_first_origin is not None:
             weekly_levels = detect_key_levels(weekly, n)
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,

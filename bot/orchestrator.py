@@ -688,7 +688,20 @@ class LiveBot:
 
         ctx = self._htf_contexts.get(instrument)
         if ctx is None or any(c is not None for c in closed.values()):
-            ctx = build_htf_context(instrument, source=self.source)
+            # Every strategy flag this bot passes to run_backtest goes to
+            # the gate too. They disagreed until 2026-09-18 (review
+            # finding 2): the gate hardcoded a sweep_break origin,
+            # wick-based sweep breaks and uncapped history while this bot
+            # runs --origin-kind any --close-based-sweep-break and a
+            # history-windows config, so the gate could refuse a candle
+            # where run_backtest had a trade. A gate that computes a
+            # different bias from the engine is not a performance filter,
+            # it is an unmeasured second strategy.
+            ctx = build_htf_context(
+                instrument, source=self.source,
+                origin_kind=self.origin_kind,
+                close_based_sweep_break=self.close_based_sweep_break,
+                max_history_years=self.history_window_years.get(instrument))
             if ctx is None:
                 logger.debug("%s: no higher-timeframe structure to bootstrap a bias from", instrument)
                 self._htf_contexts.pop(instrument, None)

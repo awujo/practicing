@@ -138,18 +138,39 @@ def test_gate_never_suppresses_a_trade_the_real_backtest_produces(instrument, st
     disagreement with the real alignment rules, which a hand-built
     fixture would be too kind to expose. Skips when the cache isn't
     present (it is gitignored); the data-fetch workflows provide it in
-    CI, and it was run manually over 3,328 trades before shipping."""
+    CI, and it was run manually over 3,328 trades before shipping.
+
+    FIXED 2026-09-18 (review finding 8). Both calls below used to be made
+    on DEFAULTS -- `build_htf_context(instrument)` and
+    `run_backtest(instrument, style)` -- so this test proved the gate
+    agreed with an engine configured `origin_kind="sweep_break"`,
+    wick-based sweep breaks, no rollover filter and no `min_reward_r`.
+    Production runs none of those. The test passed; the deployed pairing
+    was never checked, and finding 2 (the gate computing a different bias
+    from the engine) lived behind it.
+
+    Both sides now take the deployed flags from `live_flags.py`. A test
+    of a configuration nobody runs is worse than no test: it reports
+    safety for a system that is not the one flying."""
     if not _has_data(instrument):
         pytest.skip(f"no cached {instrument} data -- run the fetch-data workflow")
 
     from backtest.engine.runner import run_backtest
+    from backtest.tools.live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
 
-    ctx = build_htf_context(instrument)
+    ctx = build_htf_context(
+        instrument,
+        origin_kind=LIVE_LAUNCH_FLAGS["origin_kind"],
+        close_based_sweep_break=LIVE_LAUNCH_FLAGS["close_based_sweep_break"])
     assert ctx is not None, "real history should always bootstrap a context"
 
+    records = run_backtest(instrument, style, **LIVE_FIXED_FLAGS,
+                           origin_kind=LIVE_LAUNCH_FLAGS["origin_kind"],
+                           close_based_sweep_break=LIVE_LAUNCH_FLAGS["close_based_sweep_break"],
+                           stop_anchor=LIVE_LAUNCH_FLAGS["stop_anchor"])
     suppressed = [
         (r.entry_time, storyline_at(ctx, r.entry_time).reason)
-        for r in run_backtest(instrument, style)
+        for r in records
         if storyline_at(ctx, r.entry_time).stage != HUNTING
     ]
     assert suppressed == [], (

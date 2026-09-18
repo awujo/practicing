@@ -17,6 +17,45 @@ from ..mt5_execution import MT5Execution
 from ..orchestrator import RECONNECT_BACKOFF_BASE_SECONDS, LiveBot, TrackedPosition
 
 
+# A fixed "now" for every test in this file.
+#
+# Until 2026-09-18 these tests read the real wall clock, because
+# `_weekend_is_close()` and `_too_late_to_open()` default `now` to
+# `datetime.now(timezone.utc)`. That made 31 of them fail every Friday
+# evening and all weekend, on a completely clean tree, for reasons
+# having nothing to do with the code under test -- CI red on Fridays,
+# and a real regression indistinguishable from the calendar. Found while
+# reviewing something else: a fix was "breaking" 31 tests that were
+# already broken before it was written.
+#
+# This was already known: test_resting_order_survives_while_the_setup_is_
+# merely_waiting's docstring records it being hit on 2026-09-11, and three
+# tests were given `patch.object(LiveBot, "_weekend_is_close", ...)` as a
+# local workaround. The other 31 were left calendar-flaky, so the problem
+# came straight back the next Friday. Fixing it once, here, is what stops
+# that recurring.
+#
+# Wednesday noon UTC: mid-week, nowhere near the Friday flatten window,
+# so the weekend guards are simply inactive unless a test asks for them.
+# The tests that genuinely exercise weekend logic are unaffected -- they
+# pass `now=` explicitly (test_weekend_window_tracks_the_new_york_close_
+# through_dst and friends) or patch `_weekend_is_close` outright.
+FROZEN_NOW = datetime(2026, 9, 16, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _freeze_clock():
+    real_now = datetime.now
+
+    class _FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return FROZEN_NOW if tz else FROZEN_NOW.replace(tzinfo=None)
+
+    with patch("bot.orchestrator.datetime", _FixedDatetime):
+        yield
+
+
 def _bar(high, low, time="2026-09-01T18:00Z"):
     """Minimal candle stand-in -- check_setup() reads high/low/time."""
     from types import SimpleNamespace
@@ -128,8 +167,8 @@ def test_the_backoff_delay_grows_and_is_capped(tmp_path):
         bot._try_reconnect()
         # Force the next call past the just-set backoff window, as if
         # that much wall-clock time had actually elapsed.
-        delays.append((bot._next_reconnect_at - datetime.now(timezone.utc)).total_seconds())
-        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        delays.append((bot._next_reconnect_at - FROZEN_NOW).total_seconds())
+        bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
 
     assert fake.initialize_calls == 7
     # 5, 10, 20, 40, 60, 60, 60 -- doubles from the base, capped at max.
@@ -148,7 +187,7 @@ def test_a_successful_reconnect_resets_the_backoff(tmp_path):
     bot._try_reconnect()  # still failing -- attempt count and delay have grown
     assert bot._reconnect_attempts == 1  # second call was inside the window, didn't even try
 
-    bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
     fake._fail_init = False  # the terminal recovers
     bot._try_reconnect()
 
@@ -160,7 +199,7 @@ def test_a_successful_reconnect_resets_the_backoff(tmp_path):
     client.disconnect()
     fake._fail_init = True
     bot._try_reconnect()
-    delay = (bot._next_reconnect_at - datetime.now(timezone.utc)).total_seconds()
+    delay = (bot._next_reconnect_at - FROZEN_NOW).total_seconds()
     assert round(delay) == RECONNECT_BACKOFF_BASE_SECONDS
 
 
@@ -180,16 +219,16 @@ def test_resource_snapshot_is_logged_once_per_outage_not_per_attempt(tmp_path, c
     with patch("bot.orchestrator.resource_snapshot", return_value="load=7.2,4.1,3.8 mem=1.8/2.0GB") as mock_snap, \
          caplog.at_level("INFO", logger="bot.orchestrator"):
         bot._try_reconnect()  # attempt 1 -- first failure of this outage
-        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
         bot._try_reconnect()  # attempt 2 -- same outage, no new snapshot
-        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
         bot._try_reconnect()  # attempt 3 -- still no new snapshot
 
         assert mock_snap.call_count == 1
         assert "load=7.2,4.1,3.8" in caplog.text
 
         fake._fail_init = False
-        bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
         bot._try_reconnect()  # recovers -- one more snapshot, at recovery
 
     assert mock_snap.call_count == 2
@@ -309,7 +348,7 @@ def test_run_once_still_polls_health_every_cycle_even_while_backing_off(tmp_path
     assert fake.initialize_calls == 1  # no wasted attempt
 
     fake._fail_init = False
-    bot._next_reconnect_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    bot._next_reconnect_at = FROZEN_NOW - timedelta(seconds=1)
     bot.run_once()
     assert fake.initialize_calls == 2
     assert client.is_healthy()
@@ -2011,3 +2050,45 @@ def test_a_non_drift_sizing_failure_still_declines(tmp_path):
                  if r["event_type"] == "entry_attempt"]
     assert "reroute_drift_to_limit" not in decisions
     assert any(d.startswith("decline_sizing_") for d in decisions), decisions
+
+
+def test_the_storyline_gate_is_given_the_same_flags_as_the_engine(tmp_path):
+    """Regression for the 2026-09-18 review, finding 2.
+
+    `build_htf_context()` used to be called as
+    `build_htf_context(instrument, source=...)` and nothing else, so it
+    fell back to its own defaults: a `valid_sweep_break` origin,
+    wick-based sweep breaks and uncapped history. Both live bots run
+    `--origin-kind any --close-based-sweep-break` with a history-windows
+    config. A gate computing a different bias from the engine it gates is
+    not a performance filter, it is a second, unmeasured strategy -- and
+    it can refuse a candle at which run_backtest has a trade, which is
+    the one thing live_strategy's docstring says it must never do.
+
+    The real-data test in test_live_strategy.py now checks the deployed
+    pairing end to end, but it SKIPS without a cache (gitignored, absent
+    on a clean checkout), so it cannot be what guards this. This can: it
+    asserts the wiring directly and runs everywhere."""
+    fake = FakeMT5()
+    windows = {"D": 2.0, "W": 2.0, "H4": 1.0, "H1": 1.0}
+    bot, _audit, _client = make_bot(
+        fake, tmp_path,
+        origin_kind="any",
+        close_based_sweep_break=True,
+        history_window_years={"EURUSD": windows})
+
+    seen = {}
+
+    def spy(instrument, **kwargs):
+        seen.update(kwargs)
+        seen["instrument"] = instrument
+        return None  # "no structure to bootstrap from" -- short-circuits the rest
+
+    with patch("bot.orchestrator.build_htf_context", side_effect=spy), \
+         patch.object(bot.mt5_client, "new_candle_closed", return_value=None):
+        bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-18T12:00:00+00:00"))
+
+    assert seen["instrument"] == "EURUSD"
+    assert seen["origin_kind"] == "any"
+    assert seen["close_based_sweep_break"] is True
+    assert seen["max_history_years"] == windows

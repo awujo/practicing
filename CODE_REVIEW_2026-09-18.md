@@ -82,6 +82,14 @@ because none of the existing numbers survive the change.
 
 ## 2. CRITICAL — the storyline gate runs a different strategy than the engine it gates
 
+*Status: FIXED 2026-09-18. `build_htf_context()` now takes `origin_kind`,
+`close_based_sweep_break` and `max_history_years`, uses runner's own
+`_bootstrap_origin()` instead of a second copy of the rule, and the
+orchestrator passes its real values. The real-data safety test now runs
+the DEPLOYED flags on both sides (finding 8), and a new orchestrator test
+asserts the wiring directly -- it runs everywhere, unlike the real-data
+test, which skips without a cache.*
+
 `live_strategy.py` states the property it must have: *"It must have no
 false negatives: if `run_backtest()` would have produced a trade at some
 candle, the gate must have said hunting at that candle's time."*
@@ -329,6 +337,42 @@ reporting different H4 bias for XAUUSD, the later one anchored EARLIER
 by findings 1 and 5 without needing any cache conflict.
 
 ---
+
+## 11. The orchestrator test suite failed every Friday evening (fixed)
+
+Found while fixing finding 1: a change appeared to break 31 orchestrator
+tests, and they turned out to be already failing on a clean tree.
+`_weekend_is_close()` and `_too_late_to_open()` default `now` to
+`datetime.now(timezone.utc)`, so from roughly 20:00 UTC Friday through
+the weekend, 31 tests failed for reasons unrelated to the code.
+
+Confirmed both ways after the fix: with the frozen clock at Friday 20:00
+the same 31 fail; at Wednesday noon all 83 pass.
+
+This was already known and partially worked around -- one test's
+docstring records hitting it on 2026-09-11, and three tests were given a
+local `patch.object(LiveBot, "_weekend_is_close", ...)`. The other 31
+were left, so it returned the following Friday. Now fixed once, with an
+autouse fixture freezing the clock for the whole file.
+
+It matters beyond tidiness: CI is red every Friday for no reason, which
+trains everyone to ignore it, and a genuine regression introduced on a
+Friday is indistinguishable from the calendar.
+
+## 12. `_too_late_to_open()` is False while the market is shut
+
+Noticed while probing finding 11, not investigated further and NOT fixed.
+
+At Friday 21:30 UTC -- after the 17:00 New York close -- `_weekend_is_close()`
+is True but `_too_late_to_open()` is False, because
+`_minutes_to_weekend_close()` rolls forward to NEXT Friday the moment
+this one passes, so it reports ~six days of headroom. `_market_closed_for_weekend()`
+exists precisely because of that roll-forward and is consulted by
+`_weekend_is_close()`, but `_too_late_to_open()` does not consult it.
+
+Probably harmless in practice (the market is shut, so nothing fills),
+but the two guards disagree about the same moment, and only one of them
+gates new entries.
 
 ## 10. FIXED 2026-09-18 — the VPS was out of memory
 
