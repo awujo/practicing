@@ -1926,3 +1926,88 @@ def test_a_resting_entry_is_not_placed_while_halted(tmp_path):
     assert fake.order_send_calls == []
     rows = [r for r in audit.recent(10) if r["event_type"] == "entry_attempt"]
     assert rows and rows[0]["decision"] == "decline_account_halted"
+
+
+# ---------------------------------------------------------------------------
+# A market entry whose price ran away gets RESTED, not binned.
+#
+# 2026-09-17/18, after the cache repair cleared the stale signals, drift
+# was 100% of the conservative bot's declines. Those refusals were
+# correct -- a market order really would have filled at a price the stop
+# was never sized for. Declining was right; declining and then doing
+# nothing with a still-valid setup was the waste.
+#
+# Same rescue cedd67f already applies to a stale market signal.
+# ---------------------------------------------------------------------------
+
+def _runaway_price(fake, symbol="EURUSD"):
+    info = make_symbol_info(point=0.0001)
+    info.bid, info.ask = 1.3000, 1.3001   # miles from the signal's entry
+    fake.symbols[symbol] = info
+
+
+def test_a_drifted_market_entry_is_rested_as_a_limit(tmp_path):
+    fake = FakeMT5()
+    _runaway_price(fake)
+    bot, audit, client = make_bot(fake, tmp_path)
+    # Lives on the executor, not the bot -- make_bot's extras go to LiveBot.
+    bot.mt5_exec._max_entry_drift_fraction = 1.0
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    decisions = [r["decision"] for r in audit.recent(20)
+                 if r["event_type"] == "entry_attempt"]
+    assert "reroute_drift_to_limit" in decisions, decisions
+    # and it did not simply die there
+    assert "decline_sizing_entry_price_drifted" not in decisions
+
+
+def test_a_bot_already_resting_limits_is_not_rerouted(tmp_path):
+    """Nothing to rescue -- the drift guard never ran for it in the first
+    place, so there must be no reroute row muddying the log."""
+    fake = FakeMT5()
+    _runaway_price(fake)
+    bot, audit, client = make_bot(fake, tmp_path, entry_order_type="limit")
+    bot.mt5_exec._max_entry_drift_fraction = 1.0
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    decisions = [r["decision"] for r in audit.recent(20)
+                 if r["event_type"] == "entry_attempt"]
+    assert "reroute_drift_to_limit" not in decisions
+
+
+def test_a_non_drift_sizing_failure_still_declines(tmp_path):
+    """The reroute is for drift alone. A symbol that cannot be traded, or
+    a stop the broker rejects, is not rescued by resting the order."""
+    fake = FakeMT5()
+    info = make_symbol_info(point=0.0001, trade_mode=0)  # not tradeable
+    info.bid, info.ask = 1.1700, 1.1701
+    fake.symbols["EURUSD"] = info
+    bot, audit, client = make_bot(fake, tmp_path)
+    bot.mt5_exec._max_entry_drift_fraction = 1.0
+    entry_time = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    record = a_trade_record(entry_time)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        mock_new_candle.return_value = type("C", (), {"time": entry_time})()
+        bot.run_once()
+
+    decisions = [r["decision"] for r in audit.recent(20)
+                 if r["event_type"] == "entry_attempt"]
+    assert "reroute_drift_to_limit" not in decisions
+    assert any(d.startswith("decline_sizing_") for d in decisions), decisions

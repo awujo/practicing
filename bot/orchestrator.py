@@ -38,7 +38,7 @@ from .diagnostics import resource_snapshot
 from .live_cache_sync import sync_recent_from_mt5
 from .live_strategy import HUNTING, HTFContext, build_htf_context, storyline_at
 from .mt5_data import MT5Client, MT5ConnectionError
-from .mt5_execution import MT5Execution
+from .mt5_execution import MT5Execution, ValidationError
 from .risk_manager import Decision, OpenPosition, RiskManager
 from .setup_validity import check_setup
 
@@ -801,6 +801,33 @@ class LiveBot:
         will_rest = self.entry_order_type == "limit" or force_limit
         sizing = self.mt5_exec.compute_lot_size(instrument, risk, record.entry_price,
                                                  record.stop_loss, check_drift=not will_rest)
+
+        # Price ran away from a MARKET entry -- rest it instead of binning
+        # it. The setup is not wrong; the market has simply moved off the
+        # level while the bot was getting to it, and a limit at that level
+        # fills there or not at all. Exactly the rescue cedd67f already
+        # applies to a STALE market signal (see _check_instrument's
+        # force_limit reroute); drift is the same problem under a
+        # different name, and the signal's own entry/stop/target are
+        # untouched either way.
+        #
+        # Why it matters: on 2026-09-17/18, with the stale signals gone
+        # after the cache repair, drift was 100% of the conservative
+        # bot's declines -- and those refusals were CORRECT, because a
+        # market order really would have filled at a price the stop was
+        # never sized for. Declining was right; declining and then doing
+        # nothing was the waste.
+        if (not sizing.ok and not will_rest
+                and sizing.error is ValidationError.ENTRY_PRICE_DRIFTED):
+            self._log_event("entry_attempt", "reroute_drift_to_limit",
+                             f"{sizing.reason} Resting a limit at {record.entry_price:g} instead.",
+                             state, instrument=instrument, trade_id=str(record.trade_id),
+                             risk=risk, **base_fields)
+            will_rest = True
+            force_limit = True
+            sizing = self.mt5_exec.compute_lot_size(instrument, risk, record.entry_price,
+                                                     record.stop_loss, check_drift=False)
+
         if not sizing.ok:
             self._log_event("entry_attempt", "decline_sizing_" + sizing.error.value, sizing.reason, state,
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)
