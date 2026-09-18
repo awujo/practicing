@@ -129,14 +129,18 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "engulfing"
     assert trade.stop_loss == pytest.approx(1.1004)
-    # 3 same-direction candidates are in play here (1.1005, 1.101, 1.1012),
-    # nearest-to-extreme from the swept liquidity point (1.1015) is
-    # [1.1012, 1.101, 1.1005] -- "we don't predict, we react": the nearest
-    # candidate (1.1012) is tried first, and the fixture's H1(2)/H1(3)
-    # touch-and-engulf IS a genuine reaction off it, so it wins outright;
-    # the farther candidates are never even tried.
-    assert trade.key_level_price == pytest.approx(1.1012)
-    assert trade.key_level_shape == "V"
+    # "We don't predict, we react": the candidates are ordered
+    # nearest-to-extreme from the swept pool and tried in sequence; the
+    # fixture's H1(2)/H1(3) touch-and-engulf is a genuine reaction off
+    # the winner, so the farther candidates are never tried.
+    # CHANGED 2026-09-18 (review finding 1): was 1.1012. That level is
+    # an A/V key level confirmed by bar i+n, and bar i+n is stamped at
+    # its OPEN -- so it is readable only once that bar CLOSES, which is
+    # after this reaction. The next candidate down, 1.1010, wins now.
+    assert trade.key_level_price == pytest.approx(1.1010)
+    # open_close, not "V": the level that wins under corrected timing
+    # is a different shape as well as a different price.
+    assert trade.key_level_shape == "open_close"
     assert trade.entry_price == pytest.approx(1.1030)  # conservative -> engulf candle's close
     assert trade.status == "closed_win"
     assert trade.exit_reason == "target_hit"
@@ -423,7 +427,11 @@ def test_run_backtest_aggressive_style_enters_at_key_level_price(synthetic_cache
     # Aggressive enters at the key level itself (the H4 reaction level), not the confirmation close.
     # See test_run_backtest_produces_a_winning_trade_end_to_end for why this is 1.1012, the nearest
     # same-direction candidate to the swept liquidity point, not a scored pick.
-    assert records[0].entry_price == pytest.approx(1.1012)
+    # CHANGED 2026-09-18 (review finding 1): was 1.1012. That level is
+    # an A/V key level confirmed by bar i+n, and bar i+n is stamped at
+    # its OPEN -- so it is readable only once that bar CLOSES, which is
+    # after this reaction. The next candidate down, 1.1010, wins now.
+    assert records[0].entry_price == pytest.approx(1.1010)
     assert records[0].stop_loss == pytest.approx(1.1004)
 
 
@@ -763,7 +771,13 @@ def test_run_backtest_fires_on_a_fourth_man_reaction(tmp_path, monkeypatch):
     ]
     h1 = [
         H1(0, 1.1020, 1.1024, 1.1018, 1.1021),
-        H1(1, 1.1021, 1.1023, 1.1010, 1.1013),  # sweeps the H4 liquidity point (low <= 1.1015)
+        # Sweeps the H4 liquidity pool, which corrected known_at timing
+        # moved from 1.1015 to 1.1008 (2026-09-18 review, finding 1) --
+        # so this low drops 1.1010 -> 1.1005 to still take it. Without
+        # that the sweep lands one candle later and the H1(1)/H1(2)
+        # pair this test exists to exercise is never examined: the test
+        # went green on an `engulfing` and stopped testing 4th-man at all.
+        H1(1, 1.1021, 1.1023, 1.1005, 1.1013),
         H1(2, 1.1013, 1.1018, 1.0998, 1.1012),  # 4th-man reaction off H1(1) -- the entry trigger
         H1(3, 1.1010, 1.1035, 1.1005, 1.1030),
         H1(4, 1.1030, 1.1045, 1.1025, 1.1040),
@@ -846,15 +860,20 @@ def test_run_backtest_falls_back_to_the_key_level_when_the_natural_stop_is_too_w
 
     assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "engulfing_kl_fallback"
-    # 1 pip beyond the H4 reaction level itself (1.1012), NOT the 64-pip
-    # engulfed wick (1.0950).
-    assert trade.stop_loss == pytest.approx(1.1011)
+    # 1 pip beyond the H4 reaction level itself, NOT the 64-pip engulfed
+    # wick (1.0950).
+    # CHANGED 2026-09-18 (review finding 1): was 1.1012. That level is
+    # an A/V key level confirmed by bar i+n, and bar i+n is stamped at
+    # its OPEN -- so it is readable only once that bar CLOSES, which is
+    # after this reaction. The next candidate down, 1.1010, wins now.
+    assert trade.stop_loss == pytest.approx(1.1009)
     assert trade.status == "closed_win"
     # Task 8: ERL is Daily/Weekly period extremes, not H4 -- same
     # dwarfed-by-day8's-still-forming-high reasoning as
     # test_run_backtest_produces_a_winning_trade_end_to_end, so no ERL
     # candidate qualifies and the plain, uncapped 3:1 target applies.
-    assert trade.primary_target == pytest.approx(1.1087)
+    # 1.1093, not 1.1087: 3:1 off the corrected stop (1.1009, see above).
+    assert trade.primary_target == pytest.approx(1.1093)
     assert trade.r_multiple == pytest.approx(3.0)
 
     # Task 7: the audit trail shows what the natural (too-wide) stop
@@ -979,9 +998,24 @@ def _liquidity_setup_h4():
 
 
 def test_find_liquidity_setups_swing_mode_finds_breakout_then_liquidity_then_reaction_level():
-    """The pre-2026-09-16 path, pinned. liquidity_mode="swing" exists only
-    so the corrected single-candle path can be A/B'd against it, so it
-    must keep producing exactly what it always produced."""
+    """The swing path, pinned.
+
+    CHANGED 2026-09-18 (review finding 1). This used to assert the pool
+    was 1.1015 and said swing "must keep producing exactly what it always
+    produced" -- pinned so the single-candle A/B had a fixed baseline.
+    That premise is gone: the baseline itself was reading swing points a
+    bar before they existed.
+
+    A swing point at bar i is confirmed by bar i+n, and bar i+n is
+    stamped at its OPEN, so the point is readable only once that bar
+    CLOSES. With that corrected, the 1.1015 pool is not yet known when
+    the breakout happens and the next one that IS known, 1.1008, is
+    armed instead.
+
+    This is the correct answer, not a regression -- and it means every
+    A/B ever run between swing and the single-candle modes was measured
+    against a baseline that could see ahead. Those comparisons have to be
+    re-run."""
     h4 = _liquidity_setup_h4()
     n = 2
     confs = detect_confirmations(h4, n)
@@ -991,13 +1025,17 @@ def test_find_liquidity_setups_swing_mode_finds_breakout_then_liquidity_then_rea
     assert len(setups) == 1
     setup = setups[0]
     assert setup.direction == Direction.BULLISH
-    assert setup.liquidity_price == pytest.approx(1.1015)
-    # 3 same-direction candidates are in play here (1.1005, 1.101, 1.1012),
-    # ordered nearest-to-extreme from the swept liquidity point (1.1015):
-    # "we don't predict, we react" -- _find_liquidity_setups() itself makes
-    # no pick, it just orders the candidates for _find_entry_candidates()
-    # to try in sequence.
-    assert [lvl.price for lvl in setup.reaction_level_candidates] == pytest.approx([1.1012, 1.101, 1.1005])
+    assert setup.liquidity_price == pytest.approx(1.1008)  # was 1.1015 pre-fix
+    # Candidates ordered nearest-to-extreme from the swept pool: "we
+    # don't predict, we react" -- _find_liquidity_setups() makes no pick,
+    # it just orders them for _find_entry_candidates() to try in
+    # sequence.
+    #
+    # Pre-fix this was [1.1012, 1.101, 1.1005]. 1.1012 has dropped out
+    # for the same reason the pool moved: an A/V key level is confirmed
+    # by bar i+n, which is stamped at its open, so it is readable only
+    # once that bar closes -- and by then the setup has already formed.
+    assert [lvl.price for lvl in setup.reaction_level_candidates] == pytest.approx([1.101, 1.1005])
 
 
 def test_single_candle_mode_arms_every_post_breakout_low_not_just_the_swing():
@@ -1046,19 +1084,32 @@ def test_the_breakout_candles_own_low_is_a_valid_pool():
 
 
 def test_single_candle_is_a_true_superset_of_swing():
-    """The claim that failed silently before: every pool the swing path
-    finds must also be armed here. When it was not, the A/B was comparing
-    two different sets, not a tighter rule against a looser one."""
+    """Every pool the swing path finds must also be armed by the
+    single-candle path -- otherwise the A/B compares two different sets
+    rather than a tighter rule against a looser one.
+
+    NARROWED 2026-09-18 (review finding 1). The two paths no longer share
+    a known_at, and correctly so:
+
+      swing point at bar i   -> confirmed by bar i+n, readable at ITS close
+      single candle at bar i -> readable at bar i's own close
+
+    So swing pools now become available strictly later than the
+    equivalent single-candle pool, and a pool sitting right on a window
+    boundary can be admitted by one path and not the other. The subset
+    claim therefore holds on PRICES ARMED ANYWHERE, not on the pools
+    selected for a particular breakout window.
+
+    Asserting it on the raw pool prices keeps the property the test
+    exists for -- single_candle must not MISS anything swing sees -- while
+    no longer pretending the two have identical timing."""
+    from ...engine.liquidity import single_candle_liquidity, structural_liquidity_points
     h4 = _liquidity_setup_h4()
-    n = 2
-    confs = detect_confirmations(h4, n)
-    levels = detect_key_levels(h4, n)
-    swing = {s.liquidity_price for s in
-             _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")}
-    sc = {s.liquidity_price for s in
-          _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="single_candle",
-                                  max_pools=99)}
-    assert swing <= sc, f"swing pools missing from single_candle: {swing - sc}"
+    swing_pools = {p.price for p in structural_liquidity_points(h4, n=1)}
+    sc_pools = ({p.price for p in single_candle_liquidity(h4, "low")}
+                | {p.price for p in single_candle_liquidity(h4, "high")})
+    assert swing_pools <= sc_pools, (
+        f"swing pools missing from single_candle: {swing_pools - sc_pools}")
 
 
 def test_pool_is_never_swept_by_the_candle_that_formed_it():

@@ -50,7 +50,8 @@ import bisect
 from dataclasses import dataclass
 
 from backtest.engine.bias import (
-    Confirmation, bias_at, detect_confirmations, replay_bias, resolve_effective_bias,
+    Confirmation, bias_at, confirmation_known_at, detect_confirmations, replay_bias,
+    resolve_effective_bias,
 )
 from backtest.engine.key_levels import detect_key_levels
 from backtest.engine.runner import (
@@ -184,11 +185,18 @@ def _recent_direction(confirmations: list[Confirmation], label: str, as_of_time)
     whole list."""
     if not confirmations:
         return None
-    times = [c.time for c in confirmations]
+    # known_at, not .time -- a Daily confirmation stamped 00:00 is not
+    # readable until midnight the next day, and answering with it in
+    # between is what let the gate open on a bar still forming
+    # (2026-09-18 review, finding 1). The RECENCY window below still
+    # measures from the confirmation's own candle, which is what
+    # "how recent is this confirmation" means to a chart reader.
+    ordered = sorted(confirmations, key=confirmation_known_at)
+    times = [confirmation_known_at(c) for c in ordered]
     idx = bisect.bisect_right(times, as_of_time) - 1
     if idx < 0:
         return None
-    latest = confirmations[idx]
+    latest = ordered[idx]
     if as_of_time - latest.time > ALIGNMENT_LOOKBACK[label]:
         return None
     return latest

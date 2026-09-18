@@ -31,17 +31,26 @@ from dataclasses import dataclass
 
 from .candles import Candle
 from .structure import Direction, body_closes_beyond
+from .timeframes import bar_length as _infer_bar_length, closes_at
 
 
 @dataclass(frozen=True)
 class KeyLevel:
     """`confirmed_at`: when this level first becomes knowable in a live,
-    candle-by-candle replay. None means "same as `time`" (open_close and
-    4th-man levels -- known immediately at their own last candle's close).
-    An A/V-shape level is a fractal test (is_close_peak/is_close_trough)
-    and genuinely cannot be known until `n` bars after `time` -- see
-    `known_at()` below. Added 2026-08-28, see OPEN_QUESTIONS.md's
-    "Backtest replay may have a small (~n-bar) lookahead bias" entry."""
+    candle-by-candle replay. Two separate lags go into it:
+
+      * the FRACTAL lag -- an A/V level is a `is_close_peak`/
+        `is_close_trough` test needing n bars either side, so it cannot be
+        called until bar `i + n`. Added 2026-08-28, see OPEN_QUESTIONS.md's
+        "Backtest replay may have a small (~n-bar) lookahead bias".
+      * the BAR-CLOSE lag -- that bar is stamped at its OPEN and has to
+        finish before anyone can read it. Added 2026-09-18 (review finding
+        1); without it every level, including open_close ones, was
+        readable a full bar early.
+
+    None still means "same as `time`", which is the pre-2026-09-18
+    reading and the optimistic one. It survives only for levels built
+    outside a series (`classify_entry_pattern`'s nested levels)."""
     time: object
     price: float
     shape: str  # "A" | "V" | "open_close"
@@ -89,9 +98,14 @@ def _is_bullish(c: Candle) -> bool:
     return c.close > c.open
 
 
-def detect_open_close_level(c1: Candle, c2: Candle) -> KeyLevel | None:
+def detect_open_close_level(c1: Candle, c2: Candle, bar_length=None) -> KeyLevel | None:
     """Two consecutive same-direction candles with overlapping open/close
-    ranges. Returns None if the candles aren't same-direction or don't overlap."""
+    ranges. Returns None if the candles aren't same-direction or don't overlap.
+
+    `bar_length` makes the level knowable at c2's CLOSE rather than its
+    open. Optional because `classify_entry_pattern()` builds nested levels
+    from two loose candles with no series to measure; omitting it keeps
+    the pre-2026-09-18 reading, which is the optimistic one."""
     if _is_bearish(c1) and _is_bearish(c2):
         bias = Direction.BEARISH
     elif _is_bullish(c1) and _is_bullish(c2):
@@ -105,7 +119,8 @@ def detect_open_close_level(c1: Candle, c2: Candle) -> KeyLevel | None:
     if overlap_lo > overlap_hi:
         return None
 
-    return KeyLevel(c2.time, (overlap_lo + overlap_hi) / 2, "open_close", bias)
+    return KeyLevel(c2.time, (overlap_lo + overlap_hi) / 2, "open_close", bias,
+                    confirmed_at=closes_at(c2.time, bar_length))
 
 
 def detect_key_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]:
@@ -114,16 +129,21 @@ def detect_key_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]:
     always in range since is_close_peak/is_close_trough already required
     `idx + n < len(candles)` to return True here) -- see KeyLevel's
     docstring for why."""
+    # An A/V pivot needs n bars either side AND the last of those bars
+    # has to finish -- `candles[i + n].time` is that bar's OPEN, so using
+    # it alone made the level knowable a full bar early (2026-09-18
+    # review, finding 1).
+    length = _infer_bar_length(candles)
     levels = []
     for i in range(len(candles)):
         if is_close_peak(candles, i, n):
             levels.append(KeyLevel(candles[i].time, candles[i].close, "A", Direction.BEARISH,
-                                    confirmed_at=candles[i + n].time))
+                                    confirmed_at=closes_at(candles[i + n].time, length)))
         if is_close_trough(candles, i, n):
             levels.append(KeyLevel(candles[i].time, candles[i].close, "V", Direction.BULLISH,
-                                    confirmed_at=candles[i + n].time))
+                                    confirmed_at=closes_at(candles[i + n].time, length)))
     for i in range(len(candles) - 1):
-        oc = detect_open_close_level(candles[i], candles[i + 1])
+        oc = detect_open_close_level(candles[i], candles[i + 1], bar_length=length)
         if oc is not None:
             levels.append(oc)
     return sorted(levels, key=lambda lvl: lvl.time)

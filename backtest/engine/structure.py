@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .candles import Candle
+from .timeframes import bar_length as _infer_bar_length, closes_at
 
 
 class Direction(Enum):
@@ -146,6 +147,13 @@ class StructureTracker:
     def run(self, candles: list[Candle]) -> list[StructureEvent]:
         events: list[StructureEvent] = []
 
+        # A pivot is confirmable at bar `i`, and bar `i` is stamped at its
+        # OPEN -- so it is genuinely readable only once bar `i` closes.
+        # Recording the open as confirmed_at made every swing point usable
+        # a full bar early for anything downstream that filters on
+        # known_at() (2026-09-18 review, finding 1).
+        length = _infer_bar_length(candles)
+
         swing_high_idxs = {i for i in range(len(candles)) if is_swing_high(candles, i, self.n)}
         swing_low_idxs = {i for i in range(len(candles)) if is_swing_low(candles, i, self.n)}
 
@@ -166,10 +174,12 @@ class StructureTracker:
             # only WHEN this loop starts treating it as known moves.
             if i - self.n in swing_high_idxs:
                 p = candles[i - self.n]
-                last_swing_high = SwingPoint(p.time, p.high, "high", close=p.close)
+                last_swing_high = SwingPoint(p.time, p.high, "high",
+                                             confirmed_at=closes_at(c.time, length), close=p.close)
             if i - self.n in swing_low_idxs:
                 p = candles[i - self.n]
-                last_swing_low = SwingPoint(p.time, p.low, "low", close=p.close)
+                last_swing_low = SwingPoint(p.time, p.low, "low",
+                                            confirmed_at=closes_at(c.time, length), close=p.close)
 
             # --- Bullish sequence: sweep a prior low, then close back above the
             # structural high that was in place when the sweep happened. ---

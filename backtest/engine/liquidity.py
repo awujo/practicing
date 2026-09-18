@@ -19,6 +19,7 @@ Two pieces implemented here:
 from dataclasses import dataclass
 
 from .candles import Candle
+from .timeframes import bar_length as _infer_bar_length, closes_at
 from .structure import Direction, is_swing_high, is_swing_low, SwingPoint
 
 
@@ -138,14 +139,17 @@ def structural_liquidity_points(candles: list[Candle], n: int = 2) -> list[Swing
     the candidate points, treating that caution as a downstream filtering
     decision rather than baking it in here).
     """
+    # Bar `i + n` confirms the pivot, and is stamped at its OPEN -- the
+    # point is readable only once it closes (2026-09-18 review, finding 1).
+    _length = _infer_bar_length(candles)
     points = []
     for i in range(len(candles)):
         if is_swing_high(candles, i, n):
             points.append(SwingPoint(candles[i].time, candles[i].high, "high",
-                                      confirmed_at=candles[i + n].time))
+                                      confirmed_at=closes_at(candles[i + n].time, _length)))
         if is_swing_low(candles, i, n):
             points.append(SwingPoint(candles[i].time, candles[i].low, "low",
-                                      confirmed_at=candles[i + n].time))
+                                      confirmed_at=closes_at(candles[i + n].time, _length)))
     return sorted(points, key=lambda p: p.time)
 
 

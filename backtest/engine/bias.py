@@ -44,6 +44,7 @@ from enum import Enum
 from .candles import Candle
 from .structure import Direction, StructureTracker, body_closes_beyond, is_swing_high, is_swing_low
 from .key_levels import KeyLevel, is_disrespected, known_at as level_known_at
+from .timeframes import bar_length, closes_at
 
 
 class ConfirmationKind(Enum):
@@ -53,10 +54,30 @@ class ConfirmationKind(Enum):
 
 @dataclass(frozen=True)
 class Confirmation:
+    """`time` is the OPEN of the candle that produced the confirmation.
+    `known_at` is when that candle CLOSED, which is the first moment this
+    confirmation can legitimately influence anything.
+
+    The two are not interchangeable and conflating them was the engine's
+    single largest bug (2026-09-18 review, finding 1): an H1 entry at
+    13:00 was being confirmed by an H4 bar stamped 12:00 that did not
+    close until 16:00, a Daily bar that closed at midnight, and a Weekly
+    bar that closed the following Monday. Any consumer asking "was this
+    confirmed by now" must read `known_at`; `.time` remains the
+    confirmation's identity and what you point at on a chart."""
     time: object
     direction: Direction
     kind: ConfirmationKind
     price: float
+    known_at: object = None
+
+
+def confirmation_known_at(confirmation: Confirmation):
+    """When a confirmation becomes usable. Falls back to `.time` for
+    Confirmations built without a `known_at` -- hand-built test fixtures,
+    mostly -- which is the pre-fix reading and deliberately the unsafe
+    one, so production paths must always populate it."""
+    return confirmation.known_at if confirmation.known_at is not None else confirmation.time
 
 
 def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout: bool = True,
@@ -76,12 +97,17 @@ def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout
     for the sweep+break half instead of the plain-breakout half -- see
     StructureTracker's own close_based_break docstring. False (default)
     matches every behavior before 2026-09-13."""
+    # Every confirmation below is produced BY a candle, and is knowable
+    # only once that candle closes -- see Confirmation's docstring.
+    length = bar_length(candles)
+
     tracker = StructureTracker(n, close_based_break=close_based_sweep_break)
     sweep_events = [e for e in tracker.run(candles) if e.kind == "valid_sweep_break"]
     sweep_break_keys = {(e.time, e.direction) for e in sweep_events}
 
     confirmations = [
-        Confirmation(e.time, e.direction, ConfirmationKind.SWEEP_BREAK, e.price)
+        Confirmation(e.time, e.direction, ConfirmationKind.SWEEP_BREAK, e.price,
+                     known_at=closes_at(e.time, length))
         for e in sweep_events
     ]
 
@@ -114,14 +140,16 @@ def detect_confirmations(candles: list[Candle], n: int = 2, close_based_breakout
                 and body_closes_beyond(c, last_swing_low.close if close_based_breakout else last_swing_low.low,
                                         Direction.BEARISH)):
             if (c.time, Direction.BEARISH) not in sweep_break_keys:
-                confirmations.append(Confirmation(c.time, Direction.BEARISH, ConfirmationKind.BREAKOUT, c.close))
+                confirmations.append(Confirmation(c.time, Direction.BEARISH, ConfirmationKind.BREAKOUT,
+                                                  c.close, known_at=closes_at(c.time, length)))
             claimed_low = True
 
         if (last_swing_high is not None and not claimed_high
                 and body_closes_beyond(c, last_swing_high.close if close_based_breakout else last_swing_high.high,
                                         Direction.BULLISH)):
             if (c.time, Direction.BULLISH) not in sweep_break_keys:
-                confirmations.append(Confirmation(c.time, Direction.BULLISH, ConfirmationKind.BREAKOUT, c.close))
+                confirmations.append(Confirmation(c.time, Direction.BULLISH, ConfirmationKind.BREAKOUT,
+                                                  c.close, known_at=closes_at(c.time, length)))
             claimed_high = True
 
     return sorted(confirmations, key=lambda x: x.time)
@@ -242,9 +270,16 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
     if not candles:
         return []
 
+    # A bias breakpoint is created BY a candle of this timeframe, so it is
+    # knowable only once that candle closes. Carried as a third tuple
+    # element so `bias_at()` can answer "what did we know at time t"
+    # rather than "what happened by time t" -- see Confirmation's
+    # docstring for the bug this closes.
+    length = bar_length(candles)
+
     cascade = BiasCascade(timeframe_label)
     cascade.set_initial_bias(initial_direction, candles[0].time)
-    breakpoints = [(candles[0].time, initial_direction)]
+    breakpoints = [(candles[0].time, initial_direction, closes_at(candles[0].time, length))]
 
     levels_sorted = sorted(levels, key=lambda lvl: lvl.time)
     tested_level_times = set()
@@ -257,8 +292,12 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
     # confirmation-window slice alone built a full list of every future
     # confirmation, thousands of entries, just to take the first five of
     # it, once per level tested).
-    confirmations_sorted = sorted(confirmations, key=lambda conf: conf.time)
-    confirmation_times = [conf.time for conf in confirmations_sorted]
+    # Ordered and bisected on when each confirmation became KNOWN, not
+    # when its candle opened. The lower timeframe's bars close on a
+    # different grid from this one's, so "the next confirmation after
+    # this rejection" is only meaningful in known_at terms.
+    confirmations_sorted = sorted(confirmations, key=confirmation_known_at)
+    confirmation_times = [confirmation_known_at(conf) for conf in confirmations_sorted]
 
     # Indexed by PRICE, not time. The dominant filter per candle is
     # `c.low <= level.price <= c.high`, and a single candle's range spans
@@ -297,17 +336,38 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
         if eligible is None:
             continue
         tested_level_times.add(eligible.time)
+        # Boundary deliberately left at the rejection candle's OPEN, not
+        # its close. A lower-timeframe confirmation landing inside this
+        # candle's own span IS knowable before this candle finishes, so
+        # including it is causal, not a look-ahead. Moving the boundary
+        # to the close would change which flips happen -- that question
+        # belongs to finding 5 (making condition (c) look backwards
+        # instead of forwards), not to the known_at fix, and a test here
+        # correctly caught the attempt to smuggle it in.
         start = bisect.bisect_right(confirmation_times, c.time)
         window = confirmations_sorted[start:start + confirmation_window]
         if cascade.check_flip(eligible, c, window):
-            breakpoints.append((c.time, cascade.direction))
+            breakpoints.append((c.time, cascade.direction, closes_at(c.time, length)))
 
     return breakpoints
 
 
-def bias_at(breakpoints: list[tuple[object, Direction]], t) -> Direction | None:
-    """Query a replay_bias() breakpoint list for the bias in effect at time `t`."""
-    applicable = [bp for bp in breakpoints if bp[0] <= t]
+def breakpoint_known_at(bp) -> object:
+    """When a breakpoint became knowable: its third element when present,
+    otherwise its own time. Two-element breakpoints come from hand-built
+    test fixtures; `replay_bias()` has emitted three since 2026-09-18."""
+    return bp[2] if len(bp) > 2 and bp[2] is not None else bp[0]
+
+
+def bias_at(breakpoints: list[tuple], t) -> Direction | None:
+    """The bias KNOWN at time `t` -- filtered on each breakpoint's
+    known_at, not the candle time that produced it.
+
+    The difference is the whole of finding 1 for the bias path: a Weekly
+    breakpoint stamped Monday is not knowable until the following Monday,
+    and answering with it in between let an H1 entry inherit a bias from
+    a week it had not lived through yet."""
+    applicable = [bp for bp in breakpoints if breakpoint_known_at(bp) <= t]
     if not applicable:
         return None
-    return max(applicable, key=lambda bp: bp[0])[1]
+    return max(applicable, key=breakpoint_known_at)[1]

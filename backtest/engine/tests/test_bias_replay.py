@@ -19,8 +19,13 @@ def test_replay_bias_stays_put_when_nothing_ever_tests_it():
     candles = [C(i, 1.10, 1.11, 1.09, 1.105) for i in range(5)]
     breakpoints = replay_bias(candles, levels=[], confirmations=[],
                                initial_direction=Direction.BEARISH, timeframe_label="Daily")
-    assert breakpoints == [(candles[0].time, Direction.BEARISH)]
+    # Three elements since 2026-09-18: (time, direction, known_at). The
+    # daily bar stamped T(0) is not knowable until T(1), so the initial
+    # bias only answers from then on -- asking at T(0) now correctly
+    # returns None rather than a bias derived from a bar still forming.
+    assert breakpoints == [(candles[0].time, Direction.BEARISH, T(1))]
     assert bias_at(breakpoints, T(3)) == Direction.BEARISH
+    assert bias_at(breakpoints, T(0)) is None
 
 
 def test_replay_bias_flips_when_level_tested_and_no_lower_tf_continuation():
@@ -39,8 +44,15 @@ def test_replay_bias_flips_when_level_tested_and_no_lower_tf_continuation():
                                initial_direction=Direction.BEARISH, timeframe_label="Daily")
 
     assert breakpoints[-1][1] == Direction.BULLISH
-    assert bias_at(breakpoints, candles[-1].time) == Direction.BULLISH
-    assert bias_at(breakpoints, candles[0].time) == Direction.BEARISH  # before the flip
+    # Candle 2 is the one that does it -- it spans 1.1000 (low 1.098,
+    # high 1.112) and closes above at 1.102. So the flip is knowable only
+    # once THAT daily bar closes, at T(3).
+    assert breakpoints[-1][2] == T(3)
+    assert bias_at(breakpoints, T(3)) == Direction.BULLISH
+    # Halfway through the very candle that causes the flip, it is not
+    # knowable yet. This is the property finding 1 was about.
+    assert bias_at(breakpoints, T(2) + pd.Timedelta(hours=12)) == Direction.BEARISH
+    assert bias_at(breakpoints, T(1)) == Direction.BEARISH  # before the flip
 
 
 def test_replay_bias_does_not_flip_if_lower_tf_still_confirms_original():
@@ -58,7 +70,7 @@ def test_replay_bias_does_not_flip_if_lower_tf_still_confirms_original():
     breakpoints = replay_bias(candles, levels=[level], confirmations=[still_bearish],
                                initial_direction=Direction.BEARISH, timeframe_label="Daily")
 
-    assert breakpoints == [(candles[0].time, Direction.BEARISH)]  # never flipped
+    assert breakpoints == [(candles[0].time, Direction.BEARISH, T(1))]  # never flipped
 
 
 def test_bias_at_returns_none_before_any_breakpoint():

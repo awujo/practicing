@@ -194,7 +194,8 @@ from .structure import Direction, StructureTracker, known_at as point_known_at
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
 from .liquidity import single_candle_liquidity, structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
-from .bias import detect_confirmations, replay_bias, bias_at, resolve_effective_bias
+from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective_bias,
+                    confirmation_known_at)
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
@@ -498,8 +499,16 @@ def default_pip_size(instrument: str) -> float:
 
 
 def _direction_lookup(confirmations):
-    """Pre-sorted (times, directions) arrays for O(log n) 'last direction
-    before time t' queries, built once. The naive version of this --
+    """Pre-sorted (known_at times, directions) arrays for O(log n) 'last
+    direction KNOWN before time t' queries, built once.
+
+    Keyed on `known_at`, not `.time`: a confirmation belongs to a bar
+    that closes after it opens, and every query here comes from a LOWER
+    timeframe asking what the higher one had already established. Keying
+    on the bar's open is what let an H1 entry at 13:00 be confirmed by an
+    H4 bar closing at 16:00 (2026-09-18 review, finding 1).
+
+    The naive version of this --
     filtering the whole confirmation list on every call -- turns an O(n)
     per-candle backtest loop into O(n*m) against a confirmation list that
     can itself run into the thousands for a multi-year H1/H4 series
@@ -508,8 +517,9 @@ def _direction_lookup(confirmations):
     genuinely slow rather than fast, so this exists specifically to keep
     a full-history backtest run in the seconds-to-low-minutes range
     instead of many minutes."""
-    sorted_confs = sorted(confirmations, key=lambda c: c.time)
-    return [c.time for c in sorted_confs], [c.direction for c in sorted_confs]
+    sorted_confs = sorted(confirmations, key=confirmation_known_at)
+    return ([confirmation_known_at(c) for c in sorted_confs],
+            [c.direction for c in sorted_confs])
 
 
 def _last_direction_at(lookup, t):
