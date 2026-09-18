@@ -407,6 +407,39 @@ and 6 produce late signals on a completely idle machine.
 
 ---
 
+## Re-verification after the fixes (2026-09-18, before running any A/B)
+
+Everything was re-checked as a genuine before/after, running the same
+scripts against the fixed tree and against a git worktree at a227684 --
+the commit immediately before the first fix -- over identical synthetic
+data.
+
+**Stability: both trees pass.** Asking the engine for its view of the
+past at five cut-offs spread over three months gives an identical answer
+in both. The pre-fix engine was self-consistent; it simply used data that
+postdated the ENTRY, which this test cannot see, because a trade twenty
+days behind the cut-off has that data in every view. Recording it because
+it is the test I reached for first and it does NOT demonstrate what I
+wanted it to.
+
+**The measure that does: could a live bot have acted on it?** For each
+sampled trade, truncate the cache to what existed three hours after its
+entry candle -- the market bot's own stale cutoff -- and ask whether the
+engine produces that trade yet.
+
+| | pre-fix | fixed |
+|---|---|---|
+| backtest trades (3y synthetic) | 178 | 91 |
+| actionable inside the 3h cutoff | 2/12 (17%) | 10/12 (83%) |
+
+83% of what the old backtest promised could never have been taken at the
+time. That is the two weeks of silence, measured.
+
+The remaining 2 of 12 are signals whose birth genuinely exceeds three
+hours; they are why staleness is now measured from `signal_known_at`
+rather than the entry candle, and why the selection window carries a
+grace margin.
+
 ## Verification
 
 Every finding above was re-tested before any fix was started, with the
