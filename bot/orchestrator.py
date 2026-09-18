@@ -793,7 +793,14 @@ class LiveBot:
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)
             return
 
-        sizing = self.mt5_exec.compute_lot_size(instrument, risk, record.entry_price, record.stop_loss)
+        # Whether this entry will REST rather than be sent at market
+        # decides whether the drift guard applies at all -- a limit fills
+        # at its own price or not at all, so "the market has moved away
+        # from the entry" is not a reason to refuse it. Computed here
+        # because compute_lot_size runs before the branch below.
+        will_rest = self.entry_order_type == "limit" or force_limit
+        sizing = self.mt5_exec.compute_lot_size(instrument, risk, record.entry_price,
+                                                 record.stop_loss, check_drift=not will_rest)
         if not sizing.ok:
             self._log_event("entry_attempt", "decline_sizing_" + sizing.error.value, sizing.reason, state,
                              instrument=instrument, trade_id=str(record.trade_id), risk=risk, **base_fields)

@@ -157,7 +157,8 @@ class MT5Execution:
         return self._symbol_map.internal_symbol(broker_symbol)
 
     def compute_lot_size(self, internal_symbol: str, risk_amount: float,
-                          entry_price: float, stop_loss: float) -> ValidationResult:
+                          entry_price: float, stop_loss: float,
+                          check_drift: bool = True) -> ValidationResult:
         """Converts a $ risk amount into a broker-valid lot size, using
         the symbol's own tick value/size (NOT a hardcoded pip-value
         assumption -- forex majors, JPY pairs, metals, indices, and
@@ -210,7 +211,22 @@ class MT5Execution:
 
         # Entry-drift guard -- see _max_entry_drift_fraction's comment for
         # the live incident this exists to prevent.
-        if self._max_entry_drift_fraction is not None:
+        #
+        # check_drift=False for an entry that will REST AS A LIMIT. The
+        # guard's own reasoning is market-order reasoning -- "a market
+        # order would fill here while the stop/target still go out sized
+        # for X". A resting limit sits AT X: it either fills at the exact
+        # price the stop was sized against, or it never fills. Drift
+        # cannot hurt it, which is the entire reason the limit path
+        # exists (see place_limit_order's docstring on the bot never
+        # being prompt).
+        #
+        # Running it anyway was blocking real trades. In the two days
+        # after the cache repair, entry_price_drifted was 100% of the
+        # declines on BOTH bots -- 4 of 4 attempts -- including the
+        # aggressive bot, which places nothing but limits and therefore
+        # could never have been harmed by the drift it was rejected for.
+        if check_drift and self._max_entry_drift_fraction is not None:
             current = self._current_mid_price(symbol, info)
             if current is None:
                 # Fail CLOSED. Not being able to see the market is exactly

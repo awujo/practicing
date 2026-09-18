@@ -925,3 +925,71 @@ def test_an_unreadable_account_does_not_block_the_order():
     fake = FakeMT5()
     fake.account = None
     assert MT5Execution(fake, expected_login=111379608)._wrong_account() is None
+
+
+# ---------------------------------------------------------------------------
+# The drift guard is market-order reasoning and must not touch limits.
+#
+# Measured 2026-09-17/18, the two days after the cache repair:
+# entry_price_drifted was 100% of declines on BOTH bots (4 of 4
+# attempts) -- including the aggressive bot, which places nothing but
+# limit orders and so could never have been harmed by the drift it was
+# being rejected for.
+# ---------------------------------------------------------------------------
+
+def _drifted_market():
+    """A symbol whose live price has run far past the signal's entry.
+
+    bid/ask are attached after construction because make_symbol_info does
+    not take them, and _current_mid_price falls back to info.bid/info.ask
+    when there is no symbol_info_tick."""
+    fake = FakeMT5()
+    info = make_symbol_info(point=0.0001)
+    info.bid, info.ask = 1.2000, 1.2001
+    fake.symbols["EURUSD"] = info
+    return fake
+
+
+def test_a_market_entry_is_still_refused_when_price_has_run_away():
+    """The guard must keep doing its job where it applies -- this is the
+    2026-09-01 CHFJPY incident it was written for."""
+    fake = _drifted_market()
+    ex = MT5Execution(fake, max_entry_drift_fraction=1.0)
+    r = ex.compute_lot_size("EURUSD", 500.0, 1.1000, 1.0990)
+    assert r.ok is False
+    assert r.error is ValidationError.ENTRY_PRICE_DRIFTED
+
+
+def test_a_resting_limit_is_not_refused_for_drift():
+    """Same symbol, same runaway price, same signal -- but the order will
+    rest at 1.1000, so it fills there or not at all."""
+    fake = _drifted_market()
+    ex = MT5Execution(fake, max_entry_drift_fraction=1.0)
+    r = ex.compute_lot_size("EURUSD", 500.0, 1.1000, 1.0990, check_drift=False)
+    assert r.ok is True, r.reason
+    assert r.lot_size > 0
+
+
+def test_a_limit_is_not_refused_just_because_the_price_is_unreadable():
+    """The same block fails closed on PRICE_UNAVAILABLE. Also market-order
+    reasoning: a resting limit does not need to know where the market is
+    right now, and refusing on 'cannot see' would block trades through
+    any quote hiccup."""
+    # No bid/ask at all -- _current_mid_price can see nothing.
+    fake = FakeMT5()
+    fake.symbols["EURUSD"] = make_symbol_info(point=0.0001)
+    ex = MT5Execution(fake, max_entry_drift_fraction=1.0)
+
+    blocked = ex.compute_lot_size("EURUSD", 500.0, 1.1000, 1.0990)
+    assert blocked.ok is False and blocked.error is ValidationError.PRICE_UNAVAILABLE
+
+    resting = ex.compute_lot_size("EURUSD", 500.0, 1.1000, 1.0990, check_drift=False)
+    assert resting.ok is True, resting.reason
+
+
+def test_checking_drift_is_the_default():
+    """A caller that says nothing gets the guard. Only the limit path,
+    which knows it does not need it, opts out."""
+    fake = _drifted_market()
+    ex = MT5Execution(fake, max_entry_drift_fraction=1.0)
+    assert ex.compute_lot_size("EURUSD", 500.0, 1.1000, 1.0990).ok is False
