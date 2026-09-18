@@ -130,6 +130,20 @@ STALE_ENTRY_CUTOFF = timedelta(hours=3)
 # (decline_bias_no_longer_aligned) if it no longer says hunt.
 STALE_ENTRY_CUTOFF_LIMIT = timedelta(hours=24)
 
+# How far BEFORE its estimated birth a signal is still looked for.
+#
+# TradeRecord.signal_known_at is derived from classify_entry_pattern's
+# lookahead window, which is the binding constraint in every case
+# measured -- but it is an estimate, and on synthetic history some
+# signals appeared later than it predicted. Selecting on a strict
+# window would look once, miss, and then skip the signal forever as the
+# watermark moved past. This margin plus the evaluated-signal set turns
+# a low estimate into a repeated cheap comparison rather than a lost
+# trade. Sized at the market bot's own cutoff: a signal that has been
+# actionable longer than that is declined anyway, so looking further
+# back buys nothing.
+SIGNAL_BIRTH_GRACE = STALE_ENTRY_CUTOFF
+
 
 # The weekend rule: nothing open and nothing resting when the market
 # closes -- direct operator requirement 2026-09-02 ("we will not be
@@ -296,6 +310,11 @@ class LiveBot:
     # replays history (only a full process restart resets it; an
     # in-process reconnect does not).
     _last_entry_time: dict[str, object] = field(init=False, default_factory=dict)
+    # Entry times already evaluated this process, per instrument, so the
+    # grace margin above re-checks without re-reporting. Pruned to the
+    # limit backstop every cycle; in memory only, so a restart re-checks
+    # at most that much and the watermark bounds the rest.
+    _evaluated_signals: dict = field(init=False, default_factory=dict)
     # The candle currently being evaluated, per instrument. Only the limit
     # path reads it -- see _place_limit_entry()'s bias re-check.
     _current_candle_time: dict[str, object] = field(init=False, default_factory=dict)
@@ -653,10 +672,54 @@ class LiveBot:
                                 origin_kind=self.origin_kind,
                                 close_based_sweep_break=self.close_based_sweep_break,
                                 max_history_years=self.history_window_years.get(instrument))
+        # Selected on when each signal became COMPUTABLE, not on the
+        # candle it is stamped for (2026-09-18 review). A signal whose
+        # entry candle is 13:00 may not exist until 16:00, because
+        # classify_entry_pattern() reads candles after the entry -- so
+        # filtering on entry_time asked "did this candle just close",
+        # which is a question the signal cannot answer at the moment it
+        # is born. A signal born now with a 3-hour-old entry candle was
+        # already behind the watermark and was never looked at at all.
+        # Wider than "born since the last check", and deduped, because
+        # signal_known_at is an ESTIMATE.
+        #
+        # It is derived from classify_entry_pattern's own window, which is
+        # the binding constraint in every case measured -- but measurement
+        # on synthetic history found signals that genuinely did not exist
+        # until LATER than the estimate. A strict window would look for
+        # such a signal at its estimated birth, not find it, and then
+        # never look again because the watermark had moved past: silently
+        # lost, with no audit row.
+        #
+        # So the window carries a grace margin and the evaluated set
+        # prevents the repeat work. A low estimate then costs one extra
+        # comparison per candle instead of a trade.
+        if instrument not in self._evaluated_signals:
+            # Seeded from the audit database on first sight of an
+            # instrument, because the set is in memory and the grace
+            # margin reaches back behind the watermark -- so a fresh
+            # process would otherwise re-expose, and re-decline, every
+            # signal in the margin that the previous one already handled.
+            # That is the live-confirmed duplicate bracketing the
+            # 2026-09-15 restarts, and the persisted watermark alone no
+            # longer covers it.
+            self._evaluated_signals[instrument] = {
+                pd.Timestamp(t) for t in self.audit_log.entry_times_since(
+                    instrument, str(new_candle.time - STALE_ENTRY_CUTOFF_LIMIT))
+            }
+        seen = self._evaluated_signals[instrument]
         if watermark is None:
-            fresh = [r for r in records if r.entry_time == new_candle.time]
+            in_window = [r for r in records if _signal_known_at(r) == new_candle.time]
         else:
-            fresh = [r for r in records if watermark < r.entry_time <= new_candle.time]
+            lower = watermark - SIGNAL_BIRTH_GRACE
+            in_window = [r for r in records
+                         if lower < _signal_known_at(r) <= new_candle.time]
+        fresh = [r for r in in_window if r.entry_time not in seen]
+        seen.update(r.entry_time for r in fresh)
+        # Bounded: nothing older than the limit bot's backstop can be
+        # acted on anyway, so remembering it serves no purpose.
+        cutoff_keep = new_candle.time - STALE_ENTRY_CUTOFF_LIMIT
+        self._evaluated_signals[instrument] = {t for t in seen if t > cutoff_keep}
 
         # Shadow variants watch every fresh signal regardless of what the
         # real path below decides to do with it -- including one this bot
@@ -673,7 +736,13 @@ class LiveBot:
         cutoff = (STALE_ENTRY_CUTOFF_LIMIT if self.entry_order_type == "limit"
                   else STALE_ENTRY_CUTOFF)
         for record in fresh:
-            staleness = new_candle.time - record.entry_time
+            # Age since the signal became ACTIONABLE, not since its entry
+            # candle closed. The cutoff asks "has the market moved past
+            # this while we sat on it" -- time the signal spent not yet
+            # existing is not time anyone sat on it, and charging the
+            # signal for it is what burnt the whole three-hour budget
+            # before the bot ever saw one. See TradeRecord.signal_known_at.
+            staleness = new_candle.time - _signal_known_at(record)
             if staleness > cutoff:
                 if self.entry_order_type != "limit" and staleness <= STALE_ENTRY_CUTOFF_LIMIT:
                     # 2026-09-15 REVISED: a market fill this late can land
@@ -1481,6 +1550,19 @@ def _describe_event(event_type, decision, reason, instrument, risk, kwargs) -> s
         if risk:
             lines.append(f"  risking ${risk:,.2f}")
     return "\n".join(lines)
+
+
+def _signal_known_at(record):
+    """When a signal became computable, falling back to its entry candle.
+
+    The fallback is for TradeRecords built before `signal_known_at`
+    existed or by hand (tests, shadow books, reconciliation). It is the
+    pre-2026-09-18 reading and the PESSIMISTIC one -- it can only make a
+    signal look older than it is, never fresher -- so a missing value
+    costs opportunity, not safety.
+    """
+    known = getattr(record, "signal_known_at", None)
+    return known if known is not None else record.entry_time
 
 
 def _audit_fields_from_trade_record(record: TradeRecord) -> dict:

@@ -164,8 +164,20 @@ def test_run_backtest_produces_a_winning_trade_end_to_end(synthetic_cache):
     assert trade.natural_stop_loss == pytest.approx(trade.stop_loss)
     assert trade.stop_fallback_used is False
     assert trade.raw_target == pytest.approx(1.1108)
-    assert trade.erl_price is None
+    # CHANGED 2026-09-18: was None. The daily fixture's last bar (day 8,
+    # high 1.1200) closed eleven days before this entry, so it is a real
+    # untaken ERL point. It used to be dropped because
+    # `_unswept_period_extremes` tested "does a successor bar exist"
+    # rather than "has this bar closed", and day 8 has no day 9 -- the
+    # same wrong proxy that made live signals appear hours late.
+    #
+    # It does not CAP anything (1.1108 is nearer than 1.1200 for a long),
+    # so the target, R and win are all unchanged -- only the recorded
+    # candidate is, which is what makes this a safe correction rather
+    # than a behaviour change hiding in a test edit.
+    assert trade.erl_price == pytest.approx(1.1200)
     assert trade.erl_capped is False
+    assert trade.primary_target == pytest.approx(trade.raw_target)
 
 
 def test_run_backtest_filters_by_date_range(synthetic_cache):
@@ -698,14 +710,34 @@ def test_run_backtest_produces_an_origin_trade_close_to_the_bias_bootstrap(tmp_p
     # (1.1015) the old origin-keyed rule used either.
     assert trade.stop_loss == pytest.approx(1.1004)
     assert trade.status == "closed_win"
-    # Task 8: ERL is Daily/Weekly period extremes, not H4 -- and as of
-    # this early (day 2) entry, no completed prior day's high reaches
-    # anywhere near entry (1.1030) yet, so no ERL candidate qualifies and
-    # the plain, uncapped 3:1 target applies.
-    assert trade.primary_target == pytest.approx(1.1108)
-    assert trade.r_multiple == pytest.approx(3.0)
-    assert trade.erl_price is None
-    assert trade.erl_capped is False
+    # Task 8: ERL is Daily/Weekly period extremes, not H4.
+    #
+    # CHANGED 2026-09-18: was an uncapped 3:1 at 1.1108. Day 1's high
+    # (1.1080) closed at midnight, three hours before this entry, and it
+    # is a real untaken point above it -- so the 3:1 target is capped
+    # there.
+    #
+    # It used to be discarded as "already swept by day 2", whose high is
+    # 1.1120. But day 2 is the day this entry happens ON: it opened three
+    # hours ago and does not close until tomorrow. Asserting at 03:00
+    # that it has taken 1.1080 requires knowing the rest of the day. The
+    # sweep test now requires the SWEEPING period to have closed as well.
+    #
+    # The trade-off is explicit and conservative: an ERL that intraday
+    # price has genuinely already taken stays on the candidate list until
+    # its period closes, because this function only ever sees period
+    # candles and cannot tell. Overstating available liquidity caps
+    # targets slightly short; understating it -- the old behaviour --
+    # made the answer depend on data that did not exist yet, which is
+    # what made signals appear and disappear for days.
+    assert trade.primary_target == pytest.approx(1.1080)
+    # 1.92R, not the full 3R: the ERL cap shortens the target, and the
+    # realized R follows it. That is the cap working as designed -- see
+    # primary_target()'s docstring on it reducing realized R:R rather
+    # than the ratio itself.
+    assert trade.r_multiple == pytest.approx(1.9230769, abs=1e-6)
+    assert trade.erl_price == pytest.approx(1.1080)
+    assert trade.erl_capped is True
 
 
 def test_reaction_trigger_prefers_engulfing_then_falls_through_to_fourth_man():
@@ -891,9 +923,17 @@ def test_unswept_period_extremes_excludes_the_still_forming_last_period():
     ]
     # Neither day0 nor day1 is exceeded by anything after it (day2's own
     # high, 1.1005, is smaller than both), so both survive -- but day2
-    # itself is never returned regardless of its own high, since there's
-    # no day3 yet to confirm day2 has actually closed.
-    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-05"), "high")
+    # itself is never returned, because as_of_time falls INSIDE it and a
+    # still-forming period is not a fixed "previous" reference.
+    #
+    # as_of_time moved 2026-09-18 from 2024-01-05 to midday on day2. It
+    # had been asserting that a bar which closed two days earlier was
+    # still forming -- true only because the old implementation used
+    # "does a successor exist in the data" as its proxy for "has this
+    # closed", which is the bug being fixed. The property the test is
+    # named for is unchanged and still checked, just asked at a moment
+    # when it actually applies.
+    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-03 12:00"), "high")
     assert extremes == [pytest.approx(1.1050), pytest.approx(1.1010)]
 
 
@@ -904,10 +944,12 @@ def test_unswept_period_extremes_excludes_a_high_already_swept_by_a_later_day():
         D(2, 1.1005, 1.1080, 1.0995, 1.1010),  # day2's high (1.1080) exceeds day0's (1.1050)
         D(3, 1.1010, 1.1015, 1.1000, 1.1012),  # only here to confirm day2 has closed
     ]
-    # day0's high (1.1050) was exceeded by day2's high (1.1080) before day3
-    # even starts -- no longer real untaken liquidity. Only day2's own high
-    # (now itself confirmed complete by day3) remains.
-    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-05"), "high")
+    # day0's high (1.1050) was exceeded by day2's high (1.1080) -- no
+    # longer real untaken liquidity. Only day2's own high remains; day3
+    # is excluded because as_of_time falls inside it (see the note in
+    # test_unswept_period_extremes_excludes_the_still_forming_last_period
+    # on why this moved off 2024-01-05).
+    extremes = _unswept_period_extremes(daily, pd.Timestamp("2024-01-04 12:00"), "high")
     assert extremes == [pytest.approx(1.1080)]
 
 

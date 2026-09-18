@@ -191,6 +191,7 @@ import pandas as pd
 
 from .candles import Candle, load_candles
 from .structure import Direction, StructureTracker, known_at as point_known_at
+from .timeframes import bar_length, closes_at
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
 from .liquidity import single_candle_liquidity, structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
@@ -419,12 +420,55 @@ def _unswept_period_extremes(series: list[Candle], as_of_time, kind: str) -> lis
     multi-year backtest."""
     n = len(series)
     sweep_index = _sweep_indices(series, kind)
+    # "Has this period finished" asked of the period itself, not of
+    # whether a SUCCESSOR happens to exist in the data yet.
+    #
+    # The old test was `series[i + 1].time > as_of_time: break`, using the
+    # next bar's existence as a proxy for this one having closed. That is
+    # right on full history and wrong at the edge of it: truncate the
+    # series at the entry and the last COMPLETE period drops out, because
+    # its successor has not started. So an ERL candidate that genuinely
+    # existed at entry time was invisible, the target was capped
+    # differently, and `min_reward_r` rejected trades that later
+    # reappeared once more data arrived.
+    #
+    # Measured (2026-09-18, synthetic 3-year series): a trade stamped
+    # 2025-03-24 15:00 did not exist at T+8h and appeared at exactly
+    # T+9h -- midnight, when the entry day's own Daily bar closed and
+    # the PREVIOUS day's extreme finally became visible to this function.
+    # That is nine hours of a signal's life spent not existing for a
+    # reason that has nothing to do with the market.
+    #
+    # Not a look-ahead -- this direction is over-conservative -- but the
+    # same root confusion as review finding 1: a bar's usability is a
+    # property of its own close, never of what came after it.
+    length = bar_length(series)
 
     extremes = []
-    for i in range(n - 1):
-        if series[i + 1].time > as_of_time:
-            break  # period i+1 hasn't started yet -- period i is still the CURRENT one, excluded
-        if sweep_index[i] is not None and series[sweep_index[i]].time <= as_of_time:
+    for i in range(n):
+        if closes_at(series[i].time, length) > as_of_time:
+            break  # still forming at as_of_time -- not a fixed "previous" reference
+        # The SWEEPING period must have closed too, not merely opened.
+        #
+        # This read `series[sweep_index[i]].time <= as_of_time`, i.e. the
+        # sweeper's OPEN. On a Weekly series that lets a sweep be claimed
+        # up to seven days before it could possibly be known, and -- worse
+        # -- it is not stable: the sweeper does not exist in the data at
+        # all until later, so the candidate is present at one moment and
+        # retroactively withdrawn at the next.
+        #
+        # Measured (2026-09-18): weekly extreme 1.68915 was a valid ERL
+        # candidate for the 2025-03-24 15:00 entry at T+24h and gone at
+        # T+168h, taken by the weekly bar stamped 2025-03-24 -- a bar
+        # that opens before the entry and does not close until 03-31.
+        # That alone moved the trade's ERL and flipped it through the
+        # min_reward_r gate, so the signal kept changing its mind about
+        # existing for a week after its own candle.
+        #
+        # Third instance of review finding 1 in this one function: a
+        # period's usability is a property of its own close.
+        swept_by = sweep_index[i]
+        if swept_by is not None and closes_at(series[swept_by].time, length) <= as_of_time:
             continue  # already swept by a later period before entry -- not real untaken liquidity anymore
         extremes.append(series[i].high if kind == "high" else series[i].low)
     return extremes
@@ -1566,6 +1610,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h4_levels = detect_key_levels(h4, n)
     h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout,
                                              close_based_sweep_break=close_based_sweep_break)
+    # One inference for the whole run rather than per candidate.
+    h1_bar_length = bar_length(h1)
     h1_imbalances = detect_imbalances(h1)
     h1_imbalance_times = [im.time for im in h1_imbalances]
 
@@ -1654,6 +1700,22 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         classification = classify_entry_pattern(new_key_level, following)
         if classification is None:
             continue
+        # When this decision could first have been MADE. classify_entry_
+        # pattern() reads up to FOLLOWING_LOOKAHEAD candles past the entry
+        # and its answer changes with how many have arrived (one candle
+        # gives FRESH_IRL_REQUIRED, three can give NESTED_DISRESPECT, with
+        # a different reference level and therefore a different stop and
+        # target), so the classification is not settled until the last of
+        # them closes. At the end of the series there may be fewer, and
+        # then it is settled as soon as what exists has closed.
+        #
+        # Everything else this loop consults is already bounded at or
+        # before the entry candle by the known_at work, so this is the
+        # binding constraint. Captured here rather than at the record
+        # because `i` can be re-anchored below (irl_mode="wait"), and it
+        # is THIS index the classification was read from.
+        _settled_idx = min(i + FOLLOWING_LOOKAHEAD, len(h1) - 1)
+        signal_known_at = closes_at(h1[_settled_idx].time, h1_bar_length)
 
         # "Price moves from IRL to ERL" -- the core of the strategy, and
         # the reason this gate exists at all.
@@ -2030,6 +2092,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             instrument=instrument,
             entry_time=entry_candle.time,
             signal_time=curr.time,
+            signal_known_at=signal_known_at,
             exit_time=exit_time,
             direction=effective,
             entry_timeframe="H1",

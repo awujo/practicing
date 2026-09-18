@@ -2189,3 +2189,84 @@ def test_a_recovered_watermark_is_bounded_by_the_limit_backstop(tmp_path):
     assert "2" in considered, "a signal inside the backstop must still be evaluated"
     assert "1" not in considered, (
         "a 30h-old signal was evaluated -- the recovered watermark was not bounded")
+
+
+def test_staleness_is_measured_from_when_the_signal_became_computable(tmp_path):
+    """The point of the whole exercise (2026-09-18).
+
+    Entry detection needs candles AFTER the entry candle --
+    classify_entry_pattern reads up to FOLLOWING_LOOKAHEAD of them and
+    returns None with nothing after the entry at all -- so a signal
+    stamped 13:00 may genuinely not exist until 16:00. Measuring age as
+    `now - entry_time` charged it for the hours it spent not existing and
+    declined it against a three-hour cutoff it had already burnt before
+    anyone could see it. That is why the live bots declined nearly
+    everything they found as stale.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = make_bot(fake, tmp_path)
+
+    # The gap is deliberately past STALE_ENTRY_CUTOFF_LIMIT, not merely
+    # past STALE_ENTRY_CUTOFF. Inside the limit backstop a stale market
+    # signal is rerouted to a resting limit rather than declined, so a
+    # smaller gap passes this assertion under BOTH measures and proves
+    # nothing -- the first version of this test did exactly that.
+    entry_candle = pd.Timestamp("2026-01-12T08:00:00+00:00")
+    born = pd.Timestamp("2026-01-13T14:00:00+00:00")   # 30h after the entry candle
+    record = a_trade_record(entry_candle, trade_id=7)
+    record.signal_known_at = born
+
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": born})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        bot.run_once()
+
+    decisions = [r["decision"] for r in audit.recent(10)
+                 if r["event_type"] == "entry_attempt"]
+    assert decisions, "the signal was not evaluated at all"
+    assert "decline_stale_signal" not in decisions, (
+        f"a signal born this candle was declined as stale: {decisions} -- "
+        "staleness is still being measured from the entry candle")
+
+
+def test_a_signal_born_later_than_predicted_is_not_lost(tmp_path):
+    """signal_known_at is an ESTIMATE, and a low one used to be fatal.
+
+    Selection on a strict `watermark < known_at <= now` window means the
+    bot looks for a signal exactly once, at its predicted birth. If the
+    engine does not actually produce it until later -- measured on
+    synthetic history, so not hypothetical -- the watermark has moved
+    past by the time it appears and it is skipped forever, with no audit
+    row at all. The grace margin plus the evaluated-signal set turns that
+    into a repeated cheap comparison.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = make_bot(fake, tmp_path)
+
+    entry_candle = pd.Timestamp("2026-01-13T10:00:00+00:00")
+    predicted_birth = pd.Timestamp("2026-01-13T14:00:00+00:00")
+    actual_birth = pd.Timestamp("2026-01-13T16:00:00+00:00")   # two candles late
+
+    record = a_trade_record(entry_candle, trade_id=7)
+    record.signal_known_at = predicted_birth
+
+    # The engine genuinely has nothing at the predicted birth candle.
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": predicted_birth})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[]):
+        bot.run_once()
+
+    # ...and produces it two candles later, still stamped with the
+    # predicted birth, which is now behind the watermark.
+    with patch.object(bot.mt5_client, "new_candle_closed",
+                       return_value=type("C", (), {"time": actual_birth})()), \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[record]):
+        bot.run_once()
+
+    assert any(r["trade_id"] == "7" for r in audit.recent(10)), (
+        "a signal that appeared later than its predicted birth was never "
+        "evaluated -- the selection window is too strict to tolerate the "
+        "estimate being low")

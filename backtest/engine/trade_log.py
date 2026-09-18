@@ -55,6 +55,26 @@ class TradeRecord:
     # two come apart, and telling them apart is the whole point of
     # inspecting a limit trade: did price actually come back to the level?
     signal_time: object = None
+    # The earliest moment this record could have been COMPUTED at all --
+    # its birth time, as distinct from the candle it is stamped for.
+    #
+    # They are not the same and the gap is what kept the live bot from
+    # trading (2026-09-18 review). Entry detection needs candles AFTER
+    # the entry candle: `classify_entry_pattern()` reads up to
+    # FOLLOWING_LOOKAHEAD of them, and returns None with nothing after
+    # the entry at all, so the newest candle can never produce a signal.
+    # A signal stamped 13:00 may genuinely not exist until 16:00.
+    #
+    # The live loop measured staleness as `now - entry_time`, i.e.
+    # counting age the signal spent not existing, and declined it against
+    # a three-hour cutoff it had already burnt before anyone could see
+    # it. Measured against `signal_known_at` instead, the question
+    # becomes "how long has this been ACTIONABLE", which is what the
+    # cutoff was always meant to ask.
+    #
+    # None means "not recorded" and callers must fall back to
+    # `entry_time` -- the pre-2026-09-18 reading, and the pessimistic one.
+    signal_known_at: object = None
 
     # Entry context
     direction: object = None            # Direction

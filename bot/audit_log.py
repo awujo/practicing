@@ -206,6 +206,27 @@ class AuditLog:
         row = cur.fetchone()
         return row["entry_time"] if row else None
 
+    def entry_times_since(self, instrument: str, since: str) -> list[str]:
+        """Every distinct signal-candle time this instrument has already
+        had an entry_attempt logged for, at or after `since` (both plain
+        ISO strings -- see DecisionRecord.entry_time's own comment).
+
+        The single `last_entry_time()` above is enough for a strict
+        watermark, but not for the grace margin the orchestrator now
+        applies: `signal_known_at` is an estimate, so the selection
+        window deliberately reaches back BEHIND the watermark to catch a
+        signal born later than predicted. That re-exposes every signal in
+        the margin, including ones a previous process already declined --
+        which is the live-confirmed duplicate-decline bug of 2026-09-15
+        (JP225's 02:00 signal declined twice, bracketing that day's two
+        restarts). A fresh process seeds its dedupe set from this."""
+        cur = self._conn.execute(
+            "SELECT DISTINCT entry_time FROM decisions WHERE instrument=? "
+            "AND event_type='entry_attempt' AND entry_time != '' AND entry_time >= ?",
+            (instrument, since),
+        )
+        return [row["entry_time"] for row in cur.fetchall()]
+
     def export_csv(self, path: str):
         cur = self._conn.execute("SELECT * FROM decisions ORDER BY id")
         rows = cur.fetchall()
