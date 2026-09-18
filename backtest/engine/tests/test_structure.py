@@ -126,3 +126,73 @@ def test_close_based_break_default_is_unchanged_wick_behavior():
     default_events = StructureTracker(n=2).run(candles)
     explicit_events = StructureTracker(n=2, close_based_break=False).run(candles)
     assert default_events == explicit_events
+
+
+def _trending(n_bars=90, up=True):
+    """A series that trends while making real pullbacks -- the shape a
+    trending instrument actually has, and the one the latch below was
+    invisible on shorter fixtures."""
+    candles, px = [], 100.0
+    for i in range(n_bars):
+        leg, pull = (1.2, -0.7) if up else (-1.2, 0.7)
+        px += leg if (i // 5) % 2 == 0 else pull
+        candles.append(C(i, px - 0.3, px + 0.6, px - 0.9, px))
+    return candles
+
+
+def test_an_unconfirmed_sweep_does_not_block_every_later_sweep():
+    """Regression for the 2026-09-18 latch (review finding 4).
+
+    A pending sweep used to be cleared ONLY by its own break confirming,
+    while the gate to register any new sweep was `pending is None`. So a
+    sweep whose break never arrived shut its whole direction down for the
+    rest of the series. In a trend that is the ordinary case, not an edge
+    case: the first higher high sweeps against the low standing at that
+    instant, price then rises for months, and confirming would require
+    closing back below a low from the start of the trend.
+
+    Measured on 3 years of synthetic H4 before the fix: 40 bullish
+    sweeps and 39 bullish breaks, against exactly 1 bearish sweep -- on
+    day 2 -- and 0 bearish breaks, that sweep pending for 1,092 days.
+
+    Nothing in the suite covered this, which is why it survived. This
+    asserts the property directly: over a long trending series, each
+    direction must keep producing sweeps."""
+    # Checked in BOTH directions: an uptrend is where the bearish side
+    # latches (highs keep being taken, the break never comes) and a
+    # downtrend is the mirror. A single-direction fixture would have
+    # passed while half the bug remained.
+    up = _trending(up=True)
+    down = _trending(up=False)
+    assert up[-1].close > up[0].close + 20, "fixture does not actually trend up"
+    assert down[-1].close < down[0].close - 20, "fixture does not actually trend down"
+
+    bearish = [e for e in StructureTracker(n=2).run(up)
+               if e.kind == "sweep" and e.direction is Direction.BEARISH]
+    bullish = [e for e in StructureTracker(n=2).run(down)
+               if e.kind == "sweep" and e.direction is Direction.BULLISH]
+
+    assert len(bearish) > 1, (
+        "only one bearish sweep in a long uptrend -- the direction latched "
+        "after its first unconfirmed sweep")
+    assert len(bullish) > 1, (
+        "only one bullish sweep in a long downtrend -- same latch, mirrored")
+
+
+def test_a_break_still_has_to_be_earned():
+    """The complement, and the reason the first attempted fix was wrong.
+
+    Refreshing the structural level while a sweep waited -- so the break
+    targets the most recent pullback low -- removes the latch but makes
+    the break meaningless: price is always sitting just above the newest
+    pullback low, so every single sweep confirmed (measured: 444 sweeps,
+    444 breaks). The level must stay the one that stood AT THE SWEEP, so
+    a decent share of sweeps never confirm at all."""
+    events = StructureTracker(n=2).run(_trending(200))
+    sweeps = [e for e in events if e.kind == "sweep"]
+    breaks = [e for e in events if e.kind == "valid_sweep_break"]
+
+    assert sweeps, "fixture produced no sweeps at all"
+    assert len(breaks) < len(sweeps), (
+        f"{len(breaks)} breaks from {len(sweeps)} sweeps -- a sweep+break that "
+        "always confirms is not a filter")

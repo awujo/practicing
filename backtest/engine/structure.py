@@ -164,6 +164,11 @@ class StructureTracker:
         structural_high_at_sweep: SwingPoint | None = None
         pending_sweep_high: SwingPoint | None = None
         structural_low_at_sweep: SwingPoint | None = None
+        # Which swing point each direction's current sequence is working
+        # on, so one swing taken produces one sweep rather than one per
+        # candle -- see the bearish block below.
+        swept_low_point: SwingPoint | None = None
+        swept_high_point: SwingPoint | None = None
 
         for i, c in enumerate(candles):
             # A pivot at index (i - n) only becomes fractally confirmable
@@ -185,7 +190,12 @@ class StructureTracker:
             # structural high that was in place when the sweep happened. ---
             # The SWEEP test always reads the wick (last_swing_low.price) --
             # a sweep is a wick event regardless of close_based_break.
-            if pending_sweep_low is None and last_swing_low is not None and c.low < last_swing_low.price:
+            if (last_swing_low is not None and c.low < last_swing_low.price
+                    and last_swing_low is not swept_low_point):
+                # A DIFFERENT swing low being taken starts a new sequence,
+                # replacing any sweep still waiting -- see the bearish
+                # half below for the latch this removes.
+                swept_low_point = last_swing_low
                 pending_sweep_low = SwingPoint(c.time, c.low, "low")
                 structural_high_at_sweep = last_swing_high
                 events.append(StructureEvent(c.time, "sweep", Direction.BULLISH, c.low))
@@ -202,7 +212,37 @@ class StructureTracker:
                 structural_high_at_sweep = None
 
             # --- Bearish sequence: mirror image. ---
-            if pending_sweep_high is None and last_swing_high is not None and c.high > last_swing_high.price:
+            # Keyed on WHICH swing high is being taken, not on whether a
+            # sweep is already waiting. The old gate was
+            # `pending_sweep_high is None`, and since a pending sweep
+            # clears only when its break confirms, a sweep whose break
+            # never came latched the whole direction shut forever
+            # (2026-09-18 review, finding 4).
+            #
+            # That is the normal case in a trend, not an edge case: the
+            # first higher high registers a bearish sweep against the low
+            # standing at that instant, price rises for months, and
+            # confirming would need a close back below a low from the
+            # start of the trend. Measured on 3 years of synthetic H4
+            # beforehand: 40 bullish sweeps and 39 bullish breaks against
+            # 1 bearish sweep -- on day 2 -- and 0 bearish breaks, that
+            # one sweep pending 1,092 days and blocking 2,106 later ones.
+            #
+            # `swept_high_point` identity is what makes this one event per
+            # swing high rather than one per candle: in an uptrend
+            # `c.high > last_swing_high.price` stays true for every candle
+            # until a NEW swing high confirms, and re-firing on each would
+            # be noise, not structure.
+            #
+            # Note the structural low is still read at the moment of the
+            # sweep, NOT refreshed while waiting. Refreshing it was tried
+            # first and is wrong: it makes the break target the most
+            # recent pullback low, which price is always sitting on top
+            # of, so every sweep confirms immediately (measured: 444
+            # sweeps, 444 breaks -- a filter that filters nothing).
+            if (last_swing_high is not None and c.high > last_swing_high.price
+                    and last_swing_high is not swept_high_point):
+                swept_high_point = last_swing_high
                 pending_sweep_high = SwingPoint(c.time, c.high, "high")
                 structural_low_at_sweep = last_swing_low
                 events.append(StructureEvent(c.time, "sweep", Direction.BEARISH, c.high))
