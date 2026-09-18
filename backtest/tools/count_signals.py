@@ -61,6 +61,7 @@ from ..engine.runner import (
     run_backtest, _find_liquidity_setups, _find_entry_candidates,
     _trim_to_recent_years,
 )
+from .live_flags import LIVE_LAUNCH_FLAGS, LIVE_FIXED_FLAGS
 
 
 def _rss_mb():
@@ -115,13 +116,21 @@ def main():
     ap.add_argument("--to", dest="end", required=True, help="YYYY-MM-DD")
     ap.add_argument("--entry-style", default="conservative",
                     choices=("aggressive", "conservative"))
-    # The three flags below are what orchestrator._check_instrument()
-    # passes. They are arguments here only so a difference can be tested;
-    # the defaults are the live values and should normally be left alone,
-    # or this stops measuring what the bot actually runs.
-    ap.add_argument("--stop-anchor", default="trigger_wick")
-    ap.add_argument("--origin-kind", default="sweep_break", choices=("sweep_break", "any"))
-    ap.add_argument("--close-based-sweep-break", action="store_true")
+    # These must match the DEPLOYED launch command, not LiveBot's
+    # dataclass defaults. Both bots are started with `--origin-kind any
+    # --close-based-sweep-break`, which overrides those defaults, so
+    # pinning to the dataclass measured a strategy nobody is running
+    # (verified from ps on the VPS, 2026-09-18 -- the first version of
+    # this tool got it wrong and a test asserting it matched LiveBot
+    # passed anyway, because the mismatch is at the launch site).
+    ap.add_argument("--stop-anchor", default=LIVE_LAUNCH_FLAGS["stop_anchor"])
+    ap.add_argument("--origin-kind", default=LIVE_LAUNCH_FLAGS["origin_kind"],
+                    choices=("sweep_break", "any"))
+    ap.add_argument("--wick-based-sweep-break", dest="close_based_sweep_break",
+                    action="store_false",
+                    default=LIVE_LAUNCH_FLAGS["close_based_sweep_break"],
+                    help="turn OFF --close-based-sweep-break, which the live bots "
+                         "are launched WITH and which is therefore the default here")
     ap.add_argument("--n", type=int, default=2)
     ap.add_argument("--funnel-years", type=float, default=1.0,
                     help="trailing history for the funnel counts only; the backtest "
@@ -142,9 +151,12 @@ def main():
 
     print(f"window {start.date()} .. {(end - pd.Timedelta(days=1)).date()}   "
           f"style={args.entry_style}")
-    print("called exactly as orchestrator._check_instrument() calls it:")
-    print("  avoid_rollover_entries=True  min_reward_r=1.0  "
-          f"stop_anchor={args.stop_anchor}  origin_kind={args.origin_kind}")
+    # Printed, not assumed: a count is only checkable if the flags that
+    # produced it are visible next to it. See live_flags.py.
+    print("flags (must match the deployed launch command):")
+    print("  " + "  ".join(f"{k}={v}" for k, v in LIVE_FIXED_FLAGS.items())
+          + f"  stop_anchor={args.stop_anchor}  origin_kind={args.origin_kind}"
+          + f"  close_based_sweep_break={args.close_based_sweep_break}")
     print()
     print(f"{'instrument':<10} {'brk':>4} {'setup':>6} {'cand':>5} {'TRADES':>7} "
           f"{'all-time':>9} {'secs':>6} {'rssMB':>7}  last signal")
@@ -162,7 +174,7 @@ def main():
                 instrument, args.source, start, end, args.n, args.funnel_years)
             records = run_backtest(
                 instrument, args.entry_style, source=args.source,
-                avoid_rollover_entries=True, min_reward_r=1.0,
+                **LIVE_FIXED_FLAGS,
                 stop_anchor=args.stop_anchor,
                 origin_kind=args.origin_kind,
                 close_based_sweep_break=args.close_based_sweep_break,

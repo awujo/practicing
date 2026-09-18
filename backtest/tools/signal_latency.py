@@ -59,6 +59,7 @@ import pandas as pd
 from ..engine import runner as runner_module
 from ..engine.candles import load_candles as real_load_candles
 from ..engine.runner import run_backtest
+from .live_flags import LIVE_LAUNCH_FLAGS, LIVE_FIXED_FLAGS
 
 # How long each granularity's bar lasts, for deciding whether it had
 # closed by the as-of time. Anything not listed passes through on the
@@ -95,8 +96,8 @@ def _live_kwargs(args):
     """Exactly the flags orchestrator._check_instrument() passes. A
     latency measured under different flags is a latency for a strategy
     the bot is not running."""
-    return dict(source=args.source, avoid_rollover_entries=True,
-                min_reward_r=1.0, stop_anchor=args.stop_anchor,
+    return dict(source=args.source, **LIVE_FIXED_FLAGS,
+                stop_anchor=args.stop_anchor,
                 origin_kind=args.origin_kind,
                 close_based_sweep_break=args.close_based_sweep_break)
 
@@ -134,9 +135,16 @@ def main():
     ap.add_argument("--entry-style", default="conservative",
                     choices=("aggressive", "conservative"))
     ap.add_argument("--source", default="dukascopy")
-    ap.add_argument("--stop-anchor", default="trigger_wick")
-    ap.add_argument("--origin-kind", default="sweep_break", choices=("sweep_break", "any"))
-    ap.add_argument("--close-based-sweep-break", action="store_true")
+    # Defaults come from the deployed launch command, not LiveBot's
+    # dataclass -- see live_flags.py for why that distinction cost a run.
+    ap.add_argument("--stop-anchor", default=LIVE_LAUNCH_FLAGS["stop_anchor"])
+    ap.add_argument("--origin-kind", default=LIVE_LAUNCH_FLAGS["origin_kind"],
+                    choices=("sweep_break", "any"))
+    ap.add_argument("--wick-based-sweep-break", dest="close_based_sweep_break",
+                    action="store_false",
+                    default=LIVE_LAUNCH_FLAGS["close_based_sweep_break"],
+                    help="turn OFF --close-based-sweep-break, which the live bots "
+                         "are launched WITH and which is therefore the default here")
     args = ap.parse_args()
 
     sys.stdout.reconfigure(line_buffering=True)
@@ -144,6 +152,9 @@ def main():
     targets = parse_targets(args.targets)
 
     print(f"style={args.entry_style}  offsets(h)={offsets}")
+    print(f"flags: origin_kind={args.origin_kind}  "
+          f"close_based_sweep_break={args.close_based_sweep_break}  "
+          f"stop_anchor={args.stop_anchor}")
     print("a bar counts as available only once it has fully closed")
     print()
 
