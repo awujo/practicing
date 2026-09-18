@@ -132,6 +132,23 @@ hypothetical.
 
 ## 3. HIGH — the watermark does not advance while the gate is closed, so backlogs flood out dead
 
+*Status: FIXED 2026-09-18. The WAITING path now advances the watermark,
+which is sound because a False return means the gate said WAITING at
+EVERY candle since it -- so by the gate's own contract (now checked
+against the deployed flags, finding 2) there was nothing to find there.
+A second route was found while fixing it: `_last_entry_time` is
+in-memory only and is rebuilt after a restart from the last entry
+ATTEMPT, which the WAITING path does not write -- so a bot polling
+happily for a week returns from a restart with a week-old watermark. That
+is now bounded by STALE_ENTRY_CUTOFF_LIMIT.*
+
+*Deliberately NOT done: batching the skipped signals into one summary
+event. It was written, and a test caught that it replaced per-signal
+declines -- which carry the full strategy read (bias per timeframe,
+levels, entry/stop/target) that the operator explicitly asked to always
+see on Telegram. Signals inside the window are still reported one at a
+time.*
+
 In `_check_instrument()` the storyline gate returns early:
 
 ```python

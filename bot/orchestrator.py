@@ -572,7 +572,55 @@ class LiveBot:
             persisted = self.audit_log.last_entry_time(instrument)
             if persisted is not None:
                 watermark = pd.Timestamp(persisted)
+                # Bounded, because this one is reconstructed from the last
+                # entry ATTEMPT -- and the WAITING path (below) advances
+                # the in-memory watermark without writing an attempt, so
+                # after a restart this can point days back even on a bot
+                # that has been polling happily the whole time. Left
+                # unbounded it reproduces the finding-3 flood by a second
+                # route: a week of signals emitted at once, every one of
+                # them past the cutoff.
+                #
+                # The bound is the limit bot's own backstop, so nothing
+                # actionable is ever outside it -- a signal older than
+                # that is declined by the stale check below no matter
+                # which path found it. Signals INSIDE the window are
+                # untouched and still reported one by one with the full
+                # strategy read attached, which is the thing worth
+                # protecting here.
+                floor = new_candle.time - STALE_ENTRY_CUTOFF_LIMIT
+                if watermark < floor:
+                    logger.info(
+                        "%s: recovered watermark %s is older than the %s backstop, "
+                        "starting from %s instead", instrument, watermark,
+                        STALE_ENTRY_CUTOFF_LIMIT, floor)
+                    watermark = floor
         if not self._storyline_hunted_anywhere_in_gap(instrument, watermark, new_candle.time):
+            # Advance the watermark even though no entry search ran.
+            #
+            # Until 2026-09-18 (review finding 3) this returned without
+            # touching it, so a WAITING stretch accumulated and the
+            # eventual reopen emitted every signal since -- all of them
+            # past the cutoff, all declined stale. That is the burst
+            # pattern in the audit database: quiet for 10-27 hours, then
+            # a cluster of declines, with CHFJPY's 09-09 and 09-12
+            # signals both surfacing in the same burst on 09-16. A
+            # backlog draining, not a poll being missed.
+            #
+            # Safe because of what a False return MEANS here: the gate
+            # said WAITING at every H1 candle since the watermark, not
+            # just at this one. If the engine would have produced a trade
+            # in that span, the gate had a false negative -- the one
+            # thing live_strategy's docstring says it must never have,
+            # and now checked against the DEPLOYED flags on both sides
+            # (finding 2). This makes that contract load-bearing rather
+            # than decorative.
+            #
+            # It also keeps the watermark inside
+            # STORYLINE_GAP_LOOKBACK_CANDLES, so the gap replay above can
+            # actually cover it. A watermark weeks old could not be, and
+            # the uncovered part was silently skipped.
+            self._last_entry_time[instrument] = new_candle.time
             return
         self._current_candle_time[instrument] = new_candle.time
 

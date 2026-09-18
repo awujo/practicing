@@ -2092,3 +2092,100 @@ def test_the_storyline_gate_is_given_the_same_flags_as_the_engine(tmp_path):
     assert seen["origin_kind"] == "any"
     assert seen["close_based_sweep_break"] is True
     assert seen["max_history_years"] == windows
+
+
+@contextmanager
+def gate_closed():
+    with patch.object(LiveBot, "_storyline_says_hunt", return_value=False):
+        yield
+
+
+def test_the_watermark_advances_while_the_gate_is_closed(tmp_path):
+    """Regression for the 2026-09-18 review, finding 3.
+
+    The WAITING path used to return without touching the watermark, so a
+    closed gate accumulated and the eventual reopen emitted every signal
+    since -- all past the cutoff, all declined stale. That is the burst
+    pattern in the live audit database: quiet for 10-27 hours, then a
+    cluster of declines, with CHFJPY's 09-09 and 09-12 signals both
+    surfacing in the same burst on 09-16.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = make_bot(fake, tmp_path)
+
+    waiting_candle = pd.Timestamp("2026-01-12T08:00:00+00:00")
+    with patch.object(bot.mt5_client, "new_candle_closed") as new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_closed(), \
+         patch("bot.orchestrator.run_backtest") as backtest:
+        new_candle.return_value = type("C", (), {"time": waiting_candle})()
+        bot.run_once()
+        assert not backtest.called, "a closed gate must not run the entry search"
+
+    assert bot._last_entry_time["EURUSD"] == waiting_candle
+
+    # Now the gate opens two hours later. A signal stamped BEFORE the
+    # waiting candle belongs to the span the gate already judged, and
+    # must not resurface.
+    reopened = pd.Timestamp("2026-01-12T10:00:00+00:00")
+    during_the_wait = a_trade_record(pd.Timestamp("2026-01-12T05:00:00+00:00"), trade_id=1)
+    after_reopen = a_trade_record(pd.Timestamp("2026-01-12T09:00:00+00:00"), trade_id=2)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest",
+                return_value=[during_the_wait, after_reopen]):
+        new_candle.return_value = type("C", (), {"time": reopened})()
+        bot.run_once()
+
+    considered = {r["trade_id"] for r in audit.recent(20)
+                  if r["event_type"] == "entry_attempt"}
+    assert "2" in considered, "the signal after the reopen should be considered"
+    assert "1" not in considered, (
+        "a signal from inside the WAITING span resurfaced -- the watermark "
+        "did not advance while the gate was closed")
+
+
+def test_a_recovered_watermark_is_bounded_by_the_limit_backstop(tmp_path):
+    """The same flood by a second route.
+
+    `_last_entry_time` is in memory only, so after a restart it is
+    rebuilt from the audit database's last entry ATTEMPT -- and the
+    WAITING path advances the in-memory watermark WITHOUT writing an
+    attempt. So a bot that has been polling happily for a week comes back
+    from a restart with a watermark a week old, and emits the lot.
+
+    Bounded at the limit bot's own backstop: nothing actionable is ever
+    outside it, and signals inside the window are untouched -- still
+    reported one by one with the full strategy read, which is the part
+    worth protecting.
+    """
+    fake = FakeMT5()
+    bot, audit, _ = make_bot(fake, tmp_path)
+
+    # Seed an attempt a week back, then drop the in-memory watermark as a
+    # restart would.
+    ancient = pd.Timestamp("2026-01-05T08:00:00+00:00")
+    with patch.object(bot.mt5_client, "new_candle_closed") as new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest",
+                return_value=[a_trade_record(ancient, trade_id=99)]):
+        new_candle.return_value = type("C", (), {"time": ancient})()
+        bot.run_once()
+    assert audit.last_entry_time("EURUSD") is not None, "fixture did not seed an attempt"
+    bot._last_entry_time.clear()
+
+    now = pd.Timestamp("2026-01-12T08:00:00+00:00")   # a week later
+    too_old = a_trade_record(now - timedelta(hours=30), trade_id=1)
+    actionable = a_trade_record(now - timedelta(hours=2), trade_id=2)
+
+    with patch.object(bot.mt5_client, "new_candle_closed") as new_candle, \
+         patch("bot.orchestrator.sync_recent_from_mt5"), gate_open(), \
+         patch("bot.orchestrator.run_backtest", return_value=[too_old, actionable]):
+        new_candle.return_value = type("C", (), {"time": now})()
+        bot.run_once()
+
+    considered = {r["trade_id"] for r in audit.recent(20)
+                  if r["event_type"] == "entry_attempt" and r["trade_id"] in ("1", "2")}
+    assert "2" in considered, "a signal inside the backstop must still be evaluated"
+    assert "1" not in considered, (
+        "a 30h-old signal was evaluated -- the recovered watermark was not bounded")
