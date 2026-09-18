@@ -42,6 +42,7 @@ import pandas as pd
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from ..engine.runner import run_backtest
 from ..engine.trade_log import summarize
+from ..engine.trade_management import RISK_REWARD_PRIMARY
 from .live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
 
 # Spread is not modelled anywhere in this engine, so every R below is
@@ -85,7 +86,22 @@ def bucket(records, start, end):
     return out
 
 
+HEADER = (f"  {'period':<12} {'trades':>6} {'win':>7} {'total':>9} "
+          f"{'R/trade':>8} {'net':>7} {'avgWin':>7} {'avgLoss':>8} {'capped':>7}")
+
+
 def _row(label, recs):
+    """One period's numbers.
+
+    avgWin / capped exist to explain R/trade rather than leave it
+    mysterious. The engine targets 3:1 (RISK_REWARD_PRIMARY) but caps
+    every target at the nearest external range liquidity, so realized
+    wins are routinely well under 3R -- asked directly on 2026-09-18,
+    "is the backtest not targeting a 3:1?", which the previous columns
+    gave no way to answer. `capped` is the share of trades where the ERL
+    cap actually moved the target in from 3:1, and it went UP with the
+    2026-09-18 sweep fix: requiring the sweeping period to have CLOSED
+    leaves more liquidity standing, so more targets get pulled in."""
     s = summarize(recs)
     closed = s.get("closed_trades", 0)
     total_r = s.get("total_r", 0.0)
@@ -95,10 +111,19 @@ def _row(label, recs):
         # "0.0% win, 0.00 R/trade, -0.12 net" reads as a measured result
         # rather than an absence of one, and that column would appear on
         # every quiet pair in a 25-instrument run.
-        return f"  {label:<12} {0:>6} {'-':>8} {'-':>10} {'-':>8} {'-':>8}"
+        return (f"  {label:<12} {0:>6} {'-':>7} {'-':>9} "
+                f"{'-':>8} {'-':>7} {'-':>7} {'-':>8} {'-':>7}")
     per = total_r / closed
-    return (f"  {label:<12} {closed:>6} {win:>7.1f}% {total_r:>9.1f}R "
-            f"{per:>8.2f} {per - ASSUMED_SPREAD_R:>8.2f}")
+    done = [r for r in recs if r.r_multiple is not None]
+    wins = [r.r_multiple for r in done if r.r_multiple > 0]
+    losses = [r.r_multiple for r in done if r.r_multiple <= 0]
+    capped = [r for r in done if getattr(r, "erl_capped", False)]
+    avg_win = sum(wins) / len(wins) if wins else 0.0
+    avg_loss = sum(losses) / len(losses) if losses else 0.0
+    capped_pct = 100.0 * len(capped) / len(done) if done else 0.0
+    return (f"  {label:<12} {closed:>6} {win:>6.1f}% {total_r:>8.1f}R "
+            f"{per:>8.2f} {per - ASSUMED_SPREAD_R:>7.2f} "
+            f"{avg_win:>7.2f} {avg_loss:>8.2f} {capped_pct:>6.0f}%")
 
 
 def main():
@@ -134,6 +159,8 @@ def main():
           + f"  stop_anchor={args.stop_anchor}")
     print(f"net R/trade assumes {ASSUMED_SPREAD_R} R of spread per round trip -- the engine")
     print("models none, so the gross column is what it actually computed.")
+    print(f"targets are {RISK_REWARD_PRIMARY:g}:1 CAPPED at the nearest external range liquidity,")
+    print("so avgWin sits below that; `capped` is how often the cap actually bound.")
     print()
 
     pooled = {label: [] for label, _, _ in periods}
@@ -156,8 +183,7 @@ def main():
             continue
 
         print(f"{instrument}   ({len(records)} trades all-time, {time.time() - t0:.0f}s)")
-        print(f"  {'period':<12} {'trades':>6} {'win':>8} {'total':>10} "
-              f"{'R/trade':>8} {'net':>8}")
+        print(HEADER)
         for label, start, end in periods:
             recs = bucket(records, start, end)
             pooled[label].extend(recs)
@@ -171,8 +197,7 @@ def main():
 
     print("=" * 62)
     print("ALL INSTRUMENTS POOLED")
-    print(f"  {'period':<12} {'trades':>6} {'win':>8} {'total':>10} "
-          f"{'R/trade':>8} {'net':>8}")
+    print(HEADER)
     for label, _s, _e in periods:
         print(_row(label, pooled[label]))
     print(_row("all-time", pooled["all-time"]))
