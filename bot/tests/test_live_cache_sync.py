@@ -289,3 +289,78 @@ def test_the_newest_derived_bar_stops_changing_once_written(tmp_path, monkeypatc
     shared = first.index.intersection(second.index)
     assert len(shared) > 0
     pd.testing.assert_frame_equal(first.loc[shared], second.loc[shared])
+
+
+# ---------------------------------------------------------------------------
+# The derive must not rewrite a file that has nothing new to add.
+#
+# Measured on the live VPS 2026-09-18: 13-22 seconds per instrument for
+# the three granularities, against a loop taking ~2 minutes per
+# instrument and ~50 minutes per full cycle -- while H1 candles close
+# every 60. The sync was making the bot late, which was the thing the
+# whole session was trying to fix.
+# ---------------------------------------------------------------------------
+
+def _sync(client, symbol="EURUSD"):
+    sync_recent_from_mt5(client, symbol, source="dukascopy", lookback_count=10)
+
+
+def _client_for(fake):
+    fake.rates_by_symbol_timeframe[("EURUSD", "H1")] = [
+        make_rate(4 * DAY, 1.12, 1.14, 1.11, 1.13),
+        make_rate(2 * DAY, 1.10, 1.12, 1.09, 1.11),
+    ]
+    return MT5Client(fake, login=1, password="pw", server="Demo",
+                     server_utc_offset=pd.Timedelta(0))
+
+
+def test_a_second_sync_with_no_new_bar_does_not_touch_the_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path)
+    client = _client_for(FakeMT5())
+    _sync(client)
+
+    import os
+    path = cache_module.cache_path("dukascopy", "EURUSD", "H4")
+    before = os.stat(path).st_mtime_ns
+    size_before = os.stat(path).st_size
+
+    import time
+    time.sleep(0.01)
+    _sync(client)
+
+    after = os.stat(path)
+    assert after.st_mtime_ns == before, "the file was rewritten with nothing new to add"
+    assert after.st_size == size_before
+
+
+def test_a_genuinely_new_bar_is_still_written(tmp_path, monkeypatch):
+    """The skip must not turn into 'never updates again'."""
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path, days=30)   # H1 through 2026-09-01
+    client = _client_for(FakeMT5())
+    _sync(client)
+    first = len(cache_module.load("dukascopy", "EURUSD", "H4"))
+
+    # Another full day of H1 arrives -> six more complete H4 bars.
+    idx = pd.date_range("2026-09-02", periods=24, freq="h", tz="UTC")
+    cache_module.append("dukascopy", "EURUSD", "H1",
+                        [{"time": t.isoformat().replace("+00:00", "Z"), "open": 1.10,
+                          "high": 1.11, "low": 1.09, "close": 1.105, "volume": 1.0}
+                         for t in idx])
+    _sync(client)
+
+    assert len(cache_module.load("dukascopy", "EURUSD", "H4")) > first
+
+
+def test_an_unreadable_tail_falls_through_to_writing(tmp_path, monkeypatch):
+    """newest_cached_time returns None when it cannot tell from the tail.
+    That must mean 'do the write', never 'there is nothing there'."""
+    monkeypatch.setattr(cache_module, "DATA_ROOT", str(tmp_path))
+    _seed_h1(tmp_path)
+    client = _client_for(FakeMT5())
+
+    with patch.object(cache_module, "newest_cached_time", return_value=None):
+        _sync(client)
+
+    assert len(cache_module.load("dukascopy", "EURUSD", "H4")) > 0

@@ -169,6 +169,25 @@ def _append_rows(path: str, rows: list[dict]) -> None:
         f.write(payload)
 
 
+def newest_cached_time(source: str, symbol: str, granularity: str):
+    """The newest cached candle's time, read from the END of the file
+    rather than by parsing all of it -- or None if that can't be done
+    cheaply and safely.
+
+    `last_cached_time()` does the same job with pd.read_csv over the
+    whole time column. That is fine occasionally and far too expensive in
+    a hot loop: on this cache a 40,000-row H4 file costs ~2.5s just to
+    load, and the live sync asks per instrument, per granularity, every
+    hour.
+
+    None means "could not tell from the tail" (missing, empty, or not in
+    the expected ISO-8601 'Z' format), which callers must treat as "do
+    the full thing", never as "there is nothing there".
+    """
+    index = _tail_index(cache_path(source, symbol, granularity))
+    return index[0] if index is not None else None
+
+
 def last_cached_time(source: str, symbol: str, granularity: str):
     """Return the UTC timestamp (str) of the most recent cached candle, or None if no cache yet."""
     path = cache_path(source, symbol, granularity)

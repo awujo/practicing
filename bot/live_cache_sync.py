@@ -133,6 +133,33 @@ def _derive_tail(instrument: str, source: str, lookback: pd.Timedelta) -> dict[s
         if out.empty:
             written[granularity] = 0
             continue
+
+        # Nothing new completed -> don't rewrite the file.
+        #
+        # This sync runs hourly, but an H4 bar only completes every 4
+        # hours, a daily every 24 and a weekly every 168. So most calls
+        # would read 40,000 rows and write 40,000 identical rows back.
+        # Measured on the live VPS 2026-09-18: 13-22 seconds per
+        # instrument for the three granularities, against a loop that was
+        # taking ~2 minutes per instrument and ~50 minutes per full cycle
+        # -- while H1 candles close every 60. The bot was making itself
+        # late.
+        #
+        # Comparing the newest derived bar against the newest bar on disk
+        # is enough, because every bar written here is COMPLETE (see
+        # DERIVED_PERIODS) and complete bars are built from closed H1
+        # candles that do not change afterwards. newest_cached_time()
+        # reads the file's tail rather than parsing it, so the check
+        # itself is cheap.
+        #
+        # None from that call means "could not tell", which falls through
+        # to writing -- correct, not clever.
+        newest_on_disk = cache_module.newest_cached_time(source, instrument, granularity)
+        newest_derived = out["time"].iloc[-1].isoformat().replace("+00:00", "Z")
+        if newest_on_disk is not None and newest_derived <= newest_on_disk:
+            written[granularity] = 0
+            continue
+
         rows = [
             {"time": r["time"].isoformat().replace("+00:00", "Z"),
              "open": r["open"], "high": r["high"], "low": r["low"],
