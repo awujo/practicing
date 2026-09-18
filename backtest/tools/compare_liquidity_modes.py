@@ -222,8 +222,21 @@ def main():
             totals[mode]["r"] += s.get("total_r", 0.0)
             totals[mode]["wins"] += s.get("wins", 0)
             windowed[mode] = [r for r in recs if _in_window(r, start, end)]
-            line.append(f"{mode}: {s.get('closed_trades', 0):>5} trades "
-                        f"{s.get('total_r', 0.0):>8.1f}R  "
+            # Win rate and R/trade per instrument, not just in the totals
+            # at the end. The totals are AGGREGATED across every
+            # instrument, so until the whole run finished there was no
+            # way to judge the one row you were looking at -- asked
+            # directly on 2026-09-18, mid-run, and the answer was "wait
+            # three hours". R/trade in particular is the column that
+            # decides whether a result is tradeable at all once spread
+            # is charged, and deriving it by hand from two other numbers
+            # is exactly the sort of step that gets skipped.
+            closed = s.get("closed_trades", 0)
+            total_r = s.get("total_r", 0.0)
+            win_pct = (100.0 * s.get("wins", 0) / closed) if closed else 0.0
+            per_trade = (total_r / closed) if closed else 0.0
+            line.append(f"{mode}: {closed:>5} trades {total_r:>8.1f}R "
+                        f"{win_pct:>5.1f}% win {per_trade:>6.2f} R/trade "
                         f"[{len(windowed[mode])} in window, {secs:.0f}s]")
         print("  ".join(line), flush=True)
 
