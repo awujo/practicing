@@ -23,9 +23,19 @@ on:
         required: false
         default: ""
       interval:
-        description: "Seconds between frames"
+        description: "Seconds between frames (sheets mode)"
         required: false
         default: "15"
+      mode:
+        description: "sheets = contact sheets for skimming, frames = full-resolution stills"
+        required: false
+        default: "sheets"
+        type: choice
+        options: [sheets, frames]
+      at:
+        description: "frames mode only: comma-separated seconds, e.g. 705,750,765"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -45,9 +55,18 @@ jobs:
           TAG: ${{ inputs.release_tag }}
           ONLY: ${{ inputs.only }}
           INTERVAL: ${{ inputs.interval }}
+          MODE: ${{ inputs.mode }}
+          AT: ${{ inputs.at }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/videos
+
+          # frames mode needs timestamps and a single video, or it either
+          # does nothing or writes stills for nine videos at once.
+          if [ "$MODE" = "frames" ]; then
+            [ -n "$AT" ] || { echo "::error::frames mode needs 'at'"; exit 1; }
+            [ -n "$ONLY" ] || { echo "::error::frames mode needs 'only' to pick one video"; exit 1; }
+          fi
 
           # Asset names are the raw upload names, full of dots and
           # unsuitable as folder names. Map each to the transcript folder
@@ -108,10 +127,10 @@ jobs:
             echo "::group::$name"
             if gh api -H "Accept: application/octet-stream" \
                  "repos/$GITHUB_REPOSITORY/releases/assets/$id" > "/tmp/videos/$name.mp4" \
-               && python3 knowledge-base/tools/extract_frames.py sheets \
+               && python3 knowledge-base/tools/extract_frames.py "$MODE" \
                     --video "/tmp/videos/$name.mp4" \
                     --transcript "$transcript" \
-                    --name "$name" --interval "$INTERVAL"; then
+                    --name "$name" --interval "$INTERVAL" --at "$AT"; then
               echo "ok: $name"
             else
               echo "::warning::$name FAILED -- continuing with the rest"

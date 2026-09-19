@@ -123,3 +123,40 @@ which is clear.
 Question for the operator: is the "engulfing" confirmation entry the
 open-close-disrespect described here, or is a classic engulfing candle
 ALSO a valid separate trigger? The engine currently has only the latter.
+
+
+## Stop placement and the breakout trigger (operator, 2026-09-19)
+
+**Stop:** *"Normally we put it in the wick of the engulfing candle, that
+[is] the safest invalidation zone."* Since "engulfing" is his name for
+the whole open-close-disrespect pattern, the candle meant is the one
+that did the disrespecting -- the stop goes beyond its wick.
+
+Note this differs from what the engine does today: `engulfing_stop_loss`
+uses the more extreme of TWO candles' wicks, which belongs to the
+classic-engulfing reading that is being replaced. To be confirmed
+against the worked examples rather than by asking again.
+
+**Breakout trigger:** *"we want to see a most recent breakout in the
+intended direction on the line chart."*
+
+Two things follow. "On the line chart" means close-based, which is what
+`close_based_breakout=True` already does throughout. "Most recent"
+means the latest breakout in the trade's direction, not any historical
+one -- which is exactly `_last_direction_at()` against the H1
+confirmation stream `run_backtest` already computes and currently throws
+away on a bias reading.
+
+## Method note, from the operator
+
+> "This is why I told you to study all the videos. Repetition is the
+>  mother of learning. Those other videos aren't new things, they are
+>  just repetition of a proven system, so as you study many examples
+>  throughout the videos you learn the patterns."
+
+Correct, and a standing instruction: resolve ambiguities by finding the
+same mechanic repeated across worked examples, not by asking. Every
+question asked so far -- stop placement, entry timing, what counts as a
+breakout -- is answered somewhere in the 38 contact sheets not yet read.
+The real-chart breakdowns carry position tools with the stop drawn on
+them, so the stop rule is readable directly off the examples.
