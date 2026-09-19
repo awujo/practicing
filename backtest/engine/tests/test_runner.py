@@ -744,19 +744,19 @@ def test_reaction_trigger_prefers_engulfing_then_falls_through_to_fourth_man():
     # Engulfing: bearish prev, bullish curr fully covering prev's body.
     prev = H1(0, 1.1020, 1.1025, 1.0995, 1.1000)
     curr = H1(1, 1.0998, 1.1040, 1.0996, 1.1030)
-    assert _reaction_trigger(prev, curr, Direction.BULLISH) == "engulfing"
+    assert _reaction_trigger([prev, curr], 1, Direction.BULLISH) == "engulfing"
 
     # 4th man: curr sweeps prev's low, reclaims into prev's range, prev's
     # high stays untouched -- NOT an engulfing shape (curr's open sits
     # above prev's close, so it doesn't "fully cover" prev's body).
     prev2 = H1(2, 1.1010, 1.1020, 1.1000, 1.1015)
     curr2 = H1(3, 1.1015, 1.1018, 1.0990, 1.1005)
-    assert _reaction_trigger(prev2, curr2, Direction.BULLISH) == "fourth_man"
+    assert _reaction_trigger([prev2, curr2], 1, Direction.BULLISH) == "fourth_man"
 
     # Neither pattern fires.
     prev3 = H1(4, 1.1010, 1.1020, 1.1000, 1.1015)
     curr3 = H1(5, 1.1015, 1.1018, 1.1005, 1.1010)  # stays fully inside prev3's range
-    assert _reaction_trigger(prev3, curr3, Direction.BULLISH) is None
+    assert _reaction_trigger([prev3, curr3], 1, Direction.BULLISH) is None
 
 
 def test_natural_stop_too_wide_uses_the_configured_pip_threshold():
@@ -1957,3 +1957,68 @@ def test_both_mode_arms_every_pool_either_single_mode_would():
                    _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")}
     assert swing_armed <= both, f"swing pools missing from both: {swing_armed - both}"
     assert len(both) > len(swing_armed)
+
+
+def test_the_default_trigger_set_is_exactly_what_has_always_shipped():
+    """Guard against a silent strategy change. Adding the taught trigger
+    must not alter a single trade until someone asks for it explicitly --
+    every backtest number on record was produced with `is_engulfing`, and
+    a default flipped underneath them would make the old results
+    incomparable without anyone noticing."""
+    from ..runner import TRIGGERS_SHIPPED, TRIGGERS_TAUGHT
+    import inspect
+    from ..runner import _reaction_trigger, _find_entry_candidates, run_backtest
+
+    assert TRIGGERS_SHIPPED == ("engulfing", "fourth_man")
+    assert TRIGGERS_TAUGHT == ("open_close", "fourth_man")
+    for fn in (_reaction_trigger, _find_entry_candidates, run_backtest):
+        param = inspect.signature(fn).parameters.get("triggers") \
+            or inspect.signature(fn).parameters.get("confirmation_triggers")
+        assert param.default == TRIGGERS_SHIPPED, f"{fn.__name__} default changed"
+
+
+def test_the_taught_set_does_not_fire_on_a_classic_candlestick_engulfing():
+    """The whole point of the swap. A textbook engulfing is what the code
+    has been looking for; it is NOT what the videos describe, and on its
+    own it must no longer count as a confirmation."""
+    from ..runner import TRIGGERS_TAUGHT
+
+    prev = H1(0, 1.1020, 1.1025, 1.0995, 1.1000)
+    curr = H1(1, 1.0998, 1.1040, 1.0996, 1.1030)
+    assert _reaction_trigger([prev, curr], 1, Direction.BULLISH) == "engulfing"
+    # Same two candles, taught set: no open-close key level was built and
+    # disrespected, so nothing fires.
+    assert _reaction_trigger([prev, curr], 1, Direction.BULLISH,
+                             triggers=TRIGGERS_TAUGHT) is None
+
+
+def test_the_taught_set_fires_on_a_disrespected_open_close_level():
+    """Two consecutive bearish candles build a bearish open-close key
+    level; a later candle CLOSING above it disrespects it, which is what
+    he calls an engulfing (bishop-repeating-system t=195-210)."""
+    from ..runner import TRIGGERS_TAUGHT
+
+    candles = [
+        H1(0, 1.1050, 1.1055, 1.1040, 1.1042),   # bearish
+        H1(1, 1.1042, 1.1044, 1.1030, 1.1032),   # bearish -> level at 1.1042
+        H1(2, 1.1032, 1.1060, 1.1030, 1.1058),   # closes ABOVE it: disrespect
+        H1(3, 1.1058, 1.1059, 1.1035, 1.1050),   # comes BACK to it: the entry
+    ]
+    assert _reaction_trigger(candles, 3, Direction.BULLISH,
+                             triggers=TRIGGERS_TAUGHT) == "open_close"
+
+    # The disrespect candle itself is not the entry -- price has not come
+    # back yet. Four steps, not three; this is the step it is easiest to
+    # drop, and dropping it would enter at the top of the move instead of
+    # on the return to the level.
+    assert _reaction_trigger(candles, 2, Direction.BULLISH,
+                             triggers=TRIGGERS_TAUGHT) is None
+
+
+def test_an_unknown_trigger_name_raises_rather_than_silently_doing_nothing():
+    """A typo in a CLI flag must not quietly produce a backtest with one
+    fewer confirmation pattern than asked for."""
+    prev = H1(0, 1.1020, 1.1025, 1.0995, 1.1000)
+    curr = H1(1, 1.0998, 1.1040, 1.0996, 1.1030)
+    with pytest.raises(ValueError, match="unknown confirmation trigger"):
+        _reaction_trigger([prev, curr], 1, Direction.BULLISH, triggers=("nonsense",))

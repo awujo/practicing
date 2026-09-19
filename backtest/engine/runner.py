@@ -199,6 +199,7 @@ from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective
                     confirmation_known_at)
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
+    open_close_disrespect_entry,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
@@ -1003,22 +1004,69 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
     return setups
 
 
-def _reaction_trigger(prev: Candle, curr: Candle, direction: Direction) -> str | None:
-    """Which confirmation-entry trigger, if any, fires on this (prev, curr)
-    pair: engulfing checked first, then 4th-man confirmation -- an
-    arbitrary but documented priority for the (rare) case both patterns'
-    conditions could coexist on the same candle pair. Returns None if
-    neither fires."""
-    if is_engulfing(prev, curr, direction):
-        return "engulfing"
-    fourth_man = fourth_man_confirmation_level(prev, curr)
-    if fourth_man is not None and fourth_man.default_bias == direction:
-        return "fourth_man"
+# The trigger set that has always shipped. "engulfing" here is
+# `is_engulfing()`, a classic candlestick engulfing.
+TRIGGERS_SHIPPED = ("engulfing", "fourth_man")
+
+# What the videos actually teach. "engulfing" in the source material is
+# not a candlestick engulfing at all -- it is a key level that price has
+# CLOSED THROUGH, which then flips polarity and is traded from the other
+# side. Three independent statements, and the operator confirmed the
+# reading in his own words:
+#
+#   "You also have your engulfed open close key level. You want to see
+#   price close above this key level. And then you now want to see price
+#   come into this level and then buy to the upside."
+#                                     bishop-repeating-system t=195-210
+#
+#   "You can also use an engulfing, that's an engulfed open close key
+#   level."                                   bishop-what-next t=390
+#
+# See knowledge-base/STRATEGY_VS_IMPLEMENTATION.md, "Confirmation entry
+# triggers", for the full citation list.
+#
+# NOT YET BUILT, and deliberately absent rather than half-implemented:
+# the breakout and sweep+break confirmations, which he rates HIGHEST of
+# the four ("personally I would tell you these two... if you have these
+# two, [missing it] is a missed entry", bishop-entries-part5 t=420).
+# Both need structural context rather than a candle pair, so they are a
+# larger job than this seam allows. Until they exist, this set is the
+# taught reading of two of the four triggers, not the taught system.
+TRIGGERS_TAUGHT = ("open_close", "fourth_man")
+
+
+def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
+                      triggers: tuple[str, ...] = TRIGGERS_SHIPPED) -> str | None:
+    """Which confirmation-entry trigger, if any, fires at `idx`.
+
+    Checked in the order `triggers` lists them, so the caller's ordering
+    is the priority for the (rare) case two patterns' conditions coexist
+    on the same candle pair. Returns None if none fires.
+
+    Takes the whole series rather than a (prev, curr) pair because
+    `open_close_disrespect_entry()` needs to look BACK for the key level
+    that was disrespected -- the pattern spans more than two candles by
+    definition."""
+    prev, curr = candles[idx - 1], candles[idx]
+    for name in triggers:
+        if name == "engulfing":
+            if is_engulfing(prev, curr, direction):
+                return "engulfing"
+        elif name == "open_close":
+            if open_close_disrespect_entry(candles, idx, direction) is not None:
+                return "open_close"
+        elif name == "fourth_man":
+            fourth_man = fourth_man_confirmation_level(prev, curr)
+            if fourth_man is not None and fourth_man.default_bias == direction:
+                return "fourth_man"
+        else:
+            raise ValueError(f"unknown confirmation trigger {name!r}")
     return None
 
 
 def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
-                            max_per_setup: int = MAX_CANDIDATES_PER_SETUP
+                            max_per_setup: int = MAX_CANDIDATES_PER_SETUP,
+                            triggers: tuple[str, ...] = TRIGGERS_SHIPPED
                             ) -> list[EntryCandidate]:
     """For each setup: bounded forward-scan H1 for the sweep of
     `liquidity_price`, then -- "we don't predict, we react" -- try each of
@@ -1091,7 +1139,7 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                            or (curr.low <= level_price <= curr.high))
                 if not touched or idx in seen_indices:
                     continue
-                trigger = _reaction_trigger(prev, curr, setup.direction)
+                trigger = _reaction_trigger(h1, idx, setup.direction, triggers)
                 if trigger is not None:
                     found.append(EntryCandidate(idx, setup.direction, level,
                                                 setup.liquidity_price, trigger,
@@ -1353,6 +1401,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
                   erl_cap: bool = True, erl_mode: str = "cap",
+                  confirmation_triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
                   close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
@@ -1397,6 +1446,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     knowledge-base/STRATEGY_VS_IMPLEMENTATION.md for the citations.
     Measure it against "cap" before promoting it; the `erl_capped` count
     in the trade log says how many trades the choice can possibly touch.
+    confirmation_triggers: which confirmation-entry patterns count as a
+    reaction at the key level, checked in the order given. Defaults to
+    TRIGGERS_SHIPPED, which is what has always run. TRIGGERS_TAUGHT
+    swaps the classic candlestick engulfing for the engulfed open-close
+    key level the videos actually describe. See those two constants for
+    the citations, and note that neither set yet contains the breakout
+    and sweep+break confirmations he rates highest.
     avoid_rollover_entries: when True, skips any entry whose FINAL candle
     (after any IRL-sweep re-anchoring) falls in the 21:00-23:00 UTC
     session-rollover window (see ROLLOVER_WINDOW_START_HOUR_UTC's
@@ -1691,6 +1747,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     entry_candidates = _find_entry_candidates(
         h1, liquidity_setups,
         max_per_setup=1 if liquidity_mode == "swing" else MAX_CANDIDATES_PER_SETUP,
+        triggers=confirmation_triggers,
     )
 
     mgr = PositionManager()
@@ -2246,6 +2303,11 @@ def main():
     parser.add_argument("--no-erl-cap", action="store_true",
                          help="Disable the external range liquidity target cap -- every trade targets a flat "
                               "--rr instead. For comparing against the (default) ERL-capped behavior.")
+    parser.add_argument("--taught-triggers", action="store_true",
+                         help="use the confirmation triggers the videos describe "
+                              "(engulfed open-close key level + 4th man) instead of the "
+                              "classic candlestick engulfing that has always shipped. "
+                              "A strategy change: measure it before trusting it.")
     parser.add_argument("--erl-as-target", action="store_true",
                          help="Use the external range liquidity point AS the target rather than as a cap on "
                               "--rr, falling back to --rr only when no ERL qualifies. This is what the course "
@@ -2265,6 +2327,7 @@ def main():
     run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date,
                   "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout,
                   "erl_mode": "target" if args.erl_as_target else "cap",
+                  "confirmation_triggers": TRIGGERS_TAUGHT if args.taught_triggers else TRIGGERS_SHIPPED,
                   "irl_mode": args.irl_mode}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
@@ -2281,6 +2344,8 @@ def main():
         suffix += "_noerlcap"
     if args.erl_as_target:
         suffix += "_erltarget"
+    if args.taught_triggers:
+        suffix += "_taughttriggers"
     if args.wick_based_breakout:
         suffix += "_wickbreakout"
     if args.irl_mode != "ignore":
