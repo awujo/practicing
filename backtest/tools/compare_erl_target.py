@@ -37,6 +37,11 @@ Usage (VPS -- real cached data required, this repo checkout has none):
     docker exec -u abc -w /config/trading mt5 nice -n 19 python3 \\
         -m backtest.tools.compare_erl_target --instruments ALL
 
+Per-trade CSVs are written to backtest/results/ as it goes, so later
+questions can be asked of this run without repeating it -- the
+2026-09-19 backtest left none and every follow-up question about it
+needed a fresh multi-hour run. Read them with summarize_results.
+
 Add --entry-style aggressive to see the other deployed bot. Everything
 else is pinned to live_flags.py, i.e. to what the bots actually run,
 rather than to run_backtest's dataclass defaults -- measuring a
@@ -46,14 +51,39 @@ configuration nobody flies was review finding 8 and it has bitten twice.
 from __future__ import annotations
 
 import argparse
+import os
 import time
 import traceback
 
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from ..engine.runner import run_backtest
+from ..engine.trade_log import write_trade_log
 from .live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
 
 MODES = ("cap", "target")
+
+
+def _dump(records, instrument, erl_mode, args):
+    """Leave the per-trade rows on disk.
+
+    This run takes hours and its findings are currently thrown away the
+    moment the terminal closes: `period_stats` prints and writes nothing,
+    which is why the 9,616-trade backtest of 2026-09-19 left no CSVs
+    behind and no later question could be asked of it. Every subsequent
+    question -- does qmr_test_count predict outcome, which trades did the
+    cap truncate, what did the losers have in common -- then needs
+    another multi-hour run to ask.
+
+    Written under the same name runner.py's CLI would use, so
+    summarize_results reads them without knowing which tool produced
+    them."""
+    if not args.dump_trades:
+        return
+    os.makedirs(args.dump_trades, exist_ok=True)
+    suffix = "" if erl_mode == "cap" else "_erltarget"
+    path = os.path.join(args.dump_trades,
+                        f"{instrument}_{args.entry_style}{suffix}.csv")
+    write_trade_log(records, path)
 
 
 def _run(instrument, erl_mode, args):
@@ -113,6 +143,10 @@ def main():
     parser.add_argument("--wick-based-sweep-break", action="store_true",
                         help="turn OFF close-based sweep breaks, which the live bots "
                              "run WITH and which is therefore the default here")
+    parser.add_argument("--dump-trades", default="backtest/results",
+                        help="directory to write per-trade CSVs into, so later questions "
+                             "can be asked of this run without repeating it. Blank "
+                             "disables. Defaults to the same place runner.py writes.")
     args = parser.parse_args()
 
     if args.instruments.strip().upper() == "ALL":
@@ -134,7 +168,9 @@ def main():
         for mode in MODES:
             t0 = time.time()
             try:
-                per_mode[mode] = (_stats(_run(instrument, mode, args)), time.time() - t0)
+                recs = _run(instrument, mode, args)
+                _dump(recs, instrument, mode, args)
+                per_mode[mode] = (_stats(recs), time.time() - t0)
             except FileNotFoundError:
                 print(f"{instrument:<9} no cached data, skipped", flush=True)
                 failed = True

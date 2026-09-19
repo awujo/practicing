@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from ..compare_erl_target import MODES, _stats, main
+from ...engine.trade_log import TradeRecord
 from ..live_flags import LIVE_FIXED_FLAGS, LIVE_LAUNCH_FLAGS
 
 
@@ -70,3 +71,31 @@ def test_defaults_match_the_deployed_launch_flags():
     # version of this assertion elsewhere was a tautology.
     assert parsed["wick_based_sweep_break"] is False   # -> close-based ON
     assert parsed["no_avoid_rollover"] is False        # -> rollover avoidance ON
+
+
+def test_dump_writes_one_csv_per_mode_under_the_expected_names(tmp_path):
+    """summarize_results reads backtest/results/*.csv by filename, so the
+    two modes have to land in separate files and the variant has to be
+    visible in the name. Same convention runner.py's CLI uses."""
+    from types import SimpleNamespace
+    from ..compare_erl_target import _dump
+
+    rec = TradeRecord(trade_id=1, instrument="EURUSD", entry_time="2026-01-01",
+                      status="closed_win", r_multiple=3.0)
+    args = SimpleNamespace(dump_trades=str(tmp_path), entry_style="conservative")
+
+    _dump([rec], "EURUSD", "cap", args)
+    _dump([rec], "EURUSD", "target", args)
+
+    names = sorted(p.name for p in tmp_path.iterdir())
+    assert names == ["EURUSD_conservative.csv", "EURUSD_conservative_erltarget.csv"]
+
+
+def test_dump_is_skipped_when_the_directory_is_blank(tmp_path):
+    from types import SimpleNamespace
+    from ..compare_erl_target import _dump
+
+    args = SimpleNamespace(dump_trades="", entry_style="conservative")
+    _dump([TradeRecord(trade_id=1, instrument="EURUSD", entry_time="2026-01-01")],
+          "EURUSD", "cap", args)
+    assert list(tmp_path.iterdir()) == []
