@@ -67,6 +67,40 @@ def test_primary_target_is_capped_by_a_closer_erl_price():
     assert capped_bear == pytest.approx(1.0985)
 
 
+def test_erl_as_target_only_differs_when_the_erl_is_the_further_one():
+    """The two modes are the same rule read two ways. They agree
+    whenever the ERL is nearer than the rr target -- which is why the
+    2.72R worked trade in the course videos reproduces under both -- and
+    part company only when it is further, where "cap" truncates to rr.
+
+    That truncation is what the videos contradict (seven statements that
+    the target IS the liquidity; his own finished trades read 3.4R to
+    almost 7R). See knowledge-base/STRATEGY_VS_IMPLEMENTATION.md."""
+    entry, stop = 1.1000, 1.0990  # 10 pip risk -> plain 1:3 target 1.1030
+
+    # ERL nearer than rr: identical under both modes.
+    near = dict(erl_price=1.1020)
+    assert (primary_target(entry, stop, Direction.BULLISH, **near, erl_mode="cap")
+            == primary_target(entry, stop, Direction.BULLISH, **near, erl_mode="target")
+            == pytest.approx(1.1020))
+
+    # ERL further than rr: this is the whole disagreement. 1.1080 is 8R.
+    assert primary_target(entry, stop, Direction.BULLISH, erl_price=1.1080,
+                          erl_mode="cap") == pytest.approx(1.1030)
+    assert primary_target(entry, stop, Direction.BULLISH, erl_price=1.1080,
+                          erl_mode="target") == pytest.approx(1.1080)
+
+    # Bearish mirror of the disagreement.
+    assert primary_target(1.1000, 1.1010, Direction.BEARISH, erl_price=1.0920,
+                          erl_mode="cap") == pytest.approx(1.0970)
+    assert primary_target(1.1000, 1.1010, Direction.BEARISH, erl_price=1.0920,
+                          erl_mode="target") == pytest.approx(1.0920)
+
+    # No ERL qualifying: rr is the fallback, in both modes.
+    assert (primary_target(entry, stop, Direction.BULLISH, erl_price=None, erl_mode="target")
+            == pytest.approx(1.1030))
+
+
 def test_tiered_exit_targets():
     tiers = tiered_exit_targets(entry_timeframe_erl=1.1050, origin_timeframe_next_key_level=1.1200)
     assert tiers.partial_target == pytest.approx(1.1050)

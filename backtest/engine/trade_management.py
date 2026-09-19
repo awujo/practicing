@@ -80,21 +80,40 @@ class PositionManager:
 
 
 def primary_target(entry_price: float, stop_loss: float, direction: Direction,
-                    rr: float = RISK_REWARD_PRIMARY, erl_price: float | None = None) -> float:
-    """The plain rr (default 1:3) target, ERL-capped when `erl_price` is
-    given: "price wants to go from internal range liquidity to external"
-    -- not beyond it (direct user correction; STRATEGY.md's flat 1:3
-    baseline never accounted for this). `erl_price` should be the nearest
-    untaken external range liquidity point currently visible on
-    4H/Daily/Weekly, in the trade direction (see runner.py's
-    `_nearest_erl()`). If the plain rr target would overshoot it, the
-    target is capped there instead -- effectively reducing the realized
-    R:R rather than the fixed 1:3 ratio itself, since the ratio isn't a
-    separately tracked quantity here."""
+                    rr: float = RISK_REWARD_PRIMARY, erl_price: float | None = None,
+                    erl_mode: str = "cap") -> float:
+    """The target, given the nearest untaken external range liquidity
+    point currently visible on Daily/Weekly in the trade direction
+    (see runner.py's `_nearest_erl()`). Two readings of the same rule,
+    which differ only when the ERL is FURTHER than the rr target:
+
+    "cap" (default, and what has shipped): the plain rr target, pulled
+    back to the ERL when it would overshoot it. "Price wants to go from
+    internal range liquidity to external" -- not beyond it.
+
+    "target": the ERL itself, with the rr target as the fallback when
+    no ERL qualifies. This is what the course videos teach, and they are
+    unusually consistent about it -- seven separate statements, no
+    counter-evidence (see knowledge-base/STRATEGY_VS_IMPLEMENTATION.md,
+    "Targets"). The clearest is bias-entries t=330: "once the external
+    liquidity is taken, expect a reversal, so the target should always
+    be external liquidity". The R multiples he reads off finished trades
+    run 3.4R to almost 7R, and none of them is a number he chose -- each
+    is what the distance to liquidity happened to be worth.
+
+    The two modes agree entirely when the ERL is nearer than rr, which is
+    why the 2.72R worked trade in the videos reproduces under both. They
+    part company on the 4.9R one, where "cap" takes 3R and leaves 1.9R.
+
+    Not yet the default: it is a strategy change, and it gets measured
+    against "cap" on real data before it flies. `erl_cap=False` remains
+    a third thing (ignore the ERL entirely, plain rr) and is unaffected."""
     risk = abs(entry_price - stop_loss)
     raw_target = entry_price + risk * rr if direction == Direction.BULLISH else entry_price - risk * rr
     if erl_price is None:
         return raw_target
+    if erl_mode == "target":
+        return erl_price
     return min(raw_target, erl_price) if direction == Direction.BULLISH else max(raw_target, erl_price)
 
 

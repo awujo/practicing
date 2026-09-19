@@ -1352,7 +1352,8 @@ def _bootstrap_origin(structure_events: list, confirmations: list, origin_kind: 
 def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   pip_size: float | None = None, n: int = 2,
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
-                  erl_cap: bool = True, close_based_breakout: bool = True,
+                  erl_cap: bool = True, erl_mode: str = "cap",
+                  close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
                   avoid_rollover_entries: bool = False,
@@ -1387,6 +1388,15 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     False, every trade targets a flat `rr` with no cap at all -- for
     comparing the two approaches against each other, not a claim that the
     cap was wrong.
+    erl_mode: how the ERL is used when `erl_cap` is on. "cap" (default,
+    what ships) takes the nearer of the rr target and the ERL. "target"
+    takes the ERL ITSELF, falling back to the rr target when no ERL
+    qualifies -- the course's own rule, and the difference only shows on
+    trades whose ERL is further than rr, which "cap" truncates to 3R.
+    See trade_management.primary_target() for the evidence and
+    knowledge-base/STRATEGY_VS_IMPLEMENTATION.md for the citations.
+    Measure it against "cap" before promoting it; the `erl_capped` count
+    in the trade log says how many trades the choice can possibly touch.
     avoid_rollover_entries: when True, skips any entry whose FINAL candle
     (after any IRL-sweep re-anchoring) falls in the 21:00-23:00 UTC
     session-rollover window (see ROLLOVER_WINDOW_START_HOUR_UTC's
@@ -2036,7 +2046,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # relative to it -- see _nearest_erl()'s docstring). Weekly may be [].
         raw_target = primary_target(entry_price, stop_loss, effective, rr=rr)
         erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly) if erl_cap else None
-        target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price)
+        target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price,
+                                erl_mode=erl_mode)
         erl_capped = target != raw_target
 
         if min_reward_r is not None:
@@ -2075,8 +2086,20 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             target = (entry_price + rr * risk_distance if effective == Direction.BULLISH
                       else entry_price - rr * risk_distance)
             if erl_cap and erl_price is not None:
-                target = (min(target, erl_price) if effective == Direction.BULLISH
-                          else max(target, erl_price))
+                # `erl_price` was found relative to the PRE-shift entry, so
+                # after moving the entry to the trigger's close it can land
+                # behind us. Capping handles that harmlessly (min/max keeps
+                # the nearer of two points ahead); using it AS the target
+                # would put the target on the wrong side of the entry, so
+                # fall back to the plain rr target when it is no longer
+                # beyond us.
+                still_ahead = (erl_price > entry_price if effective == Direction.BULLISH
+                               else erl_price < entry_price)
+                if erl_mode == "target":
+                    target = erl_price if still_ahead else target
+                else:
+                    target = (min(target, erl_price) if effective == Direction.BULLISH
+                              else max(target, erl_price))
 
         limit_cancel = None
         if entry_fill == "limit":
@@ -2223,6 +2246,10 @@ def main():
     parser.add_argument("--no-erl-cap", action="store_true",
                          help="Disable the external range liquidity target cap -- every trade targets a flat "
                               "--rr instead. For comparing against the (default) ERL-capped behavior.")
+    parser.add_argument("--erl-as-target", action="store_true",
+                         help="Use the external range liquidity point AS the target rather than as a cap on "
+                              "--rr, falling back to --rr only when no ERL qualifies. This is what the course "
+                              "videos teach; the shipped default truncates those trades to --rr.")
     parser.add_argument("--wick-based-breakout", action="store_true",
                          help="Use the swing candle's wick (high/low) as a plain breakout's reference level "
                               "instead of its close (line chart, the default). For comparing against each other.")
@@ -2237,6 +2264,7 @@ def main():
 
     run_kwargs = {"source": args.source, "pip_size": args.pip_size, "start_date": start_date, "end_date": end_date,
                   "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout,
+                  "erl_mode": "target" if args.erl_as_target else "cap",
                   "irl_mode": args.irl_mode}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
@@ -2251,6 +2279,8 @@ def main():
         suffix += f"_rr{args.rr:g}"
     if args.no_erl_cap:
         suffix += "_noerlcap"
+    if args.erl_as_target:
+        suffix += "_erltarget"
     if args.wick_based_breakout:
         suffix += "_wickbreakout"
     if args.irl_mode != "ignore":
