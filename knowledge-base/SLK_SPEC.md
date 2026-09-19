@@ -257,7 +257,73 @@ missed entry"* (part5 t=420).
 
 `5.2` is his "engulfing". `5.3` is his 4th man. His breakout and
 sweep+break are not among 4th man's three, and are the two the engine
-does not implement at all.
+does not implement at all. Both are drawn side by side on one screen in
+`bishop-entries-part5`, and read off the full-resolution frames they are
+unambiguous.
+
+### 5.4 Breakout (part5 t=375-405)
+
+> *"the first thing you would be looking for is you want price to give
+> you a breakout from this level ... You want to see price give you a
+> breakout to the upside."*
+
+Frame `t_00405.png`, GBPAUD 4h, bullish case. The key level is a red
+line at **1.86700**. What he draws to the right of it:
+
+1. price comes down into the level and makes a small low (~1.86650)
+2. it lifts, leaving a minor swing high
+3. an arrow drives up through that minor high
+
+At `t_00420.png` he marks that minor high with a short horizontal
+segment, anchored at both ends, at **1.86789** — which is *above* the
+key level, not the key level itself.
+
+So the broken reference is **the minor swing high formed during the
+reaction at the key level**, not the key level. Bearish mirrors.
+
+### 5.5 Sweep of liquidity + break of structure (part5 t=405-420)
+
+> *"Another thing you would want to see ... is something like this,
+> whereby price gives you a sweep of liquidity and a break of
+> structure."*
+
+Same frame, drawn immediately to the right of 5.4 so the two can be
+compared. What differs is one leg:
+
+1. price makes a first low at the level
+2. it lifts, leaving a minor swing high
+3. **it comes back down and makes a LOWER low, taking out the first
+   low's liquidity** — this is the leg 5.4 does not have
+4. then the arrow drives up through the minor high
+
+Measured off the drawing: first low ~1.86660, second low ~1.86570,
+i.e. the sweep goes visibly beneath. The break that follows is the same
+break as 5.4.
+
+### Why these two are buildable now
+
+They are the same two primitives the engine already uses for BIAS --
+`StructureTracker`'s plain breakout and its sweep-then-break, the pair
+`origin_kind` selects between. The taught rule applies them again, on
+the entry timeframe, to the reaction at the key level.
+
+So 5.4 and 5.5 need no new detector. They need the existing structure
+detection run on the H1/M30 window bounded by the key-level reaction,
+with the reference level being the minor swing high (or low) that the
+reaction itself creates.
+
+He rates these two above all the others: *"if you ask me which ones are
+likely best, personally I would tell you these two ... if you have
+these two, [missing it] is a missed entry. Well, you might take losses,
+but your losses are going to be minimal compared to other forms of
+confirmation entry."* (part5 t=420-435)
+
+### The entry timeframe ladder is written on the chart
+
+`part5` frames t=375-450 carry the text **`H3/H2/H1/M45/M30/M5`** typed
+on screen, next to the drawing. That is the ladder, from the source,
+and it is wider than the transcript alone suggested -- it reaches M5.
+The engine looks at H1 only.
 
 ### The rejection is mandatory
 
@@ -331,8 +397,8 @@ Two measured examples, read off full-resolution frames:
 | 1 | target IS the ERL | `min(3R, ERL)` — truncates every trade above 3R |
 | 2 | "engulfing" = engulfed open-close key level | `is_engulfing()`, a candlestick engulfing |
 | 3 | disrespect applies to all four shapes | open-close only (and not wired in) |
-| 4 | breakout + sweep/break confirmations, rated highest | absent |
-| 5 | confirmation on H1/45m/30m/15m | H1 only |
+| 4 | breakout + sweep/break confirmations, rated highest (5.4, 5.5) | absent, though the detectors exist for bias |
+| 5 | confirmation on H3/H2/H1/M45/M30/M5, written on the chart | H1 only |
 | 6 | setup = 4 conditions incl. imbalance overlap | primitives all exist, none composed |
 | 7 | origin vs continuation are different trades | `origin_kind="any"` |
 | 8 | daily-only bias with reduced target | absent |
@@ -350,5 +416,12 @@ Two measured examples, read off full-resolution frames:
 - Tighter stops measured badly on the same broken engine: median 9.4 ->
   7.7 pips but win rate 51.7% -> 38.0%.
 - Nothing in this document has been measured on the fixed engine.
-- Bishop's breakout and sweep+break confirmations are described but not
-  yet specified here precisely enough to build. They need the frames.
+- Bishop's breakout and sweep+break are now specified from the frames
+  (5.4, 5.5) and need no new detector -- they reuse StructureTracker.
+  What is NOT yet pinned is the window: how far past the key-level
+  reaction the break may occur before it stops counting. The engine has
+  REACTION_LOOKAHEAD for the analogous question; whether the taught rule
+  agrees with that number is unknown.
+- The ladder written on the part5 chart reaches M5. Whether the cached
+  data goes below M15 has not been checked, so part of the ladder may
+  not be measurable at all.
