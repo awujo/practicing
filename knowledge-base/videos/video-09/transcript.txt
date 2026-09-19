@@ -1,0 +1,766 @@
+[0.0-8.0] I hope you might take notes. You might not want to take notes. You just want to follow through.
+[8.0-12.5] But at the same time, you just want to pay attention to whatever we are saying here.
+[13.2-17.0] Right? So now, one of the things you want to do is there's something you have to do
+[17.5-20.5] when it comes to, you know, okay, let me start with this. You know, people say
+[21.3-26.0] you hear the quote every time on Twitter, right? I'm no longer really like active so much on
+[26.0-30.3] Twitter like I used to be before, although my account is still there, right? But you hear people
+[30.3-39.8] say things like day trading. Day trading is not everyday trading, right? Now the thing is many
+[39.8-44.3] of them don't really understand what it means. They just know it's a quote, right? And many just
+[44.3-47.5] feel like if your setup is not there, you don't have to force it, right? So on all of those
+[47.5-54.7] things. So largely it's not really about, people feel the quote of day trading is not
+[54.7-60.0] everyday trading. It has to do with not you over trading, right? Then people also say show up every
+[60.0-64.7] day, but don't trade every day, right? So I want to really explain what it means, right? So there's
+[64.7-68.9] something you have to do every daily. There's something you have to do on a daily. There's
+[68.9-72.6] something you have to check every day on a daily candle. There's something you must check on
+[72.6-75.8] the weekly candle. There's something you must check on the monthly candle. So let me start
+[75.8-79.3] on the monthly, right? So when it comes to the monthly candle, this one you want to
+[79.3-85.7] check how every monthly candle closes, right? How a monthly candle closes, right? Matters a lot,
+[85.7-90.8] right? It gives us more intel on how the next month is going to be. So for example,
+[90.8-96.0] the way let's say June trades into a particular key level, June trades into a particular key
+[96.0-101.2] level from an old monthly key level, and it closes, it trades into return, it closes above
+[101.2-105.2] it, right? Now, if the monthly candle closes above is, there's only two things we want to
+[105.2-109.8] see, right? So we see that monthly of June has actually traded into a monthly key level,
+[109.8-113.1] and it has closed above it. There are only two major things that we need to confirm
+[113.1-117.5] that July is going to buy, right? The first thing we want to see is we want to scale down
+[117.5-120.9] to one time from below and go to the weekly, right? And see if weekly is going to give
+[120.9-124.3] to us a liquidity sweep and break off structure on the weekly time frame. Or we
+[124.3-128.5] want to see the weekly time from give to us an engulfing, right? Which is very important,
+[128.5-131.5] right? The moment we see that the weekly has given to us an engulfing, right? We want
+[131.5-135.7] to see price tap into that engulfing. We must scale on time from below again to the daily,
+[135.7-139.8] right? And we begin to look for more trading opportunities and we'll just begin to scale
+[139.8-145.0] until that entire move on the monthly is exhausted, right? So there's something you
+[145.0-148.2] need to do on the monthly, right? This is something you just have to do once in a month.
+[148.2-152.7] Like we want to always check, how did the previous monthly candle close? Like for example,
+[152.7-157.6] how did June close, right? Generally for very much every May, how did May close that is
+[157.6-162.8] leading to what we have in June, right? It tells us more intel. So there's something we have to do
+[162.8-166.6] at the beginning of every month, right? Which is we going back to the monthly time frame to
+[166.6-171.4] check how the previous monthly candle closed, where did it react from and how did it close.
+[171.4-175.9] Then we scale on time frame lower to be able to confirm what price is actually creating for us.
+[175.9-181.1] That will guide all your decisions for your trading that particular month, right?
+[181.1-184.1] So there's something we want to do also every week. The same way we do it every
+[184.1-189.1] month is one of the ways we do it every week. At the beginning of every week on a Sunday,
+[189.1-194.9] we want to check how the previous weekly candle closed, right? That is very, very important,
+[194.9-198.5] right? We want to see if the weekly candle traded into a particular key level,
+[198.5-202.3] let's say closed below it, right? If it closes below it, it is not enough reason that it
+[202.3-205.4] closed below it to say that we want to look for selling opportunities all through that
+[205.4-209.7] week. No, right? Because the next candle can come break above it and price will just continue to
+[209.7-215.0] buy, right? Even if the previous weekly candle closes below it, right? So one of the things I
+[215.0-219.8] had a call with Dex in one particular time before majority of the people joined the group,
+[219.8-223.2] I had a particular call with him and I was telling him, we're talking about
+[223.2-226.8] journaling and I was telling him, one of the ways you journal your thought process
+[226.8-229.9] in trading is that, for example, on the weekly time frame on a Sunday, you are doing your
+[229.9-236.3] analysis, right? The price traded into a particular weekly key level and it closed
+[236.3-239.3] below. So one of the things you are going to be writing down in your personal trading
+[239.3-242.5] journal, right? Maybe you are writing physically is that the previous weekly candle
+[242.5-246.1] traded into a particular key level took out inducement or internal range liquidity
+[246.1-248.9] and it closed below, which means that all through that week, we want to be looking
+[248.9-252.7] for selling opportunities. But when you scale one time frame lower on the daily,
+[252.7-256.9] so the weekly is screaming for you sales, right? But when you go to the daily time
+[256.9-260.4] frame, the daily time frame is still showing you like mobile opportunities, right? There's
+[260.4-264.4] no break of structure to the downside. It means that there's every possibility
+[264.4-268.5] that this daily can only, these daily sales that you are seeing, right? It's just a
+[268.5-271.9] little bit of retracement that is also reflecting on the weekly time frame.
+[271.9-275.4] So this daily can come to a particular key level retrace, give to us a buy
+[275.4-278.0] continuation and it will continue to buy. That is why you will see the next
+[278.0-281.6] weekly candle we come, it will break above this particular key level and all other
+[281.6-285.7] weekly candles we just continue to buy like that. So what we want to see is
+[285.7-290.5] that as much as the weekly is screaming sales, in the daily until the daily
+[290.5-293.1] gives to us a confirmation that we are going to continue to sell, the
+[293.1-296.1] daily confirmation doesn't have to be a liquidity sweep and break of structure,
+[296.1-300.0] right? The daily confirmation can only be sometimes it can be an engulfing, right?
+[300.0-303.1] Or it can be a key level that was disrespected, price will come back, tap
+[303.1-306.2] into that particular key level and we know that the weekly and the daily has
+[306.2-310.0] already aligned, right? So this is something we want to do every week. You
+[310.0-313.7] must journal your thought process. What is the weekly saying? How did the
+[313.7-317.8] weekly time frame close? Where did it react from? Did it react from a weekly
+[317.8-321.2] open close? Did it react from a daily open close? That saves you a lot of
+[321.2-325.1] stress all through the week. So you are not everywhere trying to do everything.
+[325.1-328.7] So we know what we want to do every month. We know what we want to do every week,
+[328.7-332.6] right? And when it comes to every day, right? So when it comes to the daily
+[332.6-335.5] thing, right? The daily routine is that for daily you have to work with the
+[335.5-339.9] daily and the four hours, right? But most especially the daily. So let's say you
+[339.9-343.0] come on the daily time frame, daily is showing to you a liquidity sweep and
+[343.0-346.8] break of structure to the upside, right? But the four hours is showing you
+[346.8-350.0] that price is reacting from a four hour key level and it's trying to go to
+[350.0-353.9] the downside. Now this daily is showing you that price is bullish.
+[353.9-357.1] But this four hours is showing you that we are reacting from a key level and we
+[357.1-359.1] are looking like we're going to the downside. Which one are you going to go
+[359.1-363.1] with? I'm going to go with the daily, right? Because the daily has given to you a
+[363.1-365.6] sweep of liquidity and a break of structure or the daily is giving to
+[365.6-368.8] you and engulfing and price is showing you, you know, that price wants to
+[368.8-371.9] move to the upside on. See, it means that these four hours can just be a
+[371.9-374.2] little bit of retracement or the retracement you are seeing on the
+[374.2-377.2] daily that four hours is reacting from a key level and trying to close
+[377.2-380.4] below, you know, all of these four hours movements is just a retracement on
+[380.4-384.2] the daily, right? So we know that on the daily, I'm generally my thought process
+[384.2-387.6] that on the daily we already have a sweep and a break, right? Or we have an
+[387.6-391.6] engulfing price as greater the key level and we also have a daily inducement,
+[391.6-395.7] right? The next daily can do is having an inducement. So it means that
+[395.7-398.2] anything I'm seeing on the four hours is only going to be a retracement. I'll
+[398.2-401.6] wait for the major trend and we want to continue to buy to the upside, right?
+[401.6-403.9] I know that everything I'm saying might not make a lot of sense but pay
+[403.9-406.7] attention to what I want to show to you. So if you look at
+[407.6-413.2] this June 14th, I sent this to the entire group of GU, right? So you can see that
+[413.2-416.2] it makes a lot of sense why we should not even be looking to even be buying
+[416.2-421.0] GU in the first place, right? So look at what's GU did. So you can see if you
+[421.0-423.6] move to the line chat on the GU, right? You can see this is an A-shaped
+[423.6-425.9] key level that was actually created. You can see how price
+[425.9-427.9] traded into it. So one of the other thing you would notice that price
+[427.9-431.2] did was that the previous weekly candle that was created in June,
+[431.2-434.8] that this previous weekly candle was created in June 3rd. So one of the
+[434.8-437.9] things you wouldn't think that price did was that this candle, remember what I said
+[437.9-440.8] to us now, move to see, if you move this thing to a line chat, right?
+[440.8-445.2] You see, right? You see, look at the entire structure here. We had higher high,
+[446.2-449.4] higher low, we had this higher high. You can see how we broke below this pattern.
+[449.4-453.1] In fact, we had this higher high and higher low, higher high, higher low,
+[453.7-457.7] higher high, higher low, higher high, higher high. We broke below two structural
+[457.7-460.8] points, right? Can you see how we broke below two structural points?
+[460.8-464.7] So now on the line chat is showing to us that we have broken
+[465.2-468.3] below two structural points. So we see where we are coming from already.
+[468.3-471.1] We know where we are coming from. So even without even identifying the
+[471.1-474.6] break of structure that is actually happening here, these two candles alone,
+[474.6-478.0] right? Because you can see we had two consecutive candles here.
+[478.0-481.1] You can see that these two consecutive candle engulfed this particular one,
+[481.1-484.6] creating for us this V-shaped key level, right? You can see how it engulfed.
+[484.6-488.1] Then this particular candle that was created on the weekly timeframe 3rd of June,
+[488.1-491.0] right? The first week in the month of June, you can see how we took it out
+[491.0-494.3] and we started to sell. We have been selling for two weeks, right? One of
+[494.3-497.4] the things you will actually notice is that you can see because of how this
+[497.4-502.2] particular weekly candle closed, right? This trial this week, the ideal thing
+[502.2-505.6] we should all be looking for is for more selling opportunities.
+[505.6-508.8] Where did price come to react from again? There was nothing deep that price
+[508.8-511.4] came to react from. This is another open closed key level.
+[511.4-513.6] Are you seeing where price came from? You remember when we said,
+[513.6-516.4] when I sent it, I told us that you can see where price is at the moment.
+[516.4-518.8] Price is at this particular H-shaped key level. We took out this
+[518.8-522.2] particular weekly high, right? You can see how we closed, right?
+[522.2-525.0] Handle closure matters a lot, especially on the higher timeframe.
+[525.0-528.8] It matters a whole lot, right? So you can see how we closed below.
+[528.8-531.5] It means that we are going to the downside. So the question is,
+[531.5-535.8] to where exactly are we going to? Where exactly are we going to, right?
+[535.8-539.0] And we said, this looks like an ideal place that price wants to come to.
+[539.0-543.1] This is the key level that price, that had an inducement liquidity
+[543.1-545.9] that is resting here. Price disrespected it. And ideally,
+[545.9-549.0] we want to see price continue to drop to the downside until price gets here.
+[549.0-551.9] Maybe if it gets here, we are going to satisfy two conditions, right?
+[551.9-555.2] Sweep liquidity, rebalance this holding balance at this specific
+[555.2-558.2] pricing level that was created. And we might just continue to buy
+[558.2-560.7] to the upside. In fact, all of these sales can happen. In fact,
+[560.7-564.4] we can continue to have more sales all through this month of June
+[564.4-567.2] until we get into July. Then July can start buying.
+[568.2-571.3] Are you seeing now? Can you see why we should even look for more sales, right?
+[571.3-574.7] Now, context to our weekly timeframe. We swept this previous weekly high,
+[574.7-577.1] tapped into a key level, right? That was created.
+[577.1-579.7] As you can see, the first thing that we are noting on our journal
+[579.7-583.1] is that the weekly timeframe took out an old weekly high, tapped into a
+[583.1-586.9] key level and it's closed below, right? So which means that the weekly screaming
+[586.9-590.0] more sales, right? As much as weekly screaming more sales,
+[590.0-592.8] we are going one time from lower to look for confirmations.
+[592.8-596.0] Look at what happened on, look at what happened on the daily.
+[596.0-597.8] Are you seeing now? Look at what happened on the daily.
+[598.5-602.3] So you can see on the daily year, right? For this daily year,
+[602.3-604.5] you can see what we did here. Move to the line chat again.
+[604.5-606.8] Are you seeing how we, are you on the line chat here?
+[606.8-609.5] We always swept liquidity. We broke below this particular law.
+[609.5-612.4] Impulsive move to the downside. We broke below this particular law.
+[612.4-614.4] Where did you see price come back to here on the daily?
+[614.4-617.7] Look at this. This is an open close key level here, right?
+[617.7-620.4] This is an open close key level that was tested once.
+[620.4-623.5] It was respected and it was broken impossibly.
+[623.5-626.4] Look at how price came back there, right? On when, on when I stay,
+[626.4-628.9] right? And price started to drop. You can see the
+[628.9-631.3] impossible move that is happening all through this week.
+[631.3-633.0] Look at where price is actually going to.
+[633.0-634.5] We have this particular liquidity to go.
+[634.5-636.7] This is an old daily load that needs to go.
+[636.7-639.4] So what can even happen maybe likely tomorrow because tomorrow is Friday.
+[639.4-642.4] Today is Friday. We might not see so much volatility in the market.
+[642.4-645.8] We might just see some price. We'll just go to the downside.
+[645.8-648.0] And Friday pricing action might just close here.
+[648.0-650.7] It might just close here. Prepare for next week, right?
+[650.7-653.5] We don't know, but it might just close somewhere around this place, right?
+[653.5-655.9] But we want to see this particular load go, right?
+[655.9-657.0] So we can see how we came from.
+[657.6-661.1] Can see how we came from the weekly timeframe tapped into this swept liquidity.
+[661.1-662.8] We broke below this particular load.
+[662.8-665.9] As long as it's daily showing us a break of this particular load,
+[665.9-670.6] everything we are looking for from the one hour timeframe down to the 30 minutes,
+[670.6-672.5] we are only looking for selling opportunities.
+[673.7-678.0] Now, there is every possibility as much as we know that this is like a set of points
+[678.0-680.5] we always look for where price creates internal range liquidity.
+[680.5-681.7] Internal range liquidity has to go.
+[681.7-684.0] Then price must take out external range liquidity.
+[684.0-686.5] Do you know that as much as we want to continue to sell,
+[686.5-688.9] price will give to us buying opportunities.
+[688.9-693.1] That buying opportunities is just to induce bias.
+[693.1-695.0] Then it will use them as liquidity again.
+[695.0-697.1] But price will continue to go in this internal direction.
+[697.1-698.4] For example, look at what I'm saying.
+[698.4-700.8] If you come to the four hours, now look at what the daily is saying.
+[700.8-701.7] Look at the daily.
+[701.7-704.2] Daily is showing to us that we are broken below this particular load.
+[704.2-705.5] We are going to the downside.
+[705.5-707.0] And daily is also giving us an intel.
+[707.0-708.6] Look at what's, look at this thing.
+[708.6-709.6] Look at where daily is coming from.
+[709.6-710.6] Pay attention.
+[710.6-714.5] This is an open close kill that was tested once that got broken and disrespected.
+[714.5-715.7] Now price tapped here.
+[715.7-717.9] Did this daily candle close, right?
+[717.9-720.7] Your weekly showing you is screaming sales.
+[720.7-721.2] Sales.
+[721.2-722.7] How did this daily candle close?
+[722.7-724.7] We tapped into this particular open close kill level
+[724.8-726.0] and we closed below.
+[726.0-727.3] It means that for the next day,
+[727.3-729.5] we are looking for more second opportunities.
+[729.5-731.0] And you can see how those days sold.
+[731.0-734.8] You can see, in fact, only this one move alone equals all of these moves
+[734.8-736.9] that has been happening Monday, Tuesday, and Wednesday.
+[736.9-739.4] Only this one alone, right?
+[739.4-742.0] So even if you look at this from here, right?
+[742.0-744.0] How important candle closures is, right?
+[744.0-745.4] If you look at what happened here,
+[745.4-746.8] all of these buys that happened from here,
+[746.8-748.7] okay, because we can see, right?
+[748.7-749.9] As much as we have bullish,
+[749.9-752.0] as much as we know that we have bearish from the weekly,
+[752.0-753.0] look at what price did, right?
+[753.0-754.5] Remember what we said about liquidity?
+[754.5-755.8] We took out all daily lows.
+[755.8-758.0] We reacted, look at where we reacted from, right?
+[758.0-761.0] This is an engulfing candle that created a kill level for us.
+[761.0-762.0] How did this candle close?
+[762.0-763.1] We tapped into it closed up.
+[763.1-764.3] We tapped here, closed up both.
+[764.9-766.8] We tapped here again, we also closed up both.
+[767.3-768.8] The moment we tapped here and closed up both,
+[768.8-770.2] you can see what the Monday did for us,
+[770.2-771.6] created a kill level, right?
+[771.6-774.5] So it started to give to us more spying opportunities.
+[774.5-776.6] We bought until we go to a particular kill level
+[776.6-778.6] that is overlapping inside of this imbalance.
+[778.6-781.0] Then the next thing was that we saw small sales.
+[781.0-782.6] The reason why we have all of these buys, right?
+[782.6-785.3] On the daily context, we took out all daily low,
+[785.3-786.9] reacted from a kill level that was created
+[786.9-788.3] with this engulfing here.
+[788.3-790.6] This Monday tapped into it closed up both.
+[790.6-791.7] The moment Monday closed up,
+[791.7-793.4] we are looking for buying opportunities.
+[793.4-794.8] But we are keeping it at the back of our mind
+[794.8-798.1] that the weekly shared selling, showing us,
+[798.1-799.4] no, I don't buy to my tongue,
+[799.4-801.5] the weekly showing us that we are going to the downside.
+[801.5-803.2] And the daily has confirmed it.
+[803.2-804.0] Daily confirmed it.
+[804.0-806.4] Look at how we broke below this particular low here, right?
+[806.4-807.6] Body to body breakup structure
+[807.6-808.8] because when we move to the line chart,
+[808.8-810.9] that is what the line chart recognizes.
+[810.9-812.5] That is where the volume is, right?
+[812.5-814.8] We broke below this particular low, right?
+[814.8-815.6] You can see.
+[815.6-817.7] So that doesn't mean we can catch buys.
+[817.7-819.5] Those buys are the retracement.
+[819.5-821.9] That is why we're not holding all these positions for too long.
+[821.9-823.9] We just catch a buy from around this type of area,
+[823.9-825.5] one to three, one to four, we are out.
+[825.5-827.4] And the moment price goes to this particular kill level,
+[827.4-830.3] we can see how we dropped once, just once.
+[830.3-831.1] How did it drop?
+[831.1-833.1] It tapped into this kill level here,
+[833.1-836.5] close below it, and we started to drop to the downside.
+[836.5-838.0] But look at what I'm trying to show to you.
+[838.0-840.2] Look how we have four hours was even showing people.
+[840.2-842.4] Four hours was creating even buying opportunities
+[842.4-844.9] for people.
+[844.9-846.1] Let me show you some.
+[846.1-847.4] So can you see?
+[847.4-848.7] Daily showing us more sales.
+[848.7-850.2] Look at what four hours did
+[850.2-852.7] because the market will show you what you want to see, right?
+[852.7-854.0] Look at what four hours did.
+[854.0-856.8] Four hours created a kill level without engulfing it.
+[856.8-859.3] One, the next thing that four hours did again
+[859.3-860.6] was to create a weight,
+[860.6-863.5] created an inducement liquidity for us here.
+[863.5-866.1] So we are looking at, oh, this is a perfect setup
+[866.1-867.6] because number one, we engulfed,
+[867.6-869.1] created an inducement liquidity.
+[869.1-870.7] And now we have external range liquidity
+[870.7-872.2] that should go, right?
+[872.2-873.8] We have external range liquidity that should go.
+[873.8-877.3] Look at what price did.
+[877.3-878.7] Look at this.
+[878.7-881.3] So look at price came to this low.
+[881.3-882.5] Look at this.
+[882.5-887.4] See?
+[887.4-888.4] Look at what price did.
+[888.4-889.5] Price played the kill level here
+[889.5-892.0] and started to pump to the upside, right?
+[892.0-893.5] Only for price to turn from where?
+[893.5-894.5] Look at this.
+[894.5-896.0] Look at where price came to turn from
+[896.0-897.1] to continue the sales.
+[897.1-900.0] So there are people who are looking early induced buyers,
+[900.0-901.5] who are looking to buy from here.
+[901.5-902.8] Price tapped into their entry
+[902.8-904.5] and started to buy from here, right?
+[904.5-906.6] Only for price to still reverse again on them.
+[906.7-907.7] Hits the stops.
+[907.7-910.8] It's just because some people are leaving messages.
+[913.1-913.7] I'm fast.
+[915.5-916.8] Ah, sorry.
+[916.8-917.5] Am I fast?
+[918.8-920.9] I'm trying to, I don't want to keep you guys
+[920.9-923.9] away cool till maybe like three o'clock
+[923.9-924.7] or two o'clock.
+[924.7-926.1] So that's why I'm trying to rush things.
+[928.5-932.1] Please, am I too fast or is it okay?
+[934.9-935.3] Okay.
+[935.3-936.3] Thank you, Mr. Aulou.
+[937.3-941.3] So you can see how early buyers were induced.
+[941.3-943.6] Are you seeing how early buyers were induced?
+[943.6-945.7] I'm telling you, you can keep trading
+[945.7-946.7] as simple as possible.
+[946.7-948.7] You don't need so many, many things.
+[948.7-950.7] You don't need to draw plenty things.
+[950.7-952.0] You don't need to draw plenty.
+[952.0-954.7] Just build buyers from the higher time frame, right?
+[954.7-956.3] If you come to the weekly time frame again,
+[956.3-958.5] look at, let me show you something on the weekly, right?
+[960.1-962.8] So if you look at this weekly time frame, right?
+[962.8-964.0] Look at what price did here.
+[964.0-966.1] We created a kill every year, right?
+[966.1-967.8] After we created this V-shaped kill level,
+[968.5-970.1] this is a V-shaped kill level that we created.
+[970.1-971.7] But did you notice how priced?
+[971.7-973.0] Look at the structure here, right?
+[973.0-974.5] It is clear already, right?
+[974.5-976.2] Structurally, we are this higher low.
+[976.2-977.9] We are this higher high, right?
+[977.9-978.9] So we know that we are broken
+[978.9-981.3] above this external range liquidity, right?
+[981.3-981.7] Structure.
+[981.7-983.2] We're not even looking at all this one that is happening.
+[983.2-984.6] We're not looking at past data.
+[984.6-986.1] We don't need all of that.
+[986.1-987.8] We're just paying attention to what price is doing now.
+[987.8-990.9] We created a higher high, higher low, higher high, right?
+[990.9-992.9] So we are paying attention to this most recent data
+[992.9-994.5] that has been created for us.
+[994.9-996.9] So we know that all of these old weekly looms
+[996.9-999.5] are just going to serve as internal range liquidity for us.
+[1000.1-1000.7] Are you seeing now?
+[1000.7-1003.1] So this the weekly loan from here,
+[1003.1-1005.8] only this current data is showing us mobile buying opportunities
+[1005.8-1006.7] because on the line chart,
+[1006.7-1008.2] forget about all these weeks that you are seeing
+[1008.2-1008.9] that is confusing.
+[1008.9-1011.1] You move to the line chart higher low
+[1011.1-1013.2] and higher high, higher low, higher high.
+[1013.2-1015.3] We had a kill level that is resting there, right?
+[1015.3-1016.2] Look at what price did.
+[1016.2-1017.9] Look at how what price did.
+[1017.9-1021.1] Price tapped into it a particular week in February,
+[1021.1-1022.9] tapped into it and closed above.
+[1023.6-1024.5] Are you seeing now?
+[1024.5-1026.9] Another week again in that same February price came back
+[1026.9-1028.5] to the same killer we tapped above
+[1028.5-1030.5] onto the real momentum now started.
+[1030.5-1032.6] So we know that price would could have gone
+[1032.6-1034.1] for this particular high.
+[1034.1-1035.7] We might not be able to hold a trade
+[1035.7-1037.7] until all these weeks, right?
+[1037.7-1039.6] But we know because of your prices coming from,
+[1039.6-1041.0] remember the two types of liquidities
+[1041.0-1043.1] you are looking for, internal to external.
+[1043.7-1045.4] Now we know that this structure is bullish,
+[1045.4-1047.9] higher high, higher low, higher high, right?
+[1047.9-1049.0] We have internal liquidity
+[1049.0-1050.9] that has been created already here.
+[1050.9-1053.0] Price came to take out the internal liquidity here,
+[1053.0-1055.0] laid out from a key level from the weekly.
+[1055.0-1056.5] You should not be, you don't have any business
+[1056.5-1057.7] looking for selling opportunities.
+[1057.7-1059.3] Even if you want to sell,
+[1059.3-1061.3] you should not hold the sales for too long.
+[1062.0-1062.9] Do you understand?
+[1062.9-1064.8] Now we have taken out internal range liquidity.
+[1064.8-1065.9] The next piece we should be going to
+[1065.9-1067.2] is the external range liquidity.
+[1067.2-1068.4] This is external range now.
+[1069.5-1071.7] This is external range liquidity that should go.
+[1071.7-1073.1] Internal range liquidity has been taken.
+[1073.1-1075.4] We are playing off reactive from a key level.
+[1075.4-1077.4] And because of our understanding of candle closure,
+[1077.4-1078.2] look at what price did.
+[1078.2-1080.3] We tapped into this place and we closed above.
+[1080.9-1082.5] Then the next in a particular week
+[1082.5-1084.2] where momentum now started to kick in,
+[1084.2-1085.3] you can see what price did here.
+[1085.3-1087.0] It engulfed and after the engulfing,
+[1087.0-1088.1] what did price do?
+[1088.1-1089.6] Came back to the same key level,
+[1089.6-1091.3] closed above, and you can see the momentum.
+[1093.2-1094.5] Are you seeing it now?
+[1094.5-1095.5] What do we have here?
+[1096.5-1097.8] Higher time frame.
+[1097.8-1098.7] So I can only be,
+[1099.2-1102.0] you know, we can do this on a weekly basis.
+[1102.0-1103.6] We know what to do on a weekly.
+[1103.6-1104.6] We know what to do.
+[1104.6-1105.2] Look at this.
+[1110.5-1111.3] So look at this one.
+[1112.8-1115.5] Okay, so let's talk about this.
+[1116.9-1118.6] I think this one is a very good example.
+[1120.0-1121.9] So I think let's just stay on this, right?
+[1121.9-1123.6] You see, this is where you're, you know,
+[1123.6-1126.1] and you know, we don't have to, right?
+[1126.1-1127.7] Like I used to say, I don't, I don't down.
+[1127.7-1129.3] I don't talk down when anybody's work.
+[1129.3-1129.9] I don't know.
+[1129.9-1130.4] I don't do that.
+[1130.4-1131.3] I will never do that.
+[1131.3-1132.6] It is not consistent with my nature.
+[1132.6-1133.1] All right.
+[1133.1-1135.1] It's, you know, instead of we picking
+[1135.1-1137.3] not one full other block like this,
+[1137.3-1139.1] I will say who I'm looking for, you know,
+[1139.1-1140.5] maybe you pick another block like this.
+[1140.5-1141.9] You pick no, right?
+[1141.9-1143.3] Just pay attention to what price is doing.
+[1143.3-1144.5] The story is in the price.
+[1145.0-1146.1] Move to the line chart.
+[1146.1-1146.7] Look at this.
+[1146.7-1148.9] Weekly showing us mobile opportunities, right?
+[1148.9-1152.3] One, two, so we have high, high, high, look, high, high.
+[1152.3-1154.9] Which means that we are broken up both this external rate.
+[1154.9-1156.7] See, it's just basics.
+[1156.7-1158.4] We are broken up both external range liquidity
+[1158.4-1159.3] that is resting here.
+[1159.3-1161.7] We have created a key level as well, right?
+[1161.7-1163.9] So we want to see price buy from here.
+[1163.9-1166.5] So as much as we want to see price buy from here,
+[1166.5-1167.9] knowing fully well that we also have
+[1167.9-1169.7] an internal range liquidity that should go.
+[1170.3-1172.0] Remember what I said about when we're talking
+[1172.0-1174.1] about structure, basics and advanced structure?
+[1174.1-1176.5] I told us that the market isn't bullish, right?
+[1176.5-1177.3] I told us something.
+[1177.3-1178.7] Pay attention to what I said.
+[1178.7-1181.2] I said, if price takes out an external range liquidity,
+[1181.2-1182.7] you should expect a reversal.
+[1182.7-1184.5] If price takes out internal range liquidity,
+[1184.5-1186.4] you should expect a continuation
+[1186.4-1188.4] in that particular trend, right?
+[1188.4-1190.7] Then remember what we said about trading ranges?
+[1190.7-1192.6] I told you that the same way a range starts
+[1192.6-1194.4] is the same way a range ends.
+[1194.4-1195.9] A range starts by sweep of liquidity
+[1195.9-1197.2] and break of structure.
+[1197.2-1198.9] To give you an order flow to the upside,
+[1198.9-1200.9] then the way a range ends is like to still sweep
+[1200.9-1203.3] liquidity and give you a break of structure, right?
+[1203.3-1205.3] So price will come back for the last resort liquidity,
+[1205.3-1207.2] then go for the main external range liquidity.
+[1207.2-1210.0] That aside, look at everything that we are saying here.
+[1210.0-1211.3] So you can see how we broke.
+[1211.3-1212.5] So I said after price takes out
+[1212.5-1214.5] an external range liquidity, it will reverse.
+[1214.5-1217.1] If it takes out an external range liquidity, it will reverse.
+[1217.1-1219.2] So now we have taken out, yeah,
+[1219.2-1222.4] we have external range liquidity here has been taken.
+[1222.4-1223.9] What can you see on the line charts?
+[1223.9-1226.9] The line chart is very, very important.
+[1226.9-1228.3] What can you see on the line chart?
+[1228.3-1230.5] Pay attention to the structure that is being created.
+[1230.5-1235.7] Higher high, higher low, higher high, break of structure, right?
+[1235.7-1236.9] Break of structure.
+[1236.9-1238.9] Now, if you use the basics of market structure,
+[1238.9-1241.2] after external range liquidity is taken,
+[1241.2-1242.7] where is price going to next?
+[1242.7-1244.8] Price is going to the internal range.
+[1244.8-1246.1] Then after internal range liquidity,
+[1246.1-1247.7] where is price going to external range?
+[1248.3-1249.9] That is why we've limited everything
+[1249.9-1252.1] to structural liquidity and key level.
+[1252.1-1253.4] We are not just calling it SLK
+[1253.4-1254.9] because we want to have a special name.
+[1254.9-1256.9] No, it's not about the name.
+[1256.9-1258.5] You know, I've told us already,
+[1258.5-1260.5] we don't want to know about name here.
+[1260.5-1263.0] We are just here looking for results.
+[1263.0-1266.3] We are just here trying to produce real time results.
+[1266.3-1267.2] It's not about the name.
+[1268.0-1268.7] Do you understand?
+[1268.7-1271.4] We limited everything to structural liquidity and key level.
+[1271.4-1273.1] Structure knowing that if price takes out
+[1273.1-1275.6] external range liquidity, it will come for internal.
+[1275.6-1276.7] If it takes out internal,
+[1276.7-1278.6] it will come again for external liquidity.
+[1279.2-1281.7] And the same way a range start is the same way it ends.
+[1281.7-1283.3] We took out external range liquidity
+[1283.3-1284.5] for us to have a reversal.
+[1284.5-1285.6] Look to the line chart.
+[1285.6-1287.9] We created higher high, higher low, higher high.
+[1287.9-1288.9] We broke structure.
+[1288.9-1291.3] Oh, Zoom is telling us we have 10 minutes left.
+[1295.4-1297.0] It said not about the...
+[1297.0-1298.0] See, it did say...
+[1298.0-1299.8] I hope we are not sleeping.
+[1299.8-1301.0] Are we sleeping on this call?
+[1302.5-1303.2] Are we sleeping?
+[1308.7-1311.5] See, we do not do roll call like this.
+[1315.0-1316.8] So you can see structurally,
+[1316.8-1318.5] we have taken out external range liquidity.
+[1319.1-1321.6] Then for us to come from external to internal,
+[1321.6-1323.7] we swap liquidity with broke structure.
+[1323.7-1325.6] Structurally on the weekly, we have broken structure.
+[1325.6-1327.8] So what can you see again?
+[1327.8-1328.5] What can you see?
+[1328.5-1329.5] Let's make it clear.
+[1329.5-1330.9] Let's keep our chart clean.
+[1330.9-1331.8] On the line chart here,
+[1331.8-1333.5] we have taken out this external range liquidity
+[1333.5-1334.3] that was created.
+[1335.7-1337.9] Now we have a key level that we want to see.
+[1337.9-1339.5] Remember what I said about key level?
+[1339.5-1340.8] We have not even treated it very well.
+[1341.7-1343.9] So I told us that first day that network was acting up,
+[1343.9-1345.8] I said key levels can be used as entries
+[1345.8-1348.0] and it can be used as your nearest point of exit.
+[1348.0-1350.7] So you can see after we took out external range liquidity here,
+[1350.7-1352.2] what did you see that price did?
+[1352.2-1354.8] Price, we created higher high, higher low, higher high.
+[1354.8-1356.2] We broke structure.
+[1356.2-1357.8] Now after the break of structure,
+[1357.8-1359.7] move to your candlestick chart.
+[1359.7-1361.5] What can you see engulfing?
+[1362.1-1365.4] We engulfed created for us, for us and what?
+[1365.4-1367.7] Look at this key level.
+[1368.3-1370.2] How did backhand look close?
+[1370.2-1371.5] With this candle close,
+[1371.5-1373.8] we tapped into this key level which closed below.
+[1374.5-1376.5] The nearest point of liquidity that should go
+[1376.5-1377.7] should be this one.
+[1377.7-1379.6] This is our internal range liquidity.
+[1379.6-1381.2] We even have more context again
+[1381.2-1383.6] because we saw this previous weekly I take it.
+[1383.6-1384.5] So what do we have here?
+[1384.5-1386.0] We have a sweep of liquidity.
+[1386.0-1388.6] We tapped into this particular key level flows below.
+[1388.6-1391.9] So we know that price is coming for internal range liquidity.
+[1391.9-1394.4] Hopefully price will stop at this particular key level here.
+[1395.5-1396.8] Then if price stops at this key level,
+[1396.8-1398.5] we can look for buying opportunities
+[1398.5-1400.2] to take out this external range liquidity.
+[1400.2-1401.4] So look at what price did.
+[1405.3-1413.2] Now you say, how did this candle close?
+[1413.2-1416.0] We came back to the same key level in the weekly timeframe.
+[1416.9-1419.3] Are you seeing how the price is complete already?
+[1419.3-1420.9] Look at it.
+[1420.9-1424.2] We came from external range straight to internal range.
+[1424.2-1426.9] Look at this higher high, higher low, higher high,
+[1426.9-1429.9] break of structure after taking out external range liquidity.
+[1430.8-1431.6] Back to the basics.
+[1431.6-1432.5] Let me re-emphasize.
+[1432.5-1433.8] Repetition is the model of learning.
+[1435.0-1436.8] Basics of market structure.
+[1436.8-1440.1] After every external range liquidity is taken,
+[1440.1-1441.3] expect the reversal.
+[1441.3-1443.1] After every internal range liquidity is taken,
+[1443.1-1444.4] expect the continuation.
+[1444.4-1445.6] On the weekly timeframe,
+[1445.6-1447.2] we took out external range liquidity.
+[1447.2-1448.5] We should expect the reversal.
+[1448.5-1450.5] We have created a V-shaped key level here.
+[1450.5-1451.0] Right?
+[1451.0-1452.5] Now for us to expect the reversal,
+[1452.5-1454.9] we already had higher high, higher high,
+[1454.9-1456.3] we broke structure.
+[1456.3-1457.5] Now that we have broken structure,
+[1457.5-1460.1] we want to see price move from external range liquidity
+[1460.1-1463.3] that was taken to internal complete.
+[1463.3-1464.8] Internal range liquidity has been taken
+[1464.8-1465.5] how many weeks?
+[1465.5-1466.0] Two weeks.
+[1466.8-1468.0] More selling opportunities.
+[1468.0-1468.8] Two weeks.
+[1468.8-1470.5] So at the end of that particular week,
+[1470.5-1474.0] in February, price tapped into this V-shaped key level
+[1474.0-1474.9] that was created.
+[1474.9-1475.4] Right?
+[1475.4-1476.7] After tapping into the V-shaped key level
+[1476.7-1477.3] that was created.
+[1477.3-1478.1] So let's take this off.
+[1481.9-1483.9] So after price tapped into this V-shaped key level
+[1483.9-1485.9] that was created, how did this candle close?
+[1486.7-1489.1] Now pay attention to how these two weekly candle closed.
+[1489.1-1489.6] These two.
+[1490.6-1492.8] You can see we traded into this key level closed below,
+[1492.8-1494.2] traded into this key level closed below,
+[1494.2-1496.0] and we continue to move to the downside.
+[1496.0-1497.9] How did this next weekly candle close?
+[1497.9-1499.4] This one that came to this key level,
+[1499.4-1500.3] it closed above it.
+[1501.0-1502.7] So where is price likely going to go to?
+[1502.7-1505.3] We are moving from, and like remember what I said,
+[1505.3-1507.8] after we take out external, we are coming for internal.
+[1507.8-1510.3] If we take out internal, where is the next external?
+[1510.3-1511.4] This is the next external,
+[1511.4-1513.4] overall external liquidity that should go.
+[1513.4-1514.3] So look at what price did.
+[1521.9-1523.7] Same level again, closed above it.
+[1527.5-1530.7] So look at this engulfed, we engulfed here,
+[1530.7-1532.8] created another V-shaped key level.
+[1532.8-1533.2] Right?
+[1533.2-1533.9] Now let's see.
+[1533.9-1535.3] We want to see price continue from here.
+[1542.5-1543.2] Are you seeing that?
+[1544.3-1545.4] Momentum now takes in.
+[1546.3-1548.1] Boom, boom, boom.
+[1549.9-1550.3] Are you seeing?
+[1551.2-1552.8] Momentum now kicks in.
+[1552.8-1553.4] Right?
+[1553.4-1554.5] The same thing.
+[1554.5-1555.3] The same thing.
+[1555.3-1556.8] It's everywhere.
+[1557.4-1558.4] The same thing.
+[1558.4-1560.7] Higher timeframe bias is not even a problem.
+[1560.7-1561.5] I'm not even joking.
+[1562.2-1564.2] The only thing that you might be having issues with
+[1564.2-1565.6] could be entries.
+[1565.6-1567.5] But higher timeframe bias from the weekly timeframe
+[1567.5-1569.1] will not even be a problem.
+[1569.1-1572.3] If you understand structure and candle closions,
+[1572.3-1573.5] look at what price did here.
+[1573.5-1574.2] Let's move.
+[1574.2-1574.7] Let's move.
+[1574.7-1577.2] Let's even, let's take, are we,
+[1577.2-1578.6] I wanted to say are we being blessed?
+[1579.4-1580.8] Well, I remember, I don't know if we talked today.
+[1582.8-1583.4] Are we learning?
+[1589.1-1591.9] So, so look at what price did.
+[1591.9-1593.2] This is the weekly timeframe.
+[1593.9-1595.0] This is the weekly timeframe.
+[1595.0-1595.6] Look at this.
+[1596.2-1597.9] We had an open close key level here
+[1597.9-1599.3] that is resting here.
+[1599.3-1600.3] Look at what price did.
+[1600.3-1601.1] Look at this.
+[1601.1-1602.8] Price tapped into the open close.
+[1602.8-1603.5] Close below.
+[1603.5-1604.6] Came back again.
+[1604.6-1605.5] Close below it.
+[1605.5-1606.9] And look at what price did.
+[1606.9-1608.6] We had some sort of, if I think because
+[1608.6-1610.5] of the data feed, right?
+[1610.5-1611.5] Price came.
+[1611.5-1613.3] I don't know, but you can see how
+[1614.3-1616.1] we closed somewhere around here
+[1616.1-1617.2] because of the data feed, right?
+[1617.2-1619.3] Although I don't know if there's,
+[1619.3-1620.8] I think we have something like a key level there
+[1620.8-1621.4] or something like that.
+[1621.4-1623.4] I don't know because of the data feed,
+[1623.4-1625.8] but you can see how price continued
+[1625.8-1628.2] to sell only from the weekly, right?
+[1628.2-1630.3] You can draw the Intel alone
+[1630.3-1631.4] from this weekly.
+[1631.4-1633.0] Look at how we closed here.
+[1633.0-1634.8] We engulfed, right?
+[1634.8-1635.9] Somebody would have said that
+[1635.9-1637.4] we don't know where price is reacting
+[1637.4-1638.2] from here.
+[1638.2-1638.8] We don't know.
+[1638.8-1639.4] Nobody knows.
+[1639.4-1640.7] This is July 23.
+[1640.7-1642.2] We don't know where price is reacting
+[1642.2-1643.3] from here, right?
+[1643.3-1644.6] Okay, let's put it here.
+[1644.6-1646.0] Let's put here, right?
+[1646.0-1648.0] So, weekly timeframe has engulfed.
+[1648.0-1653.4] Now, let's go one time frame lower.
+[1653.4-1654.9] Can you spot it already?
+[1654.9-1656.1] You don't need me to show you.
+[1656.7-1658.6] This is weekly timeframe, right?
+[1658.6-1662.0] Weekly timeframe engulfed to the downside, right?
+[1662.0-1663.1] Now, you don't even know where price
+[1663.1-1664.0] is actually reacting from,
+[1664.0-1665.6] but we know that the weekly timeframe
+[1665.6-1667.9] reacted from somewhere and it closed below.
+[1667.9-1669.2] And you can see all these momentum
+[1669.2-1670.5] sells to the downside.
+[1670.5-1672.2] Move one time frame lower.
+[1672.2-1672.8] This is it.
+[1672.8-1674.8] You should be able to spot it, right?
+[1675.5-1676.0] Simple.
+[1676.0-1677.0] Let's look at this.
+[1677.0-1680.0] Previous daily high is going to serve as a what?
+[1680.0-1681.4] Internal range liquidity.
+[1681.4-1682.5] What can you see?
+[1682.5-1684.9] Price would have to fulfill two market conditions.
+[1684.9-1687.3] Sweep liquidity, rebalance imbalance.
+[1687.3-1689.8] But you are rebalancing imbalance at what price?
+[1689.8-1691.0] At what specific price?
+[1691.0-1692.6] Open close that is overlapping
+[1692.6-1693.8] inside of this imbalance.
+[1696.0-1696.5] My God.
+[1699.3-1700.2] Are you getting this thing?
+[1701.9-1703.0] Or am I talking too much?
+[1705.5-1706.6] I'm trying to show you something.
+[1707.4-1709.1] Are we together?
+[1709.1-1709.6] Look at this.
+[1710.7-1711.2] Look at this.
+[1711.9-1714.7] Open close that is overlapping inside of an imbalance.
+[1714.7-1716.3] The previous daily high was going to serve as
+[1716.3-1718.5] inducement liquidity or internal range liquidity.
+[1718.5-1720.2] Price tapped into it.
+[1720.2-1722.4] And you can see all of the selling momentum
+[1722.4-1723.2] that we had.
+[1723.2-1724.6] We just continue to sell.
+[1724.6-1725.5] And did we have buys?
+[1725.5-1728.4] Yes, we had buys, but we know that
+[1728.4-1730.0] because of how the weekly timeframe is,
+[1730.7-1732.4] because of how this weekly timeframe is,
+[1732.4-1735.0] we know that price will continue to move
+[1735.0-1735.8] to the downside.
+[1735.8-1736.3] Why?
+[1736.3-1737.2] Weekly engulfed.
+[1738.7-1740.1] This kind of close below.
+[1740.1-1741.4] We moved to the daily to find out
+[1741.4-1744.0] where it was reacting from as much as it was not clear.
+[1744.0-1744.3] Right?
+[1744.3-1745.7] We were reacting from an open close
+[1745.7-1747.1] that got disrespected
+[1747.1-1749.9] and is overlapping inside of an imbalance here.
+[1749.9-1751.5] And we took out this old daily high.
+[1751.5-1751.8] No.
+[1752.7-1754.2] And we just continue to sell.
+[1754.2-1755.5] We just continue to sell.
+[1755.5-1757.0] We just continue to sell.
+[1757.0-1757.7] Are you seeing now?
+[1758.3-1761.1] So the same thing everywhere.
+[1761.1-1763.1] The same thing everywhere.
+[1763.1-1764.8] The same thing everywhere.
+[1764.8-1765.5] Look at this.
+[1767.1-1768.4] Let me show you this one.
+[1769.0-1770.9] So you can see what we have here.
+[1770.9-1772.4] So if we look to him,
+[1772.4-1774.1] if we just look to the right,
+[1774.8-1775.1] right?
+[1775.1-1775.9] If you look to this,
+[1775.9-1777.3] what is currently happening here,
+[1777.3-1779.7] this current, we have one minute,
+[1779.7-1781.1] few seconds left.
+[1781.1-1782.1] She wish she had another link.
+[1783.5-1784.9] Ghost, go ahead and change your data.
+[1784.9-1786.1] Go ahead and change your link.
+[1786.1-1789.1] Your other call in your network.
+[1790.3-1792.3] She will not go and buy network for you like this.
+[1795.1-1796.4] So I want to share another link right now.
+[1796.4-1798.9] We have about 40 seconds left for this call to end.
+[1804.2-1806.6] So let me end this so that you can start converting, right?
+[1806.6-1808.4] But I hope everybody joins again.
