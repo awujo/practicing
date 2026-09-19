@@ -101,3 +101,40 @@ def test_the_index_carries_captions_when_there_is_a_transcript(transcript):
     body = open(out).read()
     assert "No transcript for this video" not in body
     assert "Good afternoon" in body
+
+
+def test_both_modes_name_frames_by_the_second_they_were_seeked_to():
+    """The burned label, the filename and the seek target must all be the
+    same number, or a `t=` citation cannot be checked.
+
+    Sheets mode used to run one `fps=1/interval` pass and burn a COMPUTED
+    `n*interval` label. That is an assumption about which frame the
+    filter picked, and it was wrong: bishop-repeating-system's sheet tile
+    burned "t=1110s" over a chart with an FVG indicator and shaded zones,
+    while `-ss 1110` on the same video gives a clean chart."""
+    import inspect
+    from ..extract_frames import build_sheets, extract_at_times, _label_filter
+
+    src = inspect.getsource(extract_at_times)
+    # Body only: the docstring names the fps filter while explaining why
+    # it is gone, and a check that reads it would pass on the mention.
+    body = src.replace(extract_at_times.__doc__ or "", "")
+    assert '"-ss", str(t)' in body, "must seek to the requested second"
+    assert 'f"t_{t:05d}.{ext}"' in body, "filename must carry that same second"
+    assert "fps=1/" not in body, "the fps filter rewrites timestamps -- no longer used"
+
+    # The label is formatted from the same `t` that is seeked to.
+    assert "t\\=1110s" in _label_filter(1110)
+
+    # Sheets are tiled by glob, because the names are timestamps not a
+    # counter -- a %05d sequence would silently tile nothing.
+    assert '"-pattern_type", "glob"' in inspect.getsource(build_sheets)
+
+
+def test_zero_padding_keeps_lexicographic_order_equal_to_numeric_order():
+    """build_sheets globs, so the tile's position on the sheet is decided
+    by filename sort. Without padding, t_1110 would sort before t_195 and
+    every index.md row would point at the wrong picture."""
+    times = [0, 15, 195, 1110, 14370]
+    names = sorted(f"t_{t:05d}.jpg" for t in times)
+    assert names == [f"t_{t:05d}.jpg" for t in sorted(times)]

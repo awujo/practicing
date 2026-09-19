@@ -120,27 +120,80 @@ def _hhmmss(t):
     return f"{int(t) // 60:02d}:{int(t) % 60:02d}"
 
 
-def extract_interval(video, out_dir, interval, width, quality):
-    """One ffmpeg pass for the whole video, timestamp burned into each
-    frame. A tile in a contact sheet is useless without it -- you can see
-    that a chart is annotated but have no way to ask for that moment."""
+def _label_filter(t):
+    """drawtext burning the REQUESTED time, which is also the time we
+    seek to -- so the number on the frame and the number used to fetch it
+    are the same value by construction."""
+    f = (f"drawtext=fontfile={_font()}:" if _font() else "drawtext=")
+    return f + (rf"text='t\={t}s'"
+                ":x=12:y=12:fontsize=28:fontcolor=yellow:box=1:boxcolor=black@0.65")
+
+
+def extract_at_times(video, out_dir, times, *, width=None, quality=4,
+                     ext="jpg", crop="", label=False):
+    """One seek per requested second. Both modes go through here, which
+    is the point.
+
+    Sheets mode used to do a single `fps=1/interval` pass and burn a
+    COMPUTED label, `n*interval`, on each output frame. That label is an
+    assumption about which input frame the filter picked, not a fact
+    about the frame it is drawn on -- and the fps filter rewrites each
+    frame's timestamp as it goes, so nothing downstream can check it.
+    Frames mode meanwhile seeks to an explicit `-ss`. The two disagreed:
+    bishop-repeating-system's sheet tile burned "t=1110s" over a chart
+    with an FVG indicator enabled and shaded zones, while `-ss 1110` on
+    the same video returns a clean chart. Same number, different moment.
+
+    That is not a cosmetic problem. The contact sheet's burned number is
+    what every citation in knowledge-base/ refers to, and index.md pairs
+    transcript text to those same numbers. If the number does not
+    identify the frame, a citation cannot be checked and the transcript
+    can be paired with the wrong picture.
+
+    Now both modes seek the same way to the same value, so a `t=` in a
+    citation means one thing.
+    """
     os.makedirs(out_dir, exist_ok=True)
-    label = (f"drawtext=fontfile={_font()}:" if _font() else "drawtext=")
-    label += (r"text='t\=%{eif\:n*" + str(interval) + r"\:d}s'"
-              ":x=12:y=12:fontsize=28:fontcolor=yellow:box=1:boxcolor=black@0.65")
-    vf = f"fps=1/{interval},scale={width}:-2,{label}"
-    subprocess.run(
-        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", video,
-         "-vf", vf, "-q:v", str(quality),
-         os.path.join(out_dir, "f_%05d.jpg")], check=True)
-    return sorted(f for f in os.listdir(out_dir) if f.startswith("f_"))
+    written = []
+    for t in times:
+        chain = []
+        if crop:
+            chain.append(f"crop={crop}")
+        if width:
+            chain.append(f"scale={width}:-2")
+        if label:
+            chain.append(_label_filter(t))
+        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+               "-ss", str(t), "-i", video, "-frames:v", "1"]
+        if chain:
+            cmd += ["-vf", ",".join(chain)]
+        if ext == "jpg":
+            cmd += ["-q:v", str(quality)]
+        path = os.path.join(out_dir, f"t_{t:05d}.{ext}")
+        cmd.append(path)
+        subprocess.run(cmd, check=True)
+        # A seek past the end produces no file rather than an error.
+        if os.path.exists(path):
+            written.append(os.path.basename(path))
+    return written
 
 
 def build_sheets(frame_dir, sheet_dir, cols, rows, tile_width, quality):
+    """Tiles the extracted frames in filename order.
+
+    Glob rather than a `%05d` sequence: frames are now named by the
+    second they were seeked to (`t_01110.jpg`), not by a counter, so
+    there is no sequence for ffmpeg to walk. Zero-padding makes
+    lexicographic order the same as numeric order, which is what keeps a
+    tile's position on the sheet matching its row in index.md.
+
+    That naming is deliberate. A frame that carries its own timestamp in
+    its filename can be checked against the sheet it is on; a frame
+    called `f_00074.jpg` can only be trusted."""
     os.makedirs(sheet_dir, exist_ok=True)
     subprocess.run(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-         "-start_number", "1", "-i", os.path.join(frame_dir, "f_%05d.jpg"),
+         "-pattern_type", "glob", "-i", os.path.join(frame_dir, "t_*.jpg"),
          "-vf", f"scale={tile_width}:-2,tile={cols}x{rows}",
          "-q:v", str(quality),
          os.path.join(sheet_dir, "sheet_%03d.jpg")], check=True)
@@ -211,11 +264,13 @@ def main():
         duration = probe_duration(args.video)
         times = frame_times(duration, args.interval)
         frame_dir = os.path.join(out_dir, "_frames")
-        files = extract_interval(args.video, frame_dir, args.interval,
-                                 args.width, args.quality)
-        # ffmpeg decides how many frames it actually produced; trust that
-        # over the arithmetic, or the index drifts against the sheets.
-        times = times[:len(files)]
+        files = extract_at_times(args.video, frame_dir, times,
+                                 width=args.width, quality=args.quality,
+                                 ext="jpg", label=True)
+        # Keep the index aligned with the frames that actually exist: a
+        # seek past the end writes nothing.
+        times = [t for t in times
+                 if f"t_{t:05d}.jpg" in set(files)]
         sheets = build_sheets(frame_dir, os.path.join(out_dir, "sheets"),
                               args.cols, args.rows, args.tile_width, args.quality)
         write_index(os.path.join(out_dir, "index.md"), args.name, times, cues,
@@ -244,18 +299,8 @@ def main():
         # Where the screen is still too wide to read afterwards, CROP --
         # dropping the toolbar and watchlist keeps every remaining pixel,
         # where scaling destroys them uniformly.
-        chain = []
-        if args.crop:
-            chain.append(f"crop={args.crop}")
-        if args.width:
-            chain.append(f"scale={args.width}:-2")
-        for t in times:
-            cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                   "-ss", str(t), "-i", args.video, "-frames:v", "1"]
-            if chain:
-                cmd += ["-vf", ",".join(chain)]
-            cmd.append(os.path.join(out_dir, f"t_{t:05d}.png"))
-            subprocess.run(cmd, check=True)
+        extract_at_times(args.video, out_dir, times, width=args.width,
+                         ext="png", crop=args.crop)
         write_index(os.path.join(out_dir, "index_selected.md"), args.name, times, cues)
         print(f"{args.name}: {len(times)} full-resolution frames written")
 
