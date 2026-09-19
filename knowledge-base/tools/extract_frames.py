@@ -69,7 +69,15 @@ def parse_transcript(path):
     """[(start, end, text)] in file order. Lines that do not match the cue
     format are skipped rather than guessed at -- a transcript with a
     different shape should produce an empty index, which is visible, not
-    a set of plausible-looking wrong captions."""
+    a set of plausible-looking wrong captions.
+
+    No path, or a path that isn't there, means no captions rather than an
+    error: 15 of the 18 main-course videos have hand-written notes.md and
+    no transcript at all, and the frames are worth having without one --
+    the notes already carry what was SAID, and it is what was DRAWN that
+    only the frames can give."""
+    if not path or not os.path.exists(path):
+        return []
     cues = []
     with open(path, encoding="utf-8", errors="replace") as fh:
         for line in fh:
@@ -145,6 +153,10 @@ def write_index(path, name, times, cues, per_sheet=None):
         fh.write("Frame timestamps paired with what is being said over them.\n")
         fh.write("Times are seconds from the start; the same number is burned\n")
         fh.write("into the top-left of each frame.\n\n")
+        if not cues:
+            fh.write("No transcript for this video, so the caption column is\n")
+            fh.write(f"empty. See `knowledge-base/videos/{name}/notes.md` for what\n")
+            fh.write("was said; these frames are here for what was drawn.\n\n")
         if per_sheet:
             fh.write(f"Contact sheets hold {per_sheet} frames each, in reading order:\n")
             fh.write(f"sheet_001 covers frames 1-{per_sheet}, and so on.\n\n")
@@ -160,7 +172,9 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=("sheets", "frames"))
     ap.add_argument("--video", required=True)
-    ap.add_argument("--transcript", required=True)
+    ap.add_argument("--transcript", default="",
+                    help="optional; without it the index still pairs frames with "
+                         "timestamps, just with an empty caption column")
     ap.add_argument("--name", required=True, help="output folder name under --out")
     ap.add_argument("--out", default="knowledge-base/frames")
     ap.add_argument("--interval", type=int, default=15, help="seconds between frames (sheets mode)")
@@ -186,7 +200,8 @@ def main():
 
     cues = parse_transcript(args.transcript)
     if not cues:
-        print(f"WARNING: no [start-end] cues parsed from {args.transcript} -- "
+        where = args.transcript or "(no --transcript given)"
+        print(f"WARNING: no [start-end] cues parsed from {where} -- "
               f"the index will have no captions", file=sys.stderr)
 
     out_dir = os.path.join(args.out, args.name)

@@ -12,7 +12,7 @@ import textwrap
 
 import pytest
 
-from ..extract_frames import frame_times, parse_transcript, text_at
+from ..extract_frames import frame_times, parse_transcript, text_at, write_index
 
 
 @pytest.fixture
@@ -67,3 +67,37 @@ def test_frame_times_start_at_zero_and_cover_the_duration():
     # frame past the end of the video.
     assert frame_times(59, 15) == [0, 15, 30, 45]
     assert frame_times(10, 15) == [0]
+
+
+def test_a_missing_or_absent_transcript_is_not_an_error(tmp_path):
+    """15 of the 18 main-course videos have notes.md and no transcript.
+    Requiring one is why that course went unframed: the workflow skipped
+    every video it could not caption. The notes already record what was
+    SAID; the frames are wanted for what was DRAWN."""
+    assert parse_transcript("") == []
+    assert parse_transcript(str(tmp_path / "nothing-here.txt")) == []
+
+
+def test_the_index_says_so_when_there_is_no_transcript(tmp_path):
+    """An empty caption column with no explanation reads like a bug in
+    the pairing, which is the one failure this pipeline must not have
+    ambiguity about."""
+    out = tmp_path / "index.md"
+    write_index(str(out), "video-07", [0, 15], cues=[], per_sheet=25)
+    body = out.read_text()
+    assert "No transcript for this video" in body
+    assert "knowledge-base/videos/video-07/notes.md" in body
+    # The rows are still there -- timestamps are the point of the index.
+    assert "| 0 | 00:00 |" in body
+    assert "| 15 | 00:15 |" in body
+
+
+def test_the_index_carries_captions_when_there_is_a_transcript(transcript):
+    """The no-transcript header must not leak into the normal case."""
+    import os
+    import tempfile
+    out = os.path.join(tempfile.mkdtemp(), "index.md")
+    write_index(out, "bishop-entries-part5", [5], cues=parse_transcript(transcript))
+    body = open(out).read()
+    assert "No transcript for this video" not in body
+    assert "Good afternoon" in body

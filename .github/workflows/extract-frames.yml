@@ -88,6 +88,18 @@ jobs:
               *BUILDING.BIAS.PART.1*)       echo "bishop-building-bias-1" ;;
               *BUILDING.BIAS.PART.2*)       echo "bishop-building-bias-2" ;;
               *DAILY.ROUTINE*)              echo "bishop-daily-routine" ;;
+              # The 4th man main course. Its 18 assets are all named
+              # "<N>.<Title>.mp4" -- "7.Defined.Ranges.Range.Cycle.mp4" --
+              # so the number alone identifies them and no per-title glob
+              # is needed. Folders knowledge-base/videos/video-01..18
+              # already exist with notes.md; only 01, 04 and 13 have a
+              # transcript, which is why one is no longer required.
+              [0-9].*|[0-9][0-9].*)
+                n="${1%%.*}"
+                case "$n" in
+                  ''|*[!0-9]*) echo "" ;;
+                  *) printf 'video-%02d\n' "$n" ;;
+                esac ;;
               *)                            echo "" ;;
             esac
           }
@@ -120,10 +132,17 @@ jobs:
             case " $seen " in *" $name "*) echo "skip duplicate: $asset"; continue ;; esac
             seen="$seen $name"
 
+            # A missing transcript no longer skips the video. It used to,
+            # which is why the main course was never framed: 15 of its 18
+            # videos have only a hand-written notes.md. Those notes
+            # already record what was SAID; the frames are wanted for
+            # what was DRAWN, which nothing else captures. Passing an
+            # empty --transcript leaves the index's caption column blank
+            # and says so in its header.
             transcript="knowledge-base/videos/$name/transcript.txt"
             if [ ! -f "$transcript" ]; then
-              echo "::warning::$transcript missing -- skipped"
-              continue
+              echo "::notice::no transcript for $name -- framing anyway, index will have no captions"
+              transcript=""
             fi
 
             # One video failing must not discard the others. The same
