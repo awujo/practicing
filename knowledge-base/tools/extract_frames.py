@@ -165,7 +165,13 @@ def main():
     ap.add_argument("--out", default="knowledge-base/frames")
     ap.add_argument("--interval", type=int, default=15, help="seconds between frames (sheets mode)")
     ap.add_argument("--at", default="", help="comma-separated seconds (frames mode)")
-    ap.add_argument("--width", type=int, default=1280)
+    ap.add_argument("--width", type=int, default=1280,
+                    help="scale width; 0 = native pixels, which frames mode "
+                         "defaults to")
+    ap.add_argument("--crop", default="",
+                    help="ffmpeg crop, w:h:x:y, e.g. iw*0.82:ih*0.93:iw*0.03:0 to "
+                         "drop the TradingView toolbar and watchlist. Cropping "
+                         "rather than scaling is what preserves a 1px annotation")
     ap.add_argument("--quality", type=int, default=4, help="ffmpeg -q:v, lower is better")
     ap.add_argument("--cols", type=int, default=5)
     ap.add_argument("--rows", type=int, default=5)
@@ -204,15 +210,37 @@ def main():
         print(f"{args.name}: {len(files)} frames -> {len(sheets)} sheets "
               f"({args.cols}x{args.rows}), index.md written")
     else:
+        # sheets wants 1280; frames wants every pixel there is.
+        if "--width" not in sys.argv:
+            args.width = 0
         times = [int(float(x)) for x in args.at.split(",") if x.strip()]
         if not times:
             sys.exit("frames mode needs --at with at least one timestamp")
+        # Native pixels and PNG, unless told otherwise.
+        #
+        # The operator, 2026-09-19: "he uses a 1px line on his line tools
+        # on his chart to indicate things which I don't even know if you
+        # can read it." Right, and the first version of this could not:
+        # scaling to 1280 and encoding to JPEG are both ways to lose a
+        # one-pixel line, and those lines are the whole content of an
+        # annotated chart.
+        #
+        # So frames mode downscales nothing by default and writes PNG.
+        # Where the screen is still too wide to read afterwards, CROP --
+        # dropping the toolbar and watchlist keeps every remaining pixel,
+        # where scaling destroys them uniformly.
+        chain = []
+        if args.crop:
+            chain.append(f"crop={args.crop}")
+        if args.width:
+            chain.append(f"scale={args.width}:-2")
         for t in times:
-            subprocess.run(
-                ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                 "-ss", str(t), "-i", args.video, "-frames:v", "1",
-                 "-vf", f"scale={args.width}:-2", "-q:v", str(args.quality),
-                 os.path.join(out_dir, f"t_{t:05d}.jpg")], check=True)
+            cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                   "-ss", str(t), "-i", args.video, "-frames:v", "1"]
+            if chain:
+                cmd += ["-vf", ",".join(chain)]
+            cmd.append(os.path.join(out_dir, f"t_{t:05d}.png"))
+            subprocess.run(cmd, check=True)
         write_index(os.path.join(out_dir, "index_selected.md"), args.name, times, cues)
         print(f"{args.name}: {len(times)} full-resolution frames written")
 
