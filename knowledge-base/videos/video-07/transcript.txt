@@ -1,0 +1,384 @@
+[0.0-21.3] Okay. Okay, guys. Let's go. Let's go. Let's go. So we want to talk about, we want to talk about range
+[21.3-30.9] Saku and defining ranges. Oh, sorry. And we didn't record it. It was, it was an inspiring one.
+[31.4-34.6] Right. It was an inspiring one. So if you look at GU this morning,
+[35.4-39.5] GU was based on what we spoke about yesterday, right? We spoke about when we're talking
+[39.5-45.0] about the types and forms of liquidity yesterday. We spoke about some various forms of liquidity
+[45.0-51.1] where price takes out what we call the previous daily low. And the next liquidity point that price
+[51.1-55.5] is likely to take out is going to be the available previous daily high, right? So you can see our
+[55.5-62.5] price move from this old daily low moved to this yesterday's high, right? So that being said,
+[62.5-67.3] we don't want to make our chart too dirty. We can see that let's just we're just doing a quick
+[69.5-75.5] recap then we'll just go. So you can see on the daily, we have a v-shaped key level on the daily
+[75.5-80.0] timeframe, which is always like you're going to hold, right? Coming also from the contextual,
+[80.0-84.1] you can see where we are coming from here, right? We took out this previous daily low, right? We
+[84.1-89.5] created a v-shaped key like key level, right? Price tapped into it and continue to buy, right?
+[89.5-94.2] But if we now investigate thoroughly where price actually came from, you would see that
+[94.2-104.5] on the 30 minutes or 45 minutes, people are still chatting. So you see, you can see that this is a
+[104.5-109.7] daily key level already, right? This on its own is a daily key level, right? But if you move to the
+[109.7-114.5] launcher because the launcher tells us the main story, we can move this to this. This is like a
+[114.5-119.9] QMR key level on the 45 minutes that's where price came to play. But beautifully, you can
+[119.9-124.6] see that that same 45 minutes key level, this is a daily key level, right? You know where we are coming
+[124.6-128.9] from on the daily timeframe. This is the daily key level coming from the daily timeframe, right? You
+[128.9-135.7] can see also from here that this daily key level is also overlapping with this. You can see this
+[135.7-139.7] open close as well, right? You can see that daily key level is overlapping with that particular
+[139.7-145.0] open close. So you can see two major key levels, the daily key level, which is from this QMR
+[145.1-151.3] on the 45 minutes and this open close here, right? You can see. And beautifully, I think on the 30
+[151.3-156.2] minutes, I don't know if you had something very beautiful. Okay, let's turn to 45. So 45 minutes
+[156.2-162.1] give to another QMR that is overlapping with this open close, right? And you can also see that we
+[162.1-167.2] had like an inducement liquidity, right? Can you see we had this a little bit of an inducement
+[167.2-172.4] liquidity surprise came to take out that inducement liquidity. And the moment price
+[172.4-176.1] took out inducement liquidity. Remember what I said? You can see everything we spoke about
+[176.1-180.4] yesterday playing out clearly. When we spoke about the forms of liquidity, we spoke about
+[180.4-185.2] Asian low being taken, price will run to go and take Asian high. Or you can see, we see all this
+[185.2-190.2] drop that happened here. The first liquidity that I was taking was this Asian high and the
+[190.2-193.7] next liquidity that price runs to stretch. You can see the heavy momentum pushed to the
+[193.7-198.5] downside all because they wanted to take out this form of liquidity called Asian low, right?
+[198.5-203.5] So you can see on the 45 minutes timeframe that this QMR killer is overlapping with this open
+[203.5-208.4] close, right? So price took it out bounced off and also beautifully known. Well,
+[208.4-213.7] is that this killer who is from the daily V shape killer, you can see how price just
+[213.7-219.4] continue to buy. Remember, trades like this, my highest surplus I can go for every trade
+[219.4-232.6] is 10 pips, right? I can only go 10 pips per trade. So the highest I can go per trade is 10 pips.
+[233.5-238.8] So the highest I can go is 10 pips, right? So that is, this is a 10 pips stops already.
+[239.5-245.6] We did already a one, two, three, right? So in and out, if you are already there, one,
+[245.6-249.7] two, three, we're out already. So you can see one, two, three hits, price is already
+[249.7-254.7] retracing. Maybe you might want to create for us another engineered internal range liquidity,
+[254.7-257.8] then we'll just continue to buy to the upside because you can see all of this market's
+[257.8-263.1] inefficiency that has been created, right? I just want to just give to us a little bit
+[263.1-267.5] of rebalancing before doing any other thing that it wants to do. So this is what happened
+[267.5-272.5] on GU this morning, right? So if you follow our teaching from yesterday,
+[272.5-276.7] from under types and forms of liquidity, right? So I wanted to quickly review this
+[276.7-279.3] so you can see how we're able to come up with a one, two, three from here.
+[280.3-285.7] So beautiful, right? So one, two, three, got it. So let's go back to the business of today.
+[286.3-290.5] So when you talk about defining ranges, right? So let's talk about defining ranges.
+[291.7-295.1] When it comes to defining ranges, you know, what we are talking about,
+[295.9-300.8] we're talking about how a range is being defined. Please meet your mic.
+[302.4-306.3] Meet your mic, please. So we are talking about how a range is being defined, right?
+[306.3-310.4] How is a range defined? So one of the ways a range is being defined is that
+[310.4-313.9] the first way you know a range is being defined is that a range must,
+[313.9-318.8] in a bullish market structure, right? A range starts with a sweep and a break, right?
+[318.8-321.9] You know, when you talk about defining ranges, one of the ways you know
+[321.9-326.3] a range that is being defined is that it starts with two major characteristics.
+[326.3-329.8] Number one, it starts with a sweep. Number two, it starts with a break.
+[329.8-332.7] So you know, based on what we have been talking about in the basics of market
+[332.7-336.8] structure, we said that if a market is actually in a bearish market condition like this,
+[337.4-341.2] right? The moment you see that price is actually in a bearish market condition like this,
+[341.2-345.8] I said there are two major characteristics you need to know about this type of structure, right?
+[345.8-350.9] The basics of market structure. I said every lower low is a external range liquidity,
+[350.9-354.5] every lower high, yeah, right? Every lower high unknown for two things.
+[354.5-358.5] They are either internal range liquidity or structural points. And I said that
+[358.5-363.3] they are known for structural points if we trade above two particular structural points,
+[363.3-365.7] right? The moment we trade above two structural points,
+[365.7-371.0] it means that price wants to shift its structure. That's so a price trading above two
+[371.0-375.3] structural points means that price has broken structure and price will continue to move to
+[375.3-379.7] the upside, right? That is what I said, right? That they are known for two things,
+[379.7-383.7] break of structure. They are known for structural point that is every lower high
+[383.7-388.3] created is known as a structural point and also known as an internal range liquidity.
+[388.3-390.6] So structural point, if it trades above the two,
+[391.5-397.5] Babachuku is now on this call, it's sending AU trade. So if it trades above these two
+[397.5-401.3] structural points, it means a break of structure. If it trades above one structural point,
+[401.3-405.0] it can also indicate a break of structure, right? So we also said it's not just known
+[405.0-408.0] as a break of structure. It's also known as internal range liquidity, which means that
+[409.0-412.6] based on advanced market structure, price moves from internal range liquidity
+[412.6-417.9] to external range liquidity, right? So you can see the beauty of the so back to defined
+[417.9-422.0] ranges. One of the ways you know that the range has been defined is that the first thing you want
+[422.0-427.0] to see if it's a bullish range, right? It must have to change a strong low and a weak high.
+[427.0-432.0] The weak high becomes your primary target, right? The weak high becomes your primary target,
+[432.0-437.2] right? But the strong low is what starts the range and the current status of the strong
+[437.2-443.6] low is that number one, you are going to see price, you are going to see price
+[443.6-448.1] sweep liquidity, right? Then the next thing you want to see price do again,
+[448.1-454.0] is that price is going to break structure. So we must see a sweep and a break, right? So now the
+[454.0-458.6] way a strong high, so now I want to quickly say this, that the way a strong high is created is
+[458.6-463.8] the same way a weak low is created. So what do I mean? Let's say we have a bullish range, right?
+[463.8-467.3] So the first thing you want to see is that price must sweep liquidity and break structure
+[467.3-472.1] and give to us a bullish kind of structure like this, right? Then the same way now this
+[472.1-476.3] strong low was created, this strong low, the way it was created was that it swept liquidity
+[476.3-480.3] and it also broke structure, right? Now the same way the strong low was created is the same
+[480.3-483.9] way a weak high would be created. So what that means is that we see a liquidity sweep,
+[483.9-489.5] yeah, right? We also see a break of structure. So don't forget now this weak high becomes your
+[489.5-493.6] external range liquidity. You will see that everything we are teaching, right? From structure
+[493.6-497.8] to liquidity, everything is still interwoven, nothing is different, right? It just makes
+[497.8-502.4] everything the knowledge holistic overview, right? So you can see your weak high is also
+[502.4-506.5] still your external range liquidity because your weak high is still your target in a bullish
+[506.5-511.2] market condition. So what that means is that since we are still talking about range cycle,
+[511.2-516.0] so let's jump a bit, make a jump small. So we know this is our strong low, right?
+[516.0-520.0] Because the same way the strong low was created, sweep of liquidity, break of structure is the
+[520.0-524.8] same way the weak high would be created, sweep and break, right? So now as price was
+[524.8-528.6] giving us another flow to the upside like this, you know that price was creating for us
+[528.6-532.4] consecutive higher lows, higher lows, higher lows, higher lows. And I said to Rose that
+[532.4-536.0] whenever the market is actually creating for us consecutive higher lows, understanding the
+[536.0-542.1] basics of structure, right? I said to Rose that all of this, there are two major characteristics
+[542.1-546.3] you need to note. Number one, every higher low that is being created is an internal range
+[546.3-550.7] liquidity and every higher high is an external range liquidity. So what that means is that
+[550.7-554.1] this is a liquidity here, this is a liquidity here, this is also a liquidity,
+[555.1-564.1] this is a liquidity here, right? So what price would do is that price would take out all of this
+[564.1-569.4] internal range liquidity, take out the last one, but price must respect one way, so let's see price
+[569.4-573.8] respect our strong low, right? But what price would do is that take out the most recent internal
+[573.8-577.9] range liquidity that is closest to the strong low, which we also call our inducements
+[577.9-582.0] until price continues to move to the upside. So what you will see here is that price moved
+[582.0-588.3] from internal range, right? Liquidity to external range liquidity, right? So you can see the same.
+[588.3-592.8] So that is how you get to know what we talk when we begin to talk about defined ranges. So you get
+[592.8-596.7] to know how do you know that the range is being defined? Simple. The first thing you want to
+[596.7-605.3] see is, sorry, sorry guys, give me a minute. Let me just I'll be back in like one minute, less
+[605.3-648.9] than a minute please. Okay, so none of the ways you talk about defined ranges is that you want
+[648.9-653.3] to see how price sweeps liquidity and breaks structure. Then price will create for us what we
+[653.3-657.8] call an inducement liquidity or internal range liquidity. I've said it, don't bother yourself
+[657.8-663.9] about name. It's not name. This business will do it. It's a profession of numbers. It's not about
+[663.9-670.9] name, right? So the same way this, one of the ways you know that the range has started,
+[670.9-674.1] how do you get to know a defined range is what we call a sweep of liquidity,
+[674.9-678.2] break or structure price creates for us inducement liquidity or what people call
+[678.2-683.5] internal range liquidity, right? Then we want to see price move from internal to external
+[683.5-688.5] range liquidity, right? So this is the way it works. So price takes out. So when we talk about
+[688.5-693.1] defined range, we hear that is where people and for some of you that are very active on social
+[693.1-698.5] media, they would hear you hear what they say that is called ABC, right? You hear the word ABC.
+[698.5-705.0] So what our ABC means here is that it is a simple term. ABC here, this is the A leg,
+[705.0-711.1] right? This is the B leg and this is the C leg, right? So the A leg is your strong low, right?
+[711.1-716.5] This A now is your strong low because the A leg swept liquidity, right? And it also broke structure,
+[716.5-721.3] right? So your A leg is your strong low. Your B leg is your inducement liquidity or your
+[721.3-725.3] internal range liquidity and your C leg is your external range liquidity. So that is where you
+[725.3-733.0] get the concept ABC, right? ABC, ABC, right? ABC. A leg is your strong low. B leg is your
+[733.0-737.7] inducement liquidity. C leg is your weak high, right? Remember, C leg is your weak high and I
+[737.7-742.1] said your weak high is also the same as your external range liquidity. So the question we
+[742.1-749.7] ask ourselves is how do we combine a defined range? How do we use a defined range to understand
+[749.7-753.7] range circles, right? How do we use it to understand range circle? So when you hear the
+[753.7-759.3] word from the word circle, right? It's a range circle. It means it's just like saying that
+[759.3-765.2] something was coming like this, come again, you know, not just going in circles and all of those
+[765.2-775.1] things, right? So not like circle, like cycle, like C-I-R-L-C-L, no, like circle, like C-Y-C-E-L,
+[775.1-778.6] right? So that is what we're talking about. So when it comes to how do we now use the
+[778.6-783.8] defined ranges alongside what we call the range circle? So the first thing you want to know
+[783.8-791.7] is that the way a range circle starts is the same. The way a range circle starts is by first
+[791.7-797.3] understanding defined ranges, right? How does a defined range start? A defined range starts by
+[797.3-801.9] sweep of liquidity, break of structure, then price continues to give to us and other flow.
+[801.9-806.0] So this is now talking, introducing us to range circle, right? Price begins to give to us
+[806.0-810.2] other flows to the downside. You begin to see other flows to the downside, right? How do
+[810.2-814.8] you know this range, this entire range has ended, right? One of the ways you know the range has
+[814.8-819.7] ended is the same way it started, right? The way a range starts is the same way it ends, right?
+[819.7-824.0] So you know that the way this range now begins to end is that price is going to sweep liquidity
+[824.0-829.2] again, break structure, right? So the moment price sweeps liquidity and break structure.
+[829.2-834.2] So you remember what I said? I said the same way a strong high started. So this is our
+[834.2-838.5] strong high in a range circle. This is our strong guy in a range circle. So you can see
+[838.5-843.4] the first characteristic, you can actually see how this range circle started was that price swept
+[843.4-848.9] this particular liquidity and after price, after price swept the particular liquidity price broke
+[848.9-853.7] structure, right? Then the same way that particular range circle started is the same way
+[853.7-858.5] the range circle ended, right? So if this is a strong high, this becomes a weak low, right?
+[858.5-863.4] The same way the weak low, this becomes a weak low. And I said that this weak low becomes
+[863.4-868.6] your internal, your external range liquidity. So you can see how this, how this also started
+[868.6-873.1] as well swept liquidity here. We also broke structure, right? So you can see from here.
+[873.1-890.9] So now just make your mind, please. So you can see the same way a range circle starts,
+[890.9-895.4] the same way a range starts, a range circle starts is the same way a range ends.
+[895.4-899.2] But first you must understand what you must understand how to define a range, right? If
+[899.2-903.1] you want to learn how to define a range, you must understand that the first way to
+[903.1-906.9] arrange that is by sweep of liquidity and break off structure, sweep of liquidity
+[906.9-910.8] and also a break off structure. So you can see the other flow. The other flow is actually to
+[910.8-914.9] the downside. So as the other flow is actually to the downside, can you see what price has created
+[914.9-919.6] for us, price has given to us consecutive internal range liquidities, right? So you can see
+[919.6-923.5] this internal range liquidity that is being created, right? You can see all of this
+[923.5-927.3] internal range liquidity that is being created here. You can see all of this,
+[927.3-930.8] these are internal range liquidity is being created. These are internal range
+[930.8-936.3] liquidity is being created. This is what I now call the last resort, the internal range
+[936.3-941.1] liquidity that is the last resort. So when it comes to range cycle, you must understand that
+[941.1-946.4] especially if you have the sweep of liquidity, especially people who even use the range cycle
+[946.4-950.5] the most are those who trade lower timeframes, like when we talk about lower timeframes,
+[950.5-954.3] like 30 minutes, 15 minutes, where you can almost spot your sweep of liquidity
+[954.3-959.2] and break off structure. And now being known that the way we're given this particular
+[959.2-964.8] order flow to the downside, price has created for us a series of internal range liquidity. So what
+[964.8-969.2] would price do? You know, the same way this range has started, now this range has ended, right?
+[972.7-976.7] So the way this range started is the same way the range has ended. It started with a sweep
+[976.7-982.7] and a break. It ended with a sweep and a break, but don't forget I said this week low, right,
+[982.7-986.0] is also known as your external range liquidity. All of these
+[986.0-990.1] liquidity is being engineered and created are known as your internal range liquidity. So
+[990.2-994.1] what we are going to see price do is that now that price has broken structure, price will tap,
+[994.1-998.8] take out this first liquidity here, you know, go in their direction, somebody will snap and
+[998.8-1004.6] take a screenshot, post on Twitter and say, ah, price, sniper entry, sniper entry is going,
+[1004.6-1008.3] before he will make the post finish on Twitter, price has taken him out,
+[1008.3-1012.6] move to the next available liquidity. There's another person that is buying from here,
+[1012.6-1017.8] you know, to go in his direction and beat only for price to just take out all of this
+[1017.8-1021.9] liquidity. Only for at the end of the day, what price will do is that price will come to the last
+[1021.9-1027.0] resort liquidity close to the strong high. Now from the word strong high, that strong high
+[1027.0-1033.5] or people use the word protected high, right? Like I said, it's not about the name, right?
+[1033.5-1035.2] Can you mute your mic? Who is that?
+[1035.9-1051.2] Somebody's mic is on, don't leave me.
+[1056.6-1058.8] Please can somebody confirm, somebody's mic is on.
+[1059.7-1063.4] Oh, is it only me that is hearing it?
+[1071.9-1076.6] No, don't let us lose our thought process, right? So you can see in the range circle, right?
+[1077.4-1080.5] There were people who were willing to buy from this particular liquidity,
+[1080.5-1089.5] internal range liquidity only for price to take them out. Yes, yes, I can. I'll do the setting
+[1089.5-1094.1] after this call. So you can see price, there are people that price were looking to buy from
+[1094.1-1098.3] sale from this particular liquidity. Price is going to take them out, right? Price is going to
+[1098.3-1102.7] take them out. And after price takes them out, price will go to what we call the last resort
+[1102.7-1107.0] internal range liquidity, which is the last internal range liquidity that is close to the
+[1107.0-1112.1] last to the strong high or we call it the protected high, right? After price has done
+[1112.1-1116.1] that, what can you see again that price has done here? Price has created all of this
+[1116.1-1121.7] minor internal range liquidity. People call them minor structure, right? But just the same thing,
+[1121.7-1125.5] right? Here's a minor internal range liquidity that are being created.
+[1126.5-1130.1] Minor external range liquidity, sorry, these are minor external range
+[1130.1-1133.8] liquidities that are being created, right? Now that we know that minor external
+[1133.8-1137.9] range liquidities are being created, now that price has also taken this
+[1137.9-1142.6] internal range liquidity that we can find here, right? This internal range liquidity
+[1142.6-1146.0] that we have taken that is close to the strong hard. So what we'll price now
+[1146.0-1150.9] do again. Price would take out this one, right? Take out the next one. Take out
+[1150.9-1157.0] this one, pick up this one, then price will go for the overall external range liquidity.
+[1157.0-1161.7] But now the price is actually going for gone for the overall external range liquidity. It makes
+[1161.7-1168.9] a lot of sense, right? It makes a lot of sense because external range liquidity has been taken.
+[1168.9-1174.1] Price has also, it indicates for us that price has actually broken below this particular
+[1174.1-1179.1] external range liquidity. So we can see that structurally we are still bearish because we
+[1179.1-1184.4] moved from here on a standing range cycle. You can see we moved from here, we moved from
+[1184.4-1188.5] internal range liquidity, we moved straight to external range liquidity. So what can you notice
+[1188.5-1193.4] here again? Now you know that our strong high was here, right? This was our strong high
+[1193.4-1197.0] because this was the place we had a sweep of liquidity and we had a breaker structure,
+[1197.0-1200.9] right? So what did you notice price did here? We also have a sweep of liquidity here. So we
+[1200.9-1205.6] swept this particular liquidity. So our strong high, we moved from this high to this one.
+[1205.6-1210.8] So this is where our strong high, next strong high now stays. Our next strong high now comes
+[1210.8-1215.3] to this place because here we swept liquidity, right? And we have also broken below this particular
+[1215.3-1219.3] low. Right now that we have broken below this particular low, what has price done for us?
+[1219.3-1225.6] It has created for us an other flow, consecutive lower lows and lower highs until this entire
+[1225.6-1230.3] external range liquidity was actually taken. So like I said, in the basics of market
+[1230.3-1234.1] structure, I told us that two characteristics, two things you want to pay attention to
+[1234.1-1239.0] is number one, this particular highs in a bearish condition like this are known for to take
+[1239.0-1243.7] structural points and internal range liquidity. So now, and I also say to us that in the basics
+[1243.7-1248.1] of market structure that after every external range liquidity is taken, you are going to see what
+[1248.1-1252.2] we call a reversal. And after every internal range liquidity is taken, you are going to see a
+[1252.2-1257.3] continuation to that particular trend. Now that price is taking out this external,
+[1257.3-1263.3] can we hear me? Now that price is taking out this particular external range liquidity,
+[1263.6-1267.3] what are we going to see? We want to see price create because price has created a strong high
+[1267.3-1272.5] for us now. The next one to see price create for us is what we call a weak low. We want to see
+[1272.5-1277.7] price create a weak low by sweep of liquidity again, then break structure. The moving price
+[1277.7-1282.9] break structure, where is price going for all of the consecutive high and lower high that
+[1282.9-1289.2] are being created? Then what we price stop? We want to see price stop at the last result
+[1289.2-1293.3] liquidity, which is the last internal range liquidity close to the strong high. And the
+[1293.3-1301.1] moving price begins to do all of this. So the moment you see price begin to do all of this.
+[1301.1-1305.6] So what do we have here? We have a weak low here, which is our next external range liquidity
+[1305.6-1309.5] that we want to see price take. So price sweeps liquidity, price breaks structure,
+[1309.5-1313.0] then price begins to go for all the internal range liquidity that are being created.
+[1314.2-1319.1] And price will stop at the last high, the last internal range liquidity
+[1319.1-1322.6] that is close to our strong high. Don't forget our strong high moved from here
+[1322.6-1327.4] to this particular point because one of the ways a range has started is by sweep and break.
+[1327.4-1331.1] Sweep and break. So we can know that this particular range cycle has been completed
+[1331.1-1335.8] because price came to the last liquidity, internal range liquidity that is close to
+[1335.8-1340.0] the strong high that swept liquidity and broke structure. So this strong high moved from
+[1340.0-1345.6] that place to this particular place. Why did we move? Because we swept this liquidity here,
+[1345.6-1349.5] we also broke structure here. So we swept liquidity with broke structure and was continuing
+[1349.5-1355.1] to give to us an order flow, this order flow to the downside. So now we have a new weak low.
+[1355.1-1359.1] So what do we expect price to do? As price was given to us, after every external range
+[1359.1-1364.0] liquidity is taken, after every external range liquidity is taken, we have what we call a
+[1364.0-1368.7] reversal. So now for the reversal, price was given to us a reversal order flow to the upside
+[1368.7-1374.0] like this. So what do we mean? All of this lower higher lows, higher lows,
+[1374.0-1380.8] higher lows and higher lows are all internal external liquidity that needs to go.
+[1380.8-1387.4] So price would take this out like this, like this, like this, until the main external range
+[1387.4-1395.9] liquidity is taken. Somebody, okay, somebody has a question, David Berry. Okay, Mr. David
+[1395.9-1401.5] Berry, ask your question now. Ask your question now. Because this class was supposed to end
+[1401.5-1409.9] by 12, we are already 12, 40, 35. Mr. David Berry, I'll meet your mic.
+[1413.3-1421.7] I'm speaking now. Can you hear me? Hello? Can you hear me, sir?
+[1423.3-1433.5] Okay, I can hear you now. Speak. Okay, my question is, what if we fail to have a break
+[1434.5-1439.5] like that, that's our week low now. What is the price? Can you start again? Start again please.
+[1454.6-1462.3] Sorry, sir, please. Hold on. Hold on, sir. Can you do me a favor and speak up and just
+[1462.3-1467.9] get closer to your mic a bit. I'm straining myself and really struggling to hear you.
+[1468.5-1476.0] Okay, let me start. Can you hear me, sir? No, speak. I can hear you.
+[1483.3-1488.1] According to the range, sir, after we take out week low,
+[1494.7-1500.8] then the question is, what if we have a split of week low, not a break of structure?
+[1501.8-1509.1] Does that give us our new strong heart? Okay, sorry. Hold on. Does anybody
+[1509.1-1513.2] understand what he's saying so that the person can just explain to me, right?
+[1513.2-1516.1] Anybody who understands can speak up for me. I don't mind.
+[1520.2-1526.6] Okay, he said, what if we don't have a sweep and a break on a week low? Okay, there are times,
+[1526.6-1532.3] yes, yes, yes. That was a beautiful one. You know, the market is not stereotyped, right? It's not like,
+[1533.2-1537.0] it's not static. That's what I'm trying to say. Not like it's not dynamic. It's not,
+[1537.0-1540.8] the market is dynamic in nature, but it's not static. So what that means is that
+[1542.0-1545.7] it doesn't do dissenting all the time. There are days that price will give to you
+[1545.7-1550.5] a strong high and the week low is not going to give to you a sweep and a break, right?
+[1550.5-1554.7] Just know that when you know, the first thing you need to even train yourself to understand
+[1554.7-1560.4] is how a range cycle starts, right? By defined ranges by sweep of liquidity and break of structure.
+[1560.4-1567.7] And this only happens either at the top right or at the bottom left, at the top right, at the top
+[1567.7-1572.6] left or bottom left, right? So that is why you always say people say look to the left, right?
+[1572.6-1576.3] So when you look to the left, if you see where the range cycle started from, right?
+[1576.3-1580.5] So you see where we had the break of sweep of liquidity, the break of structure, right?
+[1580.6-1586.5] Just know that the next liquidity point that is there, right? That week, in the week high or the
+[1586.5-1591.0] week low, minus sweep liquidity, right? It might just be standing there, right? But we know that
+[1591.0-1595.9] since this is where the range cycle started from, we know that that high, it becomes a week,
+[1596.9-1602.5] it becomes like a week high or low, right? So we'll look at examples, right? So you can see
+[1603.7-1608.5] range cycle is very, very important. It's very, very important, right? In fact, if you
+[1608.5-1612.5] understand it, it will help you build a lot of patience to wait for trades. And it will help you
+[1612.5-1618.7] to understand if you are following the other flow. Okay, I said, what if we had a sweep of,
+[1620.5-1629.0] what if we had a sweep of the week low and not a break? Will our new strong high,
+[1629.3-1635.3] still be valid? What if we have a sweep of our week low, okay? And not a break, will our new strong high,
+[1635.3-1641.0] still be valid? Okay, I think I understand what he's trying to say. I understand the question.
+[1641.0-1645.7] So he's saying something like this. So let's just quickly run up. So he's saying, what if we
+[1645.7-1650.3] have a, for example, we have a range cycle that starts with a strong high, right? And price
+[1650.3-1655.6] begins to give us a high, right? And price begins to give us a high, right? And price
+[1655.9-1660.5] starts with a strong high, right? And price begins to give us another flow to the downside,
+[1660.5-1667.8] like this, right? We are seeing that other flow and like this. So we have, don't forget,
+[1667.8-1672.6] this is our week low, right? Now price comes to the last result liquidity, which is the last
+[1672.6-1677.9] internal range liquidity close to the week, the strong high. And he said, what if we tap,
+[1678.2-1686.5] we sweep this week low and not break, like not break below it, right? What if we sweep this week
+[1686.5-1694.8] low and not break below it? Okay, will our new strong high still be valid? Yes, if we sweep this,
+[1694.8-1700.0] if we just sweep, for example, we do something like this, we do something like this.
+[1701.2-1704.9] So let me show you what we're talking about. So don't forget, this becomes our week low,
+[1704.9-1712.0] right? So this becomes our week low. So what we did, what price actually did for us was that
+[1712.0-1718.3] instead of breaking below it and closing below it as a body, right, it now swept it close above it
+[1718.3-1726.8] as a week, right? It now close above it as a week, like this. So after sweeping, it's close above
+[1726.8-1731.5] it as a week. So now what happened here was that we swept the external range liquidity,
+[1731.5-1736.0] but we did not close, we did not break below it. So there's every tendency, just like he said,
+[1736.0-1741.3] which is a very, very beautiful question. There's every tendency that because if you move to the
+[1741.3-1746.0] line chat, as long as this week low, now follow what I'm saying carefully, as long as this weekly
+[1746.0-1752.4] was not broken, right, it was only swept, there's every possibility now that this strong high
+[1752.4-1758.5] is still valid, but this strong high, this one, this strong high is still valid,
+[1759.5-1765.5] right? But this particular strong guy is low probability because what happens is that
+[1765.5-1771.0] there's every possibility that price is going to use, right? There's a 90% chance that price is
+[1771.0-1775.9] going to use this particular high as our next liquidity before price moves in this direction.
+[1775.9-1779.4] So we are likely going to see something like this, price will take out this high,
+[1780.0-1784.9] then continue to drop to the downside until this liquidity is taken because if we only
+[1784.9-1789.1] had a sweep, we did not have a break. When you move to the line chat, you will see that this low
+[1789.1-1795.1] is still your external range liquidity that has not been broken, right? This new strong high is
+[1795.1-1801.2] invalid. It becomes invalid, right? It still becomes invalid. The price can use it as our next
+[1801.2-1805.4] liquidity point, as our next internal range liquidity that needs to be taken
+[1805.4-1809.5] before price continues to move in this direction. But if it closes below it as a body,
+[1810.0-1814.5] right, we know that our new strong highs moves from this to this particular one. But if it
+[1814.5-1821.8] sweeps above it, if it just sweeps it and it closes above it, right? This new strong high becomes
+[1821.8-1827.4] very low, very, very low probability because price is likely going to come back to use it as our
+[1827.4-1831.5] last internal range liquidity close to the strong high and drop. When you begin to go through,
+[1832.1-1836.5] I don't know if I made mention of this during our, when we're talking about advanced market
+[1836.5-1840.3] structure, I told us that there are two major price deliveries in advanced market structure.
+[1840.3-1845.5] We have this ABC where price takes out the B leg, internal range liquidity and moves to the A leg,
+[1845.5-1850.6] right? Then the second one is the second type of price delivery is what is just something similar
+[1850.6-1855.7] to this, which is something Mr. David actually is very good. Something like this price begins to
+[1855.7-1860.2] give to you an other flow to the upside. Price will trade lower, but it will not take out,
+[1860.2-1863.1] okay, let's put context to this so that it will make a lot of sense.
+[1864.1-1868.0] It will take it to make a lot of sense for us. So for example, you see price sweep
+[1868.1-1874.0] liquidity and break structure, then give to us a high. So we have our strong high,
+[1874.0-1878.5] price sweep liquidity broken structure, right? We have our strong low, we have our strong low
+[1878.5-1883.0] after price sweep liquidity and broke structure. So price will trade a bit lower like this.
+[1883.7-1886.8] This is the second type of price delivery in advanced market structure. Price will trade
+[1886.8-1890.7] a bit lower like this, but it won't take out this low. What price would do is that
+[1890.7-1894.0] it won't take out this low, right? Price might react from a particular level,
+[1894.0-1898.5] like a key level or something here. Then after price does that, it will trade above,
+[1898.5-1902.0] but it will take out this our external range liquidity, right? So one of the things you
+[1902.0-1905.7] now begin to understand about this second type of price delivery is that after price has
+[1905.7-1909.5] actually created, please meet your mic. After price has created a strong low,
+[1909.5-1913.8] how did price create a strong low, right? It created a strong low by sweep and a break.
+[1915.7-1919.3] So after we swept, after we had a sweep and break, we had our strong low,
+[1919.3-1924.1] then we had this our external range liquidity still standing. So inside of the strong low to,
+[1924.1-1928.1] from this strong low to this external range liquidity that is still standing, right? You can see
+[1929.3-1933.8] price traded very low or could not take out the external, the strong low, then price traded
+[1933.8-1938.2] very high, could not take out the strong high, right? So one of the things you now begin
+[1938.2-1942.2] to know is that this is what we call engineered internal range liquidity, right?
+[1942.2-1946.1] Which means that there's every possibility that price is going to come back like this,
+[1947.1-1951.2] right? Price would pick this internal range liquidity that is being engineered,
+[1951.2-1955.4] then continue to move to the upside. So you can see if price does not deliver like this,
+[1955.4-1959.2] price is always going to deliver like this, create a strong low, create an external range
+[1959.2-1963.9] liquidity, trade slower, cannot take out the strong low, trade higher did not take out the
+[1963.9-1968.6] weak high, right? Only for price to come back to take out the lowest low, which is going to be
+[1968.6-1972.6] like our engineer internal range liquidity and continue to move to the upside.
+[1972.6-1976.5] In this type of price delivery, you will see that what price can do sometimes,
+[1976.5-1981.2] there are many times that in price, say price would not even trade very close to this point,
+[1981.2-1985.7] but there are also times that price would trade above this external range liquidity,
+[1985.7-1990.8] it will sweep it. The moment it sweeps it, it will close below it, right? So what it did
+[1990.8-1995.0] was the price came to sweep the external range liquidity, right? But it did not close
+[1995.0-1999.2] above it. So it might have something like this, right? But many times you don't have
+[1999.2-2002.0] something like this, but sometimes we can have something like this. So what that means
+[2002.0-2006.0] is that as long, because if you move to a line chart, you will see that this external
+[2006.0-2010.5] range liquidity has not been broken, right? It's still very intact, although it has been
+[2010.5-2014.1] swept, but this external range liquidity has not been broken. What that means is that
+[2014.1-2017.7] the lowest low, which is going to be our engineered internal range liquidity that
+[2017.7-2022.6] is close to the strong low is what price is going to take out as your internal range
+[2022.6-2027.0] liquidity on T, we break up both this external range liquidity. Mr. David Berry,
+[2027.0-2033.3] did I answer your question? Yes sir, yes sir. Thank you so much.
+[2033.3-2042.6] Oh, Mr. Fortmah, can I have the question? Yes, you ask. Okay, you know what? Hold on.
+[2042.6-2047.7] We have used another 40 minutes already, which is almost over. So hold on. I want to
+[2047.7-2052.4] end this one. I'll send another link. Everybody can join so we can take your questions from there.
