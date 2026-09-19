@@ -160,3 +160,71 @@ question asked so far -- stop placement, entry timing, what counts as a
 breakout -- is answered somewhere in the 38 contact sheets not yet read.
 The real-chart breakdowns carry position tools with the stop drawn on
 them, so the stop rule is readable directly off the examples.
+
+---
+
+# Read off the worked trades, not asked (2026-09-19)
+
+Full-resolution frames from `bishop-trades-breakdown-3`, native 1366x768
+PNG, so the 1px annotation lines are legible.
+
+## 1. The target is the external liquidity. R:R falls out of it.
+
+Two trades, both with the position tool drawn on the chart:
+
+| frame | pair / TF | entry | stop | target | R:R |
+|---|---|---|---|---|---|
+| t=1080 | USDJPY 3h | 160.391 | 160.323 | 160.725 | **4.9** |
+| t=870 | NZDCHF 2h | 0.46442 | 0.46328 | 0.46752 | **2.72** |
+
+t=870 states it outright on the chart: *"Target: 0.00310 31.0"*,
+*"Stop: 0.00114 11.4"*, *"Risk/reward ratio: 2.72"*.
+
+Neither is 3:1, and they differ from each other. The R:R is not a chosen
+ratio at all -- it is whatever the distance to the external liquidity
+happens to be. On t=1080 the target lands exactly on a level line drawn
+across the whole chart at 160.725.
+
+**The engine does `target = min(3R, ERL)`.** That is right when the ERL
+is nearer than 3R -- it would have produced 2.72R on the NZDCHF trade,
+matching. It is wrong when the ERL is further: on the USDJPY trade it
+would have taken 160.595 (3R) and left 1.9R of the move behind.
+
+The rule to test: **target = the nearest untaken external liquidity**,
+with the 3R ratio as a fallback only when no ERL qualifies -- rather
+than as a ceiling.
+
+Worth noting this cuts against a habit in the codebase. `min_reward_r`
+throws away setups under 1R, and the ERL cap silently truncates the good
+ones. Both treat R as the thing being managed; these charts treat the
+liquidity as the thing being targeted.
+
+## 2. Stop: beyond the wick of the entry candle. Confirmed.
+
+On both trades the pink zone's lower edge sits just under the wick of
+the candle immediately preceding the entry, not at a round level and not
+at the open-close level itself. Matches the operator's answer --
+*"normally we put it in the wick of the engulfing candle, that [is] the
+safest invalidation zone."*
+
+## 3. Entries are not taken on H1 only.
+
+t=1080 is a **3h** chart. t=870 is a **2h** chart. The engine takes every
+entry on H1.
+
+This is already stated in `bishop-entries-part5` at 05:45-06:00 -- *"your
+H3, your H2... you can either see this on your H3, H2, H1, M30, M45,
+even M15, even M5, it just depends on you"* -- but these frames show it
+being done, on two different timeframes, in the same video.
+
+## 4. A checkable example
+
+`t=750`, NZDCHF **4h**, June 2026: a 1px line drawn at **0.46312**,
+anchored to a candle low around 4-5 June, with price returning to it
+around 10-11 June. He calls it single candle liquidity and says price
+*"virtually swept"* it.
+
+That is a concrete claim our own engine can be run against: does
+`_find_liquidity_setups` arm 0.46312 on NZDCHF H4 for that week? It is
+the first time a specific taught level can be checked against the
+implementation rather than argued about.
