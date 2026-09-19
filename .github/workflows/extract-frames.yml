@@ -1,0 +1,117 @@
+name: Extract course video frames
+
+# Turns the videos in a release into contact sheets, committed back to
+# the repo so they can actually be read.
+#
+# The videos live as release assets because they are too large for git
+# (830MB for the Bishop set alone). They are downloaded here, framed, and
+# thrown away -- only the sheets and the index are committed, which is a
+# few MB rather than tens.
+#
+# Run it from the Actions tab: pick a release tag and, optionally, one
+# video to do rather than all of them.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag holding the videos"
+        required: true
+        default: "defi-bishop"
+      only:
+        description: "Substring to match one asset (blank = every video in the release)"
+        required: false
+        default: ""
+      interval:
+        description: "Seconds between frames"
+        required: false
+        default: "15"
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Extract frames
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+          ONLY: ${{ inputs.only }}
+          INTERVAL: ${{ inputs.interval }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/videos
+
+          # Asset names are the raw upload names, full of dots and
+          # unsuitable as folder names. Map each to the transcript folder
+          # that already exists for it, so frames land beside the words
+          # rather than in a new naming scheme nobody else uses.
+          map_name() {
+            case "$1" in
+              *Part.1.Bias.Entries*)        echo "bishop-bias-entries" ;;
+              *Part.2.If.you.have.ever*)    echo "bishop-what-next" ;;
+              *Repeating.a.system*)         echo "bishop-repeating-system" ;;
+              *Part.2.TRADES.BREAKDOWN*)    echo "bishop-trades-breakdown-2" ;;
+              *Part.3.TRADES.BREAKDOWN*)    echo "bishop-trades-breakdown-3" ;;
+              *Part.5.Approach*)            echo "bishop-entries-part5" ;;
+              *BUILDING.BIAS.PART.1*)       echo "bishop-building-bias-1" ;;
+              *BUILDING.BIAS.PART.2*)       echo "bishop-building-bias-2" ;;
+              *DAILY.ROUTINE*)              echo "bishop-daily-routine" ;;
+              *)                            echo "" ;;
+            esac
+          }
+
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' > /tmp/assets.txt
+
+          seen=""
+          while read -r asset; do
+            case "$asset" in *.mp4) ;; *) continue ;; esac
+            [ -n "$ONLY" ] && case "$asset" in *"$ONLY"*) ;; *) continue ;; esac
+
+            name="$(map_name "$asset")"
+            if [ -z "$name" ]; then
+              echo "::warning::no transcript folder mapped for $asset -- skipped"
+              continue
+            fi
+            # Part 3 was uploaded twice under two names with identical
+            # checksums; framing it twice would just overwrite itself.
+            case " $seen " in *" $name "*) echo "skip duplicate: $asset"; continue ;; esac
+            seen="$seen $name"
+
+            transcript="knowledge-base/videos/$name/transcript.txt"
+            if [ ! -f "$transcript" ]; then
+              echo "::warning::$transcript missing -- skipped"
+              continue
+            fi
+
+            echo "::group::$name"
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+               --pattern "$asset" --dir /tmp/videos --clobber
+            python3 knowledge-base/tools/extract_frames.py sheets \
+              --video "/tmp/videos/$asset" \
+              --transcript "$transcript" \
+              --name "$name" --interval "$INTERVAL"
+            rm -f "/tmp/videos/$asset"
+            echo "::endgroup::"
+          done < /tmp/assets.txt
+
+      - name: Commit the sheets
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add knowledge-base/frames
+          if git diff --cached --quiet; then
+            echo "nothing new"
+            exit 0
+          fi
+          git commit -m "Contact sheets for ${{ inputs.release_tag }} (every ${{ inputs.interval }}s)"
+          git push
