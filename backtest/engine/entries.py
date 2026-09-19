@@ -113,7 +113,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .candles import Candle
-from .structure import Direction
+from .structure import Direction, body_closes_beyond, is_swing_high, is_swing_low
 from .key_levels import KeyLevel, detect_open_close_level, is_disrespected
 
 
@@ -330,3 +330,101 @@ def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Dire
         if best is None or i > best[0]:
             best = (i, level)
     return best[1] if best else None
+
+
+# How far back from the confirmation candle to look for the minor swing
+# the reaction created. Same order as OPEN_CLOSE_LOOKBACK -- the taught
+# rule never states a number, and section 9 of the spec records that as
+# an open question rather than pretending otherwise.
+REACTION_STRUCTURE_LOOKBACK = 20
+
+
+def _recent_minor_swing(candles: list[Candle], idx: int, direction: Direction,
+                        lookback: int = REACTION_STRUCTURE_LOOKBACK) -> int | None:
+    """Index of the most recent minor swing the reaction left behind: a
+    swing HIGH for a bullish entry, a swing LOW for a bearish one.
+
+    n=1 fractal, and only swings decidable BY `idx` are eligible -- a
+    1-bar fractal at j is confirmed at j+1, so j may be at most idx-1.
+    Using a swing that is not yet confirmed at entry time is the
+    look-ahead this project already removed once (see
+    timeframes.infer_bar_length and the 2026-09-18 review, finding 1)."""
+    start = max(1, idx - lookback)
+    for j in range(idx - 1, start - 1, -1):
+        if j + 1 > idx:
+            continue
+        if direction == Direction.BULLISH:
+            if is_swing_high(candles, j, n=1):
+                return j
+        else:
+            if is_swing_low(candles, j, n=1):
+                return j
+    return None
+
+
+def _reaction_structure(candles: list[Candle], idx: int, direction: Direction,
+                        lookback: int = REACTION_STRUCTURE_LOOKBACK):
+    """(broke, swept) for the candle at `idx`.
+
+    Both of Bishop's highest-rated confirmations share a skeleton, drawn
+    side by side on one screen in bishop-entries-part5 (see SLK_SPEC.md
+    5.4 and 5.5). Bullish case:
+
+        price comes into the key level, makes a low, lifts leaving a
+        MINOR SWING HIGH, and then closes back above that high.
+
+    `broke` is that close. The frame settles what gets broken: at
+    part5 t=420 he marks the reference with an anchored segment at
+    1.86789, which sits ABOVE the key level at 1.86700. It is the minor
+    swing high the reaction itself created, NOT the key level.
+
+    `swept` is the one extra leg that separates the two. In 5.5 price
+    comes back down after the minor high and makes a LOWER low than the
+    first one -- measured off the drawing, ~1.86570 against ~1.86660 --
+    taking that low's liquidity before breaking up.
+
+    Returned together so the two triggers stay mutually exclusive by
+    construction rather than by the order a caller happens to check
+    them in."""
+    j = _recent_minor_swing(candles, idx, direction, lookback)
+    if j is None:
+        return False, False
+
+    level = candles[j].high if direction == Direction.BULLISH else candles[j].low
+    broke = body_closes_beyond(candles[idx], level, direction)
+    if not broke:
+        return False, False
+
+    # The low (bullish) that preceded the minor high -- the liquidity a
+    # sweep goes after.
+    start = max(0, idx - lookback)
+    if direction == Direction.BULLISH:
+        first = min((c.low for c in candles[start:j]), default=None)
+        swept = first is not None and any(
+            c.low < first for c in candles[j + 1:idx + 1])
+    else:
+        first = max((c.high for c in candles[start:j]), default=None)
+        swept = first is not None and any(
+            c.high > first for c in candles[j + 1:idx + 1])
+    return True, swept
+
+
+def breakout_entry(candles: list[Candle], idx: int, direction: Direction,
+                   lookback: int = REACTION_STRUCTURE_LOOKBACK) -> bool:
+    """SLK_SPEC.md 5.4. A close beyond the minor swing the reaction left,
+    with NO prior sweep of the earlier extreme -- that case is 5.5."""
+    broke, swept = _reaction_structure(candles, idx, direction, lookback)
+    return broke and not swept
+
+
+def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction,
+                      lookback: int = REACTION_STRUCTURE_LOOKBACK) -> bool:
+    """SLK_SPEC.md 5.5. The same break, but price first took out the
+    earlier low's (or high's) liquidity.
+
+    Bishop rates this and 5.4 above every other confirmation: "if you
+    ask me which ones are likely best, personally I would tell you these
+    two ... if you have these two, [missing it] is a missed entry"
+    (part5 t=420-435)."""
+    broke, swept = _reaction_structure(candles, idx, direction, lookback)
+    return broke and swept

@@ -199,7 +199,7 @@ from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective
                     confirmation_known_at)
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
-    open_close_disrespect_entry,
+    open_close_disrespect_entry, breakout_entry, sweep_break_entry,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
@@ -1025,14 +1025,23 @@ TRIGGERS_SHIPPED = ("engulfing", "fourth_man")
 # See knowledge-base/STRATEGY_VS_IMPLEMENTATION.md, "Confirmation entry
 # triggers", for the full citation list.
 #
-# NOT YET BUILT, and deliberately absent rather than half-implemented:
-# the breakout and sweep+break confirmations, which he rates HIGHEST of
-# the four ("personally I would tell you these two... if you have these
-# two, [missing it] is a missed entry", bishop-entries-part5 t=420).
-# Both need structural context rather than a candle pair, so they are a
-# larger job than this seam allows. Until they exist, this set is the
-# taught reading of two of the four triggers, not the taught system.
-TRIGGERS_TAUGHT = ("open_close", "fourth_man")
+# All four Bishop enumerates, in the order he rates them. The breakout
+# and sweep+break come first because he puts them there: "if you ask me
+# which ones are likely best, personally I would tell you these two ...
+# if you have these two, [missing it] is a missed entry"
+# (bishop-entries-part5 t=420-435).
+#
+# They were specified off the full-resolution frames where he draws both
+# side by side -- see SLK_SPEC.md 5.4 and 5.5. The reference broken is
+# the MINOR SWING the reaction created, not the key level; that is only
+# visible in the frame, where he marks it at 1.86789 against a key level
+# at 1.86700.
+#
+# Entry timeframe stays H1. The ladder written on his chart is
+# H3/H2/H1/M45/M30/M5, but H1 only is a deliberate scope decision
+# (operator, 2026-09-19: "for now we can use only 1H"), not an
+# oversight.
+TRIGGERS_TAUGHT = ("sweep_break", "breakout", "open_close", "fourth_man")
 
 
 def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
@@ -1055,6 +1064,12 @@ def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
         elif name == "open_close":
             if open_close_disrespect_entry(candles, idx, direction) is not None:
                 return "open_close"
+        elif name == "breakout":
+            if breakout_entry(candles, idx, direction):
+                return "breakout"
+        elif name == "sweep_break":
+            if sweep_break_entry(candles, idx, direction):
+                return "sweep_break"
         elif name == "fourth_man":
             fourth_man = fourth_man_confirmation_level(prev, curr)
             if fourth_man is not None and fourth_man.default_bias == direction:

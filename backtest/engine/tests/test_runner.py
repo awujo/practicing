@@ -1970,7 +1970,8 @@ def test_the_default_trigger_set_is_exactly_what_has_always_shipped():
     from ..runner import _reaction_trigger, _find_entry_candidates, run_backtest
 
     assert TRIGGERS_SHIPPED == ("engulfing", "fourth_man")
-    assert TRIGGERS_TAUGHT == ("open_close", "fourth_man")
+    # All four Bishop enumerates, his two highest-rated first.
+    assert TRIGGERS_TAUGHT == ("sweep_break", "breakout", "open_close", "fourth_man")
     for fn in (_reaction_trigger, _find_entry_candidates, run_backtest):
         param = inspect.signature(fn).parameters.get("triggers") \
             or inspect.signature(fn).parameters.get("confirmation_triggers")
@@ -2022,3 +2023,96 @@ def test_an_unknown_trigger_name_raises_rather_than_silently_doing_nothing():
     curr = H1(1, 1.0998, 1.1040, 1.0996, 1.1030)
     with pytest.raises(ValueError, match="unknown confirmation trigger"):
         _reaction_trigger([prev, curr], 1, Direction.BULLISH, triggers=("nonsense",))
+
+
+
+def _reaction(lows_highs):
+    """Build H1 candles from (low, high) pairs with bodies spanning them,
+    so swing detection and close-based breaks both have something to
+    work with."""
+    out = []
+    for i, (lo, hi) in enumerate(lows_highs):
+        out.append(H1(i, lo, hi, lo, hi))
+    return out
+
+
+def test_breakout_fires_on_a_close_beyond_the_minor_swing_the_reaction_left():
+    """SLK_SPEC 5.4. Price makes a low, lifts leaving a minor swing high,
+    then closes back above that high."""
+    from ..entries import breakout_entry
+
+    # low, minor high at idx 1, pullback, then close above the minor high.
+    candles = _reaction([(1.1000, 1.1010),
+                         (1.1005, 1.1030),   # minor swing high 1.1030
+                         (1.1008, 1.1020),
+                         (1.1015, 1.1040)])  # closes 1.1040 > 1.1030
+    assert breakout_entry(candles, 3, Direction.BULLISH) is True
+
+
+def test_breakout_does_not_fire_without_a_close_beyond_it():
+    """A wick through is explicitly not a break -- body_closes_beyond is
+    the rule the rest of the engine already uses."""
+    from ..entries import breakout_entry
+
+    candles = _reaction([(1.1000, 1.1010),
+                         (1.1005, 1.1030),
+                         (1.1008, 1.1020),
+                         (1.1010, 1.1025)])  # high 1.1025 < 1.1030
+    assert breakout_entry(candles, 3, Direction.BULLISH) is False
+
+
+def test_the_two_triggers_are_mutually_exclusive():
+    """5.4 and 5.5 differ by exactly one leg -- whether price took out
+    the earlier low before breaking. He draws them as two separate
+    illustrations, so one setup must not be both. Made exclusive by
+    construction rather than by check order, because _reaction_trigger
+    returns on the first match and the order would otherwise decide
+    which label a trade gets."""
+    from ..entries import breakout_entry, sweep_break_entry
+
+    # No sweep: the pullback low (1.1008) stays above the first low.
+    plain = _reaction([(1.1000, 1.1010),
+                       (1.1005, 1.1030),
+                       (1.1008, 1.1020),
+                       (1.1015, 1.1040)])
+    assert breakout_entry(plain, 3, Direction.BULLISH) is True
+    assert sweep_break_entry(plain, 3, Direction.BULLISH) is False
+
+    # Same shape, but the pullback digs BELOW the first low first.
+    swept = _reaction([(1.1000, 1.1010),
+                       (1.1005, 1.1030),
+                       (1.0990, 1.1020),   # 1.0990 < 1.1000 -- liquidity taken
+                       (1.1015, 1.1040)])
+    assert sweep_break_entry(swept, 3, Direction.BULLISH) is True
+    assert breakout_entry(swept, 3, Direction.BULLISH) is False
+
+
+def test_the_minor_swing_used_must_be_confirmed_by_entry_time():
+    """A 1-bar fractal at j is only decidable at j+1, so j may be at most
+    idx-1. Using an unconfirmed swing is the look-ahead this project
+    already removed once."""
+    from ..entries import _recent_minor_swing
+
+    candles = _reaction([(1.1000, 1.1010),
+                         (1.1005, 1.1030),
+                         (1.1008, 1.1020),
+                         (1.1015, 1.1040)])
+    j = _recent_minor_swing(candles, 3, Direction.BULLISH)
+    assert j is not None and j <= 2
+
+
+def test_the_bearish_case_mirrors():
+    """Built explicitly rather than with _reaction(), whose candles all
+    close at their high -- a bearish break needs a close at the low and
+    would never fire, which is a property of the fixture and not of the
+    rule."""
+    from ..entries import breakout_entry, sweep_break_entry
+
+    swept = [
+        H1(0, 1.1030, 1.1040, 1.1030, 1.1040),
+        H1(1, 1.1035, 1.1035, 1.1010, 1.1030),   # minor swing LOW 1.1010
+        H1(2, 1.1030, 1.1050, 1.1020, 1.1045),   # 1.1050 > 1.1040: high taken
+        H1(3, 1.1015, 1.1015, 1.0995, 1.1000),   # closes 1.1000 < 1.1010
+    ]
+    assert sweep_break_entry(swept, 3, Direction.BEARISH) is True
+    assert breakout_entry(swept, 3, Direction.BEARISH) is False

@@ -323,7 +323,11 @@ confirmation entry."* (part5 t=420-435)
 `part5` frames t=375-450 carry the text **`H3/H2/H1/M45/M30/M5`** typed
 on screen, next to the drawing. That is the ladder, from the source,
 and it is wider than the transcript alone suggested -- it reaches M5.
-The engine looks at H1 only.
+
+**Scope decision (operator, 2026-09-19): "for now we can use only 1H."**
+So H1-only is deliberate, not a gap. The ladder is recorded here
+because it is what the source says, and because widening it later is a
+known lever rather than a discovery.
 
 ### The rejection is mandatory
 
@@ -397,8 +401,8 @@ Two measured examples, read off full-resolution frames:
 | 1 | target IS the ERL | `min(3R, ERL)` — truncates every trade above 3R |
 | 2 | "engulfing" = engulfed open-close key level | `is_engulfing()`, a candlestick engulfing |
 | 3 | disrespect applies to all four shapes | open-close only (and not wired in) |
-| 4 | breakout + sweep/break confirmations, rated highest (5.4, 5.5) | absent, though the detectors exist for bias |
-| 5 | confirmation on H3/H2/H1/M45/M30/M5, written on the chart | H1 only |
+| 4 | breakout + sweep/break confirmations, rated highest (5.4, 5.5) | BUILT 2026-09-19, in TRIGGERS_TAUGHT, not yet measured |
+| 5 | confirmation on H3/H2/H1/M45/M30/M5, written on the chart | H1 only -- deliberate, scoped by the operator |
 | 6 | setup = 4 conditions incl. imbalance overlap | primitives all exist, none composed |
 | 7 | origin vs continuation are different trades | `origin_kind="any"` |
 | 8 | daily-only bias with reduced target | absent |
@@ -422,6 +426,6 @@ Two measured examples, read off full-resolution frames:
   reaction the break may occur before it stops counting. The engine has
   REACTION_LOOKAHEAD for the analogous question; whether the taught rule
   agrees with that number is unknown.
-- The ladder written on the part5 chart reaches M5. Whether the cached
-  data goes below M15 has not been checked, so part of the ladder may
-  not be measurable at all.
+- The ladder reaches M5 in the source, but H1-only is a deliberate
+  scope decision for now. Whether the cached data even goes below H1 is
+  still unchecked, so widening it later may need a data fetch first.
