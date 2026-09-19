@@ -4,128 +4,125 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-16/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
-| 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
-| 1620 | 27:00 |  |
-| 1635 | 27:15 |  |
-| 1650 | 27:30 |  |
-| 1665 | 27:45 |  |
-| 1680 | 28:00 |  |
-| 1695 | 28:15 |  |
-| 1710 | 28:30 |  |
-| 1725 | 28:45 |  |
+| 0 | 00:00 | So I need our attention and also we'll make them for questions. |
+| 15 | 00:15 | So I want to talk about storyline and entries, right? Storyline and entries combined. So the first thing first, we're going to deal with, you know, want to keep it as simple as possible, right? |
+| 30 | 00:30 | One of the ways, in fact, one of the ways, you know, that you're already beginning to understand the concept and you're beginning to get a hold of it is that your chart is going to be so clean that the only thing you're going to find on your chart, right? |
+| 45 | 00:45 | It's just going to be two major tools, right? The two major tools you're always going to find on your chart is number one. It's going to be this vertical or maybe I don't know if it's called vertical horizontal, right? This one that helps you to identify your key level. |
+| 60 | 01:00 | That is going to signify if you are selling or buying, right? Because at the end of the day, you figure out that what you want to do over time is to be able to simplify the entire process, right? |
+| 75 | 01:15 | The moment you start seeing your chart that you're still doing, I might be wrong, right? The moment you see that you're still doing, mark here, mark there, mark there, all of those things, right? |
+| 90 | 01:30 | It might just be at the end of the day, you might want to do what best works for you. Do you understand? So you might want to do what best works for you, right? If that is the only way you feel you are going to maybe understand everything, right? |
+| 105 | 01:45 | So let's talk about storyline and entries. Let's talk about entries, right? |
+| 120 | 02:00 | Let's talk about storyline. Let's start with storyline, right? So we have, let's say we're starting from the daily time frame, right? |
+| 135 | 02:15 | So we have the daily year, right? So we have this is the daily time frame, right? So let's say this is, this daily is going to be like our daily kill level, right? |
+| 150 | 02:30 | We want to build it by us from the daily. We can also use this one as a four hours, right? But let's start with daily. So let's say, for example, we want to build it by us from the daily time frame. From the first thing first, we want to be able to, you know, talk about is how price actually, |
+| 165 | 02:45 | the first thing we want to talk about is how price actually came into that particular kill level on the daily time frame, right? We want to see how price is going to, you know, trade very close, you know? Price is coming to this particular daily kill level, trades into it. |
+| 180 | 03:00 | But we know that one of the things we want to pay attention to is the momentum, right? We want to see if price is going to break above that daily kill level, right? If price breaks above it with that heavy momentum pushed to the dance. |
+| 195 | 03:15 | Because if you study your chart also, there are times that price is going to break above a kill level like this, just a little, right? Just like a little bit, a little body above that particular kill level. That doesn't mean that price is going on, you know, just continue to buy and yeah, right? |
+| 210 | 03:30 | But one of the things we're always going to be particular about is putting context to the trading, right? So we want to see if we want to pay attention to how price, the momentum at which price comes into that particular kill level. So let's say price comes into the kill level and breaks above it to the heavy momentum pushed to the upside. |
+| 225 | 03:45 | Like not just like it breaks above it as a body, like it breaks above it with an heavy momentum pushed to the upside, right? We know already that we know we can begin to look for, you know, buy opportunities at that same kill level that God disrespected, right? |
+| 240 | 04:00 | It helps us to become flexible because if price comes into that particular daily kill level, right? And it stops into it with an heavy momentum pushed, then it begins to react, right? |
+| 255 | 04:15 | So let's say price stops into the daily kill level and it reacts and it closes, it closes below that daily kill level, right? |
+| 270 | 04:30 | Is that you want to see how price stops into that particular kill level and number two, how price closes below, right? You see the way price closes below, which is candle closure, right? |
+| 285 | 04:45 | Now these two things that has happened on the daily, the candle, the daily rejecting the daily and then also, you know, how price closes below. So it is not enough to now for you to now begin to say, you want to begin to sell, right? |
+| 300 | 05:00 | The next thing you want to do is you have to go one time frame lower and you go to, if you go one time frame lower, you're going to the four hours, right? So you move on time frame lower. So if you move on time frame lower, you want to look for what we call a breakout, right? |
+| 315 | 05:15 | So on that same daily, on that same daily kill level, right? We want to see these four hours give to us a sweep and a break, right? |
+| 330 | 05:30 | We want to see price give to us a sweep and a break and price continues to move to the downside. So first thing first, we want to talk about, we want to really clarify is being able to build by us. |
+| 345 | 05:45 | This is a break of structure, right? This is this one year is going to be a break of structure on the four hours, right? You see, because from the left-hand side, you see that the other flow was actually first bullish, right? |
+| 360 | 06:00 | Now that the other flow is actually bullish, the next thing you're going to see is that if price breaks below the most recent high that is being created, right? From the bullish other flow, right? Because the entire bullish other flow, yeah, right, was sponsored because of this daily price was coming to this daily kill level, right? |
+| 375 | 06:15 | So when we move on time frame lower, we would see that daily rejected daily, then we saw four hours give to us a breakout, right? Four hours give to us a break of structure, right? By sweep of liquidity break structure. |
+| 390 | 06:30 | So that break of structure is going to signify that price wants to move downwards now. So what that tells to us is that the daily rejected daily with the four hours given to us a break of structure, it means that your four hours and your daily are in sync, right? |
+| 405 | 06:45 | So sometimes you might not see a break of structure like this. So what you might actually see is what we call a breakout, right? What we call a breakout. So you might see that price has actually rejected like daily has reject daily tapped into a daily key level, right? |
+| 420 | 07:00 | So you might see that price has actually rejected like daily has reject daily tapped into a daily key level, right? And after daily tap into that daily particular key level, we can see something like a breakout, right? So what a breakout means is that we will see that daily, because of this rejection that is actually happening here, that rejection on the four hours time frame can just be one candle selling, right? |
+| 435 | 07:15 | So what a breakout means is that we will see that daily, because of this rejection that is actually happening here, that rejection on the four hours time frame can just be one candle selling, right? Before this daily candle closes, you will see that the whole time that this particular daily candle was actually rejecting, you see that on the four hours time frame, you'll see that the daily was at the four hours selling, right? |
+| 450 | 07:30 | As it was selling, it was creating for us a bearish other flow, but primarily for us, what we are going to see do is that it is going to give to us a breakout. So that breakout means that it was, price was, because of this rejection on the daily time frame, the four hours was given to us a bearish other flow. |
+| 465 | 07:45 | So that breakout means that it was, price was, because of this rejection on the daily time frame, the four hours was given to us a bearish other flow. So what price did was that we saw how these four hours give to us a breakout, you see that four hours is going to give to us a breakout, right? |
+| 480 | 08:00 | Many a times, many a times you're not going to see price giving to you a breakout like this where you see lower low, lower high, lower low. Many a times the kind of breakout you're actually going to see is this. This is the type of breakout you're going to see. You're going to see something like this. |
+| 495 | 08:15 | Many a times the kind of breakout you're actually going to see is this. This is the type of breakout you're going to see. You're going to see something like this. This is what I want to do. So the breakout, many a times you're going to see the breakout like this on the four hours, right? |
+| 510 | 08:30 | You're going to see the breakout like this. So what price is going to do on the four hours is that price is going to break below this particular external range liquidity, right? This, this load that is being created, right? You see that sometimes on the four hours you're like most likely not going to see a sweep and a break. |
+| 525 | 08:45 | What you're most likely going to see is a breakout like this, right? So that breakout on the four hours time frame, if you move one time frame lower, right? That is from four hours you move on time frame lower. This breakout that you see on the four hours time frame, what you're going to see on the one hour is going to be a liquidity sweep, right? |
+| 540 | 09:00 | You're going to see a liquidity sweep and a break of structure, right? It's going to show to you a liquidity sweep and a break of structure. So on the four hours time frame, you'll see that price broke out, right? We had a breakout and then on the one hour time frame, we went to one time frame lower. |
+| 555 | 09:15 | We went to the one hour time frame. Let me, so, so you can see where we are coming from, building the bias, right? |
+| 570 | 09:30 | We went to the one hour time frame. Let me, so, so you can see where we are coming from, building the bias, right? Daily rejected a daily time frame, daily key level, four hours will either give to us a liquidity sweep and a break of structure. Looking to the left for this type of scenario, you will see that we had a bullish order flow because of how this price was actually trading to this particular key level. |
+| 585 | 09:45 | Looking to the left for this type of scenario, you will see that we had a bullish order flow because of how this price was actually trading to this particular key level. So we see that the structure now shifted because we had a break of structure because the structure shifted will grow below this particular low. |
+| 600 | 10:00 | So many times when we don't see, sometimes if we don't see the break of structure, many times what we're most likely going to see on the four hours is going to be what we call the breakout, right? |
+| 615 | 10:15 | So the breakout means that the other flow is just bearish. Who else can hear me clearly? Somebody said my network is breaking. Who else can hear me clearly? |
+| 630 | 10:30 | Okay. Thank you. So you see that. Fine. Okay, thank you. Let me please walk on your network. |
+| 645 | 10:45 | So you see that many times if you don't get this four hours, if you don't get this four hours break of structure. Why money at times you're going to get this four hours breakout, right? Many times the reason why I'm going to say this breakout is maybe because of the momentum at which maybe that daily momentum that moved price to that daily key level, right? |
+| 660 | 11:00 | They began to see that rejection, all of those rejection. So the rejection that was actually created on the daily timeframe, right? Now give to us this breakout. |
+| 675 | 11:15 | Just move on time from lower the breakout you see on the four hours on the one hour timeframe is going to show to you a liquidity sweep and a breakout structure, right? So that means now it tells you this is what they call intertime frame and multi-time frame analysis, right? |
+| 690 | 11:30 | So what that means is that your one hour, your four hours are in sync with your daily. So we can now begin to look for more selling opportunities. Now, one of the things I need to add, right? I said it in passing many a times, but I want to emphasize it again is that for the folks that you are building your bias on the daily timeframe doesn't mean that you are going to see price sell all through that day, right? |
+| 705 | 11:45 | I said it in passing many a times, but I want to emphasize it again is that for the folks that you are building your bias on the daily timeframe doesn't mean that you are going to see price sell all through that day, right? What price can actually do? One of the things we need to understand about key levels is that price can start a sale from a particular key level, right? |
+| 720 | 12:00 | So what that means is that, you know, we said storyline and entries, entries combined. What I'm trying to say is that on the daily timeframe, price can give to you a rejection on the daily key level. |
+| 735 | 12:15 | And when we move to the one-hour timeframe, we saw a liquidity sweep and breakout structure. Remember, we have not even started talking about entries, right? You can see that many a times that entire day daily can sell, right? |
+| 750 | 12:30 | You will see that that daily, all through that day, we are going to sell. And the moment we get to a V-shaped key level on the daily again, we can now begin to see price reject, right? |
+| 765 | 12:45 | So for those people that many a times you want to just hold a trade because you built your bias from the daily. You now want to hold it, you know, until, you know, until you send a trade to hell, right? |
+| 780 | 13:00 | It doesn't work. It works fine, but many a times it's not always going to be like that. And the reason is because when it comes to when a, when a trade has started a bearish storyline, right? Which is a bearish bias. You can know when that bearish bias or a bullish bias has ended. |
+| 795 | 13:15 | One of the ways you get to know is that when price restart, the same way price, the area which price starts that bearish storyline or the bias, if it starts from a daily key level, there's every tendency that that bias is going to end at another daily key level. |
+| 810 | 13:30 | And after they started rejecting price gift to us a breakout on the four hours and give to us a liquidity sweep and break of structure in the one hour. So we know that our four hours and the one hour in sync with our daily, right? |
+| 825 | 13:45 | So now let's say the moment that we have this cell confirmation that we know that a bearish storyline has started. How do we now begin to figure out that this storyline has ended? What you can do is that look for the nearest daily key level, right? |
+| 840 | 14:00 | So let's say we have an open close on the daily as well, not four hours now, right? The daily, one of the ways you know that a daily storyline or the daily bearish bias has ended either bullish or bearish is that price will start from a particular key level and end at a particular key level, right? |
+| 855 | 14:15 | Then it will now shift its bias again and continue in that in maybe the opposite direction, right? So let's say we started from a daily ASHA key level, four hours give to us a breakout, one hour give to us a breakout structure. |
+| 870 | 14:30 | That is the next place we want to see price react from, right? That should be the most ideal place that we want to take profit from. So the same thing applies on the four hours. Let's say you build a bias. Let's say you have a liquidity sweep and a breakout structure on the four hours, right? |
+| 885 | 14:45 | And we liquidity sweep, breakout structure on the four hours, then you see price tap into a particular day, a four hour key level, then one hour give to you and engulfing. |
+| 900 | 15:00 | So let's say you play the one hour engulfing entry, the next available for our key level, right? It could be the V-shaped key level that is being created here, right? That should be your most ideal place that you want to see price tapping. So because since you are building the bias on the four hours, right? |
+| 915 | 15:15 | The moment you play the engulfing, your nearest play, price has the ability to just continue to move to the downside, no doubt, right? But the most ideal place, right? |
+| 930 | 15:30 | Because as much as you want to master your entries, you must also master where you want to exit from. Because what you will see many times is that price will play the one hour A-shaped key level. Trade down, like momentum is going to kick in into the nearest four hour key level. |
+| 945 | 15:45 | The moment price taps into a four hour key level, you will just see that that same kind of tapping to the four hour key level starts to reject. Then you now begin to ask yourself, ah, I didn't take profit, I didn't break even, only for price to, you know, hit your stop loss and begin to go in the opposite direction. |
+| 960 | 16:00 | You will now figure out that at the end of the day, your entry year, your bias for the sale was right, but your exit was wrong, right? Because a four hour storyline will start on, or a four hour bias will start on a four hour key level and it will end on a four hour key level as well, right? |
+| 975 | 16:15 | So we are looking for the first four, the first four hour key level that we want to build our bias from. So let's say four hour rejects from a V-shaped key level that got disrespected, right? Then we are waiting for the, we are going one time from lower one hour. We are waiting for what price to give to us and engulfing. |
+| 990 | 16:30 | We want to see price tap into that one hour A-shaped key level that is being created. I don't know, are you getting what I'm saying? Let me use a proper graphic representation, right? |
+| 1005 | 16:45 | So let's say for example, we have something like this, a V-shaped key level that got disrespected on the four hours, right? Now that we have this V-shaped key level, what's wrong with you? So we have this V-shaped key level on the four hours, right? |
+| 1020 | 17:00 | That got disrespected. Now, we know that this is the four hours. So we know that we want to build a bias on the four hours time frame. Now I wanted to pay attention to something, right? |
+| 1035 | 17:15 | If we have this particular low that got disrespected, especially on the four hours. I'm even speaking in respect to gold and maybe US, CHF and GU, right? |
+| 1050 | 17:30 | So the first thing first we had was a breakout, right? So the breakout tells us that the other flow is going to be to the downside because also it's on the four hours. Then we have a V-shaped key level that got disrespected. |
+| 1065 | 17:45 | So the next one we want to do on the four hours is that we're going to move one time frame lower, right? On that one time frame lower, we're going to the one hour time frame or 30 minutes, right? And the only thing we are going to be waiting for as a confirmation is that on the 30 minutes time frame or the one hour time frame, |
+| 1080 | 18:00 | So we are going to see an engulfing. The engulfing is going to create for us a fresh A-shaped key level, right? |
+| 1095 | 18:15 | So the engulfing is going to create for us an A-shaped key level, a fresh one, right? So what we want to now begin to see is that that A-shaped key level that has been created, we are going to see price come back to it. This is where our entry is going to be now, right? |
+| 1110 | 18:30 | We are not exiting at a one hour key level that is being created. Your nearest point of exit that you want to see price retrace from is going to be a four hours key level. You want to see price retrace or begin to react from a four hour key level. |
+| 1125 | 18:45 | Don't forget, you have a four hour key level yet that got disrespected. You move on time frame lower, you're looking for continuation. All of this retracement you are seeing is going to happen on the one hour time frame. |
+| 1140 | 19:00 | We are not expecting price to begin to turn from it and begin to react and maybe go in the opposite direction from a one hour key level. We are looking for the nearest four hour key level. |
+| 1155 | 19:15 | That becomes our first ideal point of target that we want to see price trade into, right? Price can tap into that for our open close, retrace a bit, come to another A-shaped key level then before it now begins to continue to move to the downside, right? |
+| 1170 | 19:30 | But we want to pay attention to the most ideal place we want to see price retrace from. So all I'm trying to tell you is that if price starts a storyline or you buy it from the four hours time frame, |
+| 1185 | 19:45 | So price creates an A-shaped key level. We tapped into it, right? The moment price trades into the nearest four hour key level, let's say a V-shaped key level, you will see that price will just begin to react. |
+| 1200 | 20:00 | Many a times it will do a deep retracement before it will now continue to move to this direction, that spated direction. Or sometimes it can do the deep retracement and it will just continue to, you know, price can just continue to buy, right? So as much as your entry is important, your exit too is important. |
+| 1215 | 20:15 | So this is just like an example I just made on the four hours, right? This is an example I just made on the four hours. So four hour V-shaped key level got disrespected overlapping with an imbalance. |
+| 1230 | 20:30 | So the same way I explained the four hours is the same way you now want to deal with the daily, right? So if you build your bias from the daily time frame, if the candle rejection started from the daily, we are looking for only two things, right? |
+| 1245 | 20:45 | If this does not happen, we want to see this. We want to actually see the breakout. The moment four hours gives to us a breakout. Move on time frame lower, either the one hour or 30 minutes, preferably one hour. |
+| 1260 | 21:00 | Do you understand? The moment you see price gives to your liquidity sweep and a break of structure, the next thing you want to put on down on your journal, right? Is that on your journal, you are going to be putting down that your one hour, |
+| 1275 | 21:15 | The next thing you want to be looking for, there are two major things now you're going to be dealing with. Number one is going to be how can you join the end, the sale, right? That's so the first thing you're going to be looking for is the sale to join the sale. |
+| 1290 | 21:30 | There's every tendency that price can break below that your exit on the daily and continue to move, you know, in your anticipated direction, like do 2,000, 1,000 pips or 500 pips. That's not your business, right? |
+| 1305 | 21:45 | So if you're entry from the one hour to the next daily key level gives to you like a one to four, one to five, just take your one to five, one to four, get out, right? Do your one to three get out, come back the same, the next they repeat the same process and all of that. |
+| 1320 | 22:00 | So if a storyline starts from the daily timeframe, right? It must also end on a daily timeframe, right? It must also end on the daily timeframe. |
+| 1335 | 22:15 | And also, so let's say, let's put this, let's put this in perspective. Let's say you want to build your bias from the weekly timeframe as well, right? So this would also help, but this will also help. Let me add this to it. |
+| 1350 | 22:30 | Let me say this. So let's say you want to build your bias from the weekly timeframe. Okay, somebody. |
+| 1365 | 22:45 | Okay, somebody. No, no, no, no. No, no, no, no, I'm good. So, so one of the things you are going to do is let's say you are building a bias from the weekly timeframe, right? |
+| 1380 | 23:00 | So, so one of the things you are going to do is let's say you are building a bias from the weekly timeframe, right? So if you are building a bias from the weekly timeframe, you know that you need to go. |
+| 1395 | 23:15 | I want to use a fresh slate because so let's say this is the weekly timeframe, right? |
+| 1410 | 23:30 | So, so don't forget if weekly timeframe trades into, so let's say we have price trade into a weekly key level. So price trades into a weekly key level, let's say an a shape key level on the weekly timeframe, right? |
+| 1425 | 23:45 | So price trades into a weekly key level, let's say an a shape key level on the weekly timeframe, right? After price trades into an a shape key level on the weekly timeframe, and it begins to reject, right? So we know that price rejecting is not just enough, right? |
+| 1440 | 24:00 | The next thing we want to do is that we are going to move one timeframe lower. So we are going one timeframe lower. Let's say we go to the daily timeframe, right? So on the daily timeframe, we are looking for either a liquidity sweep, right? |
+| 1455 | 24:15 | We're going to be either looking for a liquidity sweep and a break of structure, or we're going to be looking for a breakout on the daily timeframe. The primary purpose of being patient enough is to wait to see that daily is in sync with the weekly key level. |
+| 1470 | 24:30 | So either daily gives to you a break of structure or daily gives to you a breakout. So the moment you see that your daily and your daily is in sync with your weekly, weekly rejected a weekly key level gave to us a close below the weekly key level. |
+| 1485 | 24:45 | Majorly for us, it could be a breakout, right? The next thing we want to do is, you know, the daily is not enough. We'll just go to the week, the four hours timeframe. So the four hours timeframe we're only looking for. |
+| 1500 | 25:00 | With a good, you know, with the title stuff like 10 peeps, 11 peeps, 12 peeps, it doesn't matter, right? So don't forget the storyline started from the weekly timeframe. We expect it to end on a weekly key level. |
+| 1515 | 25:15 | We expect the same storyline, the bias to end on the weekly key level. So as much as we know the key level that the storyline started from, the bias started from, well, we are paying attention to the most recent, the closest key level on the weekly timeframe that we want to see price running to. |
+| 1530 | 25:30 | So daily has been, daily is now in sync with the weekly because we swept liquidity and broke structure. And also we broke out here, right? So the next thing is that on the four hours timeframe, we are waiting for price maybe on the four hours. Let me use this. |
+| 1545 | 25:45 | So on the four hours timeframe, we are going one timeframe lower. Let's say we have this. So on the four hours timeframe price came to tap into this V shape key level that got disrespected. And you got an entry there. |
+| 1560 | 26:00 | So the most, so first thing first, the first most ideal place you want to take profit from, right? Is because you understand that price would move from internal range liquidity, right? Don't forget that, right? |
+| 1575 | 26:15 | So from internal straight to external, right? So the first most ideal place using the concept of liquidity is going to be this external range liquidity. So let's say your daily and your four hours are already in sync with your weekly and you got an entry on the four hours. |
+| 1590 | 26:30 | So the most ideal place using the types of understanding liquidity is that the most ideal place you want to take profit from first is going to be the four hours external range liquidity. Why? After price takes out an external range liquidity, price could retrace, come for the next internal range liquidity before it continues. |
+| 1605 | 26:45 | But all I'm trying to say to you is that as much as you have gotten an entry in the four hours, there is every tendency before this trade, before this bias, this orderfully is going to shift from bearish to bullish, right? |
+| 1620 | 27:00 | What we are going to see is that we must see price trade into the next weekly key level, right? And we must see price react and either close above it and daily must also give to us a liquidity sweep and a break, either a breakout or a breakout structure, right? |
+| 1635 | 27:15 | If weekly, okay, the best way to communicate these thoughts now, right? I hope we are getting it. If weekly is given to you a bearish storyline, weekly rejected weekly, daily give to you a liquidity sweep or breakout structure or daily give to you a breakout, unless a price now trades into a weekly key level. |
+| 1650 | 27:30 | If weekly is given to you a bearish storyline, weekly rejected weekly, daily give to you a liquidity sweep or breakout structure or daily give to you a breakout, unless a price now trades into a weekly key level. And now price has rejected from that weekly key level and it has closed above, right? Even though it closes above, it is not enough for you to come into the new week and begin to look for buying opportunities, right? |
+| 1665 | 27:45 | The reason is because the most recent break of structure we have on the daily is to the downside, which is in sync with the weekly. Do you understand? Even though this weekly now tapped into this particular key level, rejected and closed above. |
+| 1680 | 28:00 | If this weekly rejection at this weekly key level, right, has not given to us a breakout on the daily or a breakout structure, right? We are likely just going to continue to sell to the downside. But if weekly has started this storyline here, weekly rejected weekly, daily give to us a liquidity sweep or breakout structure or he gives to us a breakout and price trades into a weekly key level and it rejects and it closes above, right? |
+| 1695 | 28:15 | But if weekly has started this storyline here, weekly rejected weekly, daily give to us a liquidity sweep or breakout structure or he gives to us a breakout and price trades into a weekly key level and it rejects and it closes above, right? And we move to the daily again. And from the daily, we could not find any breakout or breakout structure. We know that we're going to continue to move to the downside until we target the nearest weekly key level. |
+| 1710 | 28:30 | And from the daily, we could not find any breakout or breakout structure. We know that we're going to continue to move to the downside until we target the nearest weekly key level. Do we get what I'm saying? Are we getting it now? Are we seeing how key levels, how storylines start and end? |
+| 1725 | 28:45 | How we can see that storylines can start and end, right? So let me, we have like less than a minute, few seconds left. Let me end this one. I'll share another link so that everybody can join again, right? |
+| 1740 | 29:00 | Let me, we've not even spoken about entries, right? Using the storyline and entries. So I'm going to stop this one so that we can start converting everybody can join again. |

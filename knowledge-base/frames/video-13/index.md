@@ -154,3 +154,4 @@ sheet_001 covers frames 1-25, and so on.
 | 2130 | 35:30 | Because there's the, the market is very funny because it's because of its dynamic nature. As much as you can have sniper entries, you can also have sniper stop loss, |
 | 2145 | 35:45 | So you're just going to know what happened. So the thing is, one of the things we can do for ourselves is if my stop loss is supposed to be above this high, just add one more pips to it, |
 | 2160 | 36:00 | add one more pips to it or 0.5 pips, so it's, and we are good. And we are good for real. For real, we are good. Any other questions? Should I send another link? |
+| 2175 | 36:15 | Okay, let me end this one so that you can start converting for us. |

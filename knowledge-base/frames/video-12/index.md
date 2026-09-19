@@ -4,147 +4,144 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-12/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
-| 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
-| 1620 | 27:00 |  |
-| 1635 | 27:15 |  |
-| 1650 | 27:30 |  |
-| 1665 | 27:45 |  |
-| 1680 | 28:00 |  |
-| 1695 | 28:15 |  |
-| 1710 | 28:30 |  |
-| 1725 | 28:45 |  |
-| 1740 | 29:00 |  |
-| 1755 | 29:15 |  |
-| 1770 | 29:30 |  |
-| 1785 | 29:45 |  |
-| 1800 | 30:00 |  |
-| 1815 | 30:15 |  |
-| 1830 | 30:30 |  |
-| 1845 | 30:45 |  |
-| 1860 | 31:00 |  |
-| 1875 | 31:15 |  |
-| 1890 | 31:30 |  |
-| 1905 | 31:45 |  |
-| 1920 | 32:00 |  |
-| 1935 | 32:15 |  |
-| 1950 | 32:30 |  |
-| 1965 | 32:45 |  |
-| 1980 | 33:00 |  |
-| 1995 | 33:15 |  |
-| 2010 | 33:30 |  |
+| 0 | 00:00 | So, yeah, we're supposed to in fact continue a, like have one more session on, we're supposed |
+| 15 | 00:15 | to have one more session on key levels, right, so that way we go in depth to it. So, what we're going to do is this week, we're going to look, we're going to dedicate a particular day to that regard, right, we're going to dedicate one particular day to |
+| 30 | 00:30 | be able to deal with that particular, we want to dedicate like one, not like a full day, but a particular session to just talking about going in depth about key levels, right. |
+| 45 | 00:45 | So, when we talk about in-depth in key levels, not like we're trying to do something spooky, right, it's just the same thing over time, right. So, today we are going to be talking about our time frame bias and our time frame bias and yes, how to build our time frame bias, |
+| 60 | 01:00 | basically, right. So, as you all know, like I always say, I don't drop POIs, right. So, one of the things you see me never do is I don't drop POIs, meaning I don't draw a place |
+| 75 | 01:15 | where I respect, you know, price to come to, you know, before price begins to run or whatever it is, that is not what I do, right. I would rather just look for a specific area that I believe that price should actually run from, right. And that is exactly where I want to see price, |
+| 90 | 01:30 | you know, run from, right. So, if the key level is wrong, it's wrong fine, if it's not going to be wrong, right. It's definitely, that means it's going to be, it's going to hold. So, we have a usual saying that if your key level is right, right. When price gets into, when price comes into |
+| 105 | 01:45 | your key level, if it is right, we would always see what we call a momentum push to the upside, right. Either to the upper to the downside. So, momentum is definitely going to kick in. So, we spoke about building our time frame bias already, right. That night, |
+| 120 | 02:00 | there was a particular night we dedicated to raise. We went ahead of ourselves, we just had that session that night, right. Right. But it doesn't mean we can just still talk about a few more things. So, right. So, let's start like this, right. It's just going |
+| 135 | 02:15 | to be spontaneous, right. So, if you see one of the things you need to pay attention to, which is very, very important, right. I told us that one of the things you want to pay attention to, which is very important is understanding counter closures, right. So, |
+| 150 | 02:30 | how counter closures really matters a lot, which means that if we tap into, right, we might not really talk about 2246. Somebody's sending a message. Okay. So, if we have, for |
+| 165 | 02:45 | we might not really talk about 2246. Somebody's sending a message. Okay. So, if we have, for example, an A-shaped key level and a daily time frame, right. One of the ways you want to build bias is that you want to see that the first, there are two major factors, right. That you |
+| 180 | 03:00 | how the candle is going to reject and close. So, we can say reject and close around C, right. It's not a new term or I'm not using a new term. I'm just trying to keep it short, right. So, |
+| 195 | 03:15 | want to put it in consideration. And the second factor you want to put into consideration is that you want to see on, if you go one time frame lower. So, let's say, for example, this is a daily time frame key level, right. This is a daily key level. Price |
+| 210 | 03:30 | taps into this particular daily key level. And as price taps into that daily key level, we have the rejection at that particular key level. Then we see price begin to do what the price closes below it, right. So, the moment we see price react and closes below |
+| 225 | 03:45 | lower. So, from that, daily want to go to the four hours, right. And from the four hours, we want to see the second condition fulfilled, right. To be able to be sure that this higher time frame is going to sell to the downside. We want to see the four hours do two |
+| 240 | 04:00 | things for us, right. We want to see the four hours give to us either liquidity sweep or a break of structure, right. Indicating that price wants to move to the downside. Or we want to see price on the four hours give to us like an engulfing, right. What we |
+| 255 | 04:15 | engulfing in this type of situation, the next one to see price do is that the next candle that is going to be created is going to serve as our internal range liquidity, right. So, we want to see price come back to this |
+| 270 | 04:30 | internal range liquidity. Then we want to see price take it. Then we want to continue to move to the downside, right. So, the two major things we want to actually see happen in price is that the first place for the bias is that the |
+| 285 | 04:45 | there and also how the candle closes. So, you see that it takes a whole lot of patience. So, and the same way it happens on the daily is the same way it happens on the weekly is the same way it also happens on the monthly. And also, it happens the |
+| 300 | 05:00 | If you have a four hour, let's say you have a four hour V-shaped key level, price taps into that for our V-shaped key level, rejects and closes are both. All you have to do is go one time frame lower, right. Which is like would |
+| 315 | 05:15 | want to see two things, right. Number one, you want to see liquidity sweep and break of structure, right. And if you don't see this liquidity sweep and break of structure, the next thing you want to see is that you want to see price give to rest what we call an engulfing, a bullish engulfing to the upside, |
+| 330 | 05:30 | right. So, there's every possibility. Two things can actually happen, price might just come to this V-shaped key level that is being created on the one hour price will continue to move to the upside. Or the next one hour candle that is going to trade close to the V-shaped key level is going to |
+| 345 | 05:45 | price going to take it out and price will continue to move to the upside, right. So, you see that we have to be able to buy it is very, very easy, right. It just takes a lot of patience for you to be able to wait. So, if you have an |
+| 360 | 06:00 | A-shaped key level, for example, on the daily time frame, right. On the daily time frame, you have an A-shaped key level, right. Now, this A-shaped key level on the daily time frame, if price taps into it like this, |
+| 375 | 06:15 | let's say price taps. So, price taps into that A-shaped key level. So, you know that after price taps into it, it's not just going to tap into it as a week, it's going to tap into it as a full-fledged body, right. Now, one, the place, |
+| 390 | 06:30 | that particular key level. I want to see, we want to also see how the candle closes, right. So, we want to see that price must close below, you know, that particular key level that price tested, right. So, we call it the candle |
+| 405 | 06:45 | what candle closure is very important. There are times that you can be having a sale, right. You can take a sale from an A-shaped key level like this, right. Let's say price will now create an open close here. So, you took a sale |
+| 420 | 07:00 | that price was going to take out this particular low or maybe you were trying to take profit at this particular, what do we call it now, this V-shaped key level. Don't forget you were selling from this A-shaped key |
+| 435 | 07:15 | it sold to the open close, you see that price will just start to react, to react, to react. Then you see that the next hour can do that, taps into that particular open close with close above it. Then you just see that price will just continue to reverse. Don't forget you were even |
+| 450 | 07:30 | like a four hours open close. It could not get to this particular low. Then the way the four hour candle closes above that particular open close just signified that price was just going to reverse to the upside. |
+| 465 | 07:45 | So, what I'm trying to say is candle closures are very, very important. Like on the daily, the four hours, you know how the four hour candle closes, right, is very, very important. So, we have this on the daily timeframe, for example. Now, there are two conditions we have to see fulfilled, |
+| 480 | 08:00 | this is for the daily, this is for the weekly, this is for the monthly, and also this can also happen under four hours, right. We have this on the four hours. So, the first condition is that want to see price tap into the key level |
+| 495 | 08:15 | and also reject and close either above or below that particular key level, right. And the second condition we want to see is that after price has actually closed in this type of situation, which is a very scenario, after price has tapped into that particular |
+| 510 | 08:30 | is that we are going to move one time frame lower. Now, one time frame lower is that on the four hours timeframe, we want to see two things happen, right. The two things we want to see happen is that we want to see price give to us a liquidity sweep and a break of structure |
+| 525 | 08:45 | So, we are going to be looking for either a key level that is overlapping with an imbalance here. Price is going to create an internal range liquidity. Price is going to take it out and continue to move to the downside. So, you will see that, |
+| 540 | 09:00 | All you just have to do is that we are just going to be looking for, you know, having mechanized, our system of trading is just going to be so mechanized in such a way that if A happens, so it's just like this, if |
+| 555 | 09:15 | A happens, so if we say if A, B, C happens, right, we do X, Y, Z. So, which means that if let's say the first ABC that we want to see happen is that we want to see price tap into a daily key level, |
+| 570 | 09:30 | ABC, right, we want to see price reject and also close below. So, the next thing is that we have seen ABC happen, which means that price came to the daily key level, tapped into it, rejected and closed below, right. |
+| 585 | 09:45 | is going to be the XYZ. So, it's just going to be like a mechanized system. So, the XYZ now says that if we go one time frame lower and we see price give to us, either a liquidity sweep or a break off structure, right. We want to, we are going to be selling if we have an internal range |
+| 600 | 10:00 | liquidity that is close to an A key level that is overlapping with an imbalance, right. We want to sell from there, right. Or we want to see something like this sweep of liquidity, like this. So, price is going to come back for this A leg, this |
+| 615 | 10:15 | and price will continue to drop. Or we are going to see the four hours going to do something like this. The four hours is going to give to us an engulfing, right. When price does give to us an engulfing after rejection on the |
+| 630 | 10:30 | Two things can actually happen. The next four hour can do can actually tap into it and just drop, begin to drop. But many times you will see that what makes it high probability, right. Is that we want to always see the |
+| 645 | 10:45 | right. It's a trade close to it. We don't want to see trade into it, right. Which means that this next four hour can do is going to serve as a what internal range liquidity. So, you want to see price do something like this, tap, take this internal range liquidity, tap into the next key level |
+| 660 | 11:00 | and price will continue to, you know, move to the downside, right. So, you see that, okay. Let me show you, there's a particular example on EU. So, let me show us one particular example on EU. So, if you |
+| 675 | 11:15 | on EU. So, let me show us one particular example on EU. So, if you look at EU today, everybody sold EU, right. So, you can see. So, if you look at the structure, right. If you look at structure, structurally on the four hours |
+| 690 | 11:30 | here, right. We have broken above this high. We have broken above all of these structural highs, right. And we know what the structural break means, right. So, you can see how we broke above all of these highs, right. And we closed above it as a body, right. So, you know what that means |
+| 705 | 11:45 | time frame, you will see that, you know, we had a sweep of liquidity here. We broke above two major structural points, right. So, you see lower low, lower high, lower low. We broke above two structural points. We closed above it as a body. |
+| 720 | 12:00 | if you look at what people were actually doing, there are people who were selling from here, which is very correct. So, if you look at this, we had this internal range liquidity that is resting here, one. |
+| 735 | 12:15 | Then you can see above the internal range liquidity becomes high probability when we have an imbalance that is resting there. But we don't just want to trade off an imbalance at what pricing level. So, you can see, you can see this A shape key level that is resting here, |
+| 750 | 12:30 | what did price do? Price did two things, right, swept the liquidity and also rebalance the imbalance at this specific pricing level, right. You can see this is an A shape key |
+| 765 | 12:45 | just two things to do, right. Attack liquidity and also rebalance and holding balance. So, if you look at what price did here, so if you see, every one of these things even happened under four hours. So, if you were not so sure what happened here, right. This is where |
+| 780 | 13:00 | so look at what happened on EU, right. So, you can see we took out this particular internal range liquidity. Maybe there are people who are targeting this particular load. There are people targeting all of these loads, right. I'm not so sure if it's |
+| 795 | 13:15 | going to get there, but if it gets there, that's fine. But you can see what EU did is swept liquidity, then we came to, you see this imbalance that we have here, all of this imbalance that we have here, right. We don't know, right, if price is going to do a complete rebalancing, right, |
+| 810 | 13:30 | at what pricing level do we want to see price rebalance, right. So, we have this particular A shape key level that is resting here that is also overlapping inside of this particular imbalance. So, you can see what price did. So, what did price do, right. You can see |
+| 825 | 13:45 | we tap into this A shape key level, right. Close below it a bit, then you can see the next four hour can do engulfed, right. After it engulfed, what did you notice that price did? We also broke |
+| 840 | 14:00 | to that. So, you can see how we engulfed on the four hours and after we engulfed, you can see what we did from here, right. Price came back to the A shape key level that was created on the four hour stop loss that have just been above this particular high, |
+| 855 | 14:15 | right. Just to give it more a little bit of room, stop loss that have been above this high, right. And so, we took, so you can see what EU did, right. So, EU did something like this, right. |
+| 870 | 14:30 | rebalanced this imbalance that is resting here. This is what we call the continuation trade. Everybody will remember us, right. So, you will see the same thing that happened here, right. This place here, we didn't really have like an imbalance, a liquidity that needs to go, |
+| 885 | 14:45 | but you can see we had this particular open close killer that is also rebalanced, that is also overlapping inside of this imbalance. So, you see what price did, and you can see how we continue to drop. So, this is where a confirmation entry would have |
+| 900 | 15:00 | come in. You can see price came back here to this particular A shape key level that is being created here, right. Price tapped into it, look at another one here, engulfed again, tapped into it. So, you can see the way price engulfed here and also tapped into it here, right. After price engulfed |
+| 915 | 15:15 | I'm just trying to show you how you can have a mechanized system, right. It doesn't have to be too rigorous like that, right. So, but you can see what price did here, right. We swept liquidity, we rebalanced this imbalance at this specific pricing level. |
+| 930 | 15:30 | But our main attention now is that because we are, let's say you built a bias on the four hours, right. So, you can see what price did. On the same four hours we engulfed, created a new A shape key level that is resting here. Price came back, tapped at that A shape key level, |
+| 945 | 15:45 | and you can see where price dropped. So, I now personally, because I didn't take all of these sales. So, I looked at what price was actually doing here, right. So, this was my major concern, right. So, I wanted to see how price was going to reject from here because I was looking at |
+| 960 | 16:00 | the structural leader, okay, number one, we've swept liquidity, right. And after a sweep of liquidity, we broke above two structural points, right. These are the two major structural points we broke above. So, and also we didn't just break, we closed above it as a body. So, all of these could just be a little bit of retracement. Then we can just continue to have |
+| 975 | 16:15 | all of those bias. You can see we have this open close key level that is resting here. You remember what I said about key levels. Key levels can be used as, key levels can be |
+| 990 | 16:30 | So, look at what I was, this was my concern, right. This was my concern. We had this particular four hours key level, right. The price stopped, broke above it as a body, closed above it. |
+| 1005 | 16:45 | something unique happened. Look at what happened. So, if you move to the one hour time frame, you see that this is the key level that we had here. You can see. So, what did you notice here? |
+| 1020 | 17:00 | right. So, the moment price broke above it with an impossible move to the upside. And you can see we all, this same key level that was disrespected is overlapping |
+| 1035 | 17:15 | internal range liquidity that is resting there, now we want to see price actually come to take, right, attack liquidity with balance, the imbalance at this specific pricing level, because there was no internal range liquidity. So, this is where we now begin to say, okay, |
+| 1050 | 17:30 | let's see what is going to happen. For example, this is what I mean. So, I said, if price rejects from here and gives to us an engulfing. So, as at the time I was framing this particular set of, I mean, this buy from here, like this from here, my stop loss was |
+| 1065 | 17:45 | just a little bit above this place. So, I'm still in this trade, right. So, I said, if price rejects from here, this one closes above as an engulfing, I'm going to use this particular one hour can do as my internal range liquidity, right. So, if I use this one hour time, |
+| 1080 | 18:00 | We have a v-shaped key level that has already been created already, right. So, you can see the v-shaped key level was already created. My stop loss was just here. So, my stop loss was |
+| 1095 | 18:15 | the v-shaped key level was already created. My stop loss was just here. So, my stop loss was just here. Yeah, I just gave it a little bit of allowance. So, you can see what price they tapped |
+| 1110 | 18:30 | I still want to see EU run, right. I want to see EU run and until this particular ice ticket, right. So, you can see how you can be able to. So, when you talk about building buyers, |
+| 1125 | 18:45 | of those things, right. Maybe you have to do from monthly down to daily down to, you know, from monthly daily for hours, all of those things. No, all you just have to do is do many |
+| 1140 | 19:00 | price a swept liquidity broken structure. Let me see that message. Somebody left a message. |
+| 1155 | 19:15 | What's used one. So, many at times, one of the ways you can build buyers is that you can just look at what the current structure is, right, and where price is currently reacting. |
+| 1170 | 19:30 | And so, you can see many at times, you can have, you know, the origin of the set up. So, you can see with most, most times are going to have like a sweep of liquidity and a break of structure, right. The moment we have a sweep of liquidity and a break of structure, |
+| 1185 | 19:45 | an A ship key level that we have on the four hours timeframe, right. So, and the next one to see price do is we want to see price react from that for our key level or the daily key level, right. And the reaction is not just enough, right. The reaction is not just enough. |
+| 1200 | 20:00 | We also want to see price close below, right. Because now we know that we have swept liquidity and broken structure. We want to see price also close below, right. The moment we see price |
+| 1215 | 20:15 | let's say for example, this is happening on the four hours timeframe. I'm not going to the two hours. I would just go with either the one hour timeframe or the 30 minutes timeframe. And the only thing I'm just going to be looking for from these buyers that I'm |
+| 1230 | 20:30 | I just want to see two things. I want to see like an engulfing to the downside, great for me and a shape key level. I want to see the next candle that is going to trade for me servers internal range liquidity price going to take it out and continue to |
+| 1245 | 20:45 | drop to the downside, right. So, I'm just trying to have a mechanical approach to the market place. So that is what it means by bias, right. Like when somebody say, what is your bias? |
+| 1260 | 21:00 | it's nothing, it doesn't have to be something very spooky, right. So you see, on the one, I built something like this on the 30 minutes on the one on the four hours timeframe. So which means that on the four hour timeframe price comes into a particular |
+| 1275 | 21:15 | I'm just my focus now would just be on the one hour timeframe on the three on the 30 minutes timeframe, which means that on the one hour on 30 minutes timeframe, there are two things I want |
+| 1290 | 21:30 | and break structure, right. The price creates for me an internal range liquidity play the next key level that is being created and we are moving to the downside, right. Or if this does not happen, many times you will see something like this happen, |
+| 1305 | 21:45 | then the next candle that is going to be trailed will serve as internal range liquidity. The moment I see something like this, there's every possibility it can even hit stop loss, but it becomes an high probability trade because you can be something you can also |
+| 1320 | 22:00 | repeat over and over and over again. So what are you just going to see? You are going to see that price is going to take out the internal range liquidity and continue to drop. In fact, the sales I'm on like the VIX 25 sales is a very funny stuff. I wanted to catch the buy, |
+| 1335 | 22:15 | right. Catch the buy and I don't know if I still have the charts. Let me see. Okay. Let me see. Let me just open it, let it load. So you see that it becomes a very, |
+| 1350 | 22:30 | Okay. Let me see. Let me just open it, let it load. So you see that it becomes a very, you would have like a mechanical approach to the marketplace, right. So you want to see that |
+| 1365 | 22:45 | if a key level is being tapped into, it doesn't have to be an A shape. It doesn't have to be a V shape. Many times it could even be an open close, right. The two things you just want to see is that number one, price taps into that particular key level. And after price taps into the |
+| 1380 | 23:00 | below, let's say price closes above, there's no point in looking for sale. It means that that key level has been disrespected. So let's, you know, we've been talking about |
+| 1395 | 23:15 | right. Price has created for us consecutive down candles that has given to us an open close. So now we're actually looking for price to tap into this particular open close and just continue to sell to the downside only for price to tap into the particular open close |
+| 1410 | 23:30 | and close above it as a body, right. So the moment it closes above it as a body, it means that we have broken above this open close. It has now been disrespected. So what do we expect price to do? We're just going to be looking for buying opportunities will move |
+| 1425 | 23:45 | one time because of how this kind of close is internal range liquidity absolutely necessary to validate our entry. Actually, no, internal range liquidity is not is not is necessary because okay, let me say it's necessary when you want to have, |
+| 1440 | 24:00 | when you want to, you know, define like an high probability trade, right. But there are times, you know, the market has a mind of its own. I love to say that a lot. There are times |
+| 1455 | 24:15 | that, for example, want to take an entry after price as taking out price as rejected from a key level engulfed one time frame lower, right. So there are times that we could be waiting for the next candle to serve as internal range liquidity, right. And that might not happen. |
+| 1470 | 24:30 | engulfing and continue to move to the downside, right. And there are also times that price, you know, the next candle will serve as internal range liquidity. So the moment you see the next candle serving as internal range liquidity makes a lot of sense for us, we can take price to the |
+| 1485 | 24:45 | downside, right, or to the upside, whichever direction is actually going. But now the thing is, I will say it's necessary, right. But to me, it's, I want to see it as necessary, right. |
+| 1500 | 25:00 | Okay, you said my view is it is necessary for origin, but not necessary for continuation. Yeah, yeah, it could be like that as well, right. It could be necessary for origin and not necessary for continuation. So this is what this is, let me, let me show you something. |
+| 1515 | 25:15 | So let's say for example, structurally, we have, we have the origin of a particular trade starting like this. So you see something like this, we have a sweep a break after that sweep and break. So you see, so you don't want to have the origin of the trade. So we know |
+| 1530 | 25:30 | that this is an internal range liquidity, right. So you can see that it is necessary for the origin of the entire trade. So we have this internal range liquidity that is resting here, right. So let's say we have this QMR key level that is also here, that let's say the level |
+| 1545 | 25:45 | see price take out this particular internal range liquidity, right. We want to see price take out the internal range liquidity and also go for the external range. So after internal range |
+| 1560 | 26:00 | liquidity is taking, internal range liquidity is taking the next place we want to see price go above is going to be the external range liquidity. So we know that after this, after this origin has started. So if you miss this origin, one of the ways we say you can get in |
+| 1575 | 26:15 | for the continuation is that now that we have broken above this external range liquidity, right, broke above it with an impossible move to the upside, right, closed above the next one to see price do is that many at times in fact, one of the ways I even play this continuation is |
+| 1590 | 26:30 | that whenever you have like an imbalance, like you have a key level that is overlapping with an imbalance, right. So one of the things I personally will always do is that I can also just play, I can just play this particular key level here, right, especially if it doesn't have |
+| 1605 | 26:45 | peep stops, max 10 to 11 peeps, right, and I just want to buy to the upside, right. So but many times what I want to do is that if I'm patient enough, I can wait for price, |
+| 1620 | 27:00 | let's say this continuation is on the four hours timeframe, right, I can be patient enough to wait for this, I wait for the four hour level to be tested, right, the moment the four hour level is being tested, I will move one timeframe lower, right, which means that I'm going to |
+| 1635 | 27:15 | I'm going to be looking for on that lower timeframe is that I'm going to be waiting for price to give to me like an engulfing. The moment I see an engulfing after this four hour candle has been tested, this four hour key level that is overlapping with this imbalance |
+| 1650 | 27:30 | has been tested and it has closed above. If I see this engulfing on the one hour or 30 minutes, right, without an internal range liquidity, I will take my entry here. In fact, it will even make me have a very tight stop loss, right. So let's say for example, this is |
+| 1665 | 27:45 | using 10 pips of 11 pips that will go fire. I'll just, you know, my stop loss, add one more pips to it. So my stop loss would be around somewhere here. So you will see that for this type of |
+| 1680 | 28:00 | So what I'm just going to wait for is I'll wait for the four hour key level that is overlapping with this imbalance to be tested. The moment it is tested, I want to see how it's going to close. If it closes above, right, I'm scaling one timeframe lower to |
+| 1695 | 28:15 | the 30 minutes or one hour timeframe. The moment I scale one lower, I'm just looking for an engulfing. The moment I see an engulfing, I'm playing the V shape key level. And we are just going to continue to ride the continuation. So the same way, the same approach that I'm giving to you |
+| 1710 | 28:30 | we have a sweep of liquidity, a break off structure. We have our internal range liquidity created, we have our external range liquidity. So now we know that we |
+| 1725 | 28:45 | So let's say this is our next level that I want to see price trade into. So now this is what you can also do. So price taps into a four hour key level, right? After price taps into a four |
+| 1740 | 29:00 | hour key level, let's say you do want to take the trade from here. You don't want to take the trade at the beginning from that four hour key level after the internal range liquidity is taken. The moment the internal range liquidity is taken and you see that price now closes above, |
+| 1755 | 29:15 | especially above the internal range liquidity. So what price did was that price did two things, right? Price tapped into the QMR key level, took out internal range liquidity and price closed above. The moment you see price close above like this, just go one time frame lower, |
+| 1770 | 29:30 | right? Let me put this. So you see price tapped into this like this. |
+| 1785 | 29:45 | closed above. So what you're just going to do is go one time frame lower. You are going one time frame lower. You are going under, let's say you are going to the 30 minutes or you are going to the one hour, right? We are going one time frame lower. |
+| 1800 | 30:00 | So when we go one time frame lower, there is only one thing we are only looking for, right? After this rejection and the candle has closed, right? Under 30 minutes on the one hour time frame, we are only looking for one thing. We are looking for an engulfing to the upside. The moment we have |
+| 1815 | 30:15 | an engulfing to the upside, you can play the next key level, this v-shaped key level that is being created even without, you know, without an internal range liquidity being created, right? You can play the next key level after the engulfing. You can play that v-shaped |
+| 1830 | 30:30 | ride it onto these external range liquidities taken. But there are also, you know, unique situations, right? That even after you move one time frame lower, you will see that the next 30 |
+| 1845 | 30:45 | And you are expecting that price will come and use this 30 minutes candle as your internal range liquidity and play this QMR key level, only for price to do something like this. |
+| 1860 | 31:00 | So the 30 minutes time frame will just trade very close to this particular key level. It will not even tap into it. It will trade very close to the v-shaped key level. It will not even tap into it. And the next thing is that the next candle will just |
+| 1875 | 31:15 | played from. Where price played from once this particular level here, right? This key level that is resting here. So you see that you were waiting for this v-shaped |
+| 1890 | 31:30 | this 30 minutes, internal range liquidity, play this key level, only for price to just tap from here like this, very close to it. And the next candles will just continue to |
+| 1905 | 31:45 | When you miss the entire origin, let's say you missed it from this QMR key level, just move one time frame lower, go to the one hour 30 minutes, look for an engulfing. The moment you see an engulfing, you don't have to wait for internal range |
+| 1920 | 32:00 | right? Many a times, another thing you will see is that before the engulfing, you will see that price is going to create for you what we call an open close. So let's say price |
+| 1935 | 32:15 | price has also played out from this QMR key level. So as price was actually coming down to this QMR key level, right, we had two consecutive down candles that created for |
+| 1950 | 32:30 | because of how this candle rejected and closed above, we had a break, price engulfed, right? So you can see price now has engulfed this particular candle broken above this particular key level. So the next thing is that in situations like this, where you have two consecutive candles that |
+| 1965 | 32:45 | were engulfed, right, and two consecutive candles that created an open close, then price later got engulfed. After we have taken out the internal range liquidity and played out from this QMR key level, the next thing is it is most likely that price |
+| 1980 | 33:00 | that got disrespected, right? Even though we engulfed this particular candle, it is most likely that we will see price play something like this, come to this open close key level that was disrespected, and price will just continue to move to the upside. |
+| 1995 | 33:15 | So meanwhile, you are there waiting for this V-shaped key level, but you will see that we had this open close key levels that got disrespected, right? Price came back after it was engulfed |
+| 2010 | 33:30 | I hope we are following, right? So let me send another link. We have a couple of seconds left. |
+| 2025 | 33:45 | Let me send another link. Let me send another link, right? So I'm going to end this one so they can start converting. So send another link. |

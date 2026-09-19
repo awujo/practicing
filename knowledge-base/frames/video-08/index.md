@@ -4,159 +4,155 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-08/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
-| 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
-| 1620 | 27:00 |  |
-| 1635 | 27:15 |  |
-| 1650 | 27:30 |  |
-| 1665 | 27:45 |  |
-| 1680 | 28:00 |  |
-| 1695 | 28:15 |  |
-| 1710 | 28:30 |  |
-| 1725 | 28:45 |  |
-| 1740 | 29:00 |  |
-| 1755 | 29:15 |  |
-| 1770 | 29:30 |  |
-| 1785 | 29:45 |  |
-| 1800 | 30:00 |  |
-| 1815 | 30:15 |  |
-| 1830 | 30:30 |  |
-| 1845 | 30:45 |  |
-| 1860 | 31:00 |  |
-| 1875 | 31:15 |  |
-| 1890 | 31:30 |  |
-| 1905 | 31:45 |  |
-| 1920 | 32:00 |  |
-| 1935 | 32:15 |  |
-| 1950 | 32:30 |  |
-| 1965 | 32:45 |  |
-| 1980 | 33:00 |  |
-| 1995 | 33:15 |  |
-| 2010 | 33:30 |  |
-| 2025 | 33:45 |  |
-| 2040 | 34:00 |  |
-| 2055 | 34:15 |  |
-| 2070 | 34:30 |  |
-| 2085 | 34:45 |  |
-| 2100 | 35:00 |  |
-| 2115 | 35:15 |  |
-| 2130 | 35:30 |  |
-| 2145 | 35:45 |  |
-| 2160 | 36:00 |  |
-| 2175 | 36:15 |  |
-| 2190 | 36:30 |  |
+| 0 | 00:00 | Okay, what's your question? |
+| 15 | 00:15 | For that week you we want to go on to several nights. It turned out coming down already for that week you do Are you with me? So for that week you Yeah, for what for also have a break up sort of for that week you must also take two stochora |
+| 30 | 00:30 | Also to stochora point. No, I choose to try and turn out it. No, it doesn't have to Don't you have to okay one is enough one is enough |
+| 45 | 00:45 | In getting the The ring circle which which time frame do you think will be more preferable because my challenge is this It turned on 30 minutes |
+| 60 | 01:00 | My not be Chained on four hours So me So watch what time frame is next to look for that for that sweep of liquidity and break off total for you to know that |
+| 75 | 01:15 | Okay, the circle is about to start. So then how are you looking for through this? Is to know when we enter again for the main train to continue. So what time frame will you really suggest? |
+| 90 | 01:30 | Recycle I going on to look for the inside what I'm free No, that doesn't make you a question. Okay, beautiful. So you can use when it comes to Like I always say you can always use the weekly |
+| 105 | 01:45 | You can use the four hours, right? This for us is an exception But you can use the daily one weekly and sometimes for us |
+| 120 | 02:00 | build bias, but when it comes to be with you if you build your bias, you know Just by us or what I choose to call is storyline if it's if we if you build it from the week |
+| 135 | 02:15 | Range circle four hours. You can see it on one hour. You can see it on two hours You can also see it on 30 minutes Right, you can even see it on 15 minutes. It's just being able to be able to train your eyes to be able to see it |
+| 150 | 02:30 | You will see range circle of 15 minutes. You see it on 30. You see it on 45 You see it on one hour. You will see it on two hours, right? There are times that you also see it on You also see it on on the four hours as well, right? |
+| 165 | 02:45 | price has started reacting from a let's say price has started reacting from a particular daily particular daily key level right and Now the price has started reacting from a particular daily key level |
+| 180 | 03:00 | This is the daily time frame We know already that this is already a bearish market structure already, right? Because you can see what price is actually doing here with swept liquidity here and after the sweep of liquidity |
+| 195 | 03:15 | What did you notice that price did right? Did you notice how price started to give to us this lower low give to us this lower high give to us Let's pick this as a lower low give to us this lower high give to us this lower. No, right give to us a lower |
+| 210 | 03:30 | I give to us a lower. No, right? This is the daily then it broke and after breaking the gift to us hi hi I will pick this price came to take all these internal range liquidity |
+| 225 | 03:45 | Give to us this right and now looks like we want to start maybe we want to start selling or so So you can see the complete range cycle on the daily time right so you can see this is one |
+| 240 | 04:00 | That's the moment price. Can you notice what price did this was like this is the last internal range liquidity that is closest to This strong this one swept liquidity and broke structure |
+| 255 | 04:15 | Okay, let's just use this one because this one is the most visible so you can see the moment We took out this last liquidity that is closest to this Particular I right this strong high can see how we started to drop to the downside and if you move to the launcher |
+| 270 | 04:30 | So let's say for example price wants to continue to move to the downside again What can you see here right price has given to us another? Internal external range liquidity that needs to go we have this number one |
+| 285 | 04:45 | Like we have this one number three So once we are looking we can maybe see on g you is a price might come You can see this is a killer one the daily that got respected and disrespected right? |
+| 300 | 05:00 | Yeah, you know give to us all of these cells until this particular is taken We don't know yet But this place would look at a beautiful place to start to look for sale setting opportunities from |
+| 315 | 05:15 | This is even on the daily right there are other examples. Let me see somebody ask a question Okay, someone somebody okay. Dixon said he shared it on the question and answer group. Let me open it |
+| 330 | 05:30 | Question and answer |
+| 345 | 05:45 | So let me let me open it for us so that each and every one of us can see it Why is it? |
+| 360 | 06:00 | Can see the same can we see my can we see the screen? I believe you can So look at its big sin shared it already |
+| 375 | 06:15 | Fun enough. I've not even seen this before or maybe I have I think this didn't come to mind so you can see strong high created because we swept liquidity Then we broke you can see this is the structural points. We broke we broke this one as well |
+| 390 | 06:30 | Price creating for us lower lower lower higher lower lower lower lower lower lower lower lower lower In fact, exactly the way I marked it. That's the same way. Dixon marked it exactly the same way |
+| 405 | 06:45 | can see it was expecting price to play out from this key level after we have taken out this internal range liquidity want to take this out and you see price continues to go to the downside you know the same thing without even I mean it |
+| 420 | 07:00 | sent this may 24 right I've even forgotten I said something like that but you can see did you notice how we marked the same thing can see you can notice how we marked the same thing right so so this is a this is a daily |
+| 435 | 07:15 | example this is a daily example on what we call the range cycle right so this is a daily this is a daily example so let me take this off so if even if I want to |
+| 450 | 07:30 | this particular daily key level because it was stated it was tested once then it was broken right so we want to see something like the next daily can do is |
+| 465 | 07:45 | key level right want to see price take out the previous daily high react from this particular place as straight up want to go straight to these slows right you can see all of these lose yet that is resting close to this killer we |
+| 480 | 08:00 | have something like this right you can begin to have something like this and catch that sale and this is in fact I think we have news tomorrow say this might be what news want to play out tomorrow about in this came killer we have and you know |
+| 495 | 08:15 | frame if you go to maybe other time frames like two hours if you go to if you go to the two hours if you go to the one hour you would see a whole |
+| 510 | 08:30 | lot there are lots and lots of examples right there are lots of examples I mean let's look for one thing this is why this is close to general right now so |
+| 525 | 08:45 | mean let's look for one thing this is why this is close to general right now so but we can also see this right you can you can see this yeah so look at this this |
+| 540 | 09:00 | is one right so you can see where would it be free the liquidity from right you can see where we serve this liquidity from here right we serve this liquidity after sweep of liquidity the next thing you can see move to the line chart you |
+| 555 | 09:15 | structural points what did you notice we have here right so now you can see we have like an inducement internal range liquidity that needs to go this internal range liquidity that needs to go and remember our one-time setup |
+| 570 | 09:30 | our lifetime setup right one lifetime set of that now we love so much we have a key level that is overlapping inside of an imbalance did you notice that this type of trade played out in June right and they have June something like that |
+| 585 | 09:45 | so if we take this out hold on I want to take this out so one of the things you |
+| 600 | 10:00 | so if we take this out hold on I want to take this out so one of the things you |
+| 615 | 10:15 | can actually notice is so if you come to the left right if you look to what is happening here you can see the range circle already we had a strong blow this was a strong blow that was created because overall the structure was |
+| 630 | 10:30 | above to structural points greater the lower low higher high higher low you can see all of this right so the other flow from here is actually to the upside right other flow from here you can see price took it off and the next thing |
+| 645 | 10:45 | that we want to see price take out is this low so all of these lows that are being created they are internal range liquidity right so you can see price will come and this is a complete range circle want to see price do this take this out |
+| 660 | 11:00 | that as price was given to us and other flow to the upside did you notice how price was also given to us this other flow to the downside like this right so look at this lower high let's pick let's pick it from here there |
+| 675 | 11:15 | so I mean there are solid solid examples so if you look at what we did here just by using advanced market structure right so we know that we want to come back to this particular low we want to take out this particular low so what did you |
+| 690 | 11:30 | particular high or let's use this one we had this particular liquidity strip that happened here and after we had this particular liquidity strip that happened here you can see the other flow to the downside |
+| 705 | 11:45 | now let's move to the line chart to see if we actually broke structure can you see how we broke structure here strip and break so the range has been defined right range has been defined by what strip and break through the |
+| 720 | 12:00 | sweep and break we had our other flow to the downside lower low lower high lower low right so the next thing you can actually see is that we have this induced internal range liquidity that needs to go |
+| 735 | 12:15 | key level we have this particular key level open close that is also resting there so let's say we want to shut from here |
+| 750 | 12:30 | so you can see don't forget we are coming to the downside right so we're going to do 10 pips uh 10 pips right one to three as |
+| 765 | 12:45 | usual but we are going for external range liquidity right so because we are going for external range liquidity so let's play price let's see what price does right so you can see we are going for external range |
+| 780 | 13:00 | external range liquidity taken already right external range liquidity has been taken somebody left a question you're not getting the open close no no no |
+| 795 | 13:15 | there's nothing like open close liquidity when we get to killer with you understand it right when we get to killer with you understand um you understand what we are talking about |
+| 810 | 13:30 | just hold on right yes somebody said there is a key level very close to it yes there's a killer who close to it right we have this this is an open close here right this is also an open close if you play this one we are still good if you play this one we are still good |
+| 825 | 13:45 | open close on the two hours on the one hour time frame it was a it was an a-shaped key level right this other block here was responsible for all of this move right this |
+| 840 | 14:00 | anyone you choose to use is fine right but we can use this one because this one on the two hours when we come to the one hour time frame that's um other block is what we call the |
+| 855 | 14:15 | you move you can see that it is an a-shaped key level right so back to our business right so what did you notice here other flows to the downside as we continue to |
+| 870 | 14:30 | moved from internal range liquidity right we move straight to external range liquidity but don't forget that's even coming even much lower right we want to take out to this |
+| 885 | 14:45 | this is the last load that needs to go because we have it has an imbalance and we also have an open close key level that is also overlapping inside of that imbalance right so another thing you can also see again i think we can also see |
+| 900 | 15:00 | um we can see this yeah i think that's that's very clear so you can see just like the question that our other guy asked right so if you look at this now look at the entire other flow look at the |
+| 915 | 15:15 | lower low lower high lower low right this this is what we have here right so let me let me take this off i want to take something off just hold on |
+| 930 | 15:30 | right you can see this is where the strong high started from this is the next low this is the next high right this here becomes the next load that was being created right so we have this so we have |
+| 945 | 15:45 | another advanced market so you can see this low this is this low was broken here right so we know that the other flow is still to the downside because we still have all of these loads to go we still have some of these loads that needs to go |
+| 960 | 16:00 | going to see this high go right if you see this high go maybe price might play the qmr key level um this qmr key level yeah we don't know |
+| 975 | 16:15 | let's see what price does from there right let's play price okay price did not get there price did not price did not get there |
+| 990 | 16:30 | did was price came to play this particular key level yeah all right so we had lower low lower high okay lower low at first we're looking at this but price gave to us another advanced structure right it |
+| 1005 | 16:45 | remember what I said right that our strong high will move from here right to this next point because we swept we swept liquidity here we also broke structure so price didn't price gave us any structure to work with which was this low |
+| 1020 | 17:00 | back to this particular key level here right price came to play this key level and straight so we moved from internal range liquidity straight to external |
+| 1035 | 17:15 | um sorry our range circuit is just moving from one point of from one point of the circuit to another so you can see right yeah well hold on hold on so we want to |
+| 1050 | 17:30 | circuit to another so you can see right yeah well hold on hold on so we want to |
+| 1065 | 17:45 | circuit to another so you can see right yeah well hold on hold on so we want to see stop plus eat 10 pips stop plus eat right with a 10 pips stops that was already gone right with a 10 pips stops that |
+| 1080 | 18:00 | was already gone already right but we it's maybe 11 15 pips right that would have been it gonna right somebody wanted to act okay someone said do you prefer using a and yeah it's me hold on come in hold on so somebody said you |
+| 1095 | 18:15 | prefer to use the using the a and v shape key level over the open close no we don't we don't prefer one from the order we use everything it is the |
+| 1110 | 18:30 | use it is the one that is available to us at the moment right that is that is what we get to use when we get there you will you will understand we've not gotten to key levels now okay mr. allow me to mic yeah um thank you |
+| 1125 | 18:45 | won't be the clinician now no for my own summation i think it's safe to say all you find to say um you can you can get the range circuit can be on almost all |
+| 1140 | 19:00 | the on the time frame especially the higher one maybe less it's like two hours from this explanation i've got saying can i just check this time frame you are now and i can see we're on two hours time frame yeah i think yeah we are on two hours time |
+| 1155 | 19:15 | frame and even on this time frame within the first race alcohol you could see you also see another one within it so i think all it takes is for a person to just understand the race alcohol you can see a stupid of liquidity a break of |
+| 1170 | 19:30 | investment okay you to just follow that train it's fine to have that that's a mission okay that's fine that's for my own of the official food i think all when you have a |
+| 1185 | 19:45 | have two key levels okay yes i can your net your yes i can yeah yeah i had to go |
+| 1200 | 20:00 | have two key levels okay yes i can your net your yes i can yeah yeah i had to go i said when you have a key level that has an imbalance above it but we need that imbalance is on that key level within it i think in most cases the one that is above that has |
+| 1215 | 20:15 | an imbalance usually would that the first show you have didn't you get my question yes i get oh hey there are some times when you have a key level above and in this way |
+| 1230 | 20:30 | i think his network is breaking my network is breaking okay |
+| 1245 | 20:45 | i think it's fine to see the one with an imbalance we would more better than the one that does not i think that's just not going to take our time yes well when we get to when we get to the points |
+| 1260 | 21:00 | where i think dixon even trades more of that set up a lot i made mention of it in the welcome address that i i said something that there's a set up that if i was to trade more set up for life |
+| 1275 | 21:15 | right yeah set up that is this that is a set up you're already making mention of the one that has where you have an imbalance and a key level is overlapping with it right and you can you can spot it already um let me show you what i'm talking about right so if you go back to our |
+| 1290 | 21:30 | advanced market structure class right when we started the when the first time we kicked off right i remember that eu trade that we all took uh myself mr daniel almost everybody |
+| 1305 | 21:45 | let me it was okay beautiful this was it so let me show us let's take this out so if you look at this is this eu trade we all took right so you can see |
+| 1320 | 22:00 | um when we're talking about the advanced market structure i think we just yes just follow our time frame so what if we are different yes just rely on so so you can see the |
+| 1335 | 22:15 | entire move right structurally we could see that okay fine we're we're bullish uh because we took out this particular high right after we took out this high you see how we close that mortgage and um so with that day we're talking about if there's one set up a one trade for life is this |
+| 1350 | 22:30 | one that has an ingestment liquidity and also when price has an imbalance then it has a key level that is actually overlapping it so you can see this is if it is an a-shaped key level that is overlapping inside of this particular imbalance right that day when we're having that our first |
+| 1365 | 22:45 | call right everyone of us could remember that price was here uh but before we ended the call price got activated right and straight up right the first place we want to always target is this our external range liquidity right so you can see our price targeted external |
+| 1380 | 23:00 | range liquidity at the moment this one delivered the next day as well what did you notice that price did you can remember you remember now so everybody knows already that see we are ready swept you |
+| 1395 | 23:15 | if you investigate what we have inside of this you know there's a key level inside somewhere around here if you move to if you just investigate all of this all of all together right so um so we know that we sweat liquidity here right we also broke structure which means |
+| 1410 | 23:30 | that our strong low will move from this place to this particular place right so this is becomes our new strong low why we sweat liquidity here we have also broken above this particular structure so now you can remember the second trade we took for the next day after this first one |
+| 1425 | 23:45 | gone after this first one was gone from here hit this high so the next thing we can also see again is right defined ranges again right you can see defined ranges again and again and again |
+| 1440 | 24:00 | right so you can see this this becomes our delay which is our inducement or internal range liquidity and then this becomes our v-shaped key level right this is our v-shaped key level you can see v-shaped key level here right in fact you I think almost everybody cuts it so we are moving again |
+| 1455 | 24:15 | one to three from internal to external liquidity right can you see what happened here |
+| 1470 | 24:30 | are you seeing from here to here right you can see all that happened right |
+| 1485 | 24:45 | you can see how all of that happened right uh let's see right so you can see just understanding |
+| 1500 | 25:00 | either play now so you can see so what did price do we move from internal |
+| 1515 | 25:15 | either play now so you can see so what did price do we move from internal range liquidity here play the key level and we sweat straight to external range liquidity right the moment we took out external range liquidity you can see how we started to |
+| 1530 | 25:30 | drop where did we drop from this is an open close key level that is also overlapping inside of this imbalance that is resting here do you see that right you can see how we we tapped from it and what happened next afterwards the v-comeback can see it in comeback right price engulfed here |
+| 1545 | 25:45 | what happened next afterwards the v-comeback can see it in comeback right price engulfed here which is what we talk about when we begin to talk about confirmation entry do you can see how we had two major buys here from internal to external tp heat from another internal |
+| 1560 | 26:00 | to external tp heat so we were coming from again right open close that is over also overlapping with an imbalance price tapped into it give to us a confirmation entry here let's see how price went preparing for news i think it was preparing for news at this time view are you seeing are you |
+| 1575 | 26:15 | went preparing for news i think it was preparing for news at this time view are you seeing are you |
+| 1590 | 26:30 | went preparing for news i think it was preparing for news at this time view are you seeing are you seeing that remember we had a confirmation entry that god is respected right so let's take this out |
+| 1605 | 26:45 | but what did you notice that happened here the same level right you can see that is why a key level that is also overlapping inside of an imbalance when we get to that set up i mean we'll talk about the entire logic behind it we'll talk about it yeah i thought my story is not social right |
+| 1620 | 27:00 | the only talent i had with this show on this day i marked it i think this was on nfpd yes the only talent i have with it because now before i could take any trade i want to know the trend on on this day before this particular day our our thought i think i took some loss too |
+| 1635 | 27:15 | when i was trying to get the buy our our initial our thought of who says was the trend is a buy the buy trend on this day here you get so all i was looking for was a continuation of of a buy |
+| 1650 | 27:30 | and not to sell but i'm not going to have it as i saw all this thing that happened here and is well understood but my own point was that it was a buy it was a buy trend and this just happened |
+| 1665 | 27:45 | on boom the s63 the market is not giving anybody see the market is not picture perfect maybe that that's where we just ended at the end of the day okay just hold on you know it doesn't just |
+| 1680 | 28:00 | right things doesn't just happen i want you to look at the daily time frame this was nfp day remember we bought from that tuesday to that friday that gift was a complete buy |
+| 1695 | 28:15 | you saw how we we took out this particular liquidity one the number two where we by now some of you should be understanding when we talk about even if you we've not spoken about it |
+| 1710 | 28:30 | previous daily highs can be used as what as inducement liquidity or internal range liquidity so if you move to the line chat so you can see what what's tuesday and friday actually did was to |
+| 1725 | 28:45 | prepare for nfp what does they did and friday morning was actually to prepare for nfp right so you can see what price did the price did and nothing just happens in price although there are times we can take losses that and it is after the loss we will now see oh this |
+| 1740 | 29:00 | because they traded above this close to this killer we didn't take it out which means that tuesday was likely going to it's likely going to stand as our inducement or internal range liquidity so we want to see nfp london is going to trade close to it and just continue to drop |
+| 1755 | 29:15 | to the downside right so that was what happened so that your airtime frame is very very important right airtime frame is very important so look at what nfp did nfp traded above and the moment |
+| 1770 | 29:30 | key level a shape killable after we engulfed and we swept liquidity and we engulfed and you can see how we started to drop so as much as we want to look for buying opportunities that we can see yes this guy is bullish here right what is happening currently right what is even happening |
+| 1785 | 29:45 | currently even matters a lot so let me let me tell you another one so for example so what i'm trying to say is it happens on g u a lot as well and it also happens on e u2 so for example you have something like this let me flatten this thing so |
+| 1800 | 30:00 | example you have something like this let me flatten this thing so for example you can have a four-hour frame let me use so that it'll be very clear so for example |
+| 1815 | 30:15 | you can have a four-hour frame like this and the the structure is going to be bullish like this right then asian session you know asian session you just need only two four-hour can do to make of the asian session so g u gives this type of setup during london right price will |
+| 1830 | 30:30 | create asian low price will also create asian high right on the four-hour time frame then price would give to resist particular key level then price would have this one as our external range liquidity there are times that london this type of setup london will take out asian low |
+| 1845 | 30:45 | tap into a four-hour key level and boom it will just move to the upside which means that the current four-hour key level that served as the last can do that makes up the asian session |
+| 1860 | 31:00 | going to engulf like this you know when the daily engulfs with a can do if you move to a line chart it becomes it becomes an a shape key level another daily time frame right would do like |
+| 1875 | 31:15 | which means that we have a key level already that has an inducement liquidity so what do we expect want to see previous daily high taking then want to see the key level tapped then want to see all of this knows go right this same thing that i'm showing to you right you can see that was |
+| 1890 | 31:30 | what happened that was in fact that was the the move for usd card last week like that was the most explosive move for usd card last week so look at this usd card it's just studies right studies |
+| 1905 | 31:45 | see train your eyes to see this thing so what can you see on usd card can you see the entire move for usd card the same way we had the sales for EU was the same way we had the sales |
+| 1920 | 32:00 | we had these buys for usd card so what can you see right so let's start with this let's take this off so when we take this off right what can you see that happen here right you can see on the weekly time frame within engulf right but you can see how the weekly created for us a v-shaped killer |
+| 1935 | 32:15 | traded close to it but it did not take it out right it didn't take it out now for the fact that it did not take it out we expect that this previous weekly low is going to serve as an |
+| 1950 | 32:30 | out the previous daily low and the previous weekly low take it out and all of these highs must go right so we want to trade so you can see our print our next target are going to be all |
+| 1965 | 32:45 | of this this old weekly high this old weekly high all of this old weekly highs must go so now you can see so you can see what is happening yeah if I just want to learn say this is the type of setup that even most times it forms on the four hours many times you will see it on the four hours |
+| 1980 | 33:00 | what I mean is that but only that you know people like lower time frames a lot four hours we create a v-shaped key level right or an a-shaped key level like this four hours we create a v-shaped or an a-shaped key level then the next four |
+| 1995 | 33:15 | hour candle is going to trade close to the key level but to not tap into it which means that that next four hour candle that was created is going to serve as our inducement liquidity price we take it out tap into it and continue to move to the downside or to the upside the same way for our |
+| 2010 | 33:30 | but to not tap into it that four hour candle is going to serve as an induced internal range liquidity price we take it out and continue to drop right so now let's look at what price did on it on usd card that same friday right you can see that the same thing that we had on usd |
+| 2025 | 33:45 | card was what we had on e right so look at this tapped one now are you seeing it now |
+| 2040 | 34:00 | are gone already right so this next high needs to go the moment this next high needs to goes we might see a little bit of retracement this depending on how this usd card closes this |
+| 2055 | 34:15 | before the buy continues again because this is this looks like the next liquidity that price wants to go and take do you understand let me check it this |
+| 2070 | 34:30 | no the only thing i saw after study was ir real taking ir real next on the daily |
+| 2085 | 34:45 | okay okay beautiful so so that's just the way it is right so um any other question i was thinking so i'm going to give an assignment we have just three minutes left so this this is the assignment i'm going to be giving the assignment i'm going to be giving is that so the assignment i'm going |
+| 2100 | 35:00 | to be giving is that go to your chart and study um make out charts use the assignment so topic that is being created markouts range circles a lot markout a lot the ones that have |
+| 2115 | 35:15 | played out markouts you can it doesn't have to be eu and gu or good it doesn't it doesn't have to be the majors you can do for nz d usd you can do for btc you can do for ethereum crypto anything just mark center the chart so that we can also meet maybe later tonight |
+| 2130 | 35:30 | if that's if people do the assignment we can do like an assignment review right then do some assignment review do some chart studies and then we meet again tomorrow right any other question okay if there's no question um see you when i see you the record |
+| 2145 | 35:45 | is going to be dropped tonight so um the record is going to be dropped now so i'm encouraging you right if you were in the first call when we started sharing the stories of dixon and myself |
+| 2160 | 36:00 | marking out um range circles range circles range circles just what we thought today range circles where price you know created they started to define a range and started to create a defined range |
+| 2175 | 36:15 | by sweep and break then price came to take out internal to external from external to internal and all of those things right just from what we thought today right so we can review it can |
+| 2190 | 36:30 | yes a-shaper sales v-shaper buys yes yes actually we are getting there don't rush don't worry are getting there right so see you guys later tonight um let's have a wonderful evening |

@@ -4,103 +4,99 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-06/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
+| 0 | 00:00 | So, if you look at what we're talking about, we're talking about price creating, you know, |
+| 15 | 00:15 | the forms of liquidity that we're talking about, our price can run from the previous daily high, right? If you see our price took out here, right, so these are examples, price took out the previous daily high, you can see the next form of liquidity that needs to go is the |
+| 30 | 00:30 | So, if you look at this particular point again, I mean, if you zoom out clearly, you can see what happened here, right? Look at this. We took out this particular previous daily high, and the moment we took out that |
+| 45 | 00:45 | We went straight to this previous daily low, but overall, we took out all the old daily lows, right? We took out all these old daily lows. We took out this, we took out this, but normally the moment we took out this |
+| 60 | 01:00 | We took this out, we took this one out, we took this one out. please meet your mics. Just meet your mics. So what did you notice here again? Let me show you |
+| 75 | 01:15 | get to storyline because that is where you begin to know how to use it to build a bias. So if you look at what is happening here, this is an old previous, this is a previous daily low. So |
+| 90 | 01:30 | price took out the previous daily low. The next was that should go is the previous daily high. Are you seeing that now? We took out the previous daily high and for four days we are attacking old daily highs. You can see we took out all of these old daily highs that are resting here. We |
+| 105 | 01:45 | took out this one again. You can see how we took out this particular one again. Where did we start from? We started from this old daily low to get out and prices continue to move to the upside. |
+| 120 | 02:00 | So what did you notice here? Let's break this again. I'm trying to show you something. So you can see on the daily again, you can see what happened. We took out this previous daily low. We started to buy, we took out all these old highs, these old highs, these old daily highs, |
+| 135 | 02:15 | rejected above, closed below it. And the moment we closed below it, look at what we did for the next two days. For two good days, we just continued to sell. How did we now start to buy |
+| 150 | 02:30 | again? Look at how we now started to buy again. So these are forms of liquidity. We will look at the one for Asian Session. So look at again, we have this old daily low here. We also have |
+| 165 | 02:45 | this old daily low here as well. So look at what price did from there. So look at this price took out another old daily low, previous old daily low, which is a form of liquidity. |
+| 180 | 03:00 | to the upside. We took out another old daily high. The moment we took out that old daily high, look at this, we started to sell. And after we continued to sell, look at what price now did overall came again to take this place again. We don't know what price did from here again |
+| 195 | 03:15 | if it continues to sell or you can see. So are you seeing, are you seeing what we are talking about now? You can see the entire thing here. Daily high, old daily, previous daily high, which is a form of liquidity was taken. We sold for good two days. We took out another old |
+| 210 | 03:30 | daily low. We bought for two days. We took out this old daily high here, reacted from this key level. So this way you know that we have not gotten to key level, but at least for now you understand what we are talking about. So you can see we took out a ton of your videos. |
+| 225 | 03:45 | you understand what we are talking about. So you can see we took out a ton of your videos. |
+| 240 | 04:00 | So you can see we took out another old daily high, reacted from the key level, sold massively again for another two days. We took out some old lows again here. You can see old lows |
+| 255 | 04:15 | that is known as an inducement to this particular key level on the daily. And we bought for over four days. I think we bought for more than four days. You can see we bought for over four days. You can see what is happening here. We don't know what happened here, |
+| 270 | 04:30 | but you can see this is a key level that price is reacting from after we took out this old daily high. You can see two things that happened here. We have taken out the old daily high. We are reacting from a daily key level. Let's see what price did if we sold from there. Oh, this is current |
+| 285 | 04:45 | price action. Sorry. So you can see this is current price action. You can see we are selling from here already. We are already selling from here. We took out an old daily high |
+| 300 | 05:00 | GBPJPY trade idea. I think GBPJPY buy trade idea also. I think he's buying already. I don't know indeed. Was it Dickson? I'm not so sure if it was. I don't know the person, but I'll check up on this call. So you can see the same way it is on the daily is the same way it is on the |
+| 315 | 05:15 | weekly. If you go to the weekly time frame, you will see you can use these things to build it by us. You can use these things to build it by us. This is crazy. So you can see this on the weekly. This is USD card. We took out this particular previous weekly low and we |
+| 330 | 05:30 | reacted from a key level here. So you can see we reacted from this particular key level and we started to buy. So overall, we understand where we are coming from. We took out the previous |
+| 345 | 05:45 | old weekly low. So where is the ideal target that we should expect price to run to? The ideal target we should expect price to run to is the previous weekly high because we are coming from |
+| 360 | 06:00 | to all of these highs, all of these old highs here. All of these old weekly highs here. We went straight to all of those points. So when you go to your chart, you begin to study all of |
+| 375 | 06:15 | these things. Especially I make reference to candle clutches a lot. Look at this. We took out an old weekly low. After taking out an old weekly low, can you see where we satisfy the condition for old weekly highs? So you can see from one point of liquidity to another. Just like we said, |
+| 390 | 06:30 | when it comes to the types of liquidity, internal to external, I said price moves from internal range to external range or from external range to internal range. The same way, |
+| 405 | 06:45 | old weekly low to an old weekly high. Old weekly low again, old weekly highs are being taken. You can see that. You can go back and see as much as possible. You can see as much as possible. You |
+| 420 | 07:00 | can go back and see as much as possible. I think we can use GBP-USD as a definite case study for the asian type of... Who is that? Please mute your mics now. So let's go through. Let's use this |
+| 435 | 07:15 | for the asian type of... Who is that? Please mute your mics now. So let's go through. Let's use this |
+| 450 | 07:30 | asian. Let's use GBP-USD. Let's see if we can use it to study the asian session. Let's use it to see if we can use it to study the asian session. More time for... Okay, let's use four hours. |
+| 465 | 07:45 | Let's use four hours. Let me bring this back to where it was. So let me turn on the asian indicator. Let's want to see... We want to do some studies on the how price we have from... Okay, four |
+| 480 | 08:00 | hours. Let's see. Okay, so you can see... I think I can spot one example here already. A couple of examples. Let's start with this one. So what can you see here? You can see we have |
+| 495 | 08:15 | Okay, let's start with this one. So you can see we have this asian low here. |
+| 510 | 08:30 | We have this asian low here. Price took out the asian low, which is a form of liquidity. Okay, four hours is too small. Let's use one hour instead. Four hours seems too small. |
+| 525 | 08:45 | You can see how price created for us our asian high and also price created for us this asian low. So you can see what happened here. So what did you notice that price did? Price took |
+| 540 | 09:00 | See where price reacted from. Let me use this so that each other doesn't get amounts. This is a killer where I was already broken, tested once, came back to test it again. |
+| 555 | 09:15 | Now it's asian low was close to rate and all of that. So what did you notice that we did here? We tapped into it after taking out asian low. The next available liquidity that we ran straight |
+| 570 | 09:30 | to was the asian high. But you can see how it went and all of that. So if you look at this particular place as well, you will see that this is an asian high that is being created. Asian high was being created as a form of liquidity. What can you see that is resting |
+| 585 | 09:45 | So what did you notice? Can you see how we are using asian highs and lows as inducement liquidity or internal range liquidity? So what did you notice price did? We took out this asian high, which is going to act as a form of internal range liquidity |
+| 600 | 10:00 | reacted from a particular killer. Ideally, we should move from asian high to asian low. But you can see how far we went tapped here, took out asian high and you can see how we just |
+| 615 | 10:15 | The reason why we don't just use them blindly is because we have a logic already. So we added it. We added the proper logic to how we trade. So you can see this one as well. |
+| 630 | 10:30 | You can see that price has created for us an asian high. Price has created for us here also an asian low. After price created an asian high and asian low. This is the setup called the London setup using key levels. |
+| 645 | 10:45 | So you can see price took out the asian low, especially for GU. You will always see that setup at least twice or two times, three times a week. It could be once a week, |
+| 660 | 11:00 | internal range liquidity close to a key level. So you can see how asian low sometimes internal range liquidity close to this particular key level tapped into it. And the next place that the ideal place that we want to see price run into is this asian high. So you can see price |
+| 675 | 11:15 | took out asian low tapped into a key level started to buy. Or you can see it made a lot of sense for price to even have more momentum to go to the upside because you can see this is an old asian high that is still standing. It's a liquidity that needs to go. So you |
+| 690 | 11:30 | And the moment these two in the equities we're taking, you can see how price started to become lethargic. You can see how price started to become lethargic. What did you notice here |
+| 705 | 11:45 | again? We created this asian low. We created this asian low. We also created this asian high. Where did price react from? We can see this is a key level here that is overlapping |
+| 720 | 12:00 | into this particular key level that is overlapping inside this imbalance? And price just continues to move to the upside, right? Oh, somebody left the message. What time is asian high and low? |
+| 735 | 12:15 | Okay, let's talk about this, which is very important so that I don't forget. So if you look at my chart, look to the left, right, left, and bottom right of your chart, |
+| 750 | 12:30 | where you see, look at my mouse, look at my cursor, right? You can see where we have time zone. If you click on it, you can see my time is on UTC-4, New York. So I'm using New York lookout time. So that |
+| 765 | 12:45 | So the moment you change it to UTC-4, you turn on your asian indicator, come to the settings of your asian indicator, right? When you come to the setting of your asian indicator, |
+| 780 | 13:00 | you can see my timing. It is from 17 o'clock to midnight opening price. So 17 means from 5 o'clock to midnight, 5 o'clock to midnight. Don't mind this 15 year. If you put your cursor on this place where it ends, it shows you midnight. So we are putting it from 5 o'clock to midnight, |
+| 795 | 13:15 | 5 o'clock to midnight. Don't forget to set your time zone to what? You're setting your time zone to UTC-4, New York lookout time. So you can see back to what we are saying. I believe that question has been answered, right? You see where we came from. Asian low sub doesn't |
+| 810 | 13:30 | internal range liquidity. See how we continue to move to the upside, right? And the next day, we repeated the same process. Asian low was going to serve as a form of liquidity. Let's take it as internal range liquidity, right? Overlapping inside, sitting close to an like a key level |
+| 825 | 13:45 | that is overlapping inside of this imbalance. That means to be rebalanced, right? You can see what price did. Took out the asian low, tapped into that key level. We started to move to |
+| 840 | 14:00 | particular day. Yeah, thank you. You're welcome. So this was the old move for one particular day. I mean, look at how price was very slow, like one from day, like it was very, very slow for that |
+| 855 | 14:15 | happened. So you can go back to your chart and study there. So two types, two major types of liquidity in internal range liquidity and external range liquidity, the various forms of liquidity, |
+| 870 | 14:30 | we have trend line, previous daily high, previous daily low, previous weekly high, previous weekly low and all of that like that, right? So if you go back to your chart, you would see a lot and lots of examples, you see lots and lots of examples. So this is what I'm trying to say |
+| 885 | 14:45 | where I was telling you that price can sometimes take out. So look at this now, right? So that is why it's best if you want, if you're going to do this, right? When we get the asian, we'll cross the bridge, right? You can see what happened here, right? Asian low was created as a form of |
+| 900 | 15:00 | liquidity, right? Asian high was also created as a form of liquidity. Did you notice what happened? We reacted off. You can see this particular open close here that was tested a couple of months sitting close to this asian low, right? We took out the asian low, |
+| 915 | 15:15 | out the asian high, look at the rejection, look at how price was just dancing through that day, right? Took out asian low, we went straight for asian high, price started to die as boom, |
+| 930 | 15:30 | chart and go back and study the various types and forms of liquidity, right? When it comes to price delivery, we have any questions? Let's take questions. I want to look at v75 just as |
+| 945 | 15:45 | Dick said mentioned for us. Any question? I've got one. Okay, hold on. Okay, go ahead. |
+| 960 | 16:00 | Dick said mentioned for us. Any question? I've got one. Okay, hold on. Okay, go ahead. All right, so it's regarding the GU. So in one of your calls, you said the price has to take |
+| 975 | 16:15 | All right, so it's regarding the GU. So in one of your calls, you said the price has to take two extra, um, internal range liquidity before we can see change in direction. |
+| 990 | 16:30 | So for example, if you go to GU now, are we still bullish? Because I feel it hasn't taken two IRLs for it to become bearish. Okay, let me check. So price needs to take out two structural points, |
+| 1005 | 16:45 | for it to become bearish. Okay, let me check. So price needs to take out two structural points, which are also internal range liquidity, right? So but you can see what's what is happening here, right? If you see, you can see from the four hours already, right? Structurally from the four hours, |
+| 1020 | 17:00 | look at what we have here, right? Hi, hi. Hi, hello. We have this high and high, right? Hi, hello. Now this high, right? Now, inside of this high to this low, you can see how we created, |
+| 1035 | 17:15 | we created somewhat like a mini, minor structure here. Sorry, minor structure, high, low again. So we know structurally on the four hours, we are bullish, right? You can see we are bullish, we broke above this particular high, right? You can see. So what price came to |
+| 1050 | 17:30 | just do was, was a very simple thing, right? So you can see this is an internal range liquidity that needs to go. And this is an old internal range liquidity that needs to go. You can see where price is actually reacting from here, right? We'll have all of this, |
+| 1065 | 17:45 | either this, I think, let's just use this one, that particular key level, right? Or this one, or you can use this, or we can use this particular key level, any of them, right? So you can see what price did. If you move it to the daily time frame, it becomes even much clearer, right? |
+| 1080 | 18:00 | So I will move it to the daily time frame, right? You can see what did we just, what we just spoke about, right? As a form of liquidity, right? We took out the previous |
+| 1095 | 18:15 | already, if you move to the line chart, you can see we are bullish, right? This guy is still bullish. This current structure is still very much bullish. We have taken out the previous daily low, right? We can continue to move to the upside. So if we see a two-structural point |
+| 1110 | 18:30 | break, right? So the only thing I just want to see, if I'm going to join these buys, right? It's simple, right? It's simple. I just want to see price break above the side, |
+| 1125 | 18:45 | somewhere around. Take it out. And we're just going to bounce to the upside. In fact, you might not rightly owe this buy to that upside because you can see all of this imbalance that |
+| 1140 | 19:00 | into this killer, bounce a bit before continuing its story to the upside. So but because we've taken out the previous daily low, which is also like an internal range liquidity, we can see that |
+| 1155 | 19:15 | it's clear already now. I'm only just going to be waiting for our entry yet. And I'm taking it all of this to the upside. Do you understand now? Yeah, thank you. Thank you. You're welcome. |
+| 1170 | 19:30 | So Dickson said he saw something like that on v7c5. I don't know which one he saw, but let me check the four hours. Maybe it was on the four hours. So one hour could be clearer. |
+| 1185 | 19:45 | but let me check the four hours. Maybe it was on the four hours. So one hour could be clearer. He said he saw when we're talking about trendline liquidity, right? Where price just goes back. |
+| 1200 | 20:00 | Okay, I don't know which one he saw exactly, but I can actually use this as an example, right? So you can see something like this. Price was just creating lower, lower, lower, lower, lower, lower, |
+| 1215 | 20:15 | right? So you can see this lower low, all of this, right? So it's a trendline, right? It's a trendline liquidity that is being formed here, right? All of this trendline liquidity that is being formed. Remember what I was talking about, where trendline liquidity |
+| 1230 | 20:30 | liquidity being formed is going to serve as a madness, but you don't necessarily have to draw the trendline liquidity. Just go for the last result, right? So this is the last liquidity on that trendline here, right? I don't know if this is the one that Dixon is talking about. |
+| 1245 | 20:45 | Okay, okay, said that as it. Okay. So you can see, and what can you see? We have this liquidity that is here, then you can see where price came back to. We had this open close, right? That is also overlapping inside of this imbalance, right? So where did you see price go back to? |
+| 1260 | 21:00 | After all of this trendline created and all of that, right? We still went straight to this external range liquidity that is resting here, right? We went straight to that external range liquidity. Can you see that? So we came to call this liquidity |
+| 1275 | 21:15 | right? It's beautiful. See, let me tell you something. I've said it in our advanced market structure class. I've said it over and over again. If I'm supposed to trade one setup |
+| 1290 | 21:30 | a set of where that has liquidity, inducement liquidity or internal liquidity that also has an imbalance that has a key level that is overlapping in an imbalance. Oh God, we can take losses. |
+| 1305 | 21:45 | We will take, we can take losses with it, but if that is that, that is like the best, like for me, and I'm telling you, you've seen it over time. I mean, you've seen it. You've seen it in people's most of the guys charts, right? On the telegram channel, seen it over time. |
+| 1320 | 22:00 | So that's just the way it is, right? So any other question? Any question from anybody? You can call it a day so that I can send a recording. I've been up since morning |
+| 1335 | 22:15 | from one meeting to another, right? So any other question? Anybody? So if you're just joining us, please, the first place you have to go through is you are going through the welcome address video, right? You need that is very, very important. It's important than any other |
+| 1350 | 22:30 | see you guys some other time, right? Keep it simple and keep it classy. Have |

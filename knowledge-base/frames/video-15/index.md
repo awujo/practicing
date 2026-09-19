@@ -4,155 +4,152 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-15/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
+| 0 | 00:00 | The first one is already converting. I believe you can all see my screen, right? |
+| 15 | 00:15 | So it's a very simple trading system. You know what you are looking for, right? In fact, personally for me, I'm even expecting that gold should even run to this high because we |
+| 30 | 00:30 | have this particular, this place is going to suffer as internal range liquidity, right? And we also have this particular open close that is resting just above it, you know, that is resting above it. So we might actually just see something like this price continue, |
+| 45 | 00:45 | move to the upside, then a rejection before it continues to move to the upside, right? But if you look at, okay, yes sir, I'm on buy on this gold, beautiful. It's simple, |
+| 60 | 01:00 | right? I had a call with one of us, a one on one session, one of us, part of those guys who sent a mail. And this was one of the things that I told him, I said, if you want to pick, |
+| 75 | 01:15 | One of the things you are going to do for yourself is pick a system, right? And stay with it. So what I mean is that now everybody understands SLK, SLK, structural liquidity killer, this is what we do, right? But one of the things you have to learn for yourself |
+| 90 | 01:30 | range for a straight sweep and a break, price has created an internal range liquidity, right? You can say that your own system is after price takes out an internal range liquidity and plays out from a key level, right? You are going one time frame lower, |
+| 105 | 01:45 | well, let's use four hours because four hours is very important. So let's say this happens on a four hours time frame, you just move time one time frame lower, either the one hour or the 30 minute one, see, let me tell you one thing about higher time frame key levels. It was, see, before it will go against you, right? |
+| 120 | 02:00 | Price must have done at least a one to three. So you must, you are most likely going to see a one to three before price reverses, right? So you will see that entries are more important, your exit are as important as your entries. |
+| 135 | 02:15 | you are going to do is that just pick what do you want to see out of the three things that the market is likely going to do, right? Is it that you want to stay with the engulfing after price engulfs, you are just going to play the, |
+| 150 | 02:30 | liquidity. You are just going to play the A shape key level that is being created and move straight. Or you are going to wait for two consecutive candles to create an open close, then price will break below the open close |
+| 165 | 02:45 | the key level, you know, and all of that. Just pick one thing, right, and stay with it. And also I want to emphasize the importance of four hours. Four hours is very, very important. You know, where four hours |
+| 180 | 03:00 | from lower, right? So you can see what price did here, right? You see where we are coming from on the four hours time frame. If you look at where we are coming from on the four hour, right? We had three consecutive candles to |
+| 195 | 03:15 | This four hour candle actually serve as internal range liquidity. You can see, did you notice we did not do any, there was no special markup where we are now trying to, like I said, I'm not trying to speak against any trading system, |
+| 210 | 03:30 | where we mark out one other block or not. No, we know exactly the place where we want to see price reject from, right? We know where we want to see price reject from. And the place we want to see price reject from are specific pricing levels. So you can see this is the place I said I want to see |
+| 225 | 03:45 | candle is going to serve as internal range liquidity. Also, we have this key level that is also overlapping inside of this imbalance here, right? So we want to see price still continue to run to the upside. But when you see where price is |
+| 240 | 04:00 | We played out from this open close key level and we closed above it, right? When we move runtime from lower either to the one hour 30 minutes time frame, you can see what price did. Very clean and clear for us, right? So what did |
+| 255 | 04:15 | came back to play it and we started to run to the upside. If we move to the 15 minutes, we don't know what price is actually doing right now. So if we look |
+| 270 | 04:30 | at what price is doing, I want to see, are we still here me? Or maybe it's just trading view that is acting on, right? Okay, okay, hold on you. |
+| 285 | 04:45 | Okay, good. So if you look at what AU is gold is still doing, right? You can see 15 minutes to do the same thing, right? Two consecutive candles to the downside created an open close, we engulfed, broke above. |
+| 300 | 05:00 | where price tapped into and you can see the momentum that kicked in. So what I'm even looking at is that now that this buyer has actually started and we are also looking at this, we are looking at this particular high to go, |
+| 315 | 05:15 | from this particular open close that is resting here. I'm also looking at something clearly, right? You can see we have this particular open close here also that is overlapping entirely this imbalance. |
+| 330 | 05:30 | internal range liquidity. So what price might likely want to come to do? Gold might just still come down a little bit, tap from this particular open close, then we'll continue to move to the upside. So if you are not comfortable |
+| 345 | 05:45 | inside of this imbalance directly, you can still wait for what I just told you, right? One of the things you can wait for is wait for an engulfing, either just move on time from lower 15 minutes to five minutes, wait for an engulfing to be created. The moment you see price create an engulfing, |
+| 360 | 06:00 | right? If an engulfing is not being created, maybe we have two consecutive down candles that create an open close, then price engulfs and break above it. You can decide to play the open close that was broken, right? And price just, |
+| 375 | 06:15 | right? Or this particular open close key level that was actually resting here. So I likely going to see that happen. So anyway, somebody said he has a question, I'll ask you a question so that we'll move on to the next thing as well. |
+| 390 | 06:30 | Feel you or meet your mic and ask a question, please. Okay, good day sir. Good day. |
+| 405 | 06:45 | Yes. Okay, please, can you switch? I want to show you something. You know, you came on the four hours, there was no |
+| 420 | 07:00 | Yeah, so now I know it may not be random, like it's not any random area. |
+| 435 | 07:15 | I'm looking at my left. I'm sitting and open close to like the other leg after this one. The other bye after the huge sale. I'm sitting and open close there. |
+| 450 | 07:30 | Yes. Which one? This one? No, up, up. No, no. If I'm saying correctly. No, I'm okay. |
+| 465 | 07:45 | This one? Yes, yes. So now my question is, my question is, can we just enter the chart and look at the open close like |
+| 480 | 08:00 | that and, you know, use those confirmation entries that way? Okay, I get your question. You want to start my question? Yes. We just jumped in without an analysis. |
+| 495 | 08:15 | Okay, thank you. Let's do like this. See, everything is just a combination of structure, liquidity and everything. If you look at structurally, right, you can see, okay, if you just look to the left, this current structure, right, you can see how we are still, |
+| 510 | 08:30 | got this, we broke above, right? You can see how we broke above this particular high, right? So you see that we broke above this particular high and we didn't just break above it, |
+| 525 | 08:45 | the basics of market structure is that after price takes out an external range liquidity, right, we're going to see a reversal. The moment price takes out an internal range liquidity, we're going to see a continuation. So knowing fully well of what price is actually |
+| 540 | 09:00 | move to the left, like pay attention to all everything that is happening to the left before you know where the next place that price intends to go to, right? The moment, okay, now I've seen that four hours is actually bullish because we broke above this particular high |
+| 555 | 09:15 | and we closed above it as a body. So we know that this retracement that is happening would just be a little retracement, right? All of these sales is just a little bit of a retracement. So when we pay attention to what price is actually doing, we don't just use open |
+| 570 | 09:30 | see how price is going to react, right, from those particular areas. So if you look at what price did here, for example now, let's pick this particular one, look at this one, |
+| 585 | 09:45 | to the structure here, you can see we are not even paying attention to all of these structures, the entire structure that is happening here, but just this four-hour structure alone, right, this four-hour structure alone is enough. Look at what price is doing here, we had a lower low, |
+| 600 | 10:00 | we had a lower high, lower low, we broke above, right? If you move to the line chart, you can see how we broke above these two structural points, one, two, right? The moment we broke above these two structural points, this data alone on the |
+| 615 | 10:15 | that we are clearly bullish. You can see how we broke above, you can see how we clearly broke above this particular high, right? Sorry, hold on, let me attend to somebody. So you can see how |
+| 630 | 10:30 | above this particular high, right? Sorry, hold on, let me attend to somebody. So you can see how |
+| 645 | 10:45 | four hours broke above this particular high, broke above it as a body, right? So one of the places we could actually be looking for price to, areas we could be looking for price to |
+| 660 | 11:00 | that price broke above, right? So we could expect price, this is an open close as well, right? So you can see these are two major areas we want to see price reject from, right? So we know that we are going to be buying, right? So, but we want to see why don't, we are not just buying |
+| 675 | 11:15 | blindly because those are four hours time frame. We want to see how price is going to react from these key levels and also our prices, how the four-hour country is going to close. So if you look at what price did that for our candidate, next one, you can see, right? Before we had all |
+| 690 | 11:30 | key levels, these ones, but above all, that's how we close above. When you move to a much lower time frame, you are going to see how price, you know, the areas that price actually rejected from, like a confirmation entry that price gave to us from all of these areas, |
+| 705 | 11:45 | before price continued to move to the upside, right? So you don't just, we're not just picking any open close, right? And that was one of the things that you also wanted to say that paying attention to the four-hours time frame, right, matters a lot. So let's say for example, |
+| 720 | 12:00 | we have a daily open close, right? Price taps into a daily open close, right? The moment price taps into a daily open close, right? It tells us that we should be able to, we should begin to look for selling opportunities. But one of the ways that you begin to confirm your |
+| 735 | 12:15 | hours. Look for the most recent place that price broke above. Let's say price broke below. Let's say, okay, the four, the daily is actually rejected from a daily key level, right? Price is rejected |
+| 750 | 12:30 | begin to say, we look for selling opportunities, no. Until this daily candle has closed, before we know that, okay, yes, well, I keep going to be looking for sales. If the daily |
+| 765 | 12:45 | a structural high, the best thing we're still going to continue to do is continue to look for buying opportunities. Because if we continue to look for buying opportunities on the four hours, there's every tendency that this open close that price is actually rejecting from, |
+| 780 | 13:00 | price can still break above it. It will break above it and engulf and will continue to have a buy, continue to have a buy. So as much as you have a key level on the daily time frame that you want to see price reject from, let's say we have an A-shaped key level that price |
+| 795 | 13:15 | not enough information to say we want to look for selling opportunities. Price is rejecting on the daily time frame on that A-shaped key level. We are going to move on time frame lower. We want to see the most recent break. Let's say price breaks out. Let's say price gives us |
+| 810 | 13:30 | a breakout like this. It doesn't have to be a breakout like this, like a sweep and a break, right? Maybe price gives to us something like this. Price broke above a particular high on the four hours. So if price breaks above this particular high on the four hours, |
+| 825 | 13:45 | which is an external range liquidity, but price is rejecting from an A-shaped key level on a daily time frame, go with the one on the four hours, right? Because this daily time frame key level has, this daily time frame candle has not closed. And as long as this |
+| 840 | 14:00 | have a continuation buy, a buy continuation, there is every possibility that this candle on the daily is going to close above this key level, which means it's going to disrespect it and close above it. So we are going to continue to have more buying opportunities. So we are not just |
+| 855 | 14:15 | going to come on the chat and pick any key level. No, we are not picking any key level, right? We are also subjecting it to structure. If you look at the structure here, we broke above this particular structure or high. We have this particular open close. We have this one |
+| 870 | 14:30 | moment we rejected and closed above, you can see how we continue to buy until we started to have our retracement. So you can see, you can see a lot of the buys that happened, right? |
+| 885 | 14:45 | let's say you understand your structure already that okay, structure is it a bullish or bearish? One of the things you now begin to do for yourself on the four hours time frame is that you can mark out a particular open close. You can mark out the key level, right? The moment |
+| 900 | 15:00 | entries, right? Wait for confirmation entry. That is all you might just need. |
+| 915 | 15:15 | Yes. Any other question? |
+| 930 | 15:30 | Yes, actually, I just want to say what you said, just so that I go to the right because I look at you. You said when price starts to reach a higher time frame, higher time frame |
+| 945 | 15:45 | Is it better if you wait for the price to clear? Yes. Before you can go for confirmation entry on lower time frame or you go for the lower time frame to see if it's an unlimited what the rejection is on the higher time frame or if it's the open |
+| 960 | 16:00 | close. Okay, come again, come again. I'm trying. You are far from your speaker. Your voice is not. Okay, I said when price starts to reach a high time frame, it will take you a day or four hours. |
+| 975 | 16:15 | Is it, according to what you said, is it better to go to a lower time frame and wait for confirmation entry or we should wait for the closure of that kind of work that is suggesting from that particular killer? |
+| 990 | 16:30 | Okay, that's a beautiful one, right? So you're saying that if we have a killer, let's say an a-shaped killer on the daily time frame that price is actually rejecting from, right, should we go a time frame lower to wait for confirmation entry? |
+| 1005 | 16:45 | Yes. That's what I'm saying. You can move one time frame lower to wait for confirmation entry, right? You want to see like an engulfing, right? You know, price wants to give to |
+| 1020 | 17:00 | things we can actually, the reason why we're waiting for, and the reason why we're actually going one time frame lower to wait for confirmation is because if price rejects from the daily, right, as long as that daily candle has not closed, it doesn't mean that we're going to |
+| 1035 | 17:15 | then price will just still, momentum might just kick in and price will close above that particular key level. So the reason why I'm saying we should move one time frame lower to actually look for opportunities, move one time frame lower to look for a |
+| 1050 | 17:30 | confirmation is because even after price taps into, for example, a daily key level, right? And the four hours is showing us that we broke above a particular external range liquidity, right? There is every tendency that this day, this four hour that broke above |
+| 1065 | 17:45 | daily to close above this particular key level. Do you understand what I'm trying to say? Do you understand what I'm trying to say? So, but let's say, for example, we have the daily A shape key level, price is rejecting from it, right? Let's say the price is |
+| 1080 | 18:00 | rejecting from the daily A shape key level. And as price is rejecting from the daily A shape key level, meaning that want to look for selling opportunities, if our four hours time frame is also in a bearish momentum, there's no point looking for buy. |
+| 1095 | 18:15 | daily, right, is that we're just going to be looking for selling opportunities. Now the selling opportunities might not come that day. The selling opportunities might come the next day because that's current daily can do has closed below the A shape key level. |
+| 1110 | 18:30 | Do you understand? So, what I'm trying to say is that ensure your daily is in alignment with your four hours or ensure your four hours is in alignment with your daily. So, all I'm saying is that price rejects from a daily A shape key level, for example, or a daily open close, |
+| 1125 | 18:45 | right? And as long as it is rejecting, maybe price is rejecting below that particular A shape key level. And the four hours is showing us a bearish momentum. It is only ideal for you to |
+| 1140 | 19:00 | your daily. But if your four hours is showing you that, ah, oh boy, we are still buying because we broke above a particular external range liquidity, right? Four hours is showing you that we are broken above a four hour external range liquidity. But the daily is showing you |
+| 1155 | 19:15 | that we are rejecting from a daily key level. Because that daily can do has not closed yet. We cannot sell. Four hours is showing us that we are still in a buying momentum. Why? Because we |
+| 1170 | 19:30 | there is every possibility that this daily can do that you are seeing rejecting because it has not closed if we close above it as a body. Do you get what I'm saying? Okay. |
+| 1185 | 19:45 | because it has not closed if we close above it as a body. Do you get what I'm saying? Okay. EU has the same set of where price engulfed to the downside. And I stopped. Okay. Four hours. |
+| 1200 | 20:00 | Are you getting what I'm saying? Right. Okay. Somebody said EU. But I used to wait for the four hour kind of closure before going to one hour. Yes. In fact, it's just timeframe correlation. |
+| 1215 | 20:15 | If you see a thing, trading is not complicated as you think. I'm serious. It's not as complicated as you think. It's just timeframe correlation. If four hours is rejecting from a key level, |
+| 1230 | 20:30 | ensure that your one hour is in alignment with your four hours. That is all. The moment your one hour is in alignment with your four hours, shut that shit. It's not my thing. Just shut it. That's what I'm just trying to say. The moment your one hour is in alignment |
+| 1245 | 20:45 | Just shut it. That's what I'm just trying to say. The moment your one hour is in alignment with your four hours. Four hours is rejecting from a particular key level. And one hour is showing to you that we are in a bearish momentum. Just look for small selling opportunities. |
+| 1260 | 21:00 | momentum, if the one hour gives to you an engulfing and a confirmation entry, shut it. Just shut it. The reason why you're going to shut is because one hour is in alignment with the four hours. It's called timeframe correlation. No, what's that? Do you understand |
+| 1275 | 21:15 | what I'm trying to say? Do you understand what I'm trying to say? That price can... Let me give us a photographic representation. This is what I'm trying to say. So let's say we have |
+| 1290 | 21:30 | an A-shaped key level like this on the daily, right? As long as that daily timeframe has not closed. As long as the daily has not closed. So you will see that price will tap into that daily |
+| 1305 | 21:45 | key level like this, right? The moment it taps into the daily key level, right? It will start to reject. It starts to reject, right? Now, the fact that it is rejecting, don't forget when it's rejecting is going to create weeks, right? Now, the fact that the candles, the candle |
+| 1320 | 22:00 | is rejecting from that daily is rejecting. That doesn't mean that we will start looking for selling opportunities because after the rejection like this, have you not seen a tree that will give you sniper entry, right? After sniper entry, you still go back and hit |
+| 1335 | 22:15 | start to reject, right? It doesn't mean you should start looking for selling opportunities. The moment you see price start to reject from the daily key level, only for price to still close above that key level on a daily like this. And you're wondering, why did that |
+| 1350 | 22:30 | happen? The reason that happened is because the four hours is still bullish. Let's say the four hours just broke above. The four hours doesn't have to give to you a sweep and a break. The four hours, many a times just needs to just break above an external range of liquidity like this. The moment the four hours breaks above the external range of liquidity, this little rejection |
+| 1365 | 22:45 | you're saying, if you move to the lower timeframe, you will see that that little rejection was just a little bit of retracement that price came to do, right? And price just continue to move to the upside. Yeah, sniper entry time to stop. It happens a lot, right? The same thing on the |
+| 1380 | 23:00 | four hours, as it is on the daily, so it is on the four hours. Do you get what I'm trying to say? It's just timeframe correlation. You can use it on the four hours. You can use it on the |
+| 1395 | 23:15 | I like to call him, I know him as J.O.I. Do you understand what I'm saying now? |
+| 1410 | 23:30 | Okay, great. Great. So you see candle closures very important, but timeframe correlation is also important. So for example, all I'm trying to say is |
+| 1425 | 23:45 | that stop loss spoiler, but that was all one of my friends said one time, right? But it doesn't mean that you will not be on the winning side. I bet you if you pick one system and just |
+| 1440 | 24:00 | master it, I bet you I've said it over and over even in the free teleprompter channel, I've said that all you need is one trading system, one model, a repeated process, right? One model, a repeated process and increased risk. The increased risk is what is going to do the heavy |
+| 1455 | 24:15 | lifting. Do you understand what I'm trying to say? Look at what we just were supposed to look at EU now because somebody made mention of EU, right? So if you look at this, so what can you see? |
+| 1470 | 24:30 | for us an internal range of equities that is close to it. So look at what price did. |
+| 1485 | 24:45 | That is good. Yes, I know. I know. I know. I imagine from year to year. Are you saying now? |
+| 1500 | 25:00 | So what did you remember one of Dickson's video, one of his one on one session with one of the guys? Remember what Dickson said that a week on the higher time frame sometimes can also be a key level, right? This is a 15 minutes week that is also overlapping inside of an |
+| 1515 | 25:15 | A balance. If you pay attention to if you scroll more time frame lower, like five minutes, three minutes, two minutes, you know, and all of those things. You see that these weeks are what they are key levels, right? So look at what price did. All the shots that now happened. |
+| 1530 | 25:30 | overlapping inside of this imbalance. We engulfed and we didn't just engulf. We broke below this particular open close to consecutive countries greater than open close for us, |
+| 1545 | 25:45 | right? And we broke below it. So look at this. So we have a V shape, a shape killer for you. Look how our price did. So we engulfed, broke below this, our open close, right? Close below it. |
+| 1560 | 26:00 | And look how our price did, tapped into it. And that was, that was, it was a heavy one. Are you saying they call it ping pong, ping pong. Are you saying, okay, let me try the |
+| 1575 | 26:15 | chat box, right? So we have a message. Okay. So, so let's check EU, right? |
 | 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
+| 1605 | 26:45 | is don't, if it's not there, it's not there. Don't force it. Don't force some, don't even force them at all, right? If it's not there, it's not there. Don't even |
 | 1620 | 27:00 |  |
-| 1635 | 27:15 |  |
-| 1650 | 27:30 |  |
-| 1665 | 27:45 |  |
-| 1680 | 28:00 |  |
-| 1695 | 28:15 |  |
-| 1710 | 28:30 |  |
-| 1725 | 28:45 |  |
-| 1740 | 29:00 |  |
-| 1755 | 29:15 |  |
-| 1770 | 29:30 |  |
-| 1785 | 29:45 |  |
-| 1800 | 30:00 |  |
-| 1815 | 30:15 |  |
-| 1830 | 30:30 |  |
-| 1845 | 30:45 |  |
-| 1860 | 31:00 |  |
-| 1875 | 31:15 |  |
-| 1890 | 31:30 |  |
-| 1905 | 31:45 |  |
-| 1920 | 32:00 |  |
-| 1935 | 32:15 |  |
-| 1950 | 32:30 |  |
-| 1965 | 32:45 |  |
+| 1635 | 27:15 | right? Number one, you can see how we engulfed and we broke below this particular open close here, right? This is an open close that God disrespected. We engulfed. If it didn't, yes. So you can see |
+| 1650 | 27:30 | we engulfed. We broke below this open close. You can see where price came to react from again, right? See where price came to react from engulfed again and all of those things. So if you look at what price it begins to do, so you can see how the four hours, the reason why |
+| 1665 | 27:45 | into it and closed below, right? This little buy was a little bit of retracement, right? If we move, let's move to the 30 minutes timeframe. So look at this now. So you can see this |
+| 1680 | 28:00 | move, let's move to the 30 minutes timeframe. So look at this now. So you can see this confirmation entry. Don't forget this is a four hour key level, right? This is a four hour key level, right? The reason why we have that as a four hour key level, we didn't just engulf. |
+| 1695 | 28:15 | We also broke below this particular open close, right? You can see price came back to the peak of that particular key level. So if we move one time from lower either to the one hour or to the 30 minutes, we can see what we have clearly there, right? So what can you see that we have here, right? Look at this. Sclare now. So look at this. What do we have? Can you see it? |
+| 1710 | 28:30 | here, right? Look at this. Sclare now. So look at this. What do we have? Can you see it? Sclare, it's just patience to just wait, right? So what do you see on the 30 minutes timeframe? |
+| 1725 | 28:45 | minutes timeframe, we don't want to miss out on that trade. So let's say we are playing this open close that got disrespected, but our stop loss will still be at the right place, right? Where would our stop loss be? We're just going to put it above this particular high. So that's |
+| 1740 | 29:00 | so from where it is to, that's a one to four. So let's say we are playing from this open close and we're targeting this particular key level as well, right? So we want to play from here to this point, right? Look at this. Are you seeing that now? Stop. Are you seeing what price |
+| 1755 | 29:15 | here to this point, right? Look at this. Are you seeing that now? Stop. Are you seeing what price did greater than engulfing? So all you just have to do is just wait for timeframe correlation. That is all. I don't even know what to even say again, but let's go back to our four hours, |
+| 1770 | 29:30 | is all. I don't even know what to even say again, but let's go back to our four hours, right? Somebody said something is something remarkable is happening in the four hours. |
+| 1785 | 29:45 | Number one, we tapped into this particular key level, right? Then on the 30 minutes, as price started to reject, we moved to the 30 minutes and we saw what we were looking for, engulfing, breaking below to open to consecutive counties that created an open close price |
+| 1800 | 30:00 | came back to play that same point. All of this move, right? Was just enough. All of this move was enough. Then if you look at this particular place again, we played this open close, right? Four hours tapped into this particular open close and started to reject and it closed below. Let's move on timeframe lower either to the 30 minutes or to |
+| 1815 | 30:15 | So you can see this was the four hour candle that tapped into that, you know, we tapped into the four hour key level, right? And the moment we tapped into |
+| 1830 | 30:30 | We engulfed, we broke. After engulfing, we broke below this particular open close, right? You can see we broke below this particular open close. So what do you have here? You have internal range liquidity that is going to stand here, right? Number one, |
+| 1845 | 30:45 | confirmation entry, price might not, there's every possibility that price might not come to the extreme. So you can see what price did, right? You can see where price came back to again. |
+| 1860 | 31:00 | It's just patience, patience. So as important as our entry is, so is also our exit, right? So you can see we engulfed, we broke below this open close. Internal range liquidity is resting here. |
+| 1875 | 31:15 | if you study what price did here again, look at this. |
+| 1890 | 31:30 | took out this internal range liquidity. Now that we started to drop, you can see all this tapping that is happening here, right? It's not tap swappable. This one is just open close killer with tapping, right? And price began to close below it. You can see momentum kicked |
+| 1905 | 31:45 | again. The A shape that is being created tapped into it and the main momentum kicked in. Are you seeing what price did here now? So you can see from here, straight down, |
+| 1920 | 32:00 | so is your exit. Look at this. Price came to this kill level again, right? You can see what price did. |
+| 1935 | 32:15 | EU, are we done? EU is not playing again. What's happening? Okay. So you can see just using four hours and can do confirmation entry alone. |
+| 1950 | 32:30 | Just using the four hours and can do confirmation entry. That's all. Any other question? I think it's none. Any other question? |
+| 1965 | 32:45 | Any other question? I think it's none. Any other question? |
 | 1980 | 33:00 |  |
-| 1995 | 33:15 |  |
-| 2010 | 33:30 |  |
-| 2025 | 33:45 |  |
-| 2040 | 34:00 |  |
-| 2055 | 34:15 |  |
-| 2070 | 34:30 |  |
-| 2085 | 34:45 |  |
-| 2100 | 35:00 |  |
-| 2115 | 35:15 |  |
-| 2130 | 35:30 |  |
+| 1995 | 33:15 | It's as easy as that, right? Using time from correlation four hours, wait for can do closure, move one time from lower, wait for confirmation entry, |
+| 2010 | 33:30 | losses? Yes, now you take losses, but I'm assuring you. I'm not, I'm telling you from what I know that this thing has a 70 to 80% point rate and I'm not even joking. |
+| 2025 | 33:45 | Telling you what I know, right? Telling you from what I know. So any question? I have another class. It's one of our, one, I have a one-on-one session, my 12th. The lady is waiting on me. |
+| 2040 | 34:00 | Any question? Did we get this? Did we get this? Okay. I took this exact rate. Yes. |
+| 2055 | 34:15 | Thank you very much. This is Benjamin. Please. I said something on the tax on the key level. I'm waiting for the part two. Okay. And I see the other videos that have part two, I look at how they simplify the area part one. |
+| 2070 | 34:30 | And I see the other videos that have part two, I look at how they simplify the area part one. So I'm very sure that this one also will simplify that. Some of them, what we have done today, |
+| 2085 | 34:45 | that, I will be expecting that. Thank you. No problem. I think having classes in the middle of the night is also going to be sweet. Right? Dickson, don't worry. We have our own. |
+| 2100 | 35:00 | I'm just talking about it. We just pick a time. Right? So what we'll do is hopefully we can have a class tonight by 12 a.m. Right? Let's do some chat work by 12 a.m. Let's do 12 to 1 again in the middle of the night. What do we say about that? Okay. Okay, guys. So the recording is going |
+| 2115 | 35:15 | in the middle of the night. What do we say about that? Okay. Okay, guys. So the recording is going to be shared with each and every one of us. See you later tonight by 12 o'clock. Have a wonderful |
+| 2130 | 35:30 | day ahead. Okay. Sessions. How many minutes do we have left? Jesus. I'm supposed to. Okay. |
+| 2145 | 35:45 | treatment. We meet in the middle of the night. Sessions. Thank you. So the recording will be shared with us later tonight. Thank you. |

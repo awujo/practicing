@@ -4,121 +4,117 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-18/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
-| 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
-| 1620 | 27:00 |  |
+| 0 | 00:00 | on that gold right so now if you want to reuse okay now yes now one of the things we spoke about |
+| 15 | 00:15 | we'll be talking about key levels we said that there are three types of key levels we have the v-shape let me use the two hours time frame mix it with Clara all right we have the v-shape key level all right and every v-shape key level should be used for selling opportunity and buying |
+| 30 | 00:30 | opportunities we have the m-s shape key level right we also have the s-shape so the s-shape key level should be used for selling opportunities the v-shape key level should be used for buying opportunities right so that is one of the things we actually we've been talking about |
+| 45 | 00:45 | raise my mouse so i'm recording you on the water so we have the s-shape right see this right we also have the v-shape right now this v-shape key level right we said that |
+| 60 | 01:00 | see this right we also have the v-shape right now this v-shape key level right we said that every a-shape and every v-shape killer we should be used for buying and selling meaning i want to see momentum kicking at every a-shape killer we want to see momentum kicking at every v-shape killer and we also spoke about how a level can actually be disrespected |
+| 75 | 01:15 | is when we started talking about ranges and applying logic to ranges i told us that anytime we see that the range has started and the range actually starts with one called a sweep |
+| 90 | 01:30 | break of structure right the next one to see is i spoke to us about that s-shape killer that guess is respected right the s-shape killer that guess is respected that is also overlapping inside of my email us and i told us something about a single kind of formation that that we can |
+| 105 | 01:45 | actually use right i don't know why this thing is behaving like this uh i don't know if it's my chat so we have the single kind of formation that can actually serve as internal uh the |
+| 120 | 02:00 | formation that can serve as both internal range liquidity and external range liquidity right anybody has everybody anybody knows why my mouse is moving from edge to edge right i don't know why it's moving from edge so okay just hold on nice let me let me shut let me restart this |
+| 135 | 02:15 | sorry i just sold on my my page is moving from edge to edge it's it's it's fixable it's |
+| 150 | 02:30 | fixable okay i think it's better now so one of the things i mean if you remember what i said i said |
+| 165 | 02:45 | things one you need to be hinged on you and that is going to be your ability to follow simple instructions and number three your work ethics right the amount of time you put into studying |
+| 180 | 03:00 | you have two major assignments each and every one number one understand directional bias the moment you have a grasp of where the market is going to i bet 70 percent of your problem is all number two |
+| 195 | 03:15 | kick on entry model right and stay with it and when we started to talk about it yesterday i spoke to us about applying logic to ranges and i told us that for example if we have price sweep liquidity and break structure right that means for us that there are three key levels |
+| 210 | 03:30 | subjecting everything to structure so automatically what that means for us is that for example i said that if we have an a-shape key level i guess is respected i told us yesterday that it makes a whole lot of sense for us whenever the key level is actually overlapping inside of an |
+| 225 | 03:45 | imbalance then it now makes more sense if we have this particular time for this particular structure given to us or single kind of formation as internal rigidity and external rigidity the primary purpose is we want to see the market actually satisfy |
+| 240 | 04:00 | see satisfy is want to see that attack liquidity right want to see that attack liquidity and also rebalance and holding balance right so one thing i want to quickly state about gold is that gold is |
+| 255 | 04:15 | like an internal range liquidity resting very close to it but you are seeing that even if we want to attack liquidity and rebalance and holding balance the question is at what pricing level do we want to see price attack liquidity and rebalance and holding balance |
+| 270 | 04:30 | going to be respected to the upside right and also that has a liquidity that is resting above it so that single kind of formation is going to serve as what internal range then external range you can see that everything is coming together right then i want to reiterate something again right this |
+| 285 | 04:45 | right i told us that when it comes to the forms of liquidity there are two types of liquidity and they have various forms of liquidity then i said that every form of liquidity also still has a type of liquidity right the two types of liquidity is internal range and external range |
+| 300 | 05:00 | as a type of liquidity right so we now use one thing what we call the single kind of formation to explain what we call uh we use the single kind of formation as um our explanation for the |
+| 315 | 05:15 | both the monthly and represents the weekly going to represent the daily it's going to represent the four hours it's going to represent the two hours and even the one hour as well right so we said this high is going to serve as both internal range liquidity and external range liquidity depending |
+| 330 | 05:30 | internal range the high is going to be the external range if it's in a bearish formation this high is going to be the internal range this low is going to be the external range so you see that when it comes to the subject of single kind of formation right the high and the low |
+| 345 | 05:45 | information that we have at that time, which is very important. So I told us that if you go back to the studies of types of liquidity, types and forms of liquidity, I told us that if price takes |
+| 360 | 06:00 | high, if price takes this is in this is this thing I'm showing you guys about liquidity, it will save you from taking unnecessary killings as an entry, it will be even help you to have enough the handful of patients. Let's say this is a four hour time |
+| 375 | 06:15 | price now sweeps this particular four hour high and it closes below. The moment we have this four hour high taking, it means that the internal range liquidity has been taken, let's say for example this is a bearish formation. Now price has taken this four hour high, so what do we expect price? The next available liquidity, the next opposing liquidity that we want to see price take out |
+| 390 | 06:30 | definitely is going to be this particular low. So what we want to see price do is that we want to see price after taking that particular high, we want to see the next candle that is going to form take out our low. Now the exception is that many a times it might not be the next |
+| 405 | 06:45 | out the four hour high price will go for the next low which is going to be the four hour low. So you see that the first thing that price did was that price took out this high came for this low, why is it like this? Why did I want price takes out the high to go for the low or when price |
+| 420 | 07:00 | the basics of structure, all those one thing I said for every external range liquidity that is taking price will reverse. But let's say for example this is a bullish market structure right? Let's say we are bullish like this and this income is for observing that both |
+| 435 | 07:15 | serves as external range liquidity. But for every external range liquidity that is taking with the basic understanding of structure what does that mean for us? It means that we're going to reverse right? Every external range liquidity taking is going to lead to a retracement |
+| 450 | 07:30 | internal range liquidity we give towards an expansion. When you calculate the key point for the expansion after internal range liquidity is taking when compared to the reversal you see that I mean the momentum is different right? So but what I want to tell |
+| 465 | 07:45 | example we are bullish and knowing fully well that we are bullish right? Maybe there is a particular key level that is actually resting somewhere around here like a V-shaped key level right? But you know that the reason why you're not going to take this V-shaped key level or any key level that is resting is because you can actually pay |
+| 480 | 08:00 | An external range liquidity has been taking definitely we want to see this particular low go next right? And the moment this particular low go next right? Price will look for the nearest liquidity that is the nearest key level that this low is |
+| 495 | 08:15 | onto this particular high it's taking right? And that is how price continues to do. So like I said if you want to study gold you can study gold on this basis right? Sweep break to the upside look for a key level that is overlapping inside of an |
+| 510 | 08:30 | imbalance in fact gold likes to rebalance all the imbalances right? But what makes it high probability that we have a key level overlapping inside of the imbalance and we also have what we call the single kind of formation that is resting very close to it. So the moment you are able to spot a single kind of formation |
+| 525 | 08:45 | and you are able to spot your what key level that is overlapping inside of it. You might think time or price will still come back to that particular level and you'll see some heavy momentum push to the upside. So I'm reiterating all of this because of what happened right? If you look at |
+| 540 | 09:00 | to what we said yesterday you know we spoke about a single kind of formation on yeah we spoke about a single kind of formation. So when you look at what price did from here I think let me use it two hours two hours maybe clear enough |
+| 555 | 09:15 | three no okay let me just use the four hours. So if we use the four hours you can see where price came back to right? Although automatically we could say that price |
+| 570 | 09:30 | the momentum for the bias kicked in from this particular low right? No, I think this is different but this is my data feed. Hold on this is SACSO. SACSO has the accurate chart for gold right? So if you trade gold maybe you'll profit use SACSO. SACSO is very accurate |
+| 585 | 09:45 | so if you look at what price did the single kind of formation right? You can spot the origin of the entire move from this V-shape kill level right? You can see where we are coming from right? You can see that we are coming from this V-shape kill level yeah so we reacted from this |
+| 600 | 10:00 | V-shape kill level we closed that both right? There was no break of structure but this is the four hours you can see where we started to do. So as we pay attention to the entire structural formation that is forming what do we have next? Single kind of formation which is this low that's served as what's internal range liquidity resting very close to the nearest |
+| 615 | 10:15 | that price came back to so if you want to have covered for your stock maybe just below this particular low right? Or maybe at this kill level or just below this particular low. So you can see on the four hours the origin of the move started from this V-shape kill level that was |
+| 630 | 10:30 | created here right? And it makes a whole lot of sense for us to come start that move from there because we could actually spot this single kind of formation that served as internal range liquidity so you see that from the left price to equity came back to the V-shape kill level right? And not just only that you can see how we started to react so because |
+| 645 | 10:45 | we've been able to sort where price is coming from as the origin then we're not paying attention to everything the price is doing here. So what can you see that price did here? Two consecutive counters to the upside created a bullish open close single kind of formation |
+| 660 | 11:00 | what you are going to be seeing in this chart like this single kind of formation now you will see that from here after this internal range liquidity was external range liquidity was taken you can see this external range liquidity on the four hours the moment it's got taken |
+| 675 | 11:15 | started to reject so we'll pay attention to what price did here you can see that this single kind of formation that is going to serve as internal range liquidity that is resting very close to the so called close kill level you can see that the high was not taken right? |
+| 690 | 11:30 | double I don't know but you can see that this high was not this high was not taken but the low was used as internal range so if it was used as internal range price played out from the nearest kill level that price is resting very close too. |
+| 705 | 11:45 | so now hopefully when we know that the high has been taken what did you notice that price did pay attention now you see the difference was just the in the details. Okay equal highs thank you equal highs here I was trying to I know that there's a particular |
+| 720 | 12:00 | move from the T-shaped kill level move single kind of formation served as internal range liquidity and we started to rally up to the upside right? But if you notice the difference between the same kind of formation the entire story started here we swept this |
+| 735 | 12:15 | have a weak but we know why price came back to this particular point to reverse because after this high has been taken the low for this scandal needs to be taken right? And it's reversed from here because we have this bullish open close that is resting here |
+| 750 | 12:30 | so when you pay attention to what we have here you know if somebody asks me a question one time say what is the difference between break or structure and breakout? I told you that break or structure is when price to the left hand side was given is given to us price to the left hand side is actually given to us a bearish momentum right? So you can see |
+| 765 | 12:45 | we can actually see the price was given to us a bearish momentum to the left then what price did was in a bearish market structure every higher lower high is what every lower high is going to be treated as liquidity, internal range liquidity or structural point and I say price |
+| 780 | 13:00 | So break or structure just actually means that price is going to shift its other flow from bearish to bullish or from bullish to bearish right? Why we talk about the most recent breakout? |
+| 795 | 13:15 | break or structure means the price is shifting in direction of us from sales to buys but the subject of most recent breakout just means that price is going to continue |
+| 810 | 13:30 | continue in that respective direction so if you see what there is one reemphasizing this is you can spot the origin from here right? V shape key level internal range liquidity price bounced off |
+| 825 | 13:45 | not just bouncing off from there you can also spot from here we had a single kind of formation price came back to this open close we started to move now when you move to the line chart what can you spot here you can spot this a shape key level that got disrespected to the |
+| 840 | 14:00 | upside are you seeing that now right now but this the to be able to understand the logic behind this this story is not even the a shape key level that got disrespected to the upside this is where if you watch that video right of that live call that i did last night about this gold vice from this |
+| 855 | 14:15 | is because i said this now external range liquidity has been taken using single kind of formation now that the external range liquidity has been taken using this single kind of formation we expect price to sell until internal range liquidity is taken so what that means |
+| 870 | 14:30 | for us is that personally we could see i was saying it's in that video because the video is long right i'm not sure if i shared on the spot i was saying that another valid key level that we can see right is this open close but we are not going to use the open close the reason is because |
+| 885 | 14:45 | external range liquidity has been taken now that external range liquidity has been taken we want to see price drop to take out internal range so remember the basics of structure right for every external range liquidity that is taking get the reverse up for every internal |
+| 900 | 15:00 | is going to serve as external range liquidity for us right so now the logic behind it is that we are looking for liquidity that is resting very close to a key level subjecting it to structure so structurally we have bullish because when we see what we price has done we have our most recent |
+| 915 | 15:15 | breakout to the upside when you move to the launcher you can see the most recent breakout of half to the upside the price to count this particular four hour high we expect normally now sales this this level is not even valid at all right because after price takes out this |
+| 930 | 15:30 | high we expect the completion to take out the slope right so which key level is closest to this low a shape key level that god is respected to the downside right a shape key level that god is respected to the upside price broke above you to conceive move close above you to the body |
+| 945 | 15:45 | look at what price did swept the liquidity we came back to this a shape key level that god is respected to the upside with the body what did you see price do look at this massively right |
+| 960 | 16:00 | you can see how the momentum kicked in when you now pay attention to the same thing again repeating itself that's why I said that we can have I think some some people said some things in the group that almost almost everybody caught this by these gold buys right everybody saw the |
+| 975 | 16:15 | same thing and that is how you supposed to be right just that sometimes there are some weeks that people don't really pay attention when you look at what we have here what did why what's sponsored our buys here those recent breakout on four hours what is sponsoring our buy again |
+| 990 | 16:30 | key level that god is respected right so we can see that a shape key level god is respected right now pay attention the same thing we have here the same thing price took out the external |
+| 1005 | 16:45 | range liquidity first we dropped to take out internal range and we started to move to the upside so what else did price now do for us again look at this a shape key level that got disrespected to the upside leading for us to like it led to a most recent breakout to the upside |
+| 1020 | 17:00 | then this single kind of formation is what is going to serve as what's both internal range and external range so we have this as internal range we also have this as external range so look at what price did during cpi to the cpi we took out this external range liquidity |
+| 1035 | 17:15 | then we reversed to take out this internal range liquidity right which of the key level is price resting very close to this one right this is the a shape key level that got disrespected |
+| 1050 | 17:30 | because price did not come back to that a shape key level right so look at what price did price came back to the same a shape key level use the same kind of as uh internal range liquidity single kind of formation as internal range and external range so look at what price did |
+| 1065 | 17:45 | on the force swept this came back to the a shape key level that got disrespected and look at what price just continued to do this high now has been taken so if we want to follow the same cost what can you see on the four hours again the same thing is repeating itself |
+| 1080 | 18:00 | most recent breakout is to the upside again we have this single can do right we have taken out external range liquidity now that we're taking out external range liquidity what do you expect we expect some sense of reversal right so what that means for us is that we want to see price |
+| 1095 | 18:15 | the single candle that is going to create internal range liquidity and the next thing wants to see price do is that's what i buy from here and continue to do it at this point i think |
+| 1110 | 18:30 | right you can see this place you can see this v shape key level that got disrespected that is also overlapping inside of an imbalance it's like price has almost gotten there but we're looking for a opportunity to join this want to join this right just continue to move to the |
+| 1125 | 18:45 | upside right want to join this then overall want to see that this high is taking right you can |
+| 1140 | 19:00 | pay attention to what the market is saying to us are we getting it is it clear so you can see |
+| 1155 | 19:15 | pay attention to what the market is saying to us are we getting it is it clear so you can see |
+| 1170 | 19:30 | pay attention to what the market is saying to us are we getting it is it clear so you can see |
+| 1185 | 19:45 | pay attention to what the market is saying to us are we getting it is it clear so you can see |
+| 1200 | 20:00 | that you have we have want to pay attention to right in this good so you can see you have something to go back to go back tonight after tonight's class go back and study everything that happened here |
+| 1215 | 20:15 | look at this pay attention to all the details this is how the market repeat itself is that we repeat itself this is how we repeat itself this is how we repeat itself and all of that so you have something to study right i think we have something to study already right okay |
+| 1230 | 20:30 | so you have something to study right i think we have something to study already right okay |
+| 1245 | 20:45 | so you have something to study right i think we have something to study already right okay |
+| 1260 | 21:00 | so you have something to study right i think we have something to study already right okay |
+| 1275 | 21:15 | so you have something to study right i think we have something to study already right okay divine jack divine jack divine jack ask your question ask so we have like five minutes |
+| 1290 | 21:30 | divine jack divine jack divine jack ask your question ask so we have like five minutes |
+| 1305 | 21:45 | divine jack divine jack divine jack ask your question ask so we have like five minutes |
+| 1320 | 22:00 | divine jack divine jack divine jack ask your question ask so we have like five minutes |
+| 1335 | 22:15 | divine jack divine jack divine jack ask your question ask so we have like five minutes okay sir um i was curious so um doesn't mean that for each breakout like for each breakout price will |
+| 1350 | 22:30 | okay sir um i was curious so um doesn't mean that for each breakout like for each breakout price will price will always come back to and the breakout to you know to to move to move to move up like to |
+| 1365 | 22:45 | trade up because i saw that all all the entries here we are we are like we are on each breakout |
+| 1380 | 23:00 | what did you say so does it mean that i said i heard me yes i said um um uh does it mean that price will always come back to each breakout because all these entries |
+| 1395 | 23:15 | are on the breakout doesn't mean that price will always come back to each breakout then trade higher it is yes most times well listen if you are in yesterday's call i explained why we want to |
+| 1410 | 23:30 | right we're looking for areas that price is going to create internal range liquidity close to a key level that is valid so if we have a breakout and price creates internal range liquidity very close |
+| 1425 | 23:45 | okay sir yes so if price gives to you a most recent breakout the most recent breakout is just to even tell you that see price is just going to continue to buy just be attention to what price |
+| 1440 | 24:00 | is saying right so now the best thing is for you to now begin to look for the best area that you believe that price is most likely going to come back to right the place where you believe that liquidity is resting closest to right that is the key level you want to actually play |
+| 1455 | 24:15 | do you understand okay sir yeah no question yeah okay so i wanted us to talk about |
+| 1470 | 24:30 | do you understand okay sir yeah no question yeah okay so i wanted us to talk about what do they call it directional bias but i just want to leave us with this go back and study all of |
+| 1485 | 24:45 | this i want to leave this as an assignment everything i've explained here back right and study everything notes from this origin of standard what can you see there are some things i didn't like when i like to say for example i did i like this sweep of liquidity that people can do so that's |
+| 1500 | 25:00 | study all of this right one study all of this and i want everybody to build an expectation for good from tomorrow tuesday and friday right before the end of this week so i want us to after |
+| 1515 | 25:15 | here already seen right you can already see what we have here let me make it easy you can see we have an equities that we have price came back to the a shape killer but i'm going to disrespect it we have this single kind of formation that's served as internal range price has taken out |
+| 1530 | 25:30 | these particular ones okay price has not taken out this external range right what we know so you |
+| 1545 | 25:45 | these particular ones okay price has not taken out this external range right what we know so you |
+| 1560 | 26:00 | will see that so you will see that um you can see also from here that we have like a most recent break out to the upside already right you can see that we have a most recent breakout to the upside right this most recent breakout to the upside has given to us that we're going to continue |
+| 1575 | 26:15 | that there are the places where pay attention to look at this we have this a shape killer that is also resting here right this a shape killer was well that got disrespected when you move to |
+| 1590 | 26:30 | the price has disrespected this one to the upside just above it right and all of that so we want to look for the next for our country that is going to serve as internal range liquidity and one out of these two levels we're most likely hold if you don't trust this one just stick with |
+| 1605 | 26:45 | this one this is the extreme following everything that we've been able to see from here price came back to the extreme price came back to the a shape killer but i've got disrespected there's every tendency that price is also going to come back to this a shape killer was well |
+| 1620 | 27:00 | i got this right so that is what i want each of every one of us to send it in so send everything that you find out from your study and send them across tomorrow by 12 right so i'll send this |

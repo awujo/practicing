@@ -4,133 +4,129 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-No transcript for this video, so the caption column is
-empty. See `knowledge-base/videos/video-09/notes.md` for what
-was said; these frames are here for what was drawn.
-
 Contact sheets hold 25 frames each, in reading order:
 sheet_001 covers frames 1-25, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
-| 0 | 00:00 |  |
-| 15 | 00:15 |  |
-| 30 | 00:30 |  |
-| 45 | 00:45 |  |
-| 60 | 01:00 |  |
-| 75 | 01:15 |  |
-| 90 | 01:30 |  |
-| 105 | 01:45 |  |
-| 120 | 02:00 |  |
-| 135 | 02:15 |  |
-| 150 | 02:30 |  |
-| 165 | 02:45 |  |
-| 180 | 03:00 |  |
-| 195 | 03:15 |  |
-| 210 | 03:30 |  |
-| 225 | 03:45 |  |
-| 240 | 04:00 |  |
-| 255 | 04:15 |  |
-| 270 | 04:30 |  |
-| 285 | 04:45 |  |
-| 300 | 05:00 |  |
-| 315 | 05:15 |  |
-| 330 | 05:30 |  |
-| 345 | 05:45 |  |
-| 360 | 06:00 |  |
-| 375 | 06:15 |  |
-| 390 | 06:30 |  |
-| 405 | 06:45 |  |
-| 420 | 07:00 |  |
-| 435 | 07:15 |  |
-| 450 | 07:30 |  |
-| 465 | 07:45 |  |
-| 480 | 08:00 |  |
-| 495 | 08:15 |  |
-| 510 | 08:30 |  |
-| 525 | 08:45 |  |
-| 540 | 09:00 |  |
-| 555 | 09:15 |  |
-| 570 | 09:30 |  |
-| 585 | 09:45 |  |
-| 600 | 10:00 |  |
-| 615 | 10:15 |  |
-| 630 | 10:30 |  |
-| 645 | 10:45 |  |
-| 660 | 11:00 |  |
-| 675 | 11:15 |  |
-| 690 | 11:30 |  |
-| 705 | 11:45 |  |
-| 720 | 12:00 |  |
-| 735 | 12:15 |  |
-| 750 | 12:30 |  |
-| 765 | 12:45 |  |
-| 780 | 13:00 |  |
-| 795 | 13:15 |  |
-| 810 | 13:30 |  |
-| 825 | 13:45 |  |
-| 840 | 14:00 |  |
-| 855 | 14:15 |  |
-| 870 | 14:30 |  |
-| 885 | 14:45 |  |
-| 900 | 15:00 |  |
-| 915 | 15:15 |  |
-| 930 | 15:30 |  |
-| 945 | 15:45 |  |
-| 960 | 16:00 |  |
-| 975 | 16:15 |  |
-| 990 | 16:30 |  |
-| 1005 | 16:45 |  |
-| 1020 | 17:00 |  |
-| 1035 | 17:15 |  |
-| 1050 | 17:30 |  |
-| 1065 | 17:45 |  |
-| 1080 | 18:00 |  |
-| 1095 | 18:15 |  |
-| 1110 | 18:30 |  |
-| 1125 | 18:45 |  |
-| 1140 | 19:00 |  |
-| 1155 | 19:15 |  |
-| 1170 | 19:30 |  |
-| 1185 | 19:45 |  |
-| 1200 | 20:00 |  |
-| 1215 | 20:15 |  |
-| 1230 | 20:30 |  |
-| 1245 | 20:45 |  |
-| 1260 | 21:00 |  |
-| 1275 | 21:15 |  |
-| 1290 | 21:30 |  |
-| 1305 | 21:45 |  |
-| 1320 | 22:00 |  |
-| 1335 | 22:15 |  |
-| 1350 | 22:30 |  |
-| 1365 | 22:45 |  |
-| 1380 | 23:00 |  |
-| 1395 | 23:15 |  |
-| 1410 | 23:30 |  |
-| 1425 | 23:45 |  |
-| 1440 | 24:00 |  |
-| 1455 | 24:15 |  |
-| 1470 | 24:30 |  |
-| 1485 | 24:45 |  |
-| 1500 | 25:00 |  |
-| 1515 | 25:15 |  |
-| 1530 | 25:30 |  |
-| 1545 | 25:45 |  |
-| 1560 | 26:00 |  |
-| 1575 | 26:15 |  |
-| 1590 | 26:30 |  |
-| 1605 | 26:45 |  |
-| 1620 | 27:00 |  |
-| 1635 | 27:15 |  |
-| 1650 | 27:30 |  |
-| 1665 | 27:45 |  |
-| 1680 | 28:00 |  |
-| 1695 | 28:15 |  |
-| 1710 | 28:30 |  |
-| 1725 | 28:45 |  |
-| 1740 | 29:00 |  |
-| 1755 | 29:15 |  |
-| 1770 | 29:30 |  |
-| 1785 | 29:45 |  |
-| 1800 | 30:00 |  |
+| 0 | 00:00 | I hope you might take notes. You might not want to take notes. You just want to follow through. |
+| 15 | 00:15 | But at the same time, you just want to pay attention to whatever we are saying here. Right? So now, one of the things you want to do is there's something you have to do when it comes to, you know, okay, let me start with this. You know, people say |
+| 30 | 00:30 | you hear the quote every time on Twitter, right? I'm no longer really like active so much on Twitter like I used to be before, although my account is still there, right? But you hear people say things like day trading. Day trading is not everyday trading, right? Now the thing is many |
+| 45 | 00:45 | of them don't really understand what it means. They just know it's a quote, right? And many just feel like if your setup is not there, you don't have to force it, right? So on all of those things. So largely it's not really about, people feel the quote of day trading is not |
+| 60 | 01:00 | everyday trading. It has to do with not you over trading, right? Then people also say show up every day, but don't trade every day, right? So I want to really explain what it means, right? So there's |
+| 75 | 01:15 | something you have to check every day on a daily candle. There's something you must check on the weekly candle. There's something you must check on the monthly candle. So let me start on the monthly, right? So when it comes to the monthly candle, this one you want to |
+| 90 | 01:30 | right? It gives us more intel on how the next month is going to be. So for example, the way let's say June trades into a particular key level, June trades into a particular key |
+| 105 | 01:45 | level from an old monthly key level, and it closes, it trades into return, it closes above it, right? Now, if the monthly candle closes above is, there's only two things we want to see, right? So we see that monthly of June has actually traded into a monthly key level, |
+| 120 | 02:00 | that July is going to buy, right? The first thing we want to see is we want to scale down to one time from below and go to the weekly, right? And see if weekly is going to give to us a liquidity sweep and break off structure on the weekly time frame. Or we |
+| 135 | 02:15 | right? The moment we see that the weekly has given to us an engulfing, right? We want to see price tap into that engulfing. We must scale on time from below again to the daily, right? And we begin to look for more trading opportunities and we'll just begin to scale |
+| 150 | 02:30 | need to do on the monthly, right? This is something you just have to do once in a month. Like we want to always check, how did the previous monthly candle close? Like for example, how did June close, right? Generally for very much every May, how did May close that is |
+| 165 | 02:45 | leading to what we have in June, right? It tells us more intel. So there's something we have to do at the beginning of every month, right? Which is we going back to the monthly time frame to check how the previous monthly candle closed, where did it react from and how did it close. |
+| 180 | 03:00 | That will guide all your decisions for your trading that particular month, right? So there's something we want to do also every week. The same way we do it every |
+| 195 | 03:15 | we want to check how the previous weekly candle closed, right? That is very, very important, right? We want to see if the weekly candle traded into a particular key level, let's say closed below it, right? If it closes below it, it is not enough reason that it |
+| 210 | 03:30 | week. No, right? Because the next candle can come break above it and price will just continue to buy, right? Even if the previous weekly candle closes below it, right? So one of the things I |
+| 225 | 03:45 | I had a particular call with him and I was telling him, we're talking about journaling and I was telling him, one of the ways you journal your thought process in trading is that, for example, on the weekly time frame on a Sunday, you are doing your |
+| 240 | 04:00 | analysis, right? The price traded into a particular weekly key level and it closed below. So one of the things you are going to be writing down in your personal trading journal, right? Maybe you are writing physically is that the previous weekly candle traded into a particular key level took out inducement or internal range liquidity |
+| 255 | 04:15 | for selling opportunities. But when you scale one time frame lower on the daily, so the weekly is screaming for you sales, right? But when you go to the daily time frame, the daily time frame is still showing you like mobile opportunities, right? There's |
+| 270 | 04:30 | that this daily can only, these daily sales that you are seeing, right? It's just a little bit of retracement that is also reflecting on the weekly time frame. So this daily can come to a particular key level retrace, give to us a buy |
+| 285 | 04:45 | weekly candle we come, it will break above this particular key level and all other weekly candles we just continue to buy like that. So what we want to see is that as much as the weekly is screaming sales, in the daily until the daily |
+| 300 | 05:00 | daily confirmation doesn't have to be a liquidity sweep and break of structure, right? The daily confirmation can only be sometimes it can be an engulfing, right? Or it can be a key level that was disrespected, price will come back, tap into that particular key level and we know that the weekly and the daily has |
+| 315 | 05:15 | must journal your thought process. What is the weekly saying? How did the weekly time frame close? Where did it react from? Did it react from a weekly open close? Did it react from a daily open close? That saves you a lot of |
+| 330 | 05:30 | So we know what we want to do every month. We know what we want to do every week, right? And when it comes to every day, right? So when it comes to the daily thing, right? The daily routine is that for daily you have to work with the |
+| 345 | 05:45 | come on the daily time frame, daily is showing to you a liquidity sweep and break of structure to the upside, right? But the four hours is showing you that price is reacting from a four hour key level and it's trying to go to |
+| 360 | 06:00 | But this four hours is showing you that we are reacting from a key level and we are looking like we're going to the downside. Which one are you going to go with? I'm going to go with the daily, right? Because the daily has given to you a sweep of liquidity and a break of structure or the daily is giving to |
+| 375 | 06:15 | move to the upside on. See, it means that these four hours can just be a little bit of retracement or the retracement you are seeing on the daily that four hours is reacting from a key level and trying to close below, you know, all of these four hours movements is just a retracement on |
+| 390 | 06:30 | that on the daily we already have a sweep and a break, right? Or we have an engulfing price as greater the key level and we also have a daily inducement, right? The next daily can do is having an inducement. So it means that |
+| 405 | 06:45 | wait for the major trend and we want to continue to buy to the upside, right? I know that everything I'm saying might not make a lot of sense but pay attention to what I want to show to you. So if you look at this June 14th, I sent this to the entire group of GU, right? So you can see that |
+| 420 | 07:00 | it makes a lot of sense why we should not even be looking to even be buying GU in the first place, right? So look at what's GU did. So you can see if you move to the line chat on the GU, right? You can see this is an A-shaped key level that was actually created. You can see how price |
+| 435 | 07:15 | did was that the previous weekly candle that was created in June, that this previous weekly candle was created in June 3rd. So one of the things you wouldn't think that price did was that this candle, remember what I said to us now, move to see, if you move this thing to a line chat, right? |
+| 450 | 07:30 | higher low, we had this higher high. You can see how we broke below this pattern. In fact, we had this higher high and higher low, higher high, higher low, higher high, higher low, higher high, higher high. We broke below two structural |
+| 465 | 07:45 | So now on the line chat is showing to us that we have broken below two structural points. So we see where we are coming from already. We know where we are coming from. So even without even identifying the |
+| 480 | 08:00 | right? Because you can see we had two consecutive candles here. You can see that these two consecutive candle engulfed this particular one, creating for us this V-shaped key level, right? You can see how it engulfed. |
+| 495 | 08:15 | right? The first week in the month of June, you can see how we took it out and we started to sell. We have been selling for two weeks, right? One of the things you will actually notice is that you can see because of how this particular weekly candle closed, right? This trial this week, the ideal thing |
+| 510 | 08:30 | Where did price come to react from again? There was nothing deep that price came to react from. This is another open closed key level. Are you seeing where price came from? You remember when we said, when I sent it, I told us that you can see where price is at the moment. |
+| 525 | 08:45 | particular weekly high, right? You can see how we closed, right? Handle closure matters a lot, especially on the higher timeframe. It matters a whole lot, right? So you can see how we closed below. It means that we are going to the downside. So the question is, |
+| 540 | 09:00 | And we said, this looks like an ideal place that price wants to come to. This is the key level that price, that had an inducement liquidity that is resting here. Price disrespected it. And ideally, |
+| 555 | 09:15 | Maybe if it gets here, we are going to satisfy two conditions, right? Sweep liquidity, rebalance this holding balance at this specific pricing level that was created. And we might just continue to buy to the upside. In fact, all of these sales can happen. In fact, |
+| 570 | 09:30 | until we get into July. Then July can start buying. Are you seeing now? Can you see why we should even look for more sales, right? Now, context to our weekly timeframe. We swept this previous weekly high, |
+| 585 | 09:45 | is that the weekly timeframe took out an old weekly high, tapped into a key level and it's closed below, right? So which means that the weekly screaming more sales, right? As much as weekly screaming more sales, |
+| 600 | 10:00 | Look at what happened on, look at what happened on the daily. Are you seeing now? Look at what happened on the daily. So you can see on the daily year, right? For this daily year, you can see what we did here. Move to the line chat again. |
+| 615 | 10:15 | Impulsive move to the downside. We broke below this particular law. Where did you see price come back to here on the daily? Look at this. This is an open close key level here, right? This is an open close key level that was tested once. |
+| 630 | 10:30 | Look at how price came back there, right? On when, on when I stay, right? And price started to drop. You can see the impossible move that is happening all through this week. Look at where price is actually going to. We have this particular liquidity to go. |
+| 645 | 10:45 | Today is Friday. We might not see so much volatility in the market. We might just see some price. We'll just go to the downside. And Friday pricing action might just close here. It might just close here. Prepare for next week, right? |
+| 660 | 11:00 | So we can see how we came from. Can see how we came from the weekly timeframe tapped into this swept liquidity. We broke below this particular load. As long as it's daily showing us a break of this particular load, |
+| 675 | 11:15 | we are only looking for selling opportunities. Now, there is every possibility as much as we know that this is like a set of points we always look for where price creates internal range liquidity. |
+| 690 | 11:30 | Do you know that as much as we want to continue to sell, price will give to us buying opportunities. That buying opportunities is just to induce bias. Then it will use them as liquidity again. |
+| 705 | 11:45 | Look at the daily. Daily is showing to us that we are broken below this particular load. We are going to the downside. And daily is also giving us an intel. Look at what's, look at this thing. Look at where daily is coming from. |
+| 720 | 12:00 | Did this daily candle close, right? Your weekly showing you is screaming sales. Sales. How did this daily candle close? We tapped into this particular open close kill level |
+| 735 | 12:15 | And you can see how those days sold. You can see, in fact, only this one move alone equals all of these moves that has been happening Monday, Tuesday, and Wednesday. Only this one alone, right? |
+| 750 | 12:30 | all of these buys that happened from here, okay, because we can see, right? As much as we have bullish, as much as we know that we have bearish from the weekly, look at what price did, right? Remember what we said about liquidity? |
+| 765 | 12:45 | This is an engulfing candle that created a kill level for us. How did this candle close? We tapped into it closed up. We tapped here, closed up both. We tapped here again, we also closed up both. The moment we tapped here and closed up both, you can see what the Monday did for us, |
+| 780 | 13:00 | We bought until we go to a particular kill level that is overlapping inside of this imbalance. Then the next thing was that we saw small sales. The reason why we have all of these buys, right? On the daily context, we took out all daily low, |
+| 795 | 13:15 | The moment Monday closed up, we are looking for buying opportunities. But we are keeping it at the back of our mind that the weekly shared selling, showing us, no, I don't buy to my tongue, |
+| 810 | 13:30 | Look at how we broke below this particular low here, right? Body to body breakup structure because when we move to the line chart, that is what the line chart recognizes. That is where the volume is, right? We broke below this particular low, right? |
+| 825 | 13:45 | That is why we're not holding all these positions for too long. We just catch a buy from around this type of area, one to three, one to four, we are out. And the moment price goes to this particular kill level, we can see how we dropped once, just once. |
+| 840 | 14:00 | close below it, and we started to drop to the downside. But look at what I'm trying to show to you. Look how we have four hours was even showing people. Four hours was creating even buying opportunities for people. |
+| 855 | 14:15 | because the market will show you what you want to see, right? Look at what four hours did. Four hours created a kill level without engulfing it. One, the next thing that four hours did again |
+| 870 | 14:30 | So we are looking at, oh, this is a perfect setup because number one, we engulfed, created an inducement liquidity. And now we have external range liquidity that should go, right? We have external range liquidity that should go. Look at what price did. |
+| 885 | 14:45 | So look at price came to this low. Look at this. See? Look at what price did. Price played the kill level here |
+| 900 | 15:00 | Look at where price came to turn from to continue the sales. So there are people who are looking early induced buyers, who are looking to buy from here. Price tapped into their entry and started to buy from here, right? |
+| 915 | 15:15 | I'm fast. Ah, sorry. Am I fast? I'm trying to, I don't want to keep you guys |
+| 930 | 15:30 | So that's why I'm trying to rush things. Please, am I too fast or is it okay? |
+| 945 | 15:45 | So you can see how early buyers were induced. Are you seeing how early buyers were induced? I'm telling you, you can keep trading as simple as possible. You don't need so many, many things. You don't need to draw plenty things. |
+| 960 | 16:00 | If you come to the weekly time frame again, look at, let me show you something on the weekly, right? So if you look at this weekly time frame, right? Look at what price did here. We created a kill every year, right? |
+| 975 | 16:15 | But did you notice how priced? Look at the structure here, right? It is clear already, right? Structurally, we are this higher low. We are this higher high, right? So we know that we are broken above this external range liquidity, right? |
+| 990 | 16:30 | We don't need all of that. We're just paying attention to what price is doing now. We created a higher high, higher low, higher high, right? So we are paying attention to this most recent data that has been created for us. |
+| 1005 | 16:45 | So this the weekly loan from here, only this current data is showing us mobile buying opportunities because on the line chart, forget about all these weeks that you are seeing that is confusing. You move to the line chart higher low |
+| 1020 | 17:00 | Look at what price did. Look at how what price did. Price tapped into it a particular week in February, tapped into it and closed above. Are you seeing now? |
+| 1035 | 17:15 | So we know that price would could have gone for this particular high. We might not be able to hold a trade until all these weeks, right? But we know because of your prices coming from, |
+| 1050 | 17:30 | higher high, higher low, higher high, right? We have internal liquidity that has been created already here. Price came to take out the internal liquidity here, laid out from a key level from the weekly. |
+| 1065 | 17:45 | you should not hold the sales for too long. Do you understand? Now we have taken out internal range liquidity. The next piece we should be going to is the external range liquidity. This is external range now. |
+| 1080 | 18:00 | And because of our understanding of candle closure, look at what price did. We tapped into this place and we closed above. Then the next in a particular week where momentum now started to kick in, |
+| 1095 | 18:15 | closed above, and you can see the momentum. Are you seeing it now? What do we have here? Higher time frame. So I can only be, |
+| 1110 | 18:30 | So look at this one. Okay, so let's talk about this. |
+| 1125 | 18:45 | So I think let's just stay on this, right? You see, this is where you're, you know, and you know, we don't have to, right? Like I used to say, I don't, I don't down. I don't talk down when anybody's work. |
+| 1140 | 19:00 | not one full other block like this, I will say who I'm looking for, you know, maybe you pick another block like this. You pick no, right? Just pay attention to what price is doing. The story is in the price. |
+| 1155 | 19:15 | One, two, so we have high, high, high, look, high, high. Which means that we are broken up both this external rate. See, it's just basics. We are broken up both external range liquidity that is resting here. |
+| 1170 | 19:30 | So as much as we want to see price buy from here, knowing fully well that we also have an internal range liquidity that should go. Remember what I said about when we're talking about structure, basics and advanced structure? |
+| 1185 | 19:45 | I said, if price takes out an external range liquidity, you should expect a reversal. If price takes out internal range liquidity, you should expect a continuation in that particular trend, right? Then remember what we said about trading ranges? |
+| 1200 | 20:00 | and break of structure. To give you an order flow to the upside, then the way a range ends is like to still sweep liquidity and give you a break of structure, right? So price will come back for the last resort liquidity, |
+| 1215 | 20:15 | So you can see how we broke. So I said after price takes out an external range liquidity, it will reverse. If it takes out an external range liquidity, it will reverse. So now we have taken out, yeah, |
+| 1230 | 20:30 | The line chart is very, very important. What can you see on the line chart? Pay attention to the structure that is being created. Higher high, higher low, higher high, break of structure, right? |
+| 1245 | 20:45 | after external range liquidity is taken, where is price going to next? Price is going to the internal range. Then after internal range liquidity, where is price going to external range? That is why we've limited everything |
+| 1260 | 21:00 | No, it's not about the name. You know, I've told us already, we don't want to know about name here. We are just here looking for results. We are just here trying to produce real time results. |
+| 1275 | 21:15 | We limited everything to structural liquidity and key level. Structure knowing that if price takes out external range liquidity, it will come for internal. If it takes out internal, it will come again for external liquidity. |
+| 1290 | 21:30 | We created higher high, higher low, higher high. We broke structure. Oh, Zoom is telling us we have 10 minutes left. |
+| 1305 | 21:45 | Are we sleeping on this call? Are we sleeping? See, we do not do roll call like this. |
+| 1320 | 22:00 | So you can see structurally, we have taken out external range liquidity. Then for us to come from external to internal, we swap liquidity with broke structure. Structurally on the weekly, we have broken structure. |
+| 1335 | 22:15 | On the line chart here, we have taken out this external range liquidity that was created. Now we have a key level that we want to see. Remember what I said about key level? |
+| 1350 | 22:30 | and it can be used as your nearest point of exit. So you can see after we took out external range liquidity here, what did you see that price did? Price, we created higher high, higher low, higher high. |
+| 1365 | 22:45 | What can you see engulfing? We engulfed created for us, for us and what? Look at this key level. How did backhand look close? |
+| 1380 | 23:00 | The nearest point of liquidity that should go should be this one. This is our internal range liquidity. We even have more context again because we saw this previous weekly I take it. So what do we have here? |
+| 1395 | 23:15 | So we know that price is coming for internal range liquidity. Hopefully price will stop at this particular key level here. Then if price stops at this key level, we can look for buying opportunities to take out this external range liquidity. |
+| 1410 | 23:30 | Now you say, how did this candle close? We came back to the same key level in the weekly timeframe. |
+| 1425 | 23:45 | We came from external range straight to internal range. Look at this higher high, higher low, higher high, break of structure after taking out external range liquidity. |
+| 1440 | 24:00 | Basics of market structure. After every external range liquidity is taken, expect the reversal. After every internal range liquidity is taken, expect the continuation. |
+| 1455 | 24:15 | Right? Now for us to expect the reversal, we already had higher high, higher high, we broke structure. Now that we have broken structure, we want to see price move from external range liquidity |
+| 1470 | 24:30 | Two weeks. More selling opportunities. Two weeks. So at the end of that particular week, in February, price tapped into this V-shaped key level that was created. |
+| 1485 | 24:45 | So after price tapped into this V-shaped key level that was created, how did this candle close? Now pay attention to how these two weekly candle closed. |
+| 1500 | 25:00 | and we continue to move to the downside. How did this next weekly candle close? This one that came to this key level, it closed above it. So where is price likely going to go to? We are moving from, and like remember what I said, |
+| 1515 | 25:15 | This is the next external, overall external liquidity that should go. So look at what price did. |
+| 1530 | 25:30 | So look at this engulfed, we engulfed here, created another V-shaped key level. Right? Now let's see. We want to see price continue from here. |
+| 1545 | 25:45 | Are you seeing that? Momentum now takes in. Boom, boom, boom. |
+| 1560 | 26:00 | It's everywhere. The same thing. Higher timeframe bias is not even a problem. I'm not even joking. The only thing that you might be having issues with |
+| 1575 | 26:15 | If you understand structure and candle closions, look at what price did here. Let's move. Let's move. Let's even, let's take, are we, I wanted to say are we being blessed? |
+| 1590 | 26:30 | So, so look at what price did. This is the weekly timeframe. This is the weekly timeframe. |
+| 1605 | 26:45 | Look at this. Price tapped into the open close. Close below. Came back again. Close below it. And look at what price did. We had some sort of, if I think because of the data feed, right? |
+| 1620 | 27:00 | we closed somewhere around here because of the data feed, right? Although I don't know if there's, I think we have something like a key level there or something like that. I don't know because of the data feed, but you can see how price continued |
+| 1635 | 27:15 | from this weekly. Look at how we closed here. We engulfed, right? Somebody would have said that we don't know where price is reacting from here. We don't know. Nobody knows. |
+| 1650 | 27:30 | Let's put here, right? So, weekly timeframe has engulfed. Now, let's go one time frame lower. Can you spot it already? |
+| 1665 | 27:45 | Weekly timeframe engulfed to the downside, right? Now, you don't even know where price is actually reacting from, but we know that the weekly timeframe reacted from somewhere and it closed below. And you can see all these momentum |
+| 1680 | 28:00 | Simple. Let's look at this. Previous daily high is going to serve as a what? Internal range liquidity. What can you see? Price would have to fulfill two market conditions. |
+| 1695 | 28:15 | At what specific price? Open close that is overlapping inside of this imbalance. My God. |
+| 1710 | 28:30 | I'm trying to show you something. Are we together? Look at this. Look at this. Open close that is overlapping inside of an imbalance. |
+| 1725 | 28:45 | And you can see all of the selling momentum that we had. We just continue to sell. And did we have buys? Yes, we had buys, but we know that because of how the weekly timeframe is, |
+| 1740 | 29:00 | Why? Weekly engulfed. This kind of close below. We moved to the daily to find out where it was reacting from as much as it was not clear. Right? |
+| 1755 | 29:15 | And we took out this old daily high. No. And we just continue to sell. We just continue to sell. We just continue to sell. Are you seeing now? So the same thing everywhere. |
+| 1770 | 29:30 | Let me show you this one. So you can see what we have here. So if we look to him, if we just look to the right, |
+| 1785 | 29:45 | few seconds left. She wish she had another link. Ghost, go ahead and change your data. Go ahead and change your link. Your other call in your network. |
+| 1800 | 30:00 | So I want to share another link right now. We have about 40 seconds left for this call to end. |
