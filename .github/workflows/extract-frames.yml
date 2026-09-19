@@ -68,11 +68,21 @@ jobs:
             esac
           }
 
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
-            --json assets --jq '.assets[].name' > /tmp/assets.txt
+          # Asset IDs, not name globs. `gh release download --pattern`
+          # matches with filepath.Match, and these names -- dotted,
+          # hyphenated, 90+ characters -- do not survive it: the 2026-09-19
+          # run downloaded the first video fine and then died on the second
+          # with "no assets match the file pattern", using a pattern copied
+          # verbatim from the asset list. A numeric ID cannot be
+          # misinterpreted.
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '.assets[] | "\(.id)\t\(.name)"' > /tmp/assets.tsv
 
+          failed=""
           seen=""
-          while read -r asset; do
+          # fd 3, not stdin: gh reads stdin, and a loop fed on stdin can
+          # lose the rest of its input to a child process.
+          while IFS=$'\t' read -r id asset <&3; do
             case "$asset" in *.mp4) ;; *) continue ;; esac
             [ -n "$ONLY" ] && case "$asset" in *"$ONLY"*) ;; *) continue ;; esac
 
@@ -92,18 +102,29 @@ jobs:
               continue
             fi
 
+            # One video failing must not discard the others. The same
+            # 2026-09-19 run framed a whole video and then threw it away,
+            # because the job aborted before the commit step ever ran.
             echo "::group::$name"
-            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
-               --pattern "$asset" --dir /tmp/videos --clobber
-            python3 knowledge-base/tools/extract_frames.py sheets \
-              --video "/tmp/videos/$asset" \
-              --transcript "$transcript" \
-              --name "$name" --interval "$INTERVAL"
-            rm -f "/tmp/videos/$asset"
+            if gh api -H "Accept: application/octet-stream" \
+                 "repos/$GITHUB_REPOSITORY/releases/assets/$id" > "/tmp/videos/$name.mp4" \
+               && python3 knowledge-base/tools/extract_frames.py sheets \
+                    --video "/tmp/videos/$name.mp4" \
+                    --transcript "$transcript" \
+                    --name "$name" --interval "$INTERVAL"; then
+              echo "ok: $name"
+            else
+              echo "::warning::$name FAILED -- continuing with the rest"
+              failed="$failed $name"
+            fi
+            rm -f "/tmp/videos/$name.mp4"
             echo "::endgroup::"
-          done < /tmp/assets.txt
+          done 3< /tmp/assets.tsv
+
+          echo "FAILED_VIDEOS=$failed" >> "$GITHUB_ENV"
 
       - name: Commit the sheets
+        if: always()
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -115,3 +136,11 @@ jobs:
           fi
           git commit -m "Contact sheets for ${{ inputs.release_tag }} (every ${{ inputs.interval }}s)"
           git push
+
+      - name: Fail if any video failed
+        if: always()
+        run: |
+          if [ -n "${FAILED_VIDEOS// /}" ]; then
+            echo "::error::these videos failed:${FAILED_VIDEOS}"
+            exit 1
+          fi
