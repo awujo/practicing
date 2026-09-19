@@ -384,7 +384,110 @@ sell environment... daily always retraces."*
 
 ---
 
+## The 4th man entry model — and what QMR actually is
+
+**This supersedes the section below it, which was written from the
+hand-written notes before the main-course transcripts existed and got
+QMR wrong.** Sources here are the transcripts themselves:
+`knowledge-base/videos/video-14/transcript.txt` (Entry Models 1) and
+`knowledge-base/videos/plug-and-play/transcript.txt`.
+
+### QMR is a shape, not a test count
+
+> *"It could be a QMR key level, **which is an A-shaped key level that
+> is overlapping inside of an imbalance**, or it could be an open close
+> key level that could be overlapping inside of an imbalance."*
+> (video-14 t=180-189)
+
+Said twice more at t=89-98. I previously recorded QMR as "a level
+tested and respected 2+ times before disrespect, preferred over others"
+and filed it as a **ranking** factor the engine ignores. Both halves
+were wrong: it is a **shape**, and the test-count idea is a different
+criterion that belongs to the same setup (below), not a tie-breaker
+between candidates.
+
+### The setup, stated in full
+
+plug-and-play t=791-955, which is the clearest statement of an entry
+rule anywhere in either course:
+
+> *"I love to play a key level ... that [was] disrespected, that is also
+> overlapping inside of an imbalance ... It has [liquidity] resting
+> above or below it ... A-shaped key levels [that were] disrespected, or
+> V-shaped key levels [that were] disrespected, overlapping inside of an
+> imbalance"*
+
+and then the refinement he says he has data on:
+
+> *"I don't just play key levels ... that A-shaped key level **must have
+> sponsored some level of sales** ... price rejected from here, it gives
+> to us some heavy momentum sales ... and after that, then that's where
+> we get [it] disrespected to the other side."* (t=838-925)
+
+So one rule with four conditions, in order:
+
+1. An **A-shaped** (or V-shaped) key level
+2. that **sponsored a move** — price rejected off it and it worked
+3. that was then **disrespected** — price closed through it
+4. and which **overlaps an imbalance**, with liquidity resting beyond it
+
+That resolves video-17's "tested and respected before being
+disrespected" as condition 2, not a separate ranking heuristic.
+
+### The engine has every piece and composes none of them
+
+| condition | primitive that exists |
+|---|---|
+| A/V shape | `detect_key_levels()` |
+| sponsored a move | `count_tests_before_disrespect()` |
+| disrespected | `is_disrespected()` |
+| overlaps an imbalance | `overlaps_level()` |
+
+All four are computed. `count_tests_before_disrespect` is recorded as
+`qmr_test_count` and read by nothing. `overlaps_level(im,
+key_level.price)` is what the engine labels **`plug_and_play`** — the
+same name the course uses.
+
+And there is a measured result sitting in `_nearest_imbalance_zone()`'s
+docstring that deserves a second look. An A/B on 2026-09-02 required
+the key level to overlap an imbalance and found it *"silently reduced
+the whole rule to plug-and-play ... 80.2% of setups skipped"*. That was
+recorded as a bug — the experiment measuring the wrong thing.
+
+On this reading it may have been implementing the taught rule and
+throwing away the answer. Skipping 80% of setups is what a four-condition
+filter is supposed to do. **What that note does not say is whether the
+surviving 20% performed better**, which is the only thing that matters
+and is the first thing to go and check.
+
+### Origin vs continuation
+
+video-14 t=263-366 splits the model in two, and the engine already has
+an `origin_kind` flag:
+
+- **origin** — the first setup: IRL taken, then play from the key level
+  that overlaps an imbalance
+- **continuation** — price breaks the external liquidity (a V-shaped key
+  level) with an impulsive move; expect a *shallow* retracement, a new
+  IRL forming close to that disrespected level and overlapping an
+  imbalance; play from there
+
+> *"this continuation set up has over like a 70 to 80% win rate"*
+> (t=296-301, repeated t=361-366)
+
+Stops and targets, same passage: *"10 to 11 pips is enough. 1 to 3, 1
+to 4, you are done"* (t=349-354).
+
+The live bots run `origin_kind="any"`, which does not distinguish them.
+
+---
+
 ## Where the two courses disagree: which key level
+
+**SUPERSEDED by the section above.** Kept because the disagreement it
+describes is real, but its QMR definition came from the hand-written
+notes and is wrong -- QMR is an A-shaped key level overlapping an
+imbalance, not "a level tested 2+ times". Read the section above first.
 
 Found while extending the frame pipeline to the 4th man course, so this
 row is sourced from the main-course notes rather than from frames. It is
@@ -441,10 +544,14 @@ not a change.
    disagree.
 6. **Stop = the disrespecting candle's wick** for the disrespect
    trigger.
-7. **Measure whether `qmr_test_count` predicts outcome** in the trades
-   the backtest already produces. Costs one query, not a strategy
-   change, and settles whether 4th man's key-level ranking should be
-   reconnected (see the section above).
+7. **Re-open the 2026-09-02 plug-and-play A/B.** It required the key
+   level to overlap an imbalance, skipped 80.2% of setups, and was
+   recorded as a broken experiment. On the taught reading that IS the
+   rule, and the note never says whether the surviving 20% performed
+   better. One number, already measured once.
+8. **Compose the four-condition setup** (A/V shape, sponsored a move,
+   disrespected, overlapping an imbalance). Every primitive exists;
+   nothing joins them.
 
 ---
 
