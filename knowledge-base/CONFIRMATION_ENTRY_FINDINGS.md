@@ -80,7 +80,40 @@ candles... gives you a bearish open-close key level."* The engine
 requires the two candles to share direction, which is right. That was an
 open question before this passage answered it.
 
-## Needs confirming before implementing
+## CONFIRMED by the operator, 2026-09-19
+
+Asked directly whether "engulfing" is only ever his name for the
+open-close disrespect. Answer: **yes**, with this example:
+
+> "we have 2 candles to the downside forming an open close kl, the
+>  third candle closes above the open close kl i.e. has disrespected
+>  that open close kl, then that open close kl can be used for a buying
+>  entry."
+
+And on when the entry actually happens:
+
+> "Yes we wait for price to come back to the bearish open close, to now
+>  buy from it."
+
+So the bullish confirmation entry is four steps, not a two-candle
+pattern:
+
+1. Two consecutive BEARISH candles with overlapping open/close ranges
+   form a bearish open-close key level.
+2. A later candle CLOSES ABOVE that level -- the disrespect. It need not
+   be a bullish candle: *"it doesn't necessarily mean it can be a
+   bullish candle, sometimes the candle can be below."*
+3. Price comes BACK DOWN to that same level.
+4. Buy from it.
+
+Bearish is the mirror: two bullish candles, a close below, a return up
+to the level, sell from it.
+
+`is_engulfing()` -- classic candlestick engulfing -- is therefore simply
+the wrong pattern and comes out. It is not a narrower version of this;
+it is a different thing that happens to share the name.
+
+## Superseded: needs confirming before implementing
 
 The transcript garbles one line (08:45 reads *"these points right here
 is your work to engulfing"*, probably *"what we call engulfing"*). The

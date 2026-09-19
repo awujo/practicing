@@ -5,6 +5,7 @@ from ..candles import Candle
 from ..structure import Direction
 from ..key_levels import KeyLevel
 from ..entries import (
+    open_close_disrespect_entry,
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
     origin_stop_loss, continuation_stop_loss, tight_stop_loss_no_irl,
     engulfing_stop_loss, fourth_man_stop_loss,
@@ -140,3 +141,76 @@ def test_entry_style_prices():
 
     assert aggressive_entry_price(level) == pytest.approx(1.1000)
     assert conservative_entry_price(confirmation) == pytest.approx(1.0985)
+
+
+# --- the confirmation entry formerly (and wrongly) called "engulfing" ---
+
+def _oc(i, o, h, l, c):
+    return Candle(pd.Timestamp("2024-01-01", tz="UTC") + pd.Timedelta(hours=i), o, h, l, c, 1000)
+
+
+def _bullish_sequence():
+    """Two bearish candles -> bearish open-close level ~1.1010; a candle
+    closing above it; then a candle returning to it."""
+    return [
+        _oc(0, 1.1050, 1.1060, 1.1000, 1.1010),   # bearish
+        _oc(1, 1.1010, 1.1020, 1.0980, 1.0990),   # bearish, overlaps -> level
+        _oc(2, 1.0990, 1.1060, 1.0980, 1.1050),   # CLOSES ABOVE -> disrespect
+        _oc(3, 1.1050, 1.1060, 1.0990, 1.1040),   # comes back to the level
+    ]
+
+
+def test_open_close_disrespect_fires_on_the_return():
+    level = open_close_disrespect_entry(_bullish_sequence(), 3, Direction.BULLISH)
+    assert level is not None
+    assert level.shape == "open_close"
+    assert level.price == pytest.approx(1.1010)
+
+
+def test_it_does_not_fire_on_the_disrespecting_candle_itself():
+    """Operator, 2026-09-19: "we WAIT for price to come back to the
+    bearish open close, to now buy from it." The disrespect is step 2 of
+    four; entering there would be a different trade at a different price
+    with a different stop."""
+    assert open_close_disrespect_entry(_bullish_sequence(), 2, Direction.BULLISH) is None
+
+
+def test_the_disrespecting_candle_need_not_be_bullish():
+    """His explicit caveat: "it doesn't necessarily mean it can be a
+    bullish candle, sometimes the candle can be below." Only the CLOSE
+    beyond the level matters."""
+    candles = _bullish_sequence()
+    # A bearish candle (open above close) that still closes above the level.
+    candles[2] = _oc(2, 1.1060, 1.1065, 1.0980, 1.1050)
+    assert candles[2].close < candles[2].open, "fixture must be a bearish candle"
+    assert open_close_disrespect_entry(candles, 3, Direction.BULLISH) is not None
+
+
+def test_no_disrespect_means_no_entry():
+    candles = _bullish_sequence()
+    candles[2] = _oc(2, 1.0990, 1.1005, 1.0980, 1.1000)   # never closes above 1.1010
+    assert open_close_disrespect_entry(candles, 3, Direction.BULLISH) is None
+
+
+def test_a_classic_engulfing_alone_does_not_trigger_it():
+    """THE distinction, pinned.
+
+    `is_engulfing()` was the engine's primary trigger and is a different
+    pattern: prev bearish, curr bullish, curr's body covering prev's. It
+    involves no two-candle open-close formation and no close beyond one.
+    A textbook engulfing with neither must not fire this."""
+    prev = _oc(0, 1.1050, 1.1055, 1.1000, 1.1005)   # bearish
+    curr = _oc(1, 1.1000, 1.1070, 1.0995, 1.1060)   # bullish, engulfs it
+    assert is_engulfing(prev, curr, Direction.BULLISH), "fixture is a real engulfing"
+    assert open_close_disrespect_entry([prev, curr], 1, Direction.BULLISH) is None
+
+
+def test_bearish_is_the_mirror():
+    candles = [
+        _oc(0, 1.1000, 1.1050, 1.0990, 1.1040),   # bullish
+        _oc(1, 1.1040, 1.1080, 1.1030, 1.1070),   # bullish, overlaps -> level
+        _oc(2, 1.1070, 1.1080, 1.1000, 1.1010),   # CLOSES BELOW -> disrespect
+        _oc(3, 1.1010, 1.1060, 1.1005, 1.1020),   # comes back up to it
+    ]
+    assert open_close_disrespect_entry(candles, 3, Direction.BEARISH) is not None
+    assert open_close_disrespect_entry(candles, 3, Direction.BULLISH) is None

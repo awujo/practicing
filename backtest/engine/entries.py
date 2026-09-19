@@ -259,3 +259,74 @@ def aggressive_entry_price(key_level: KeyLevel) -> float:
 def conservative_entry_price(confirmation_candle: Candle) -> float:
     """Wait for the full lower-timeframe confirmation trigger (e.g. an engulfing candle) before entering."""
     return confirmation_candle.close
+
+
+# How far back to look for the open-close key level a return is buying
+# from. Generous, because the level only has to still be standing --
+# formation, disrespect and return can be spread over a session.
+OPEN_CLOSE_LOOKBACK = 20
+
+
+def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Direction,
+                                 lookback: int = OPEN_CLOSE_LOOKBACK) -> KeyLevel | None:
+    """The confirmation entry this project has been calling "engulfing".
+
+    It is not a candlestick engulfing. Operator, 2026-09-19, confirming
+    the reading taken off bishop-entries-part5 at 08:00-09:15:
+
+        "we have 2 candles to the downside forming an open close kl, the
+         third candle closes above the open close kl i.e. has
+         disrespected that open close kl, then that open close kl can be
+         used for a buying entry"
+        "Yes we wait for price to come back to the bearish open close,
+         to now buy from it."
+
+    Four steps, bullish case, mirrored for bearish:
+
+      1. two consecutive BEARISH candles with overlapping open/close
+         ranges form a bearish open-close key level
+      2. a later candle CLOSES ABOVE it -- the disrespect. It need not be
+         a bullish candle: "it doesn't necessarily mean it can be a
+         bullish candle, sometimes the candle can be below"
+      3. price comes BACK DOWN to that level
+      4. buy from it
+
+    `idx` is the candle being tested as step 4 -- the return. Returns the
+    level being bought/sold from, or None.
+
+    What this replaces: `is_engulfing()`, which required prev bearish,
+    curr bullish and curr's body covering prev's. That is a different
+    pattern that happens to share the name, and it was the engine's
+    primary entry trigger. Neither the two-candle open-close formation
+    nor the close beyond it appears anywhere in that test.
+    """
+    curr = candles[idx]
+    # Step 4: this candle must actually trade back to the level.
+    want_bearish_level = direction == Direction.BULLISH
+
+    start = max(1, idx - lookback)
+    best = None
+    for i in range(start, idx):
+        level = detect_open_close_level(candles[i - 1], candles[i])
+        if level is None:
+            continue
+        # A bullish entry buys from a level that was originally BEARISH
+        # (two down candles) and then got disrespected upward.
+        if want_bearish_level != (level.default_bias == Direction.BEARISH):
+            continue
+        # Step 2: some candle after it closed beyond it, before now.
+        disrespected_at = None
+        for j in range(i + 1, idx):
+            if is_disrespected(candles[j], level):
+                disrespected_at = j
+                break
+        if disrespected_at is None:
+            continue
+        # Step 3: price is back at the level on this candle.
+        if not (curr.low <= level.price <= curr.high):
+            continue
+        # Nearest such level to the return wins -- the one price is
+        # actually reacting from, not an older one further away.
+        if best is None or i > best[0]:
+            best = (i, level)
+    return best[1] if best else None
