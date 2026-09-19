@@ -1920,3 +1920,40 @@ def test_swing_mode_keeps_the_any_direction_window():
     swing = _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")
     # One pool per breakout at most, exactly as before.
     assert len(swing) <= len(confs)
+
+
+def test_both_mode_arms_every_pool_either_single_mode_would():
+    """liquidity_mode="both" exists because the source says both forms
+    count (repeating-a-system video, 04:30-05:45: "it's not all the time
+    your form of liquidity is going to be a single candle... sometimes
+    it's also going to be like structural liquidity... this is another
+    form of liquidity right here").
+
+    The engine only ever had the structural form, and the 2026-09-16
+    single_candle mode only had the other -- replacing structural rather
+    than joining it, which is the likeliest reason it measured worse.
+    So the property that matters is that "both" MISSES NOTHING: every
+    pool price either single-source mode finds must be armed here.
+    """
+    from ...engine.liquidity import single_candle_liquidity, structural_liquidity_points
+    h4 = _liquidity_setup_h4()
+    sc = ({p.price for p in single_candle_liquidity(h4, "low")}
+          | {p.price for p in single_candle_liquidity(h4, "high")})
+    swing = {p.price for p in structural_liquidity_points(h4, n=1)}
+
+    n = 2
+    confs = detect_confirmations(h4, n)
+    levels = detect_key_levels(h4, n)
+    both = {s.liquidity_price for s in
+            _find_liquidity_setups(h4, confs, levels, n,
+                                    liquidity_mode="both", max_pools=99)}
+
+    # Every pool "both" arms must come from one of the two sources -- it
+    # must not invent prices of its own.
+    assert both <= (sc | swing), f"prices from nowhere: {both - (sc | swing)}"
+    # And it must arm strictly more than the swing-only path, or the mode
+    # is pointless.
+    swing_armed = {s.liquidity_price for s in
+                   _find_liquidity_setups(h4, confs, levels, n, liquidity_mode="swing")}
+    assert swing_armed <= both, f"swing pools missing from both: {swing_armed - both}"
+    assert len(both) > len(swing_armed)

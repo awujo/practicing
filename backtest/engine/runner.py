@@ -799,6 +799,33 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
                             + single_candle_liquidity(h4, "high"))
     elif liquidity_mode == "swing":
         liquidity_points = structural_liquidity_points(h4, n=1)
+    elif liquidity_mode == "both":
+        # Both forms, because the source says both count.
+        #
+        # From the "repeating a system that works" video, at 04:30-05:45,
+        # while drawing them:
+        #
+        #   "that's where the fact that I prefer to use single candle
+        #    liquidity. You need to know that it's NOT ALL THE TIME your
+        #    form of liquidity is going to be a single candle... you can
+        #    have another candle like this here as well... a series, not
+        #    always the immediate candle... Sometimes it's also going to
+        #    be like STRUCTURAL LIQUIDITY... this particular point might
+        #    be a V shape K level... this is another form of liquidity
+        #    right here."
+        #
+        # The engine has only ever implemented the structural form, and
+        # the 2026-09-16 "single_candle" mode implemented only the other
+        # one -- REPLACING structural rather than joining it. That is the
+        # likeliest reason it measured worse and got parked: it did not
+        # add the missing pools, it swapped one valid set for another.
+        #
+        # Deliberately a third mode rather than a change to either, so
+        # the A/B compares three defined things and the existing numbers
+        # stay meaningful.
+        liquidity_points = (single_candle_liquidity(h4, "low")
+                            + single_candle_liquidity(h4, "high")
+                            + structural_liquidity_points(h4, n=1))
     else:
         raise ValueError(f"unknown liquidity_mode: {liquidity_mode!r}")
     breakouts = sorted(h4_confirmations, key=lambda c: c.time)
@@ -860,7 +887,7 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
         # still valid. Maybe the second candle is the thing that will
         # form the truly single candle liquidity." A numeric cap is kept
         # only so the A/B can ask whether bounding it helps.
-        if liquidity_mode in ("single_candle", "single_candle_h4"):
+        if liquidity_mode in ("single_candle", "single_candle_h4", "both"):
             cap = max_pools
         else:
             cap = 1
@@ -961,7 +988,12 @@ def _find_liquidity_setups(h4: list[Candle], h4_confirmations, h4_key_levels: li
                 liquidity_price=liquidity_point.price,
                 liquidity_time=liquidity_point.time,
                 liquidity_known_at=known,
-                sweep_from=(known if liquidity_mode == "single_candle"
+                # From the pool's CLOSE, so the candle that FORMS a low
+                # cannot also count as taking it. "swing" keeps the pivot
+                # time only because it is the frozen pre-2026-09-16
+                # baseline; "both" mixes pool sources and so must use the
+                # correct rule rather than the grandfathered one.
+                sweep_from=(known if liquidity_mode in ("single_candle", "both")
                             else liquidity_point.time),
                 reaction_level_candidates=reaction_level_candidates,
                 setup_id=next_setup_id,

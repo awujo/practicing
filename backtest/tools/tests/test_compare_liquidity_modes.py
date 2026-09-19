@@ -68,9 +68,13 @@ def test_variants_puts_the_baseline_first_and_one_entry_per_cap():
     from ..compare_liquidity_modes import variants
     v = variants([1, 3])
     assert [name for name, _ in v] == ["swing", "single_candle/1", "single_candle/3",
-                                       "sc_h4/1", "sc_h4/3"]
+                                       "sc_h4/1", "sc_h4/3", "both/1", "both/3"]
     unbounded = variants([None])
-    assert [name for name, _ in unbounded] == ["swing", "single_candle/all", "sc_h4/all"]
+    assert [name for name, _ in unbounded] == ["swing", "single_candle/all",
+                                                "sc_h4/all", "both/all"]
+    # "both" unions the two pool sources -- see runner's liquidity_mode
+    # docstring and the 04:30-05:45 quote behind it.
+    assert unbounded[3][1] == {"liquidity_mode": "both", "single_candle_max_pools": None}
     assert unbounded[1][1]["single_candle_max_pools"] is None
     assert v[0][1] == {"liquidity_mode": "swing"}
     assert v[2][1] == {"liquidity_mode": "single_candle", "single_candle_max_pools": 3}

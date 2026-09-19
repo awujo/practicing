@@ -87,6 +87,10 @@ def variants(max_pools_list):
         label = "all" if p is None else str(p)
         out.append((f"sc_h4/{label}",
                     {"liquidity_mode": "single_candle_h4", "single_candle_max_pools": p}))
+    for p in max_pools_list:
+        label = "all" if p is None else str(p)
+        out.append((f"both/{label}",
+                    {"liquidity_mode": "both", "single_candle_max_pools": p}))
     return out
 
 
