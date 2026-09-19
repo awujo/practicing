@@ -1,15 +1,302 @@
-[2.0-16.0] So, yeah, so one of the things that is our major custom is that when students pay, right, we treat it like an institution, right, in the sense that when students pay, we try as much as possible to give to them what we call a welcome address call.
-[16.0-29.0] So the primary purpose of that is, you know, the way institutions behave, right, you know, when you get admission into an institution that is for those people that are students, right, you know that the first thing you would do is that there's something called a matriculation,
-[29.0-51.0] where you are told about the norms, the mode of operation of how the school works. So, yeah, so the reason why we always have a welcome address before any other team, right, is because we want to try as much as possible to make everyone who is a part of us to understand how we do things here.
-[51.0-61.0] So first thing first, I always want to give a disclaimer, right, I want to be disclaimer I want to give is that number one, I don't sell dreams to people, I will never sell a dream to anybody.
-[599.0-613.6] Funny enough, we took the two trades together Euro NZ and GBP USD. This is GBP USD from me. It was a zero drawdown trade the trade is even running. And this is the Euro NZ. Let me show you guys.
-[613.6-630.6] This is from Oanda. Yes, the data feed was from Oanda. So, so do look, look at it. Okay. Yes. So look at it. So can you see how, right? Oanda didn't feel it, but you can see from me, you know, this was it.
-[630.6-638.6] If you check the free telegram channel, you'll see where I shared it with him. Right. We're supposed to, we're going to sell from here. So he saw that this particular liquidity point.
-[638.6-648.6] Right. And this is just one model that I know that if I want, I said, if I want to trade just one model for the rest of my life, this is the model I'm going to trade. Right. And these are things that I'm going to teach you.
-[1292.1-1293.6] And I've said it before
-[1293.6-1298.9] Right. I've said it in the free telegram channel. All you need is one model increased risk and a repeated process
-[1299.4-1301.7] Somebody came to me and said what do I mean by increased risk?
-[1301.7-1306.3] What I mean is by increased risk is that if as much as your equity continues to increase
-[1306.8-1312.1] If you started trading with 0.01 lot size and you are repeating the same process you're using the same model
-
-[NOTE: This is a condensed excerpt of the strategy-relevant portions. Full 264-line transcript is orientation/onboarding content with minimal strategy substance -- see notes.md for the complete summary. Full raw transcript available in session scratch dir if needed later.]
+[2.0-10.0] So, yeah, so one of the things that is our major custom is that when students pay, right, we treat it like an institution, right?
+[10.0-16.0] In the sense that when students pay, we try as much as possible to give to them what we call a welcome address call.
+[16.0-20.0] So the primary purpose of that is, you know, the way institutions behave, right?
+[20.0-25.0] You know, when you get admission into an institution, that is for those people that are students, right?
+[25.0-35.0] I know that the first thing you would do is that there's something called a matriculation where you are told about the norms, the mode of operation of how the school works.
+[35.0-52.0] So, yeah, so the reason why we always have a welcome address before any other team, right, is because we want to try as much as possible to make everyone who is a part of us to understand how we do things here.
+[52.0-55.0] The first thing first, I always want to give a disclaimer, right?
+[55.0-62.0] One of the disclaimer I want to give is that number one, I don't sell dreams to people. I would never sell a dream to anybody.
+[62.0-71.0] I would not try to get people to join the academy or my academy with a lifestyle. I'm not going to fake any results.
+[71.0-77.0] I'm not going to fake a lifestyle by posting cars, posting houses, you know, as much as those things are good.
+[77.0-83.0] But the reason why many of you, right, you people might not, the 13 people on this call and others will catch up with the recording.
+[83.0-87.0] You guys might not be those, you might not be part of those people, right?
+[87.0-99.0] But one of the things I've found out from research and personal studies is that the reason why many people find it difficult in their trading journey and career, you know, to make reasonable progress in reasonable time, right?
+[99.0-105.0] To make progress in reasonable time is because many of them have been sold a dream. They've been sold a facade, right?
+[105.0-113.0] Based on what they have seen on Instagram, based on what they have seen on Twitter, only for them to come to learn forex, to start forex.
+[113.0-127.0] And for the first two years, or the first one year, or the first one year, six months, what they were seeing on, what they were actually seeing on, on social media is completely different from the experience they are having on the chat, right?
+[127.0-138.0] So but what I want to tell you is, one thing I want to assure you, and I'm going to tell you that on 100% for everybody who's on this call, is that number one, the first disclaimer is I don't sell dreams to anybody, right?
+[138.0-150.0] If you desire to become a profitable trader, your work ethics, right, must coexist with the desired results that you want, which are the results you want to see in your, so you must have a solid work ethics.
+[150.0-152.0] You don't have any business complaining, right?
+[152.0-155.0] Like, oh, I don't have time. I close from work late.
+[156.0-168.0] Okay, if you go to work by nine o'clock in the morning, or eight o'clock in the morning, and you come back by 10, right? What about just dedicating, you come back by 10, you start to study by 12 to 2am, right?
+[168.0-177.0] Why not show up every 2am to 2am to study, right? Back test, you know, journal, why not dedicate the first two hours upon getting home, right?
+[177.0-183.0] There's no excuse, but if you look for excuse, you're going to find one. So that didn't fail disclaimer. I will never sell a dream to anybody.
+[183.0-191.0] And number two, what I want people to always understand is that what I teach, right? I can say anywhere in the world, right?
+[191.0-201.0] You can go on Twitter, you can go on, you can go on Twitter, you can see, in fact, many people are beginning to realize, I mean, there are people who are even in our free telegram channel, right?
+[202.0-210.0] I can boldly say this anywhere that there are people who are in our free telegram channel, they can't say it out, right? But I see their charts and I know that, see, this is it.
+[210.0-219.0] Many of them even came to my DM and was like, ah, bro, but I can't put it out all yet because many of them are trying to maintain the status or maybe don't look at me.
+[219.0-226.0] I'm not after status. I hardly post on Twitter. The only time I post is maybe I post on our free telegram channel. I do a market commentary.
+[226.0-238.0] I post on my WhatsApp status. I don't, I don't, I don't do all those things, right? I mean, at the end of the day, if social media is not there, we're still going to live a peaceable life.
+[238.0-244.0] They understand. So the first thing first I want each and every one of us to understand is that I will never sell a dream to anybody. That is number one.
+[244.0-254.0] And number two, what I teach, right? I can say it anywhere. Somebody reached out to me today on the telegram, you know, the guy was like,
+[254.0-261.0] Don't you take losses? And I said, I take losses. I said, but all through the month of May, like I can count the number of losses I've taken.
+[261.0-267.0] I said, the total losses I've taken maybe all through the month of May into June that we just started is no more than three.
+[267.0-275.3] I think about two to three losses that I've taken in total. Mr. Olawale. Okay. You want to say something? You're raising up your hand.
+[275.3-280.2] Mr. Olawale, you want to say something?
+[280.2-283.2] No, no, no, no, no, no, no, no, no, no, no.
+[283.2-295.7] Okay. Okay. Okay. So it reached out to me and he was like, do I take losses at all, blah, blah, blah.
+[295.7-313.0] So I told him that I told him, I said, the total losses I've taken all through May to June is more than I think about two to three losses, right?
+[313.0-318.0] And one thing about me is I don't over-trade. So in a week, right, just to tell you the way I trade, right?
+[318.0-329.0] There are guys that I know that lend lends from me. You can see them on Twitter, like FX Lord, trade FX Lord. There's another one, Optimus, Mario, Scofield.
+[329.0-336.0] You know, many of these guys trade almost every day. Like somebody like me, I just take two to three trades a week.
+[336.0-341.0] I can take one on. Please, can you turn off your video and your mic?
+[341.0-345.0] So somebody like me, I take only three trades a week. I could take one on Monday.
+[345.0-351.0] I could, I can take one on Monday, one on Tuesday, one on Wednesday, depending on market condition. And I'm done Thursday and Friday.
+[351.0-365.0] I'm not really doing anything. I'm just doing market commentaries, catching up with one on one sessions with, you know, private mentorship students, you know, doing public mentorship commentaries, you know, answering questions in my DM, trying to reply messages, right?
+[365.0-370.0] Because that is the freedom actually that we're actually looking for. So I don't over-trade. So it is very easy.
+[370.0-384.0] There's somebody I used to love and admire in the trading industry called Sammy Matz. I have never learnt from him, but I have a friend who paid to him and in one of the lectures, Sammy Matz showed them a particular video of an account.
+[384.0-395.0] He showed them an account that has been trading for five years, five good years. It trades only GBP and USDJPY on that account. And Sammy Matz has not taken a loss.
+[395.0-408.0] I'm not even joking. He has not taken one single loss on that account. And this person that's paid to the, many of us might not know him, he's one of my very close friends, his name is Charles, he paid for his mentorship and all.
+[408.0-420.0] And they showed them, he showed them all of these things. So I'm not trying to say, and the reason he, that account that Sammy Matz showed them was just an account for, you know, maybe you have an investor, right?
+[420.0-431.0] Because the first investor I ever had, well, we still share mutual relationship, right? The first investor I ever had, it was true being able to keep a track record of all my trades.
+[431.0-440.0] The man is an Indian, right? And we've had and built solid relationships together, right? I was just in a telegram group, like everybody's in my telegram channel, right?
+[440.0-450.0] But this one, the only difference was that the telegram channel was accessible, people could talk, people could chat. Then he came up on there and said, I'm building an edge fund, and we're looking for traders that can manage funds.
+[450.0-460.0] I reached out to him, and he was like, show me what you have done. I showed him my first ever pro-femme certificate. I showed him, showed him my statistics, my win rates, showed him my life accounts.
+[460.0-471.0] Then what I used to do is that if I pass face one of every pro-femme, I do a screen record of it. I will always do a screen record of all my trades taking. I sent him the two screen records for the face one and face two when it was passed.
+[471.0-484.0] I sent him my dashboard link. I sent him my certificate, sent him everything. And that was how we started. It started with me with $500. I did 20% in, I think, a week and a few days.
+[484.0-497.0] It moved me to $5,000. Then from $5,000, we moved to $10,000. From $10,000, we moved to $15,000. Life money, this is not even pro-femme. Life money, raw zero spread account on ex-ness. Do you understand?
+[497.0-509.0] So I'm trying to let you know. I'm trying to build it into your subconscious, and I'm trying to tell you, this is not even, I'm not trying to sell to you anything, but I'm trying to tell you that what I teach works like mad.
+[509.0-522.0] Let me borrow me. I'm a believer. I'm not supposed to use that kind of word, but in this type of situation, just allow me to use it. What I teach works crazily. And it has to be simple. It doesn't have to be elaborate.
+[522.0-535.0] You don't need names. You don't need big names. And the third disclaimer I want to put out is that your success solely depends on you. I will play my own part. I will teach you everything that you need to know.
+[535.0-551.0] I responded to one of our guys yesterday night, and I was like, if I was supposed to take a set up, if I'm supposed to trade one set up for the rest of my life, this is a particular set I'm going to trade, but I put it out there, but not everybody would understand the logic behind the trade.
+[551.0-560.0] It is that same set up I was talking about on his tweet yesterday that I used to catch. I shared this trade with one of my, you know, one of my role model, the one of the guys I love so much in the trading industry.
+[560.0-570.0] Right. As last year, the guy, the total amount he grossed as a profit throughout last year in trading and everything was over 400 million.
+[570.0-578.0] Right. His name is Kelvin King. Right. He's one of my closest. I wouldn't I don't want to call him a friend because I don't want to bring familiarity into this.
+[578.0-587.0] He's one of my closest like closest mentor, somebody that I love and like a role model to me. Right. So the two trades we took today.
+[588.0-597.0] I shared the two trades with him. Why? Because it was from the same model. I said, if I'm supposed to trade one model for the rest of my life, this is the model I'm going to trade.
+[597.0-605.0] And it has a very simple logic. Funny enough, we took the two trades together Euro NZ and GBP USD. This is GBP USD from me.
+[605.0-613.6] It was a zero drawdown trade. The trade is even running. And this is the Euro NZ. Let me show you guys.
+[613.6-624.6] It's from Oanda. Yes, the data feed was from Oanda. So, so do look, look at it. Okay. Yes. So look at it. So can you see how right.
+[624.6-633.6] Oanda didn't feel it, but you can see from me, you know, this was it. If you check the free telegram channel, you'll see where I shared it with him.
+[633.6-642.6] Right. We're supposed to sell from here. So he saw that this particular liquidity point. Right. And this is just one model that I know that if I want, I said if I want to trade just one model.
+[642.6-648.6] If I want to trade just one model for the rest of my life, this is the model I'm going to trade. Right. And these are things that I'm going to teach you.
+[648.6-653.6] Right. I'm going to show each and every one of you. I will show you the logic behind it. I will explain everything to you.
+[653.6-661.6] The only thing I need you to do for me, right, is number one show up in classes number two study the videos. Don't watch them like Netflix.
+[661.6-670.6] Right. Don't watch them like Netflix. You will do yourself a disservice. Right. If you paid the money, if you paid for this,
+[670.6-681.6] study the videos come to my DM. Right. Message me. So I don't understand this. Right. You are entitled to my time. You are entitled to my one on one. You are entitled to a one on one session once a week.
+[681.6-688.6] If we start and you say, ah, sir, I don't understand this particular team will fix a time will fix 30 minutes or one hour.
+[688.6-696.6] We'll get on a call you and I doesn't have to be a group call will agree on a time and in a day will jump on the call will look at this in depth.
+[696.6-706.6] One watching a video once is not enough to say you already understood it. You have to watch it over and over and over and over again. There's a guy currently his name is gala.
+[706.6-718.6] That's his nickname. You will see him on Twitter. You'll see him everywhere. I post his result is one of my students as well. Right. He said the only movie a watch that since the month of May from the beginning of May to date.
+[718.6-728.6] The only thing he watched is my video. Right. He watches them like he's watching a movie and he watches them every day when he wakes up and he goes to bed and the guy is already funded already.
+[728.6-739.6] He's funded already just by the simple logic. Oh, this is how it should be. No next time do it like this. It does it take losses. Yes, it takes losses. Right. But he's funded already. Do you understand? Right.
+[739.6-750.6] So the guy who asked me today, I was like, Oh, do you take losses? That's why I explained things to him and I told him, go to the telegram channel. If we end this for you guys, go to the telegram channel. I have a particular student last month, early last month.
+[750.6-768.6] It passed a mapping account with 100% win rates. 100% win rate. There was no single loss on it. Why? Simple. Just simple explanations. Simple instructions. So I said that to say this, which is the third disclaimer I'm trying to bring across to you guys.
+[769.6-782.6] You must rule off your sleeves to work. I'll play my own part, but you have to play your own part as well. Right. You have to play your own part. You have to show up in classes. You have to download the videos. You have to cut out destruction itself.
+[782.6-794.6] Right. You have to cut out destruction. I can't remember the last time I sat in front of a television, you know, to watch TV. It's not like I have TV. It's not like I don't like all those things, but I have lost appetite for many of these things.
+[794.6-810.6] It's not like I'm maybe I'm trying to be a super human. No, it's not about that. Do I have fun? Yes, I have fun. There are other things I do for fun. But I don't, you know, if I'm trying to get something in life, if I'm trying to get ahead or do something, you know, there are certain things I have to sacrifice.
+[810.6-816.6] Right. I just have to sacrifice certain things. Right. I can't remember the last time I sat down to watch TV.
+[816.6-832.6] Right on a lot of those things, but I do other things for fun. Some weekends, maybe on a Saturday, I could step out, I could go somewhere, you know, I could just go do something else, you know, just something away from the chat and come back refreshed so that I don't start the week, you know, tired and exhausted.
+[832.6-844.6] So all I'm trying to say, which is the thought disclosure disclosure is that you have to roll off your sleeves to work, study, and the experience is not going to come from watching the videos. Let me just bring that.
+[844.6-857.6] The experience you want is not going to come from watching the videos. The experience is going to come from constantly going to the chat. You will take losses, you will take wins, you will go back, you will go back, you will go back.
+[857.6-868.6] You will constantly go back to the losses you will draw now. Dixon, I don't know if Dixon is on this call. I don't know what Dixon trading was like when he, before he came to me, Dixon is on this call.
+[868.6-879.6] But I've seen his growth. I've seen, I mean, the first week that Dixon even joined, he had about three to four TPs, he's within that same week.
+[879.6-886.6] Right, has he taken losses over time since then? Yes, he has taken losses, right.
+[886.6-895.6] So what I'm trying to say is, I will allow Dixon to speak, let him just share his experience with us, right. So what I'm trying to say is this, I don't know you.
+[895.6-903.6] Right, I've never met you before. And I don't know, and the reason why I'm saying these two things that I don't know you have never met you before is because I don't know how well you follow instructions.
+[903.6-912.6] Right, there are many of you, you are learning here, but you will still be going to YouTube to learn. You are not going to, you are doing yourself a great disservice, not me.
+[912.6-920.6] Right, because everything I'm showing to you, I mean, from the free Telegram channel, most of the results you see there are from private mentorship students, many of them are for even.
+[920.6-930.6] There are even people that are not even in the mentorship that they even pay, that they are just using only the information from the free Telegram to pass Proc firms, right, to pass Proc firms.
+[930.6-937.6] It's just like that, you know, people are people who don't have the money to pay, but I say, okay, I will make do with what I have.
+[937.6-944.6] So how much more you that you're in the private mentorship, right, are you just going to sit and relax and just say, let me just do what needs to be done.
+[944.6-949.6] Right, no, so I don't know you, I don't know, I've never met you before, and I don't know how well you follow instructions.
+[949.6-960.6] I don't know how if you follow simple instructions, but if you're a type of person that if I say, this is how you should be done, take, do ABC, when, when the market does ABC, you should do XYZ.
+[960.6-967.6] Right, and you follow the simple instruction over time, you see your growth, right, your growth score is going to change.
+[967.6-976.6] Like it's going to change amazingly, you are really going to see it, right, you are really going to see it in your, in your chatting in your in the way you look at the market.
+[976.6-985.6] But if you're the type of person that you are in so many, see if I, if I show you my Telegram channel, I'm not in any tele trading group anymore.
+[985.6-993.6] At some point in my journey, I had to remove myself, and I had to give myself a lesser focus when I found out that this is what I wanted to be doing business.
+[993.6-998.6] I had to be viewing the market, I had to remove myself from so many groups, I don't care.
+[998.6-1005.6] I had to reboot the ones I haven't paid for, the ones I joined, maybe they just added me voluntarily or something, I had to remove myself.
+[1005.6-1015.6] I don't need an excuse, right, because I needed to focus, I needed to give myself that lesser focus, putting that work, right, because the trading is a solo game.
+[1015.6-1025.6] And I, I try to make every student understand that trading is a solo game. Let me tell you something. Dixon that you are seeing posting charts, posting charts every day, even on weekend is doing synthetics and crypto,
+[1025.6-1033.6] the weekdays is doing Forex, as you see Dixon posting all of these things, the time will come when Dixon gets married, he might not be posting anymore.
+[1033.6-1044.6] Dixon might be on a vacation with his, you know, his wife, or his, you know, his, his girlfriend, maybe he's not married, but he's on a vacation to Mildives or Maritus or somewhere, you know, with his babe or
+[1044.6-1057.6] and he might not have that time because now this one is family time. Sometimes it will, maybe it will be with him himself and his mom, or his dad, his brothers, his siblings, they're on a vacation to maybe a West African country or one place,
+[1057.6-1063.6] maybe they are in Nairobi, Kenya. You can't expect him to be on vacation with his family and still be dropping charts, it's not possible.
+[1063.6-1073.6] Right, so it's a solo game at the beginning when we start, each and every one of us will run together, but over time, as we begin to advance in our journey, we'll see that, oh, I can,
+[1073.6-1090.6] somebody says Zanzibar, I'm leaving, I'm leaving, right? So all I'm trying to say is that if you put in your work, I bet you see, I promise you, I'm telling you, I'm beating my chest and I'm telling you that if you put in this work and you follow simple instructions,
+[1090.6-1097.6] you show up in class, all the things you just need to do is let me, let me state them out. Number one, show up.
+[1097.6-1118.9] Number two, study. So when we say study, you back test, you forward test, and you watch all the videos, and you take notes. Number three, follow instructions, follow instructions, and journal, right?
+[1118.9-1126.9] If you know all these things, I'm telling you, you will see your own progress, you will see your own progress, it's up to you, me, I assure you I'll play my part.
+[1126.9-1134.9] If you don't need, if you need, we have to stop because we wanted to take some new intakes. I was already moving on with Dixie and others.
+[1134.9-1142.9] I had to delete most of the videos because now that we have a new people, set of new people that has joined us, I'll be taking everybody from scratch.
+[1142.9-1152.9] I will show the logic behind that one trade setup. If I'm supposed to trade one set up for the rest of my life, that one set up, I will show us the logic behind how it is, how it works and everything.
+[1152.9-1159.9] You understand, right? So these are all the things you are going to learn. It's going to be as simple as possible. It's going to be as simple as possible.
+[1159.9-1165.9] So if you are here, you are still, I learnt from ICT, I'm not just crediting ICT. ICT is a great mentor. I learnt from him.
+[1165.9-1170.9] Most of the things I know today that I have been able to simplify my trading, I learnt from him and I give him the credit.
+[1170.9-1178.9] But if you are here, you are still going to study ICT. I mean, I will play my own part. I will even ask you.
+[1179.9-1185.9] I want to ask you because I've seen a student like that. The guy came, he paid for mentorship, he would attend classes.
+[1185.9-1193.9] Then one day, he bought a pro-femme account and the first trade he took was an over-leveraged trade.
+[1193.9-1199.9] And I told him, send me your chat because the trade took his account to draw down.
+[1199.9-1203.9] So I think after two, three trades, he was almost about to lose the account.
+[1203.9-1206.9] Then he reached out to me and said, sir, he's about to lose a pro-femme account.
+[1206.9-1210.9] Okay, let me see all the trades you've taken. He showed me. I said, send me all the chats.
+[1210.9-1215.9] But before and after, let me see. Let's know where things have gone wrong.
+[1215.9-1219.9] When this guy sent it to me, you won't believe this guy was using an indicator to trade.
+[1219.9-1223.9] Yet he was coming to class. Yet he was coming and attending the Zoom sessions.
+[1223.9-1227.9] He was using indicator. I didn't want to sign him again till dates.
+[1227.9-1231.9] I did not sign him again. I didn't sign him again. I mean, there was no points.
+[1231.9-1235.9] Just as if I was wasting my time. I didn't sign him again.
+[1235.9-1239.9] If you follow simple instructions, if you show up daily, don't trade demo.
+[1239.9-1244.9] Don't trade demo accounts for long, right? There is a promo that is coming up by Funded Nation.
+[1244.9-1250.9] In fact, there are small accounts as small as maybe $10, $19 from Marvin.
+[1250.9-1255.9] Marvin has a $2,000 account that goes for maybe I think $5 or $6.
+[1255.9-1258.9] The moment you see that you have started learning and you are getting holding,
+[1258.9-1264.9] having a grasp of the entire concept, right? Go and get a small account.
+[1264.9-1268.9] Practice it there. It might not be a problem.
+[1268.9-1274.9] What you might just do is, for you, it might just be $120, just use a broker.
+[1274.9-1279.9] Use a broker deposit $20 life account and you can just be using 0.05 lot size.
+[1279.9-1285.9] Watch how you are going to flip that money. Watch how long it's going to take you to grow the account, right?
+[1285.9-1291.9] How long it's going to take you to grow the account from 20 to 40, from 40 to 60, from 60 to 80.
+[1291.9-1294.9] And I've said it before, right? I've said it in the free telegram channel.
+[1294.9-1298.9] All you need is one model, increased risk and a repeated process.
+[1298.9-1301.9] Somebody came to me and said, what do I mean by increased risk?
+[1301.9-1306.9] What I mean is by increased risk that if as much as your equity continues to increase,
+[1306.9-1310.9] if you started trading with 0.01 lot size and you are repeating the same process,
+[1310.9-1315.9] you're using the same model, that's a time of calm that you will not use 0.01 anymore.
+[1315.9-1319.9] Your risk appetite is going to increase because your equity is also increasing
+[1319.9-1323.9] because you are using one similar model. You understand now, right?
+[1323.9-1326.9] So your equity is always going to increase.
+[1326.9-1330.9] As your equity increases, your risk also increases as well.
+[1330.9-1333.9] Do you understand what that means now? So your risk increases.
+[1333.9-1336.9] And as your risk increases, you are repeating the same process.
+[1336.9-1339.9] So you move from 0.01, you move to 0.10.
+[1339.9-1343.9] As your risk continues to increase, as your equity increases, repeating the same model,
+[1343.9-1348.9] your risk is now going to move from 0.10, it's going to move to one lot size.
+[1348.9-1351.9] You see yourself trading a 50K live-funded account.
+[1351.9-1353.9] You are now doing 3 lots. You are doing 5 lots.
+[1353.9-1355.9] So what did the heavy lifting?
+[1355.9-1359.9] What did the heavy lifting was that you were trading just one simple model.
+[1359.9-1361.9] You were repeating the same process.
+[1361.9-1365.9] And the major thing that did the heavy lifting was the increased risk.
+[1365.9-1368.9] And you subjected your increased risk to only two things,
+[1368.9-1372.9] your model and repetitive process.
+[1372.9-1376.9] So a proof that you understand something is that you'll be able to repeat it steadily.
+[1376.9-1378.9] You'll be able to do it steadily.
+[1378.9-1380.9] Do you understand what I'm trying to say?
+[1380.9-1381.9] So we have about seven minutes more.
+[1381.9-1383.9] I want Dickson to speak.
+[1383.9-1384.9] There are a lot of them.
+[1384.9-1386.9] Dickson, Belon, Latif.
+[1386.9-1388.9] Dickson, are you on the call?
+[1388.9-1389.9] You cannot mute your mic.
+[1389.9-1393.9] Tell us for the few days or weeks that we've been together,
+[1393.9-1395.9] what has your experience been like?
+[1395.9-1402.6] Dickson, you cannot mute your mic so we can give questions for people, right?
+[1402.6-1404.6] Okay.
+[1404.6-1408.6] Good afternoon everyone.
+[1408.6-1412.6] Okay, my own contribution to what you said,
+[1412.6-1415.6] before I paid for the class actually,
+[1415.6-1418.6] I was on the free Telegram channel.
+[1418.6-1421.6] I'm the kind of guy who taught himself trading.
+[1421.6-1424.6] I never had an opportunity to pay for class,
+[1424.6-1427.6] but I've always wanted to learn,
+[1427.6-1430.6] is it DAX, DAX concepts,
+[1430.6-1433.6] but his own price was $200.
+[1433.6-1436.6] It was Kelvin King on Twitter,
+[1436.6-1438.6] who mentioned you?
+[1438.6-1440.6] Is it Emmanuel Babaksunde,
+[1440.6-1442.6] something like that?
+[1442.6-1445.6] Yes, exactly.
+[1445.6-1447.6] And he mentioned some other accounts that
+[1447.6-1449.6] these are the people that if you don't have money
+[1449.6-1451.6] you can go to their Telegram and start watching their videos
+[1451.6-1453.6] and etc.
+[1453.6-1456.6] I don't know if I was left by the spirit
+[1456.6-1458.6] and I came into your own direct experience
+[1458.6-1460.6] so you had your Telegram link.
+[1460.6-1463.6] So that was when I started watching yours
+[1463.6-1465.6] and started developing myself
+[1465.6-1467.6] it was just only your free Telegram videos
+[1467.6-1469.6] and I said no, no, no, I don't think
+[1469.6-1471.6] on most of your videos you'd be like
+[1471.6-1473.6] okay, some of these things I can't
+[1473.6-1475.6] I can't spit them out
+[1475.6-1477.6] or I can't spit them out
+[1477.6-1479.6] that they are the private students
+[1479.6-1481.6] and so I said no, no, I have to pay for this class.
+[1481.6-1483.6] I've told you I am no longer working,
+[1483.6-1485.6] I'm also working because of the stress
+[1485.6-1487.6] and all that, but
+[1487.6-1489.6] on is it that
+[1489.6-1491.6] before I paid for the class
+[1491.6-1493.6] I wasn't doing enough myself.
+[1493.6-1495.6] I was having those about to do nothing
+[1495.6-1497.6] I don't know how to do nothing
+[1497.6-1499.6] which you've played me down
+[1499.6-1501.6] this is how it's going to be
+[1501.6-1503.6] and this is how I'm going to do nothing
+[1503.6-1505.6] and the concepts work on everything
+[1505.6-1507.6] on everything good thing
+[1507.6-1509.6] I was also in the group
+[1509.6-1511.6] but I had to just
+[1511.6-1513.6] remove myself so I can focus more
+[1513.6-1515.6] I think growth
+[1515.6-1517.6] growth is always constant
+[1517.6-1519.6] and change begins with us
+[1519.6-1521.6] because our mindset especially
+[1521.6-1523.6] our mindset is what is always
+[1523.6-1525.6] reaching us from achieving some kind of
+[1525.6-1527.6] dreams we have in our lives
+[1527.6-1529.6] and funny enough the Maldives that you mentioned
+[1529.6-1531.6] and you said this thing will go to Maldives
+[1531.6-1533.6] is one of the country I've always
+[1533.6-1535.6] wanted to visit
+[1535.6-1537.6] and you will go
+[1537.6-1539.6] you will go I promise you
+[1539.6-1541.6] you will go
+[1541.6-1543.6] I'm even planning to
+[1543.6-1545.6] maybe I should just meet up with you
+[1545.6-1547.6] I think you are going to go to Lagos also
+[1547.6-1549.6] I mean Lagos
+[1549.6-1551.6] I have to delete my water
+[1551.6-1553.6] delete my telegram
+[1553.6-1555.6] sorry my instagram
+[1555.6-1557.6] and everything that you shared with me
+[1557.6-1559.6] I just left with telegrams for now
+[1559.6-1561.6] so I just let me deal down
+[1561.6-1563.6] and work on myself too
+[1563.6-1565.6] thank you StarFords, thank you for this opportunity
+[1565.6-1567.6] I'm very very excited
+[1567.6-1569.6] let's welcome everyone of us
+[1569.6-1571.6] amazing
+[1571.6-1573.6] for those of us
+[1573.6-1575.6] who can't reach out to StarFords
+[1575.6-1577.6] maybe you think he'll be here
+[1577.6-1579.6] at least meet some of us
+[1579.6-1581.6] that we
+[1581.6-1583.6] at least we are in the same group
+[1583.6-1585.6] and can meet at least one of us
+[1585.6-1587.6] so those of us who are free that can help
+[1587.6-1589.6] thank you StarFords, thank you
+[1589.6-1591.6] yes don't worry
+[1591.6-1593.6] everybody said teachers out to general
+[1593.6-1595.6] the way I did it for Dixie now
+[1595.6-1597.6] it's going to be a general course
+[1597.6-1599.6] it's part of the curriculum right
+[1599.6-1601.6] so Dixie me I'm assuring you
+[1601.6-1603.6] and I'm telling you with full confidence
+[1603.6-1605.6] that's your trip to Maldives
+[1605.6-1607.6] it is going to happen
+[1607.6-1609.6] I mean I'm assuring you
+[1609.6-1611.6] it is going to happen right
+[1611.6-1613.6] you will see it happen
+[1613.6-1615.6] so it's not a cliche word
+[1615.6-1617.6] it's not that I'm assuring you
+[1617.6-1619.6] that it's going to happen right
+[1619.6-1621.6] just roll your sleeves, put on the work
+[1621.6-1623.6] put in the work and let's
+[1623.6-1625.6] let's just watch the magic
+[1625.6-1627.6] happen itself right it's an assurance
+[1627.6-1629.6] so I want to give questions
+[1629.6-1631.6] room for questions and answers to people
+[1631.6-1633.6] but we have three minutes more on this zoom
+[1633.6-1635.6] so I'm going to send another link now
+[1635.6-1637.6] I will end this call now send another link
+[1637.6-1639.6] so we can have time for questions
+[1639.6-1641.6] and answers then we will now finalize
+[1641.6-1643.6] the call with our days for our training
+[1643.6-1645.6] which is going to be Monday
+[1645.6-1647.6] Tuesday so I want to send another link
+[1647.6-1649.6] now so we can leave this one
+[1649.6-1651.6] let me send another link immediately
