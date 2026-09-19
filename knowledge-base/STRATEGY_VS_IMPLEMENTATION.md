@@ -384,6 +384,47 @@ sell environment... daily always retraces."*
 
 ---
 
+## Where the two courses disagree: which key level
+
+Found while extending the frame pipeline to the 4th man course, so this
+row is sourced from the main-course notes rather than from frames. It is
+the one place the two teachers appear to give different rules, which
+makes it worth stating rather than quietly picking a side.
+
+**4th man (video-17) ranks candidates by test history.** A level tested
+and respected 2+ times before it was finally disrespected beats both a
+level broken on its first test and a further untested "extreme" one --
+quoted at ~80%. This is what "QMR key level" means; videos 7 through 13
+use the term without defining it and the notes had it flagged unresolved
+until video-17.
+
+**Bishop reacts in order and does not rank.** *"Price likes using the
+closest key levels"* (entries t=435) -- but a tendency, not a selector,
+and when price skipped the nearest one he was untroubled: *"instead it
+[went to a level below]. And that's not a problem for me, because I just
+want to see a rejection after that."* (bd2 t=570)
+
+**Engine: Bishop's reading, deliberately.** `ranking.py` implements the
+4-factor score including QMR test-count, and `runner.py` disconnected it
+on purpose -- nearest-to-extreme order, take the first candidate that
+actually reacts, extreme as last resort, *"we don't predict, we react."*
+`count_tests_before_disrespect()` still runs and its result is still
+recorded on every trade as `qmr_test_count`, but nothing consumes it and
+`ranking_score` stays at 0.0.
+
+So the QMR data is being collected and thrown away. That is the cheap
+thing to check first, and it can be checked on trades we already have
+rather than by changing the strategy: **does `qmr_test_count` correlate
+with outcome in the existing backtest output?** If levels with 2+ prior
+tests win materially more often, 4th man's ranking is worth wiring back
+in. If it does not, the disconnection was right and this stops being an
+open question.
+
+Not attempted yet. Listed below as item 7 because it is a measurement,
+not a change.
+
+---
+
 ## What to change, in order of expected effect
 
 1. **Target = ERL with 3R fallback**, not `min(3R, ERL)`. Seven
@@ -400,6 +441,10 @@ sell environment... daily always retraces."*
    disagree.
 6. **Stop = the disrespecting candle's wick** for the disrespect
    trigger.
+7. **Measure whether `qmr_test_count` predicts outcome** in the trades
+   the backtest already produces. Costs one query, not a strategy
+   change, and settles whether 4th man's key-level ranking should be
+   reconnected (see the section above).
 
 ---
 
@@ -417,7 +462,7 @@ against the implementation instead of argued about.
 
 ## Status
 
-Transcript index read in full for all nine videos (1,058 rows, ~4h of
+Bishop: transcript index read in full for all nine videos (1,058 rows, ~4h of
 material). Contact sheets read: 7 of 42, plus 3 full-resolution frames.
 
 The transcripts turned out to carry nearly all the rules, because he
