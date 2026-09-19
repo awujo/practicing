@@ -1,38 +1,52 @@
 name: Transcribe video release
 
-# On-demand transcription for a knowledge-base source video, entirely on
-# GitHub's infrastructure. Given a release tag and an asset filename
-# pattern (releases like defi-bishop hold MULTIPLE videos, so release_tag
-# alone isn't enough to pick one), downloads the matching .mp4, extracts
-# audio, transcribes with faster-whisper, and commits the raw transcript
-# to knowledge-base/videos/<video_slug>/transcript.txt -- video_slug is
-# separate from release_tag specifically so multiple videos sharing one
-# release don't collide on the same output path.
+# Transcribes the videos in a release with faster-whisper and commits
+# each transcript to knowledge-base/videos/<slug>/transcript.txt.
 #
 # Runs here specifically because this Claude Code session's own network
 # egress policy blocks huggingface.co (where faster-whisper's model
 # weights live) -- the same class of restriction already documented for
 # the Dukascopy data pipeline in backtest/README.md. A standard
-# GitHub-hosted runner has normal internet access, so this is the
-# reusable fix for every future video release too, not just a one-off.
+# GitHub-hosted runner has normal internet access.
+#
+# 2026-09-19: rewritten to do a whole release per dispatch rather than
+# one video. It used to take a single asset_pattern matching exactly one
+# file, which meant 15 manual dispatches for the main course -- so the
+# main course simply never got transcribed, and 15 of its 18 videos were
+# studied from contact sheets and hand-written notes instead. The Bishop
+# pass established that transcripts carry nearly all the content, because
+# he narrates what he draws, so leaving them ungenerated was the wrong
+# trade.
+#
+# Commits after EACH video rather than at the end. A full release is
+# hours of CPU transcription and the job has a 6h ceiling; work already
+# done should survive the job being cut off. Use `limit` to run it in
+# batches if a release is too big for one job.
 
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag holding the video asset (e.g. defi-bishop)"
+        description: "Release tag holding the videos (e.g. remaining-videes)"
         required: true
-      asset_pattern:
-        description: "Glob matching exactly one asset in the release (e.g. '*Part.1.Bias.Entries*')"
+      only:
+        description: "Substring matching one asset (blank = every video in the release)"
         required: false
-        default: "*.mp4"
-      video_slug:
-        description: "Output folder name under knowledge-base/videos/ (e.g. bishop-bias-entries)"
-        required: true
+        default: ""
       model:
         description: "faster-whisper model size (tiny/base/small/medium/large-v3)"
         required: false
         default: "small"
+      limit:
+        description: "Stop after this many videos (0 = no limit). For batching a big release."
+        required: false
+        default: "0"
+      redo_existing:
+        description: "Re-transcribe videos that already have a transcript"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
 
 permissions:
   contents: write
@@ -40,11 +54,13 @@ permissions:
 jobs:
   transcribe:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     env:
-      RELEASE_TAG: ${{ inputs.release_tag }}
-      ASSET_PATTERN: ${{ inputs.asset_pattern }}
-      VIDEO_SLUG: ${{ inputs.video_slug }}
+      TAG: ${{ inputs.release_tag }}
+      ONLY: ${{ inputs.only }}
       WHISPER_MODEL: ${{ inputs.model }}
+      LIMIT: ${{ inputs.limit }}
+      REDO: ${{ inputs.redo_existing }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,33 +73,116 @@ jobs:
           sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install faster-whisper
 
-      - name: Download video asset
+      - name: Transcribe each video
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -uo pipefail
           mkdir -p /tmp/video
-          gh release download "$RELEASE_TAG" --pattern "$ASSET_PATTERN" --dir /tmp/video
-          count=$(ls /tmp/video/*.mp4 | wc -l)
-          if [ "$count" -ne 1 ]; then
-            echo "::error::asset_pattern matched $count files, expected exactly 1 -- narrow the pattern"
-            ls /tmp/video/*.mp4
-            exit 1
-          fi
 
-      - name: Extract audio
-        run: |
-          f=$(ls /tmp/video/*.mp4 | head -1)
-          ffmpeg -y -i "$f" -vn -ac 1 -ar 16000 -acodec pcm_s16le /tmp/video/audio.wav
+          # Same mapping as extract-frames.yml, so a video's frames and
+          # its transcript always land in folders of the same name.
+          map_name() {
+            case "$1" in
+              *Part.1.Bias.Entries*)        echo "bishop-bias-entries" ;;
+              *Part.2.If.you.have.ever*)    echo "bishop-what-next" ;;
+              *Repeating.a.system*)         echo "bishop-repeating-system" ;;
+              *Part.2.TRADES.BREAKDOWN*)    echo "bishop-trades-breakdown-2" ;;
+              *Part.3.TRADES.BREAKDOWN*)    echo "bishop-trades-breakdown-3" ;;
+              *Part.5.Approach*)            echo "bishop-entries-part5" ;;
+              *BUILDING.BIAS.PART.1*)       echo "bishop-building-bias-1" ;;
+              *BUILDING.BIAS.PART.2*)       echo "bishop-building-bias-2" ;;
+              *DAILY.ROUTINE*)              echo "bishop-daily-routine" ;;
+              [0-9].*|[0-9][0-9].*)
+                n="${1%%.*}"
+                case "$n" in
+                  ''|*[!0-9]*) echo "" ;;
+                  *) printf 'video-%02d\n' "$n" ;;
+                esac ;;
+              *)                            echo "" ;;
+            esac
+          }
 
-      - name: Transcribe
-        run: python .github/scripts/transcribe.py
+          # Asset IDs, not name globs. `gh release download --pattern`
+          # matches with filepath.Match and these names do not survive
+          # it -- the frames workflow lost a whole run to exactly that
+          # on 2026-09-19, using a pattern copied verbatim from the
+          # asset list.
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+            --jq '.assets[] | "\(.id)\t\(.name)"' > /tmp/assets.tsv
 
-      - name: Commit transcript
-        run: |
-          mkdir -p "knowledge-base/videos/$VIDEO_SLUG"
-          cp /tmp/video/transcript.txt "knowledge-base/videos/$VIDEO_SLUG/transcript.txt"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "knowledge-base/videos/$VIDEO_SLUG/transcript.txt"
-          git diff --cached --quiet && echo "Nothing to commit" || git commit -m "Add transcript for $VIDEO_SLUG"
-          git pull --rebase && git push
+
+          failed=""
+          seen=""
+          done_count=0
+          # fd 3, not stdin: gh reads stdin, and a loop fed on stdin can
+          # lose the rest of its input to a child process.
+          while IFS=$'\t' read -r id asset <&3; do
+            case "$asset" in *.mp4) ;; *) continue ;; esac
+            [ -n "$ONLY" ] && case "$asset" in *"$ONLY"*) ;; *) continue ;; esac
+
+            if [ "$LIMIT" != "0" ] && [ "$done_count" -ge "$LIMIT" ]; then
+              echo "::notice::hit limit of $LIMIT videos -- stopping, re-run to continue"
+              break
+            fi
+
+            name="$(map_name "$asset")"
+            if [ -z "$name" ]; then
+              echo "::warning::no slug mapped for $asset -- skipped"
+              continue
+            fi
+            case " $seen " in *" $name "*) echo "skip duplicate: $asset"; continue ;; esac
+            seen="$seen $name"
+
+            out="knowledge-base/videos/$name/transcript.txt"
+            if [ -f "$out" ] && [ "$REDO" != "true" ]; then
+              echo "skip (already transcribed): $name"
+              continue
+            fi
+
+            echo "::group::$name"
+            if gh api -H "Accept: application/octet-stream" \
+                 "repos/$GITHUB_REPOSITORY/releases/assets/$id" > /tmp/video/in.mp4 \
+               && ffmpeg -y -loglevel error -i /tmp/video/in.mp4 \
+                    -vn -ac 1 -ar 16000 -acodec pcm_s16le /tmp/video/audio.wav \
+               && AUDIO_PATH=/tmp/video/audio.wav TRANSCRIPT_PATH=/tmp/video/transcript.txt \
+                  python .github/scripts/transcribe.py; then
+              mkdir -p "knowledge-base/videos/$name"
+              cp /tmp/video/transcript.txt "$out"
+              git add "$out"
+              if git diff --cached --quiet; then
+                echo "no change for $name"
+              else
+                git commit -m "Transcript for $name"
+                # Retry around a concurrent push. A transcription run is
+                # hours long and the branch can move under it; losing
+                # the lot at the final push is what happened to the
+                # frames run on 2026-09-19.
+                for attempt in 1 2 3; do
+                  git push && break
+                  echo "push rejected, rebasing (attempt $attempt)"
+                  git pull --rebase origin "$GITHUB_REF_NAME"
+                done
+              fi
+              done_count=$((done_count + 1))
+              echo "ok: $name"
+            else
+              echo "::warning::$name FAILED -- continuing with the rest"
+              failed="$failed $name"
+            fi
+            rm -f /tmp/video/in.mp4 /tmp/video/audio.wav
+            echo "::endgroup::"
+          done 3< /tmp/assets.tsv
+
+          echo "transcribed $done_count video(s)"
+          echo "FAILED_VIDEOS=$failed" >> "$GITHUB_ENV"
+
+      - name: Fail if any video failed
+        if: always()
+        run: |
+          if [ -n "${FAILED_VIDEOS// /}" ]; then
+            echo "::error::these videos failed:${FAILED_VIDEOS}"
+            exit 1
+          fi
