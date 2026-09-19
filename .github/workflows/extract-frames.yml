@@ -36,6 +36,10 @@ on:
         description: "frames mode only: comma-separated seconds, e.g. 705,750,765"
         required: false
         default: ""
+      crop:
+        description: "frames mode: ffmpeg crop w:h:x:y to drop chrome, blank = whole screen"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -57,6 +61,7 @@ jobs:
           INTERVAL: ${{ inputs.interval }}
           MODE: ${{ inputs.mode }}
           AT: ${{ inputs.at }}
+          CROP: ${{ inputs.crop }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/videos
@@ -130,7 +135,7 @@ jobs:
                && python3 knowledge-base/tools/extract_frames.py "$MODE" \
                     --video "/tmp/videos/$name.mp4" \
                     --transcript "$transcript" \
-                    --name "$name" --interval "$INTERVAL" --at "$AT"; then
+                    --name "$name" --interval "$INTERVAL" --at "$AT" --crop "$CROP"; then
               echo "ok: $name"
             else
               echo "::warning::$name FAILED -- continuing with the rest"
