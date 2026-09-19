@@ -455,10 +455,36 @@ the whole rule to plug-and-play ... 80.2% of setups skipped"*. That was
 recorded as a bug — the experiment measuring the wrong thing.
 
 On this reading it may have been implementing the taught rule and
-throwing away the answer. Skipping 80% of setups is what a four-condition
-filter is supposed to do. **What that note does not say is whether the
-surviving 20% performed better**, which is the only thing that matters
-and is the first thing to go and check.
+throwing away the answer. Skipping 80% of setups is what a
+four-condition filter is supposed to do.
+
+**Checked. The answer is in bot/OPERATIONS_LOG.md, and it points the
+wrong way for the taught rule.** The log records that those 533
+surviving trades were *"identical to their default versions"* -- same
+entry, same stop -- so the run does contain a clean read on how the
+imbalance-overlapping subset performed against the whole book:
+
+| | all setups | plug-and-play only |
+|---|---:|---:|
+| trades | 2,697 | 533 |
+| win rate | **51.7%** | **46.3%** |
+| R/trade | **0.990** | **0.786** |
+
+The subset that satisfies the course's headline condition performed
+*worse* than the average of everything, on both measures.
+
+**But do not conclude from this yet.** That run is dated 2026-09-02,
+sixteen days before the look-ahead bug was removed. 0.990 R/trade
+against today's 0.32 is the signature of the broken engine. Both
+columns are inflated by an engine that could see a week past its own
+entry, and there is no reason to assume the inflation is uniform across
+a subset selected by imbalance overlap.
+
+So: the only measurement we have says the taught filter underperforms,
+and the measurement is not trustworthy. It needs re-running on the
+fixed engine before it means anything. Until then this is an open
+question with one discouraging and unreliable data point, which is
+different from both "unmeasured" and "disproved".
 
 ### Origin vs continuation
 
@@ -544,14 +570,17 @@ not a change.
    disagree.
 6. **Stop = the disrespecting candle's wick** for the disrespect
    trigger.
-7. **Re-open the 2026-09-02 plug-and-play A/B.** It required the key
-   level to overlap an imbalance, skipped 80.2% of setups, and was
-   recorded as a broken experiment. On the taught reading that IS the
-   rule, and the note never says whether the surviving 20% performed
-   better. One number, already measured once.
+7. **Re-run the plug-and-play filter on the fixed engine.** The
+   2026-09-02 numbers say the imbalance-overlapping subset did WORSE
+   than the whole book (46.3% vs 51.7% win, 0.786 vs 0.990 R/trade) --
+   but that run predates the look-ahead fix and both columns are
+   inflated. It is the one taught rule with a measurement against it,
+   which makes re-measuring it the highest-information run available.
 8. **Compose the four-condition setup** (A/V shape, sponsored a move,
    disrespected, overlapping an imbalance). Every primitive exists;
-   nothing joins them.
+   nothing joins them. Note that item 7 tests only ONE of the four
+   conditions -- a rule can fail on one leg and work whole, so a bad
+   result there does not close this.
 
 ---
 
