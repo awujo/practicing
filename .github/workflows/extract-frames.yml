@@ -178,7 +178,30 @@ jobs:
             exit 0
           fi
           git commit -m "Contact sheets for ${{ inputs.release_tag }} (every ${{ inputs.interval }}s)"
-          git push
+
+          # Retry around a concurrent push to the same branch. The
+          # 2026-09-19 run framed all 17 main-course videos, committed
+          # them, and then lost the lot to "! [rejected] (fetch first)"
+          # because someone pushed to the branch during the ~20 minutes
+          # it was working. Nothing had gone wrong with the framing --
+          # FAILED_VIDEOS was empty -- and the whole run still ended in
+          # failure with nothing to show.
+          #
+          # --rebase is safe here: this commit only ADDS files under
+          # knowledge-base/frames/, so it cannot conflict with work on
+          # anything else, and replaying it onto the newer tip is
+          # exactly what is wanted. No force, ever: a rejection this
+          # cannot resolve should stay a rejection.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected, rebasing onto the current tip (attempt $attempt)"
+            git pull --rebase origin "$GITHUB_REF_NAME"
+          done
+          echo "::error::could not push the sheets after 3 attempts"
+          exit 1
 
       - name: Fail if any video failed
         if: always()
