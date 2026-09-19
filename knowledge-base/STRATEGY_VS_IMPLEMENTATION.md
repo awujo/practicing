@@ -460,6 +460,38 @@ against the implementation instead of argued about.
 
 ---
 
+## Which citations here are trustworthy
+
+A timestamp bug was found on 2026-09-19 (see `extract_at_times()` in
+knowledge-base/tools/extract_frames.py). Contact sheets burned a
+COMPUTED `n*interval` label rather than the time they were seeked to,
+so a sheet tile's number does not reliably identify its frame. Full
+resolution frames were always fetched with an explicit `-ss` and are
+unaffected.
+
+That splits this document cleanly:
+
+**Sound.** Everything citing transcript text -- which is nearly all of
+it. `index.md`'s caption column is computed from the cue file's own
+`[start-end]` stamps and never went through the frame pipeline.
+
+**Sound.** The numeric trade data in "Targets" (`bd3 t=1080` USDJPY,
+`bd3 t=870` NZDCHF) and the NZDCHF `0.46312` claim at `bd3 t=750`.
+All three were read off full-resolution PNGs, which still exist in
+`knowledge-base/frames/bishop-trades-breakdown-3/` at those exact
+filenames and can be re-opened and re-checked.
+
+**Not sound.** Anything read off a contact-sheet tile. One claim of
+that kind was made and has been retracted: that two frames in
+`bishop-repeating-system` showed position tools with entry, stop and
+target. Pulled at full resolution, they show horizontal levels and no
+position tool.
+
+The sheets need regenerating on the fixed path before they are used for
+anything more than navigation.
+
+---
+
 ## Status
 
 Bishop: transcript index read in full for all nine videos (1,058 rows, ~4h of
