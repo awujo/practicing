@@ -93,6 +93,11 @@ jobs:
               *BUILDING.BIAS.PART.1*)       echo "bishop-building-bias-1" ;;
               *BUILDING.BIAS.PART.2*)       echo "bishop-building-bias-2" ;;
               *DAILY.ROUTINE*)              echo "bishop-daily-routine" ;;
+              # 4th man's plug-and-play session. Its asset is named
+              # "This_Plug_and_Play_Forex_System_..." -- underscores, no
+              # leading number -- so it matched nothing and was silently
+              # skipped, which is why it has a transcript but no frames.
+              *Plug_and_Play*|*plug*and*play*) echo "plug-and-play" ;;
               [0-9].*|[0-9][0-9].*)
                 n="${1%%.*}"
                 case "$n" in
