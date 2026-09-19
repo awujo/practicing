@@ -100,3 +100,4 @@ sheet_001 covers frames 1-25, and so on.
 | 1320 | 22:00 | rejected, let's check out for the confirmation entry. Can I see that price now given and closing at this point? So after price did this, I will fail to override that spot, but I still have my limits there. |
 | 1335 | 22:15 | on the two hours later on. So I was targeting, I think I targeted something like this, this key level, right here, except for this particular point. |
 | 1350 | 22:30 | the price broke structure to the downside, right, broke structure to the downside, and they now gave us single kind of liquidity at this particular point. |
+| 1365 | 22:45 | So that is where we will call it a day. So thank you very much. |

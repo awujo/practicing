@@ -158,3 +158,4 @@ sheet_001 covers frames 1-25, and so on.
 | 2190 | 36:30 | so when I saw this guy right I waited here at this point what price never came back I waited at the critical level of price never came back there right so I missed that confirmation and |
 | 2205 | 36:45 | transfer but for a direct entry trader you would need to be up by that time if you had cut this trade this would have been a very good amount of money because your stop loss would have just been around here let's see highest here and then that's like 5.6 at 5.5 and bad so that |
 | 2220 | 37:00 | been around here let's see highest here and then that's like 5.6 at 5.5 and bad so that is it guys so your routine is important and you look over that you need to know that if you're starting it out you're going to miss a lot of setups right and it is not the best thing to do I |
+| 2235 | 37:15 | repeat it is not the best of things to do right so that's what we call it a day thank you and happy weekend |

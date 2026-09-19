@@ -141,3 +141,4 @@ sheet_001 covers frames 1-25, and so on.
 | 1935 | 32:15 | We rejected. But there's no bearish breakouts yet. There's no bearish breakouts yet. So I would wait until XAU gives me was a bearish breakout before I engage. |
 | 1950 | 32:30 | You might see buys up until this point or wherever. If I'm wrong, I'm wrong. I'm just giving my own personal view. So that is where we'll be calling it a day. Right. |
 | 1965 | 32:45 | Don't forget to get your accounts with equity edge as well. I've been enjoying trading with them so far. Like they have the two days minimum trading rule. And the two days actually doesn't have to be 0.5%. Right. |
+| 1980 | 33:00 | So see you all in the next video. Thank you. |

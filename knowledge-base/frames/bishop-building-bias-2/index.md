@@ -155,3 +155,4 @@ sheet_001 covers frames 1-25, and so on.
 | 2145 | 35:45 | situation or bearish market condition so internal liquidity external liquidity was taken to now hide the reversal right now this reversal |
 | 2160 | 36:00 | we break out in here we must break out again meaning our new external liquidity was taken hence we might have some sort of reversal probably here I don't know |
 | 2175 | 36:15 | liquidity so from there we have old external liquidity this is basically what we are watching now for so as it's basically when it comes to getting |
+| 2190 | 36:30 | happy return to the company once again peace out |

@@ -55,3 +55,4 @@ sheet_001 covers frames 1-25, and so on.
 | 645 | 10:45 | and we had to our breakout to the upside. Boom. So, originally it looked as if price was actually leaving you to yourself. But you can see that this was the level price now used. |
 | 660 | 11:00 | So, the level price now used and then we had this. Think I had something like this, a five-hour or so. |
 | 675 | 11:15 | So, this was exactly how I targeted it. And because this external was taken up right, you know, it doesn't mean that you can see it happened on Japan 25 and US 30. |
+| 690 | 11:30 | doesn't mean you should have exaggerated targets. You should, there's always tomorrow. So, that was how I got in on those trades. Thank you and have a nice day. |
