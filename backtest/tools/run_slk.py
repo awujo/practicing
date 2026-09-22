@@ -40,11 +40,33 @@ independent bets, and the EUR pairs and JPY pairs move together, so
 the true portfolio risk is higher than a naive reading of these
 numbers suggests.
 
+FULL HISTORY OR LIVE WINDOWS
+
+`--windows full` (the default) runs ~20 years per instrument: the
+largest sample, and hours of VPS time.
+
+`--windows live` runs the SAME trimmed windows the bot loads from
+`bot/history_windows.json`. That is a smaller sample, but it is the
+only history the live bot ever sees, so it answers "how will this
+behave once deployed" more directly than full history does -- and it
+finishes in about half an hour rather than most of a day.
+
+One wrinkle it reports rather than hides: the windows are not equal.
+An explicit null in that file means "confirmed NOT safe to cap"
+(GBPNZD), so that instrument runs full history while the rest run one
+or two years. A pooled equity curve mixing a 20-year series with
+26 one-year series is not a portfolio anyone could have traded, so the
+pooled figures are also reported over the span every instrument
+actually covers.
+
 USAGE
 
     docker exec -d -u abc -w /config/trading mt5 sh -c \\
         'nice -n 19 python3 -m backtest.tools.run_slk \\
             --instruments ALL > /config/slk.log 2>&1'
+
+    # the deployable-sample answer, in ~30 minutes
+    ... -m backtest.tools.run_slk --instruments ALL --windows live
 
     # with a filter on top, to see whether it earns its place
     ... -m backtest.tools.run_slk --instruments ALL --variant qmr
@@ -64,6 +86,10 @@ from collections import Counter, defaultdict
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from ..engine.runner import run_backtest
 from ..engine.trade_log import write_trade_log
+# One window resolver, shared with the timing tool, which in turn calls
+# the live bot's own. Three copies of this lookup would be three chances
+# to measure a machine nobody runs.
+from .live_cycle_timing import load_windows
 from .slk_system import SLK_VARIANTS, slk_kwargs
 
 
@@ -137,6 +163,10 @@ def main():
                         choices=("aggressive", "conservative"))
     parser.add_argument("--variant", default="",
                         help=f"one of {','.join(SLK_VARIANTS)}, applied on top")
+    parser.add_argument("--windows", default="full", choices=("full", "live"),
+                        help="'full' runs ~20 years per instrument. 'live' runs "
+                             "the trimmed windows the bot actually loads, which "
+                             "is a smaller sample but the only one live ever sees.")
     parser.add_argument("--spread", type=float, default=0.12,
                         help="R charged per round trip. An ASSUMPTION, not a "
                              "measurement -- 0.12 is what earlier reports used.")
@@ -156,18 +186,26 @@ def main():
     else:
         instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
 
+    window_for = load_windows(instruments=instruments) if args.windows == "live" \
+        else (lambda _inst: None)
+
     print("SLK SYSTEM")
     for k, v in sorted(kwargs.items()):
         print(f"  {k} = {v}")
     print(f"  spread assumption = {args.spread} R/round trip")
+    print(f"  history = {args.windows}"
+          + ("  (bot/history_windows.json, same as live)"
+             if args.windows == "live" else "  (~20 years per instrument)"))
     print(flush=True)
 
     print("PER INSTRUMENT")
     all_closed = []
+    first_entry = {}
     for instrument in instruments:
         t0 = time.time()
         try:
-            recs = run_backtest(instrument, args.entry_style, **kwargs)
+            recs = run_backtest(instrument, args.entry_style,
+                                max_history_years=window_for(instrument), **kwargs)
         except FileNotFoundError:
             print(f"  {instrument:<12} no cached data, skipped", flush=True)
             continue
@@ -182,6 +220,8 @@ def main():
                 args.dump_trades, f"{instrument}_{args.entry_style}{suffix}.csv"))
         s = _stats(recs, args.spread)
         all_closed.extend(s["closed"])
+        if s["closed"]:
+            first_entry[instrument] = min(r.entry_time for r in s["closed"])
         _report(f"{instrument} [{time.time()-t0:.0f}s]", s, width=20)
 
     if not all_closed:
@@ -201,6 +241,24 @@ def main():
     print("=" * 78)
     print("POOLED")
     _report("all", pooled)
+
+    # A pooled equity curve is a claim about a portfolio, so it is only
+    # honest over a span the whole portfolio was actually trading. With
+    # live windows one instrument can carry twenty years while the rest
+    # carry one (GBPNZD's explicit null), and the early part of that
+    # curve is a single instrument wearing a portfolio's name -- which
+    # flatters the drawdown, because one instrument cannot draw down
+    # like twenty-seven can.
+    common = _stats([r for r in all_closed if r.entry_time >= max(first_entry.values())],
+                    args.spread) if len(first_entry) > 1 else None
+    if common and common["n"] and common["n"] != pooled["n"]:
+        start = max(first_entry.values())
+        latest = max(first_entry, key=lambda i: first_entry[i])
+        _report("common span", common)
+        print(f"    common span starts {str(start)[:10]}, set by {latest} -- "
+              f"{pooled['n'] - common['n']} of {pooled['n']} trades fall before it.")
+        print("    Read THIS row as the portfolio result. The 'all' row above")
+        print("    includes a stretch when only some instruments had data.")
     print()
     print("  trigger breakdown:")
     for k, v in sorted(pooled["by_trigger"].items(), key=lambda kv: -kv[1]):
@@ -208,10 +266,12 @@ def main():
     print(f"  avg win {pooled['avg_win']:.2f}R   avg loss {pooled['avg_loss']:.2f}R")
 
     print()
+    # Size off the portfolio row, not the flattered one.
+    sizing = common if (common and common["n"]) else pooled
     print("  WHAT THE DRAWDOWN MEANS FOR SIZING")
     for risk in (0.25, 0.5, 1.0):
         print(f"    at {risk}% risk/trade: worst stretch is "
-              f"{pooled['max_dd'] * risk:.1f}% of the account")
+              f"{sizing['max_dd'] * risk:.1f}% of the account")
     print()
     print("  Pooled drawdown assumes every instrument traded together at equal")
     print("  risk. It is NOT the sum of the per-instrument figures, which happen")
