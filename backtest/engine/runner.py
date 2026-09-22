@@ -1983,7 +1983,43 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 stop_loss = natural
                 stop_kind = "engulfing"
                 stop_fallback_used = False
-        else:  # candidate.trigger == "fourth_man"
+        elif candidate.trigger == "open_close":
+            # SLK_SPEC 5.2. The stop goes on the wick of the candle that
+            # DISRESPECTED the level -- video-14: "stop loss is just
+            # going to be a little bit above this particular high" --
+            # which is the confirming candle's own extreme, not a
+            # two-candle span.
+            trigger_type = "open_close"
+            natural = origin_stop_loss(
+                curr.low if effective == Direction.BULLISH else curr.high,
+                effective, pip_size=pip_size)
+            natural_stop_loss = natural
+            if _natural_stop_too_wide(entry_price, natural, pip_size):
+                stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
+                stop_kind = "open_close_kl_fallback"
+                stop_fallback_used = True
+            else:
+                stop_loss = natural
+                stop_kind = "open_close"
+                stop_fallback_used = False
+        elif candidate.trigger in ("breakout", "sweep_break"):
+            # SLK_SPEC 5.4/5.5. These two have no candle-wick anchor of
+            # their own -- what invalidates them is price going back
+            # through the leg the break came out of. That is exactly
+            # `_reaction_leg_extreme()`, i.e. the operator's rule:
+            # "we are placing it at invalidation zones -- setup
+            # invalidation zones" (2026-09-19), Bishop's placement
+            # rather than 4th man's fixed pip count.
+            trigger_type = candidate.trigger
+            anchor = _reaction_leg_extreme(h1, i, effective, new_key_level.time)
+            if anchor is None:
+                continue
+            natural = origin_stop_loss(anchor, effective, pip_size=pip_size)
+            natural_stop_loss = natural
+            stop_loss = natural
+            stop_kind = trigger_type
+            stop_fallback_used = False
+        elif candidate.trigger == "fourth_man":
             trigger_type = "fourth_man"
             sweep_extreme = curr.low if effective == Direction.BULLISH else curr.high
             natural = fourth_man_stop_loss(sweep_extreme, effective, pip_size=pip_size)
@@ -1996,6 +2032,16 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 stop_loss = natural
                 stop_kind = "fourth_man"
                 stop_fallback_used = False
+        else:
+            # Loud, not silent. This block used to end in
+            # `else:  # candidate.trigger == "fourth_man"`, which caught
+            # everything that was not "engulfing" -- so the three
+            # triggers added on 2026-09-19/22 were all being labelled
+            # fourth_man and given a fourth-man stop derived from a
+            # sweep extreme that, for a breakout, does not exist. The
+            # trades would have looked fine in the log and measured a
+            # stop rule nobody chose.
+            raise ValueError(f"no stop rule for trigger {candidate.trigger!r}")
 
         # stop_anchor="structural": replace whichever anchor the branches
         # above picked with the setup's own reaction-leg extreme, and drop

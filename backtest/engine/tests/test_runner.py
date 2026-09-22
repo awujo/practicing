@@ -2120,3 +2120,26 @@ def test_the_bearish_case_mirrors():
     ]
     assert sweep_break_entry(swept, 5, Direction.BEARISH) is True
     assert breakout_entry(swept, 5, Direction.BEARISH) is False
+
+
+def test_every_taught_trigger_has_its_own_stop_rule():
+    """The stop block used to end in `else:  # candidate.trigger ==
+    "fourth_man"`, which caught everything that was not "engulfing". So
+    open_close, breakout and sweep_break were all silently labelled
+    fourth_man and given a stop derived from a sweep extreme that, for a
+    breakout, does not exist.
+
+    Nothing would have failed. The trades would have appeared in the log
+    as fourth_man and measured a stop rule nobody chose -- which is the
+    exact shape of the 2026-09-02 plug-and-play A/B that measured "take
+    only plug-and-play trades" and was read as a verdict on a stop."""
+    import inspect
+    from ..runner import TRIGGERS_SHIPPED, TRIGGERS_TAUGHT, run_backtest
+
+    src = inspect.getsource(run_backtest)
+    for name in set(TRIGGERS_SHIPPED) | set(TRIGGERS_TAUGHT):
+        assert f'candidate.trigger == "{name}"' in src or f'trigger_type = "{name}"' in src \
+            or f'"{name}"' in src, f"{name} has no branch in the stop block"
+
+    # And an unknown one must raise rather than fall through.
+    assert "no stop rule for trigger" in src
