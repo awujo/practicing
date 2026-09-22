@@ -233,6 +233,20 @@ price returns to it, and that return is the entry.
 
 **Stop:** *"just going to be a little bit above this particular high."*
 
+### Note: all three already exist in the engine, under other names
+
+`classify_entry_pattern()` predates this spec and is the same model:
+5.1 is `EntryPattern.DIRECT_MITIGATION`, 5.2 is `NESTED_DISRESPECT`,
+5.3 is `FRESH_IRL_REQUIRED`. So `open_close_disrespect_entry()`
+re-implements 5.2, and mapping 5.3 onto `fourth_man` (below) is loose --
+`FRESH_IRL_REQUIRED` carries the "next candle becomes internal range
+liquidity" idea explicitly and is the closer match.
+
+`FRESH_IRL_REQUIRED` only does anything when `irl_mode` is "skip" or
+"wait". It defaults to "ignore" and `live_flags.py` does not set it, so
+**5.3 is implemented and switched off in production**. See
+AUDIT_2026-09-22.md D1 and D2.
+
 ### 5.3 Engulf, then the next candle is inducement
 
 > *"After price engulfs, the next one hour or 30 minutes candle is going
