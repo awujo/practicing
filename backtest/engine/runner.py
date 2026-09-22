@@ -190,7 +190,8 @@ from dataclasses import dataclass
 import pandas as pd
 
 from .candles import Candle, load_candles
-from .structure import Direction, StructureTracker, known_at as point_known_at
+from .structure import (Direction, StructureTracker, wick_sweeps_without_close,
+                        known_at as point_known_at)
 from .timeframes import bar_length, closes_at
 from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
 from .liquidity import single_candle_liquidity, structural_liquidity_points
@@ -573,6 +574,63 @@ def _last_direction_at(lookup, t):
     if idx < 0:
         return None
     return directions[idx]
+
+
+
+# How far past a key level's confirmation a rejection off it is looked
+# for. Bounded so this stays O(n) rather than levels x candles, which on
+# a Daily series is thousands times thousands.
+REJECTION_SCAN = 60
+
+
+def rejection_times(candles: list[Candle], levels, direction: Direction) -> list:
+    """Sorted times of candles that REJECTED off a key level in
+    `direction` -- wick trades into the level, body closes back away
+    from it.
+
+    This is the other half of Bishop's bias rule, and the engine has
+    never had it. `detect_confirmations()` only ever produces breakouts
+    and sweep+breaks, so a timeframe that merely rejected is invisible to
+    the alignment check.
+
+        "Sometimes you see a daily candle reject, one or two daily
+         candles reject off that same particular zone. In such a case
+         you can then start building your bias from the daily ... You're
+         still using key levels, rejection and candle closure. But the
+         difference now is that you are now going to make sure you
+         absolutely see your sweep and break or your breakouts ON THE
+         NEXT TIMEFRAME LOWER -- which is your four hours."
+                                    bishop-building-bias-1 t=780-855
+
+    `wick_sweeps_without_close()` is exactly this shape, and already
+    exists for a different purpose. A bearish rejection is price wicking
+    ABOVE a level and closing back below it, which is the same predicate
+    asked in the bullish sense of the level.
+
+    Only levels already confirmed are used, and only candles after that
+    confirmation, so nothing here can see a level before it existed."""
+    opposite = Direction.BEARISH if direction == Direction.BULLISH else Direction.BULLISH
+    times = [c.time for c in candles]
+    out = []
+    for level in levels:
+        known = level_known_at(level)
+        start = bisect.bisect_left(times, known)
+        for c in candles[start:start + REJECTION_SCAN]:
+            if wick_sweeps_without_close(c, level.price, opposite):
+                out.append(c.time)
+    out.sort()
+    return out
+
+
+def _rejected_recently(times: list, as_of_time, window) -> bool:
+    """Was there a rejection at or before `as_of_time` and within
+    `window` of it? Bisect rather than scan -- this runs per candidate."""
+    if not times:
+        return False
+    idx = bisect.bisect_right(times, as_of_time) - 1
+    if idx < 0:
+        return False
+    return (as_of_time - times[idx]) <= window
 
 
 def _aligned_timeframes(direction: Direction, as_of_time, weekly_confirmations,
@@ -1464,6 +1522,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   start_date=None, end_date=None, rr: float = RISK_REWARD_PRIMARY,
                   erl_cap: bool = True, erl_mode: str = "cap",
                   confirmation_triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
+                  require_qmr: bool = False,
+                  bias_caveat: bool = False,
                   close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                   irl_mode: str = "ignore",
@@ -1508,6 +1568,18 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     knowledge-base/STRATEGY_VS_IMPLEMENTATION.md for the citations.
     Measure it against "cap" before promoting it; the `erl_capped` count
     in the trade log says how many trades the choice can possibly touch.
+    bias_caveat: when True, a Daily that only REJECTED off a key level
+    (rather than breaking out) can still satisfy alignment, provided the
+    Weekly also rejected and H4 carries the breakout. bias-1 t=780-855.
+    Default False. This deliberately loosens the engine's strictest
+    gate, so the weekly-rejection requirement is not optional.
+    require_qmr: when True, only levels that overlap an imbalance -- QMR
+    key levels -- can be traded. Default False, which is what has always
+    shipped. The one existing measurement of this condition is
+    DISCOURAGING and predates the look-ahead fix, so it settles nothing
+    either way: 46.3% win against 51.7%, 0.786 R/trade against 0.990
+    (bot/OPERATIONS_LOG.md, 2026-09-02). Re-measure before believing it
+    in either direction.
     confirmation_triggers: which confirmation-entry patterns count as a
     reaction at the key level, checked in the order given. Defaults to
     TRIGGERS_SHIPPED, which is what has always run. TRIGGERS_TAUGHT
@@ -1775,6 +1847,14 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     h1_imbalances = detect_imbalances(h1)
     h1_imbalance_times = [im.time for im in h1_imbalances]
 
+    weekly_levels_all = detect_key_levels(weekly, n) if weekly else []
+    if bias_caveat:
+        daily_rejections = {d: rejection_times(daily, daily_levels, d) for d in Direction}
+        weekly_rejections = {d: rejection_times(weekly, weekly_levels_all, d) for d in Direction}
+    else:
+        daily_rejections = {d: [] for d in Direction}
+        weekly_rejections = {d: [] for d in Direction}
+
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
                                      confirmation_window=confirmation_window)
@@ -1785,8 +1865,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         weekly_structure_events = weekly_tracker.run(weekly)
         weekly_first_origin = _bootstrap_origin(weekly_structure_events, weekly_confirmations, origin_kind)
         if weekly_first_origin is not None:
-            weekly_levels = detect_key_levels(weekly, n)
-            weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
+            weekly_breakpoints = replay_bias(weekly, weekly_levels_all, daily_confirmations,
                                               weekly_first_origin.direction, "Weekly",
                                               confirmation_window=confirmation_window)
 
@@ -1853,7 +1932,33 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         aligned = _aligned_timeframes(candidate.direction, curr.time,
                                        weekly_confirmations, daily_confirmations, h4_confirmations,
                                        lookups=alignment_lookups)
-        if not ("Daily" in aligned and "H4" in aligned):
+        daily_ok = "Daily" in aligned
+        if not daily_ok and bias_caveat:
+            # THE CAVEAT (bias-1 t=780-855). The daily never broke out --
+            # it only REJECTED off the zone the weekly rejected. That is
+            # still a bias, built from the daily, and condition 3 does
+            # not disappear: it DESCENDS to H4, which the
+            # `"H4" in aligned` test below already enforces.
+            #
+            # He runs this live on XAUUSD (t=1845-1890), where the daily
+            # had actually broken out the OTHER way: "Daily hasn't given
+            # us a breakout to the downside ... instead a bullish
+            # breakout ... So for me personally, I would be sticking
+            # with the sell bias. I can also use this as daily rejects a
+            # daily key level ... What has the four hour timeframe given
+            # us? A bearish breakout after that rejection."
+            #
+            # The weekly rejection is REQUIRED, not optional. Without it
+            # this collapses into "trade whenever H4 agrees", which is a
+            # far weaker system wearing the same name -- the daily
+            # confirmation is currently the strictest gate in the engine
+            # and this is the only thing standing in for it.
+            daily_ok = (
+                _rejected_recently(daily_rejections[candidate.direction],
+                                   curr.time, ALIGNMENT_LOOKBACK["Daily"])
+                and _rejected_recently(weekly_rejections[candidate.direction],
+                                       curr.time, ALIGNMENT_LOOKBACK["Weekly"]))
+        if not (daily_ok and "H4" in aligned):
             continue
 
         new_key_level = candidate.reaction_level
@@ -1995,6 +2100,28 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             if overlaps_level(im, new_key_level.price)
         ]
         imbalance_overlap = len(overlapping) > 0
+
+        # QMR gate. A key level overlapping inside an imbalance IS a QMR
+        # key level -- that is the definition, stated as such:
+        #
+        #   "a QMR key level, which is an A-shaped key level that is
+        #    overlapping inside of an imbalance"     video-14 t=180-189
+        #
+        # Operator, 2026-09-22, correcting an earlier four-condition
+        # reading of mine: it is not all of them, "the key level
+        # overlapping inside an imbalance WILL be a QMR kl". The
+        # "sponsored some level of sales" and "got disrespected" lines
+        # from plug-and-play t=838-925 are what he PREFERS on top of
+        # that, not what makes a level QMR.
+        #
+        # `imbalance_overlap` has always been computed here and has only
+        # ever chosen a STOP RULE (the `plug_and_play` branch below). It
+        # has never decided whether a trade is taken, so the engine has
+        # been trading non-QMR levels constantly while measuring the
+        # condition and discarding it.
+        if require_qmr and not imbalance_overlap:
+            continue
+
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
         fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0
 
@@ -2411,6 +2538,16 @@ def main():
     parser.add_argument("--no-erl-cap", action="store_true",
                          help="Disable the external range liquidity target cap -- every trade targets a flat "
                               "--rr instead. For comparing against the (default) ERL-capped behavior.")
+    parser.add_argument("--require-qmr", action="store_true",
+                         help="only trade levels that overlap an imbalance -- QMR key "
+                              "levels. video-14 t=180: 'a QMR key level, which is an "
+                              "A-shaped key level that is overlapping inside of an "
+                              "imbalance'. The engine has always computed this and used "
+                              "it only to pick a stop.")
+    parser.add_argument("--bias-caveat", action="store_true",
+                         help="let a Daily that only REJECTED off a key level satisfy "
+                              "alignment, provided the Weekly also rejected and H4 "
+                              "carries the breakout (bias-1 t=780-855).")
     parser.add_argument("--taught-triggers", action="store_true",
                          help="use the confirmation triggers the videos describe "
                               "(engulfed open-close key level + 4th man) instead of the "
@@ -2436,6 +2573,7 @@ def main():
                   "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout,
                   "erl_mode": "target" if args.erl_as_target else "cap",
                   "confirmation_triggers": TRIGGERS_TAUGHT if args.taught_triggers else TRIGGERS_SHIPPED,
+                  "require_qmr": args.require_qmr, "bias_caveat": args.bias_caveat,
                   "irl_mode": args.irl_mode}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
@@ -2454,6 +2592,10 @@ def main():
         suffix += "_erltarget"
     if args.taught_triggers:
         suffix += "_taughttriggers"
+    if args.require_qmr:
+        suffix += "_qmr"
+    if args.bias_caveat:
+        suffix += "_biascaveat"
     if args.wick_based_breakout:
         suffix += "_wickbreakout"
     if args.irl_mode != "ignore":

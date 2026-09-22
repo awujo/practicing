@@ -74,6 +74,18 @@ daily persistently disagree, the weekly may be set aside:
 Confirmed as deliberate at next t=465: *"I built it from the daily
 alone."* The **reduced target** is what makes it safe.
 
+### The caveat, built
+
+Built as `bias_caveat` (default off). A Daily that only REJECTED off a
+key level satisfies alignment when the Weekly also rejected and H4
+carries the breakout. `rejection_times()` is the detector the engine
+never had — `detect_confirmations()` only ever emits breakouts and
+sweep+breaks, so a timeframe that merely rejected was invisible.
+
+The weekly rejection is not optional. Without it the rule collapses
+into "trade whenever H4 agrees", which is a much weaker system wearing
+the same name.
+
 ---
 
 ## 2. Liquidity
@@ -182,8 +194,20 @@ An A-shaped or V-shaped key level that:
 3. **overlaps an imbalance**
 4. has **liquidity resting beyond it**
 
-Video 17's "tested and respected before being disrespected" is
-condition 1, not a separate ranking rule.
+**Correction, operator 2026-09-22: these are not four required
+conditions.** *"It's not all of them -- the key level overlapping
+inside an imbalance WILL be a QMR kl."*
+
+So the DEFINITION is two things: a key level, overlapping an imbalance.
+That is what video-14 t=180 says outright — *"a QMR key level, which is
+an A-shaped key level that is overlapping inside of an imbalance"*. The
+"sponsored some level of sales" and "got disrespected" lines are what he
+PREFERS on top of a QMR level, not what makes one.
+
+Built as `require_qmr` (default off). `imbalance_overlap` has always
+been computed and has only ever chosen a stop rule, so the engine has
+been trading non-QMR levels constantly while measuring the condition
+and discarding it.
 
 ### Origin and continuation
 

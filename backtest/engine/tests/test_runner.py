@@ -2274,3 +2274,61 @@ def test_an_unconfirmed_av_pivot_is_not_eligible():
     from ..entries import disrespect_entry
 
     assert "i + n < idx" in inspect.getsource(disrespect_entry)
+
+
+def test_qmr_and_bias_caveat_are_both_off_by_default():
+    """Both change which trades exist. Every recorded backtest was
+    produced with them off and must stay comparable."""
+    import inspect
+    from ..runner import run_backtest
+
+    params = inspect.signature(run_backtest).parameters
+    assert params["require_qmr"].default is False
+    assert params["bias_caveat"].default is False
+
+
+def test_a_rejection_is_a_wick_through_with_a_close_back():
+    """The engine had no rejection detector at all -- detect_confirmations
+    only ever emits breakouts and sweep+breaks, so a timeframe that
+    merely rejected was invisible to alignment. A bearish rejection is
+    price wicking ABOVE a level and closing back below it."""
+    from ..key_levels import KeyLevel
+    from ..runner import rejection_times
+
+    level = KeyLevel(H1_BASE, 1.1050, "A", Direction.BEARISH,
+                     confirmed_at=H1_BASE)
+    rejected = H1(1, 1.1040, 1.1065, 1.1038, 1.1042)   # wicks over, closes under
+    broke_through = H1(2, 1.1040, 1.1070, 1.1038, 1.1068)  # closes beyond
+    untouched = H1(3, 1.1010, 1.1020, 1.1005, 1.1015)
+
+    times = rejection_times([rejected, broke_through, untouched], [level],
+                            Direction.BEARISH)
+    assert rejected.time in times
+    assert broke_through.time not in times, "a close beyond the level is a break, not a rejection"
+    assert untouched.time not in times
+
+
+def test_the_caveat_requires_the_weekly_rejection_too():
+    """Without it this collapses into "trade whenever H4 agrees", which
+    is a far weaker system wearing the same name. The daily confirmation
+    is the strictest gate in the engine and this is the only thing
+    standing in for it."""
+    import inspect
+    from ..runner import run_backtest
+
+    src = inspect.getsource(run_backtest)
+    assert "weekly_rejections[candidate.direction]" in src
+    # Both conditions, joined by and -- not either-or.
+    assert src.count("_rejected_recently(") >= 2
+
+
+def test_rejected_recently_respects_the_window():
+    from ..runner import _rejected_recently
+
+    t0 = pd.Timestamp("2026-01-01", tz="UTC")
+    times = [t0]
+    assert _rejected_recently(times, t0 + pd.Timedelta(days=10), pd.Timedelta(days=45)) is True
+    assert _rejected_recently(times, t0 + pd.Timedelta(days=60), pd.Timedelta(days=45)) is False
+    # Nothing before the query time.
+    assert _rejected_recently(times, t0 - pd.Timedelta(days=1), pd.Timedelta(days=45)) is False
+    assert _rejected_recently([], t0, pd.Timedelta(days=45)) is False
