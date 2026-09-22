@@ -2026,14 +2026,20 @@ def test_an_unknown_trigger_name_raises_rather_than_silently_doing_nothing():
 
 
 
-def _reaction(lows_highs):
-    """Build H1 candles from (low, high) pairs with bodies spanning them,
-    so swing detection and close-based breaks both have something to
-    work with."""
-    out = []
-    for i, (lo, hi) in enumerate(lows_highs):
-        out.append(H1(i, lo, hi, lo, hi))
-    return out
+def _leg(pullback_low, break_close):
+    """A bullish reaction leg with a real swing low and a real swing
+    high, so the structural sweep test has both sides to work with.
+
+    idx 1 is the swing LOW, idx 3 the swing HIGH, idx 4 the pullback
+    whose depth decides breakout vs sweep+break, idx 5 the break."""
+    return [
+        H1(0, 1.1025, 1.1030, 1.1020, 1.1028),
+        H1(1, 1.1012, 1.1015, 1.1000, 1.1010),   # swing LOW 1.1000
+        H1(2, 1.1012, 1.1025, 1.1010, 1.1022),
+        H1(3, 1.1025, 1.1040, 1.1020, 1.1038),   # swing HIGH 1.1040
+        H1(4, 1.1030, 1.1030, pullback_low, 1.1025),
+        H1(5, 1.1035, 1.1060, 1.1035, break_close),
+    ]
 
 
 def test_breakout_fires_on_a_close_beyond_the_minor_swing_the_reaction_left():
@@ -2041,24 +2047,19 @@ def test_breakout_fires_on_a_close_beyond_the_minor_swing_the_reaction_left():
     then closes back above that high."""
     from ..entries import breakout_entry
 
-    # low, minor high at idx 1, pullback, then close above the minor high.
-    candles = _reaction([(1.1000, 1.1010),
-                         (1.1005, 1.1030),   # minor swing high 1.1030
-                         (1.1008, 1.1020),
-                         (1.1015, 1.1040)])  # closes 1.1040 > 1.1030
-    assert breakout_entry(candles, 3, Direction.BULLISH) is True
+    candles = _leg(pullback_low=1.1015, break_close=1.1055)
+    assert breakout_entry(candles, 5, Direction.BULLISH) is True
 
 
 def test_breakout_does_not_fire_without_a_close_beyond_it():
     """A wick through is explicitly not a break -- body_closes_beyond is
-    the rule the rest of the engine already uses."""
+    the rule the rest of the engine already uses. The break candle's
+    HIGH reaches 1.1060, well past the 1.1040 swing; only its close
+    decides."""
     from ..entries import breakout_entry
 
-    candles = _reaction([(1.1000, 1.1010),
-                         (1.1005, 1.1030),
-                         (1.1008, 1.1020),
-                         (1.1010, 1.1025)])  # high 1.1025 < 1.1030
-    assert breakout_entry(candles, 3, Direction.BULLISH) is False
+    candles = _leg(pullback_low=1.1015, break_close=1.1038)
+    assert breakout_entry(candles, 5, Direction.BULLISH) is False
 
 
 def test_the_two_triggers_are_mutually_exclusive():
@@ -2070,49 +2071,52 @@ def test_the_two_triggers_are_mutually_exclusive():
     which label a trade gets."""
     from ..entries import breakout_entry, sweep_break_entry
 
-    # No sweep: the pullback low (1.1008) stays above the first low.
-    plain = _reaction([(1.1000, 1.1010),
-                       (1.1005, 1.1030),
-                       (1.1008, 1.1020),
-                       (1.1015, 1.1040)])
-    assert breakout_entry(plain, 3, Direction.BULLISH) is True
-    assert sweep_break_entry(plain, 3, Direction.BULLISH) is False
+    # Pullback holds above the swing low at 1.1000.
+    plain = _leg(pullback_low=1.1015, break_close=1.1055)
+    assert breakout_entry(plain, 5, Direction.BULLISH) is True
+    assert sweep_break_entry(plain, 5, Direction.BULLISH) is False
 
-    # Same shape, but the pullback digs BELOW the first low first.
-    swept = _reaction([(1.1000, 1.1010),
-                       (1.1005, 1.1030),
-                       (1.0990, 1.1020),   # 1.0990 < 1.1000 -- liquidity taken
-                       (1.1015, 1.1040)])
-    assert sweep_break_entry(swept, 3, Direction.BULLISH) is True
-    assert breakout_entry(swept, 3, Direction.BULLISH) is False
+    # Same leg, but the pullback digs BELOW that swing low first.
+    swept = _leg(pullback_low=1.0990, break_close=1.1055)
+    assert sweep_break_entry(swept, 5, Direction.BULLISH) is True
+    assert breakout_entry(swept, 5, Direction.BULLISH) is False
 
 
-def test_the_minor_swing_used_must_be_confirmed_by_entry_time():
+def test_the_swing_used_must_be_confirmed_by_entry_time():
     """A 1-bar fractal at j is only decidable at j+1, so j may be at most
     idx-1. Using an unconfirmed swing is the look-ahead this project
     already removed once."""
-    from ..entries import _recent_minor_swing
+    from ..entries import _recent_swing
 
-    candles = _reaction([(1.1000, 1.1010),
-                         (1.1005, 1.1030),
-                         (1.1008, 1.1020),
-                         (1.1015, 1.1040)])
-    j = _recent_minor_swing(candles, 3, Direction.BULLISH)
-    assert j is not None and j <= 2
+    candles = _leg(pullback_low=1.1015, break_close=1.1055)
+    j = _recent_swing(candles, 5, Direction.BULLISH, "high")
+    assert j is not None and j <= 4
+
+
+def test_there_is_no_lookback_bound_on_the_swing():
+    """Operator, 2026-09-22: "remove the 20 candle [rule], there is no
+    data to that -- a breakout is a breakout." A swing far back still
+    counts; padding the leg with quiet candles must not lose it."""
+    from ..entries import breakout_entry
+
+    candles = _leg(pullback_low=1.1015, break_close=1.1045)
+    # 40 quiet candles between the swing high and the break, none of
+    # which makes a new extreme either way.
+    filler = [H1(6 + i, 1.1032, 1.1034, 1.1029, 1.1031) for i in range(40)]
+    padded = candles[:5] + filler + [H1(46, 1.1035, 1.1060, 1.1033, 1.1055)]
+    assert breakout_entry(padded, len(padded) - 1, Direction.BULLISH) is True
 
 
 def test_the_bearish_case_mirrors():
-    """Built explicitly rather than with _reaction(), whose candles all
-    close at their high -- a bearish break needs a close at the low and
-    would never fire, which is a property of the fixture and not of the
-    rule."""
     from ..entries import breakout_entry, sweep_break_entry
 
     swept = [
-        H1(0, 1.1030, 1.1040, 1.1030, 1.1040),
-        H1(1, 1.1035, 1.1035, 1.1010, 1.1030),   # minor swing LOW 1.1010
-        H1(2, 1.1030, 1.1050, 1.1020, 1.1045),   # 1.1050 > 1.1040: high taken
-        H1(3, 1.1015, 1.1015, 1.0995, 1.1000),   # closes 1.1000 < 1.1010
+        H1(0, 1.1005, 1.1010, 1.1000, 1.1002),
+        H1(1, 1.1015, 1.1030, 1.1012, 1.1028),   # swing HIGH 1.1030
+        H1(2, 1.1020, 1.1025, 1.1010, 1.1015),
+        H1(3, 1.1012, 1.1015, 1.1000, 1.1005),   # swing LOW 1.1000
+        H1(4, 1.1005, 1.1035, 1.1002, 1.1010),   # 1.1035 > 1.1030: high taken
+        H1(5, 1.1005, 1.1008, 1.0980, 1.0990),   # closes 1.0990 < 1.1000
     ]
-    assert sweep_break_entry(swept, 3, Direction.BEARISH) is True
-    assert breakout_entry(swept, 3, Direction.BEARISH) is False
+    assert sweep_break_entry(swept, 5, Direction.BEARISH) is True
+    assert breakout_entry(swept, 5, Direction.BEARISH) is False

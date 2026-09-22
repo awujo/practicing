@@ -332,47 +332,34 @@ def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Dire
     return best[1] if best else None
 
 
-# How far back from the confirmation candle to look for the minor swing
-# the reaction created.
-#
-# There is no taught rule for this and the operator said so plainly
-# (2026-09-22): "SLK doesn't have a rule for that ... we don't have any
-# rule for the breakout candle number, what we want to see is a
-# breakout." 20 was accepted as a working bound -- "for a confirmation
-# breakout we should have it in like 20 candles."
-#
-# So this is a chosen parameter, not a transcribed one. It bounds how
-# stale a reaction may be before its break stops counting, which is a
-# real question the source simply does not answer. Sweeping it is
-# legitimate tuning; treating 20 as doctrine is not.
-REACTION_STRUCTURE_LOOKBACK = 20
+def _recent_swing(candles: list[Candle], before: int, direction: Direction,
+                  kind: str) -> int | None:
+    """Index of the most recent `kind` ("high"/"low") swing strictly
+    before `before`, or None.
 
+    NO LOOKBACK BOUND. An earlier version capped the search at 20
+    candles; the operator removed it (2026-09-22): "remove the 20 candle
+    [rule], there is no data to that -- a breakout is a breakout." If
+    price closes beyond the swing the reaction left, that is the
+    confirmation, whether the swing formed three candles ago or fifty.
 
-def _recent_minor_swing(candles: list[Candle], idx: int, direction: Direction,
-                        lookback: int = REACTION_STRUCTURE_LOOKBACK) -> int | None:
-    """Index of the most recent minor swing the reaction left behind: a
-    swing HIGH for a bullish entry, a swing LOW for a bearish one.
+    Scans backwards and returns on the FIRST hit, which is by
+    construction the most recent one, so the common case costs a few
+    comparisons rather than a walk to the start of history.
 
-    n=1 fractal, and only swings decidable BY `idx` are eligible -- a
-    1-bar fractal at j is confirmed at j+1, so j may be at most idx-1.
-    Using a swing that is not yet confirmed at entry time is the
-    look-ahead this project already removed once (see
-    timeframes.infer_bar_length and the 2026-09-18 review, finding 1)."""
-    start = max(1, idx - lookback)
-    for j in range(idx - 1, start - 1, -1):
-        if j + 1 > idx:
-            continue
-        if direction == Direction.BULLISH:
-            if is_swing_high(candles, j, n=1):
-                return j
-        else:
-            if is_swing_low(candles, j, n=1):
-                return j
+    n=1 fractal, and only swings decidable BY `before` are eligible -- a
+    1-bar fractal at j is confirmed at j+1, so j may be at most
+    before-1. Using a swing not yet confirmed at entry time is the
+    look-ahead this project already removed once (2026-09-18 review,
+    finding 1), and it would be very easy to reintroduce here."""
+    test = is_swing_high if kind == "high" else is_swing_low
+    for j in range(before - 1, 0, -1):
+        if test(candles, j, n=1):
+            return j
     return None
 
 
-def _reaction_structure(candles: list[Candle], idx: int, direction: Direction,
-                        lookback: int = REACTION_STRUCTURE_LOOKBACK):
+def _reaction_structure(candles: list[Candle], idx: int, direction: Direction):
     """(broke, swept) for the candle at `idx`.
 
     Both of Bishop's highest-rated confirmations share a skeleton, drawn
@@ -392,42 +379,50 @@ def _reaction_structure(candles: list[Candle], idx: int, direction: Direction,
     first one -- measured off the drawing, ~1.86570 against ~1.86660 --
     taking that low's liquidity before breaking up.
 
+    The low being swept is found STRUCTURALLY: the swing low immediately
+    preceding the minor high, i.e. the other side of the same leg. It
+    used to be the minimum over a fixed 20-candle window, which is a
+    different and worse thing -- with no window to bound it that version
+    would have reduced to "a new all-time low", which no reaction ever
+    makes. Removing the window forced the definition to become the one
+    the drawing actually shows.
+
     Returned together so the two triggers stay mutually exclusive by
     construction rather than by the order a caller happens to check
     them in."""
-    j = _recent_minor_swing(candles, idx, direction, lookback)
+    swing_kind = "high" if direction == Direction.BULLISH else "low"
+    j = _recent_swing(candles, idx, direction, swing_kind)
     if j is None:
         return False, False
 
     level = candles[j].high if direction == Direction.BULLISH else candles[j].low
-    broke = body_closes_beyond(candles[idx], level, direction)
-    if not broke:
+    if not body_closes_beyond(candles[idx], level, direction):
         return False, False
 
-    # The low (bullish) that preceded the minor high -- the liquidity a
-    # sweep goes after.
-    start = max(0, idx - lookback)
+    # The other side of the leg: the swing low (bullish) that the minor
+    # high lifted away from. That is the liquidity a sweep goes after.
+    opposite = _recent_swing(candles, j, direction,
+                             "low" if direction == Direction.BULLISH else "high")
+    if opposite is None:
+        return True, False
+
     if direction == Direction.BULLISH:
-        first = min((c.low for c in candles[start:j]), default=None)
-        swept = first is not None and any(
-            c.low < first for c in candles[j + 1:idx + 1])
+        first = candles[opposite].low
+        swept = any(c.low < first for c in candles[j + 1:idx + 1])
     else:
-        first = max((c.high for c in candles[start:j]), default=None)
-        swept = first is not None and any(
-            c.high > first for c in candles[j + 1:idx + 1])
+        first = candles[opposite].high
+        swept = any(c.high > first for c in candles[j + 1:idx + 1])
     return True, swept
 
 
-def breakout_entry(candles: list[Candle], idx: int, direction: Direction,
-                   lookback: int = REACTION_STRUCTURE_LOOKBACK) -> bool:
+def breakout_entry(candles: list[Candle], idx: int, direction: Direction) -> bool:
     """SLK_SPEC.md 5.4. A close beyond the minor swing the reaction left,
     with NO prior sweep of the earlier extreme -- that case is 5.5."""
-    broke, swept = _reaction_structure(candles, idx, direction, lookback)
+    broke, swept = _reaction_structure(candles, idx, direction)
     return broke and not swept
 
 
-def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction,
-                      lookback: int = REACTION_STRUCTURE_LOOKBACK) -> bool:
+def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction) -> bool:
     """SLK_SPEC.md 5.5. The same break, but price first took out the
     earlier low's (or high's) liquidity.
 
@@ -435,5 +430,5 @@ def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction,
     ask me which ones are likely best, personally I would tell you these
     two ... if you have these two, [missing it] is a missed entry"
     (part5 t=420-435)."""
-    broke, swept = _reaction_structure(candles, idx, direction, lookback)
+    broke, swept = _reaction_structure(candles, idx, direction)
     return broke and swept

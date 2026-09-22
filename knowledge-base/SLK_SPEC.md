@@ -300,6 +300,19 @@ Measured off the drawing: first low ~1.86660, second low ~1.86570,
 i.e. the sweep goes visibly beneath. The break that follows is the same
 break as 5.4.
 
+### Neither is bounded by a candle count
+
+The break is a break whenever it happens. `_recent_swing()` scans back
+to the most recent confirmed swing with no limit, and the sweep is
+tested against **the swing low on the other side of that same leg** --
+not against a minimum over some window.
+
+That second part only became right when the window went away. With a
+fixed window the sweep was "a new low within N candles", which is a
+different rule; unbounded, that version would have degenerated to "a
+new all-time low", which no reaction ever makes. Removing the arbitrary
+number forced the definition into the one the drawing actually shows.
+
 ### Why these two are buildable now
 
 They are the same two primitives the engine already uses for BIAS --
@@ -420,12 +433,12 @@ Two measured examples, read off full-resolution frames:
 - Tighter stops measured badly on the same broken engine: median 9.4 ->
   7.7 pips but win rate 51.7% -> 38.0%.
 - Nothing in this document has been measured on the fixed engine.
-- The window in which the break must occur has **no taught rule**, and
-  the operator confirmed it: *"SLK doesn't have a rule for that ... we
-  don't have any rule for the breakout candle number, what we want to
-  see is a breakout."* 20 candles was accepted as a working bound
-  (`REACTION_STRUCTURE_LOOKBACK`). It is a chosen parameter, legitimate
-  to sweep, and must not be quoted back as doctrine.
+- There is **no window** on the break, and there should not be. The
+  20-candle bound was removed on the operator's instruction
+  (2026-09-22): *"remove the 20 candle [rule], there is no data to that
+  -- a breakout is a breakout."* The rule is now purely structural: the
+  most recent confirmed swing before the entry candle, however far back
+  it formed.
 - The ladder reaches M5 in the source, but H1-only is a deliberate
   scope decision for now. Whether the cached data even goes below H1 is
   still unchecked, so widening it later may need a data fetch first.
