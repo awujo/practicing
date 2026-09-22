@@ -1079,9 +1079,26 @@ def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
     return None
 
 
+# Triggers whose geometry puts the confirmation AWAY from the key level,
+# so a per-candle touch test cannot see them.
+AWAY_FROM_LEVEL_TRIGGERS = frozenset({"breakout", "sweep_break"})
+
+
+def resolve_reaction_gate(triggers: tuple[str, ...]) -> str:
+    """Which touch gate a trigger set needs, when the caller has not said.
+
+    Derived rather than defaulted, because the wrong pairing fails
+    SILENTLY: `breakout` under a per-candle gate simply never produces a
+    trade, and the A/B would have read as "the taught triggers find
+    fewer setups" when the truth is that two of them were switched off
+    by a condition their own geometry cannot satisfy."""
+    return "window" if AWAY_FROM_LEVEL_TRIGGERS & set(triggers) else "candle"
+
+
 def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                             max_per_setup: int = MAX_CANDIDATES_PER_SETUP,
-                            triggers: tuple[str, ...] = TRIGGERS_SHIPPED
+                            triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
+                            reaction_gate: str | None = None
                             ) -> list[EntryCandidate]:
     """For each setup: bounded forward-scan H1 for the sweep of
     `liquidity_price`, then -- "we don't predict, we react" -- try each of
@@ -1113,6 +1130,8 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
     Deduped by H1 index so two setups converging on the same candle
     cannot both claim it."""
     times = [c.time for c in h1]
+    if reaction_gate is None:
+        reaction_gate = resolve_reaction_gate(triggers)
     candidates: list[EntryCandidate] = []
     seen_indices: set[int] = set()
 
@@ -1148,11 +1167,32 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
         for level in setup.reaction_level_candidates:
             level_price = level.price
             found: list[EntryCandidate] = []
+            touched_yet = False
             for idx in range(sweep_idx + 1, min(sweep_idx + 1 + REACTION_LOOKAHEAD, len(h1))):
                 prev, curr = h1[idx - 1], h1[idx]
-                touched = ((prev.low <= level_price <= prev.high)
-                           or (curr.low <= level_price <= curr.high))
-                if not touched or idx in seen_indices:
+                touches_now = ((prev.low <= level_price <= prev.high)
+                               or (curr.low <= level_price <= curr.high))
+                touched_yet = touched_yet or touches_now
+                # "candle": the trigger candle itself must span the level.
+                # "window": price must have REACHED the level at some point
+                # in this window, and the confirmation may come later.
+                #
+                # The distinction is not cosmetic, and getting it wrong
+                # silently disables triggers rather than failing. A
+                # breakout (SLK_SPEC 5.4) closes beyond the minor swing
+                # high, which is ABOVE the key level -- so the break
+                # candle does not span the level and never will. Under
+                # "candle" the pattern fires and the gate throws it away:
+                # measured on a synthetic leg, breakout_entry() returned
+                # True at the break while the gate returned False.
+                #
+                # The taught sequence is reach the level, react, THEN
+                # confirm on the lower timeframe. "window" is that
+                # reading. "candle" stays the default so the shipped
+                # two-candle triggers, which are at-the-level patterns by
+                # construction, measure exactly as they always have.
+                gate = touched_yet if reaction_gate == "window" else touches_now
+                if not gate or idx in seen_indices:
                     continue
                 trigger = _reaction_trigger(h1, idx, setup.direction, triggers)
                 if trigger is not None:

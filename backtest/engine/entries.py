@@ -325,8 +325,14 @@ def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Dire
         # Step 3: price is back at the level on this candle.
         if not (curr.low <= level.price <= curr.high):
             continue
-        # Nearest such level to the return wins -- the one price is
-        # actually reacting from, not an older one further away.
+        # MOST RECENTLY FORMED wins, not nearest in price. The comment
+        # here used to claim "nearest", which is a different rule and not
+        # the one written: `i` is the level's index in the series. Both
+        # readings pick the same level in a clean one-way move and differ
+        # in chop, where several disrespected levels can sit inside the
+        # return candle's range. Most-recent is kept because it is what
+        # has been measured; nearest-in-price is a legitimate variant and
+        # has never been tried.
         if best is None or i > best[0]:
             best = (i, level)
     return best[1] if best else None

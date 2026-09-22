@@ -2143,3 +2143,45 @@ def test_every_taught_trigger_has_its_own_stop_rule():
 
     # And an unknown one must raise rather than fall through.
     assert "no stop rule for trigger" in src
+
+
+def test_the_touch_gate_would_silently_switch_the_new_triggers_off():
+    """Regression for a bug that produced no error and no failing test.
+
+    `breakout` closes beyond the MINOR SWING HIGH, which sits above the
+    key level -- so the break candle does not span the level. Under the
+    per-candle touch gate the pattern fires and the gate discards it, and
+    the A/B would have read as "the taught triggers find fewer setups"
+    when two of the four were switched off by a condition their geometry
+    cannot satisfy."""
+    from ..entries import breakout_entry
+    from ..runner import resolve_reaction_gate, AWAY_FROM_LEVEL_TRIGGERS
+    from ..runner import TRIGGERS_SHIPPED, TRIGGERS_TAUGHT
+
+    leg = _leg(pullback_low=1.1015, break_close=1.1055)
+    assert breakout_entry(leg, 5, Direction.BULLISH) is True
+
+    # The key level is down at the reaction low; the break candle is not
+    # anywhere near it.
+    level_price = 1.1000
+    prev, curr = leg[4], leg[5]
+    touches_now = ((prev.low <= level_price <= prev.high)
+                   or (curr.low <= level_price <= curr.high))
+    assert touches_now is False, "the break candle must not span the level"
+
+    # Which is why the gate is derived from the trigger set, not defaulted.
+    assert resolve_reaction_gate(TRIGGERS_SHIPPED) == "candle"
+    assert resolve_reaction_gate(TRIGGERS_TAUGHT) == "window"
+    assert AWAY_FROM_LEVEL_TRIGGERS == {"breakout", "sweep_break"}
+
+
+def test_the_shipped_set_keeps_the_per_candle_gate():
+    """The shipped triggers are at-the-level two-candle patterns, so the
+    looser gate would change their numbers. Every recorded backtest was
+    produced under "candle" and must stay comparable."""
+    from ..runner import resolve_reaction_gate
+
+    assert resolve_reaction_gate(("engulfing", "fourth_man")) == "candle"
+    assert resolve_reaction_gate(("open_close", "fourth_man")) == "candle"
+    # One away-from-level trigger is enough to need the window.
+    assert resolve_reaction_gate(("engulfing", "breakout")) == "window"
