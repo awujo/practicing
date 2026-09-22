@@ -470,17 +470,24 @@ Two measured examples, read off full-resolution frames:
 
 ## 8. What the engine does differently
 
-| # | taught | engine |
-|---|---|---|
-| 1 | target IS the ERL | `min(3R, ERL)` — truncates every trade above 3R |
-| 2 | "engulfing" = engulfed open-close key level | `is_engulfing()`, a candlestick engulfing |
-| 3 | disrespect applies to all four shapes | open-close only (and not wired in) |
-| 4 | breakout + sweep/break confirmations, rated highest (5.4, 5.5) | BUILT 2026-09-19, in TRIGGERS_TAUGHT, not yet measured |
-| 5 | confirmation on H3/H2/H1/M45/M30/M5, written on the chart | H1 only -- deliberate, scoped by the operator |
-| 6 | setup = 4 conditions incl. imbalance overlap | primitives all exist, none composed |
-| 7 | origin vs continuation are different trades | `origin_kind="any"` |
-| 8 | daily-only bias with reduced target | absent |
-| 9 | stop at the setup's invalidation zone | per-trigger, and #2's is built on the wrong pattern |
+| # | taught | engine | state |
+|---|---|---|---|
+| 1 | target IS the ERL | `min(3R, ERL)` | `--erl-as-target` |
+| 2 | "engulfing" = a disrespected key level | `is_engulfing()`, a candlestick engulfing | `disrespect_entry()` |
+| 3 | disrespect applies to all four shapes | open-close only | **built** -- A/V/open-close, overshoot allowed, opposite-breakout invalidation |
+| 4 | breakout + sweep/break, rated highest | absent | **built** -- 5.4/5.5 off the frames |
+| 5 | ladder H3..M5, written on his chart | H1 only | **deliberate** -- scoped by the operator |
+| 6 | QMR key level | not detected at all | **built** -- `detect_quasimodo_levels()`, `--require-qmr` |
+| 6b | (imbalance overlap, a separate property) | computed, only picked a stop | `--require-imbalance-overlap` |
+| 7 | the bias caveat: daily rejects, condition 3 descends to H4 | daily must break out | `--bias-caveat` |
+| 8 | stop at the setup's invalidation zone | per-trigger | **built** for the new triggers |
+| 9 | **origin vs continuation are different trades** | `origin_kind="any"` | **NOT BUILT** |
+| 10 | **daily-only bias with a REDUCED target** | absent | **NOT BUILT** |
+| 11 | trendline liquidity | absent | **NOT BUILT** (bd2 t=1125, one mention) |
+| 12 | the breakout candle's own extremes are liquidity | not modelled | **NOT BUILT** (bias-2 t=795-885) |
+
+Everything marked built defaults OFF, so no recorded number has moved.
+**Nothing in this table has been measured on the fixed engine.**
 
 ---
 
