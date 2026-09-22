@@ -69,15 +69,32 @@ WINDOWS_PATH = os.path.join(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))), "bot", "history_windows.json")
 
 
-def load_windows(path=WINDOWS_PATH):
-    """The same file the orchestrator reads. Loaded rather than
-    duplicated: a timing run against different windows than the ones
-    live uses would be measuring a machine nobody runs."""
+def load_windows(path=WINDOWS_PATH, instruments=None):
+    """The same file AND the same resolver the live bot uses.
+
+    An earlier version re-implemented the two-tier lookup as
+    `per.get(inst, default)`. That happens to agree with the real rule,
+    but only by an accident of Python semantics: `dict.get` returns the
+    default when a key is ABSENT, not when its value is null -- and an
+    explicit null in this file means something specific and load-bearing:
+
+        "an explicit null -- that's 'confirmed NOT safe to cap' (e.g.
+         GBPNZD, which never converged even at a 15-year search
+         ceiling), deliberately different from 'no data yet'"
+                        run_live.resolve_history_window_years
+
+    Agreeing by luck is not agreeing. A timing run against different
+    windows than live uses would be measuring a machine nobody runs, so
+    this now calls the live resolver and cannot drift from it."""
+    from bot.run_live import resolve_history_window_years
+
     with open(path) as fh:
         data = json.load(fh)
-    default = data.get("default")
-    per = data.get("instruments", {})
-    return lambda inst: per.get(inst, default)
+    instruments = tuple(instruments or sorted(DUKASCOPY_INSTRUMENTS))
+    resolved = resolve_history_window_years(data, instruments)
+    # Uncapped instruments are simply absent, matching run_backtest's
+    # own None-means-unbounded convention.
+    return lambda inst: resolved.get(inst)
 
 
 CONFIGS = {
@@ -103,11 +120,11 @@ def main():
     if args.max_pools is not None:
         kwargs["single_candle_max_pools"] = args.max_pools
 
-    window_for = load_windows()
     if args.instruments.strip().upper() == "ALL":
         instruments = sorted(DUKASCOPY_INSTRUMENTS)
     else:
         instruments = [s.strip().upper() for s in args.instruments.split(",") if s.strip()]
+    window_for = load_windows(instruments=instruments)
 
     print(f"config: {args.config}")
     for k, v in sorted(kwargs.items()):
@@ -139,7 +156,10 @@ def main():
         if secs > slowest[1]:
             slowest = (instrument, secs)
         w = window or {}
-        label = "/".join(str(w.get(k, "-")) for k in ("D", "W", "H4", "H1"))
+        # "uncapped" rather than dashes: GBPNZD's null is a decision, not
+        # missing data, and the row should say which.
+        label = ("uncapped (full history)" if not w
+                 else "/".join(str(w.get(k, "-")) for k in ("D", "W", "H4", "H1")))
         print(f"{instrument:<12} {label:<22} {secs:>9.1f} {len(recs):>7}", flush=True)
 
     if not timed:

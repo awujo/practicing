@@ -6,14 +6,25 @@ from ..live_cycle_timing import CONFIGS, CYCLE_BUDGET_S, STALE_CUTOFF_S, load_wi
 from ..slk_system import SLK_OPERATIONAL, slk_kwargs
 
 
-def test_windows_come_from_the_file_the_orchestrator_reads():
-    """Timing against different windows than live uses would be measuring
-    a machine nobody runs."""
-    window_for = load_windows()
-    # A default exists and is small -- that trimming is the whole reason
-    # live keeps up while a full backtest takes minutes per instrument.
-    assert window_for("SOME_UNLISTED_PAIR") is not None
+def test_windows_use_the_live_resolver_not_a_reimplementation():
+    """An explicit null in history_windows.json means "confirmed NOT safe
+    to cap" -- GBPNZD never converged even at a 15-year ceiling -- which
+    is deliberately different from "absent, use the default".
+
+    A `per.get(inst, default)` reimplementation agrees with that by
+    accident of Python semantics, not by construction. Agreeing by luck
+    is not agreeing, so the real resolver is called."""
+    import inspect
+
+    from ..live_cycle_timing import load_windows as lw
+    assert "resolve_history_window_years" in inspect.getsource(lw)
+
+    window_for = load_windows(instruments=("EURUSD", "GBPNZD", "USOIL"))
     assert window_for("EURUSD")["H1"] >= 1
+    # Explicit null -> uncapped, i.e. absent from the resolved mapping.
+    assert window_for("GBPNZD") is None
+    # Absent from the file -> the default applies.
+    assert window_for("USOIL") is not None
 
 
 def test_it_can_time_both_the_shipped_and_the_slk_configuration():
