@@ -199,7 +199,7 @@ from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective
                     confirmation_known_at)
 from .entries import (
     is_engulfing, fourth_man_confirmation_level, classify_entry_pattern, EntryPattern,
-    open_close_disrespect_entry, breakout_entry, sweep_break_entry,
+    open_close_disrespect_entry, disrespect_entry, breakout_entry, sweep_break_entry,
     origin_stop_loss, imbalance_stop_loss, engulfing_stop_loss, fourth_man_stop_loss,
     aggressive_entry_price, conservative_entry_price,
 )
@@ -1041,7 +1041,7 @@ TRIGGERS_SHIPPED = ("engulfing", "fourth_man")
 # H3/H2/H1/M45/M30/M5, but H1 only is a deliberate scope decision
 # (operator, 2026-09-19: "for now we can use only 1H"), not an
 # oversight.
-TRIGGERS_TAUGHT = ("sweep_break", "breakout", "open_close", "fourth_man")
+TRIGGERS_TAUGHT = ("sweep_break", "breakout", "disrespect", "fourth_man")
 
 
 def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
@@ -1061,7 +1061,14 @@ def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
         if name == "engulfing":
             if is_engulfing(prev, curr, direction):
                 return "engulfing"
+        elif name == "disrespect":
+            if disrespect_entry(candles, idx, direction) is not None:
+                return "disrespect"
         elif name == "open_close":
+            # The narrow predecessor: open-close shapes only, and the
+            # return had to SPAN the level. Kept so the two can be A/B'd
+            # against each other rather than one silently replacing the
+            # other.
             if open_close_disrespect_entry(candles, idx, direction) is not None:
                 return "open_close"
         elif name == "breakout":
@@ -2023,24 +2030,24 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 stop_loss = natural
                 stop_kind = "engulfing"
                 stop_fallback_used = False
-        elif candidate.trigger == "open_close":
+        elif candidate.trigger in ("disrespect", "open_close"):
             # SLK_SPEC 5.2. The stop goes on the wick of the candle that
             # DISRESPECTED the level -- video-14: "stop loss is just
             # going to be a little bit above this particular high" --
             # which is the confirming candle's own extreme, not a
             # two-candle span.
-            trigger_type = "open_close"
+            trigger_type = candidate.trigger
             natural = origin_stop_loss(
                 curr.low if effective == Direction.BULLISH else curr.high,
                 effective, pip_size=pip_size)
             natural_stop_loss = natural
             if _natural_stop_too_wide(entry_price, natural, pip_size):
                 stop_loss = origin_stop_loss(new_key_level.price, effective, pip_size=pip_size)
-                stop_kind = "open_close_kl_fallback"
+                stop_kind = f"{trigger_type}_kl_fallback"
                 stop_fallback_used = True
             else:
                 stop_loss = natural
-                stop_kind = "open_close"
+                stop_kind = trigger_type
                 stop_fallback_used = False
         elif candidate.trigger in ("breakout", "sweep_break"):
             # SLK_SPEC 5.4/5.5. These two have no candle-wick anchor of

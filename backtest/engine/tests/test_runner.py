@@ -1971,7 +1971,7 @@ def test_the_default_trigger_set_is_exactly_what_has_always_shipped():
 
     assert TRIGGERS_SHIPPED == ("engulfing", "fourth_man")
     # All four Bishop enumerates, his two highest-rated first.
-    assert TRIGGERS_TAUGHT == ("sweep_break", "breakout", "open_close", "fourth_man")
+    assert TRIGGERS_TAUGHT == ("sweep_break", "breakout", "disrespect", "fourth_man")
     for fn in (_reaction_trigger, _find_entry_candidates, run_backtest):
         param = inspect.signature(fn).parameters.get("triggers") \
             or inspect.signature(fn).parameters.get("confirmation_triggers")
@@ -1990,7 +1990,7 @@ def test_the_taught_set_does_not_fire_on_a_classic_candlestick_engulfing():
     # Same two candles, taught set: no open-close key level was built and
     # disrespected, so nothing fires.
     assert _reaction_trigger([prev, curr], 1, Direction.BULLISH,
-                             triggers=TRIGGERS_TAUGHT) is None
+                             triggers=("disrespect", "open_close")) is None
 
 
 def test_the_taught_set_fires_on_a_disrespected_open_close_level():
@@ -2006,14 +2006,14 @@ def test_the_taught_set_fires_on_a_disrespected_open_close_level():
         H1(3, 1.1058, 1.1059, 1.1035, 1.1050),   # comes BACK to it: the entry
     ]
     assert _reaction_trigger(candles, 3, Direction.BULLISH,
-                             triggers=TRIGGERS_TAUGHT) == "open_close"
+                             triggers=("open_close",)) == "open_close"
 
     # The disrespect candle itself is not the entry -- price has not come
     # back yet. Four steps, not three; this is the step it is easiest to
     # drop, and dropping it would enter at the top of the move instead of
     # on the return to the level.
     assert _reaction_trigger(candles, 2, Direction.BULLISH,
-                             triggers=TRIGGERS_TAUGHT) is None
+                             triggers=("open_close",)) is None
 
 
 def test_an_unknown_trigger_name_raises_rather_than_silently_doing_nothing():
@@ -2089,7 +2089,7 @@ def test_the_swing_used_must_be_confirmed_by_entry_time():
     from ..entries import _recent_swing
 
     candles = _leg(pullback_low=1.1015, break_close=1.1055)
-    j = _recent_swing(candles, 5, Direction.BULLISH, "high")
+    j = _recent_swing(candles, 5, "high")
     assert j is not None and j <= 4
 
 
@@ -2182,6 +2182,95 @@ def test_the_shipped_set_keeps_the_per_candle_gate():
     from ..runner import resolve_reaction_gate
 
     assert resolve_reaction_gate(("engulfing", "fourth_man")) == "candle"
-    assert resolve_reaction_gate(("open_close", "fourth_man")) == "candle"
+    assert resolve_reaction_gate(("disrespect", "fourth_man")) == "candle"
     # One away-from-level trigger is enough to need the window.
     assert resolve_reaction_gate(("engulfing", "breakout")) == "window"
+
+
+def _flip_leg(return_low, opposite_break=False):
+    """A bearish open-close level that gets disrespected upward, then
+    revisited. `return_low` controls whether the return merely reaches
+    the level or pokes through it."""
+    c = [
+        H1(0, 1.1050, 1.1055, 1.1040, 1.1042),   # bearish
+        H1(1, 1.1042, 1.1044, 1.1030, 1.1032),   # bearish -> level at 1.1042
+        H1(2, 1.1032, 1.1060, 1.1030, 1.1058),   # closes ABOVE it: disrespect
+    ]
+    if opposite_break:
+        # Swing low at idx 4 (1.1044, with higher lows either side), then
+        # a close beneath it at idx 6: a bearish breakout after the flip,
+        # which kills the setup however nicely price then returns.
+        c += [
+            H1(3, 1.1058, 1.1059, 1.1048, 1.1052),
+            H1(4, 1.1052, 1.1052, 1.1044, 1.1046),   # swing low 1.1044
+            H1(5, 1.1046, 1.1050, 1.1046, 1.1049),
+            H1(6, 1.1049, 1.1050, 1.1035, 1.1038),   # closes below 1.1044
+            H1(7, 1.1041, 1.1041, return_low, 1.1039),
+        ]
+    else:
+        c += [
+            H1(3, 1.1058, 1.1059, 1.1050, 1.1052),
+            # High deliberately BELOW the 1.1042 level when return_low is
+            # low, so the candle does not span it -- that is the case the
+            # narrow predecessor throws away.
+            H1(4, 1.1041, 1.1041, return_low, 1.1039),
+        ]
+    return c
+
+
+def test_the_disrespect_entry_takes_a_return_that_pokes_through_the_level():
+    """Operator, 2026-09-22: price "can still come to the flip level too
+    or even below". The predecessor required the entry candle to SPAN
+    the level, which throws away every return that overshoots -- a
+    common and perfectly valid case."""
+    from ..entries import disrespect_entry, open_close_disrespect_entry
+
+    through = _flip_leg(return_low=1.1035)   # well below the 1.1042 level
+    assert disrespect_entry(through, 4, Direction.BULLISH) is not None
+    # The narrow version cannot see it: the candle does not span 1.1042.
+    assert open_close_disrespect_entry(through, 4, Direction.BULLISH) is None
+
+    # And a return that merely reaches the level still works.
+    touching = _flip_leg(return_low=1.1041)
+    assert disrespect_entry(touching, 4, Direction.BULLISH) is not None
+
+
+def test_a_breakout_back_the_other_way_kills_the_flipped_level():
+    """"but it must not create a breakout back to the opposite
+    direction". A close beneath a swing low formed after the disrespect
+    invalidates the setup, however nicely price then returns."""
+    from ..entries import disrespect_entry
+
+    killed = _flip_leg(return_low=1.1035, opposite_break=True)
+    assert disrespect_entry(killed, 7, Direction.BULLISH) is None
+
+
+def test_the_disrespect_entry_is_not_limited_to_open_close_shapes():
+    """bias-1 t=195-300 applies the flip to A, V and open-close alike.
+    An A-shape closed above becomes a level to BUY from."""
+    from ..entries import disrespect_entry
+
+    # A-shape peak at idx 2 (close 1.1060 is the local max, n=2 either
+    # side), disrespected upward at idx 6, returned to at idx 7.
+    c = [
+        H1(0, 1.1000, 1.1012, 1.0998, 1.1010),
+        H1(1, 1.1010, 1.1040, 1.1008, 1.1035),
+        H1(2, 1.1035, 1.1065, 1.1030, 1.1060),   # A-shape pivot, close 1.1060
+        H1(3, 1.1060, 1.1062, 1.1030, 1.1035),
+        H1(4, 1.1035, 1.1038, 1.1010, 1.1015),
+        H1(5, 1.1015, 1.1020, 1.1008, 1.1012),
+        H1(6, 1.1012, 1.1080, 1.1010, 1.1075),   # closes ABOVE 1.1060
+        H1(7, 1.1075, 1.1078, 1.1055, 1.1070),   # returns to it
+    ]
+    level = disrespect_entry(c, 7, Direction.BULLISH)
+    assert level is not None
+    assert level.shape == "A", f"expected the flipped A-shape, got {level.shape}"
+
+
+def test_an_unconfirmed_av_pivot_is_not_eligible():
+    """An A/V pivot at i is only confirmed n bars later. Using one before
+    that is the look-ahead removed on 2026-09-18."""
+    import inspect
+    from ..entries import disrespect_entry
+
+    assert "i + n < idx" in inspect.getsource(disrespect_entry)

@@ -137,6 +137,24 @@ Four shapes (bias-1 t=60-180):
 
 Applies to **all four shapes**, not just open-close.
 
+Two refinements from the operator, 2026-09-22, both of which the
+open-close-only implementation had wrong:
+
+- **The return may overshoot the level.** *"It can still come to the
+  flip level too or even below."* Requiring the entry candle to SPAN
+  the level throws away every return that pokes through it.
+- **Invalidation is a breakout back the other way.** *"but it must not
+  create a breakout back to the opposite direction."* Between the
+  disrespect and the return, no break of structure against the trade --
+  a body close beyond a swing that formed AFTER the flip. A wick through
+  is not enough, and a close beyond a swing that predates the flip is
+  just price retracing into the level, which is the setup rather than
+  its invalidation.
+
+Implemented as `disrespect_entry()`. The narrow predecessor
+`open_close_disrespect_entry()` is kept so the two can be compared
+rather than one silently replacing the other.
+
 ### QMR = Quasimodo
 
 The operator supplied the pattern directly. Bullish: `L -> H -> LL

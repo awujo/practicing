@@ -114,7 +114,8 @@ from enum import Enum
 
 from .candles import Candle
 from .structure import Direction, body_closes_beyond, is_swing_high, is_swing_low
-from .key_levels import KeyLevel, detect_open_close_level, is_disrespected
+from .key_levels import (KeyLevel, detect_open_close_level, is_disrespected,
+                         is_close_peak, is_close_trough)
 
 
 def is_engulfing(prev: Candle, curr: Candle, direction: Direction) -> bool:
@@ -338,8 +339,7 @@ def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Dire
     return best[1] if best else None
 
 
-def _recent_swing(candles: list[Candle], before: int, direction: Direction,
-                  kind: str) -> int | None:
+def _recent_swing(candles: list[Candle], before: int, kind: str) -> int | None:
     """Index of the most recent `kind` ("high"/"low") swing strictly
     before `before`, or None.
 
@@ -397,7 +397,7 @@ def _reaction_structure(candles: list[Candle], idx: int, direction: Direction):
     construction rather than by the order a caller happens to check
     them in."""
     swing_kind = "high" if direction == Direction.BULLISH else "low"
-    j = _recent_swing(candles, idx, direction, swing_kind)
+    j = _recent_swing(candles, idx, swing_kind)
     if j is None:
         return False, False
 
@@ -407,7 +407,7 @@ def _reaction_structure(candles: list[Candle], idx: int, direction: Direction):
 
     # The other side of the leg: the swing low (bullish) that the minor
     # high lifted away from. That is the liquidity a sweep goes after.
-    opposite = _recent_swing(candles, j, direction,
+    opposite = _recent_swing(candles, j,
                              "low" if direction == Direction.BULLISH else "high")
     if opposite is None:
         return True, False
@@ -438,3 +438,118 @@ def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction) -> 
     (part5 t=420-435)."""
     broke, swept = _reaction_structure(candles, idx, direction)
     return broke and swept
+
+
+def _opposite_breakout_between(candles: list[Candle], lo: int, hi: int,
+                               direction: Direction) -> bool:
+    """Did price break structure AGAINST `direction` between `lo` and `hi`?
+
+    The operator's invalidation for a flipped level (2026-09-22): price
+    may return to it "or even below, but it must not create a breakout
+    back to the opposite direction."
+
+    "Breakout" is read the same way it is read everywhere else in this
+    engine and in SLK_SPEC 5.4 -- a body close beyond a confirmed swing.
+    For a bullish setup the killer is a close below a swing low that
+    formed after the disrespect; a wick through it is not enough, which
+    is the `body_closes_beyond` rule the rest of the code already uses.
+
+    Only swings formed AFTER `lo` count. A close below some swing low
+    that predates the flip is just price retracing into the level, which
+    is the setup, not its invalidation."""
+    kind = "low" if direction == Direction.BULLISH else "high"
+    opposite = Direction.BEARISH if direction == Direction.BULLISH else Direction.BULLISH
+    for k in range(lo + 1, hi + 1):
+        j = _recent_swing(candles, k, kind)
+        if j is None or j <= lo:
+            continue
+        level = candles[j].low if kind == "low" else candles[j].high
+        if body_closes_beyond(candles[k], level, opposite):
+            return True
+    return False
+
+
+def disrespect_entry(candles: list[Candle], idx: int, direction: Direction,
+                     lookback: int = OPEN_CLOSE_LOOKBACK, n: int = 2) -> KeyLevel | None:
+    """Any key level price closed through, returned to, and has not
+    broken back away from.
+
+    Generalises `open_close_disrespect_entry()`, which covered one shape
+    of three. Bishop states the rule for all of them (bias-1 t=195-300):
+
+        "Let's say you have a candle close below this V-shaped key
+         level. This key level will no longer be used for buys. Instead
+         this key level is going to be used for [sells]... If price
+         closes above your A-shaped key level, it is no longer going to
+         be used for sales... And the same idea still applies to your
+         open-closed key levels as well... This is what the key level
+         should be used for UNTIL THEY GET DISRESPECTED."
+
+    Two corrections from the operator, 2026-09-22, both of which the
+    open-close-only version got wrong:
+
+    1. **Shape.** "Not [only] the open close -- it can still come to the
+       flip level too." A, V and open-close all qualify.
+
+    2. **The return may overshoot.** "it can still come to the flip
+       level too OR EVEN BELOW." The old code required the entry candle
+       to SPAN the level (`low <= price <= high`), which throws away
+       every return that pokes through it -- a common and perfectly
+       valid case. Now a bullish entry only needs `low <= level`.
+
+    3. **Invalidation.** "but it must not create a breakout back to the
+       opposite direction." Between the disrespect and the return, no
+       break of structure against the trade. See
+       `_opposite_breakout_between()`.
+
+    Levels are found by a bounded local scan rather than by calling
+    `detect_key_levels()` on the whole series, which would be O(n) per
+    candidate inside the entry loop. Only levels CONFIRMED by `idx` are
+    eligible: an A/V pivot at i is confirmed n bars later, so it must
+    satisfy i + n < idx, and using one before that is look-ahead."""
+    curr = candles[idx]
+    # A bullish entry buys from a level that was originally BEARISH and
+    # then got disrespected upward. Mirrored for bearish.
+    want_bias = Direction.BEARISH if direction == Direction.BULLISH else Direction.BULLISH
+
+    start = max(1, idx - lookback)
+    best = None
+    for i in range(start, idx):
+        candidates = []
+        # A/V pivots: confirmed n bars after the pivot itself.
+        if i + n < idx:
+            if is_close_peak(candles, i, n):
+                candidates.append(KeyLevel(candles[i].time, candles[i].close,
+                                           "A", Direction.BEARISH))
+            if is_close_trough(candles, i, n):
+                candidates.append(KeyLevel(candles[i].time, candles[i].close,
+                                           "V", Direction.BULLISH))
+        oc = detect_open_close_level(candles[i - 1], candles[i])
+        if oc is not None:
+            candidates.append(oc)
+
+        for level in candidates:
+            if level.default_bias != want_bias:
+                continue
+            # The disrespect: a close through it, after it formed.
+            disrespected_at = None
+            for j in range(i + 1, idx):
+                if is_disrespected(candles[j], level):
+                    disrespected_at = j
+                    break
+            if disrespected_at is None:
+                continue
+            # The return -- at the level or beyond it.
+            if direction == Direction.BULLISH:
+                returned = curr.low <= level.price
+            else:
+                returned = curr.high >= level.price
+            if not returned:
+                continue
+            if _opposite_breakout_between(candles, disrespected_at, idx, direction):
+                continue
+            # Most recently formed wins; see open_close_disrespect_entry
+            # for why that is not the same as nearest in price.
+            if best is None or i > best[0]:
+                best = (i, level)
+    return best[1] if best else None
