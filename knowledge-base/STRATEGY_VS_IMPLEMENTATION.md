@@ -356,10 +356,14 @@ The engine only ever does the first, so it declines a class of trades
 he takes. This is the clearest unimplemented rule found so far, and it
 is not a small one.
 
-**(c) Two bias machines, one rule?** The engine runs both `bias_at()`
-(flip machine) and `_aligned_timeframes()` (most-recent-breakout) and
-requires both. The videos describe one rule with two construction
-methods, not two gates. Whether ours is double-counting is still open.
+**(c) Two bias machines, one rule? CLOSED -- they are two rules.**
+Audited 2026-09-22 (AUDIT_2026-09-22_PART2.md, C1). `BiasCascade` is
+video-16's "do not flip while the lower timeframe still confirms the
+old direction", a rule for ABANDONING a bias. `_aligned_timeframes` is
+bias-1 t=390-405's "a breakout or break of structure on the next
+timeframe lower", the positive evidence needed to ESTABLISH one, here
+enforced at entry. Different operations, both taught. Requiring both is
+correct and is not double-counting.
 
 **Lower timeframe opposing a higher one is internal liquidity, not a
 reversal.** *"We are still bearish on the weekly. For daily, switch to
