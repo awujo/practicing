@@ -333,9 +333,18 @@ def open_close_disrespect_entry(candles: list[Candle], idx: int, direction: Dire
 
 
 # How far back from the confirmation candle to look for the minor swing
-# the reaction created. Same order as OPEN_CLOSE_LOOKBACK -- the taught
-# rule never states a number, and section 9 of the spec records that as
-# an open question rather than pretending otherwise.
+# the reaction created.
+#
+# There is no taught rule for this and the operator said so plainly
+# (2026-09-22): "SLK doesn't have a rule for that ... we don't have any
+# rule for the breakout candle number, what we want to see is a
+# breakout." 20 was accepted as a working bound -- "for a confirmation
+# breakout we should have it in like 20 candles."
+#
+# So this is a chosen parameter, not a transcribed one. It bounds how
+# stale a reaction may be before its break stops counting, which is a
+# real question the source simply does not answer. Sweeping it is
+# legitimate tuning; treating 20 as doctrine is not.
 REACTION_STRUCTURE_LOOKBACK = 20
 
 

@@ -20,8 +20,21 @@ name: Fetch backtest data
 # costs little beyond whatever candles actually closed since the last run.
 
 on:
-  schedule:
-    - cron: "0 * * * *" # hourly, on the hour
+  # SCHEDULE DISABLED 2026-09-22, on request, while the taught-rules
+  # branch is being tested. This was the ONLY cron in the repo, and
+  # hourly-signal-check.yml fires on this workflow's completion, so
+  # commenting it out stops both.
+  #
+  # What stops: the `data-latest` release stops being refreshed, so the
+  # cached candles stop advancing past today. Backtests over history are
+  # unaffected -- history does not change -- but anything wanting
+  # candles newer than the last run will not get them.
+  #
+  # To re-enable: delete the two comment markers below. Both workflows
+  # remain runnable by hand from the Actions tab in the meantime.
+  #
+  # schedule:
+  #   - cron: "0 * * * *" # hourly, on the hour
   workflow_dispatch: {}
 
 permissions:

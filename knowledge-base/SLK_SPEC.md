@@ -420,12 +420,12 @@ Two measured examples, read off full-resolution frames:
 - Tighter stops measured badly on the same broken engine: median 9.4 ->
   7.7 pips but win rate 51.7% -> 38.0%.
 - Nothing in this document has been measured on the fixed engine.
-- Bishop's breakout and sweep+break are now specified from the frames
-  (5.4, 5.5) and need no new detector -- they reuse StructureTracker.
-  What is NOT yet pinned is the window: how far past the key-level
-  reaction the break may occur before it stops counting. The engine has
-  REACTION_LOOKAHEAD for the analogous question; whether the taught rule
-  agrees with that number is unknown.
+- The window in which the break must occur has **no taught rule**, and
+  the operator confirmed it: *"SLK doesn't have a rule for that ... we
+  don't have any rule for the breakout candle number, what we want to
+  see is a breakout."* 20 candles was accepted as a working bound
+  (`REACTION_STRUCTURE_LOOKBACK`). It is a chosen parameter, legitimate
+  to sweep, and must not be quoted back as doctrine.
 - The ladder reaches M5 in the source, but H1-only is a deliberate
   scope decision for now. Whether the cached data even goes below H1 is
   still unchecked, so widening it later may need a data fetch first.
