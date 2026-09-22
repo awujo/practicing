@@ -106,3 +106,72 @@ def test_count_tests_never_disrespected_within_window():
     test_count, disrespect_time = count_tests_before_disrespect(candles_after, level)
     assert test_count == 2
     assert disrespect_time is None
+
+
+def _zig(pts, base=None):
+    import pandas as pd
+    from ..candles import Candle
+    b = base or pd.Timestamp("2026-01-01", tz="UTC")
+    return [Candle(b + pd.Timedelta(hours=i), lo, hi, lo, hi, 1000)
+            for i, (lo, hi) in enumerate(pts)]
+
+
+def test_quasimodo_is_the_pattern_and_the_level_is_the_left_shoulder():
+    """L -> H -> LL (below L) -> HH (above H), then buy the ORIGINAL L.
+
+    The operator's own diagram labels that first L the "Left Shoulder
+    Level", and it is the tradeable price. Nothing about imbalances is
+    involved: "a QMR is a QMR, nothing much about it. It must NOT
+    overlap an imbalance. Any kl can overlap an imbalance."
+    (2026-09-22)"""
+    from ..key_levels import detect_quasimodo_levels
+    from ..structure import Direction
+
+    c = _zig([(1.1020, 1.1030), (1.1000, 1.1010), (1.1030, 1.1040),
+              (1.1050, 1.1060), (1.1030, 1.1040), (1.0980, 1.0990),
+              (1.1030, 1.1040), (1.1070, 1.1080), (1.1040, 1.1050),
+              (1.1035, 1.1045)])
+    levels = detect_quasimodo_levels(c, n=1)
+    assert len(levels) == 1
+    lvl = levels[0]
+    assert lvl.price == pytest.approx(1.1000), "the level is the LEFT SHOULDER"
+    assert lvl.shape == "V" and lvl.default_bias == Direction.BULLISH
+
+
+def test_no_quasimodo_when_the_third_swing_does_not_exceed_the_first():
+    """L -> H -> higher low -> HH is an uptrend, not a Quasimodo. The
+    LL must actually take out the left shoulder's low."""
+    from ..key_levels import detect_quasimodo_levels
+
+    c = _zig([(1.1020, 1.1030), (1.1000, 1.1010), (1.1030, 1.1040),
+              (1.1050, 1.1060), (1.1030, 1.1040), (1.1010, 1.1020),
+              (1.1030, 1.1040), (1.1070, 1.1080), (1.1040, 1.1050),
+              (1.1035, 1.1045)])
+    assert detect_quasimodo_levels(c, n=1) == []
+
+
+def test_the_level_is_not_knowable_before_the_fourth_swing_confirms():
+    """Dating a QM level from its left shoulder would make it appear
+    long before anyone could have seen the pattern -- the look-ahead
+    removed on 2026-09-18. confirmed_at comes from the FOURTH swing."""
+    from ..key_levels import detect_quasimodo_levels, known_at
+
+    c = _zig([(1.1020, 1.1030), (1.1000, 1.1010), (1.1030, 1.1040),
+              (1.1050, 1.1060), (1.1030, 1.1040), (1.0980, 1.0990),
+              (1.1030, 1.1040), (1.1070, 1.1080), (1.1040, 1.1050),
+              (1.1035, 1.1045)])
+    lvl = detect_quasimodo_levels(c, n=1)[0]
+    # Left shoulder is candle 1; the HH is candle 7 and confirms at 8.
+    assert lvl.time == c[1].time
+    assert known_at(lvl) > c[7].time
+
+
+def test_same_kind_swings_collapse_so_the_zigzag_alternates():
+    """Without collapsing, a run of three highs reads as high-low-high
+    and the pattern matches on noise."""
+    from ..key_levels import _alternating_swings
+
+    c = _zig([(1.1000, 1.1010), (1.1020, 1.1030), (1.1010, 1.1020),
+              (1.1040, 1.1050), (1.1005, 1.1015), (1.1000, 1.1008)])
+    kinds = [k for _, k, _ in _alternating_swings(c, n=1)]
+    assert all(a != b for a, b in zip(kinds, kinds[1:])), kinds

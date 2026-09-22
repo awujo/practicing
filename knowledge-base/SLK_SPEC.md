@@ -174,11 +174,16 @@ The operator supplied the pattern directly. Bullish: `L -> H -> LL
 is the price of the original L -> buy`. Bearish is mirrored: `H -> L ->
 HH -> LL -> return to the original H -> sell`.
 
-So a QMR key level is the left shoulder, and it is an A-shape or a
-V-shape. 4th man states it as such:
+So a QMR key level **is the left shoulder**, and it is an A-shape or a
+V-shape. That is the whole definition — *"a QMR is a QMR, nothing much
+about it"* (operator, 2026-09-22).
 
-> *"a QMR key level, **which is an A-shaped key level that is
-> overlapping inside of an imbalance**"* (video-14 t=180-189)
+Implemented as `detect_quasimodo_levels()`: four alternating swings
+where the third exceeds the first and the fourth exceeds the second,
+emitting a level at the first. `confirmed_at` comes from the FOURTH
+swing, since the pattern does not exist until that one confirms —
+dating it from the left shoulder would make the level appear long
+before anyone could have seen it.
 
 ---
 

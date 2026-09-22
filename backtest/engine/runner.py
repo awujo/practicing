@@ -193,7 +193,8 @@ from .candles import Candle, load_candles
 from .structure import (Direction, StructureTracker, wick_sweeps_without_close,
                         known_at as point_known_at)
 from .timeframes import bar_length, closes_at
-from .key_levels import KeyLevel, detect_key_levels, count_tests_before_disrespect, known_at as level_known_at
+from .key_levels import (KeyLevel, detect_key_levels, detect_quasimodo_levels,
+                         count_tests_before_disrespect, known_at as level_known_at)
 from .liquidity import single_candle_liquidity, structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective_bias,
@@ -1523,6 +1524,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   erl_cap: bool = True, erl_mode: str = "cap",
                   confirmation_triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
                   require_qmr: bool = False,
+                  require_imbalance_overlap: bool = False,
                   bias_caveat: bool = False,
                   close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
@@ -1573,11 +1575,14 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     Weekly also rejected and H4 carries the breakout. bias-1 t=780-855.
     Default False. This deliberately loosens the engine's strictest
     gate, so the weekly-rejection requirement is not optional.
-    require_qmr: when True, only levels that overlap an imbalance -- QMR
-    key levels -- can be traded. Default False, which is what has always
-    shipped. The one existing measurement of this condition is
-    DISCOURAGING and predates the look-ahead fix, so it settles nothing
-    either way: 46.3% win against 51.7%, 0.786 R/trade against 0.990
+    require_qmr: when True, the H4 reaction levels are restricted to
+    QUASIMODO left shoulders -- `detect_quasimodo_levels()`. That is
+    what a QMR key level is, and it has nothing to do with imbalances.
+    require_imbalance_overlap: when True, only levels overlapping an
+    imbalance can be traded. A separate property that any key level may
+    have. The one existing measurement of it is DISCOURAGING and
+    predates the look-ahead fix, so it settles nothing either way: 46.3%
+    win against 51.7%, 0.786 R/trade against 0.990
     (bot/OPERATIONS_LOG.md, 2026-09-02). Re-measure before believing it
     in either direction.
     confirmation_triggers: which confirmation-entry patterns count as a
@@ -1839,7 +1844,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         close_based_sweep_break=close_based_sweep_break) if weekly else []
     h4_confirmations = detect_confirmations(h4, n, close_based_breakout=close_based_breakout,
                                              close_based_sweep_break=close_based_sweep_break)
-    h4_levels = detect_key_levels(h4, n)
+    # A QMR key level is a Quasimodo left shoulder, nothing else. When
+    # required, it REPLACES the general key-level pool rather than
+    # filtering it, because the two detectors find different things: a
+    # left shoulder is a swing that a later pattern made significant,
+    # not a shape read off the candle alone.
+    h4_levels = detect_quasimodo_levels(h4, n) if require_qmr else detect_key_levels(h4, n)
     h1_confirmations = detect_confirmations(h1, n, close_based_breakout=close_based_breakout,
                                              close_based_sweep_break=close_based_sweep_break)
     # One inference for the whole run rather than per candidate.
@@ -2101,25 +2111,18 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         ]
         imbalance_overlap = len(overlapping) > 0
 
-        # QMR gate. A key level overlapping inside an imbalance IS a QMR
-        # key level -- that is the definition, stated as such:
+        # NOT a QMR gate, despite an earlier version of this comment.
+        # Operator, 2026-09-22: "a QMR is a QMR, nothing much about it.
+        # It must NOT overlap an imbalance. ANY kl can overlap an
+        # imbalance." Overlap is a separate property that any key level
+        # may or may not have -- see `require_qmr` and
+        # `detect_quasimodo_levels()` for what QMR actually is.
         #
-        #   "a QMR key level, which is an A-shaped key level that is
-        #    overlapping inside of an imbalance"     video-14 t=180-189
-        #
-        # Operator, 2026-09-22, correcting an earlier four-condition
-        # reading of mine: it is not all of them, "the key level
-        # overlapping inside an imbalance WILL be a QMR kl". The
-        # "sponsored some level of sales" and "got disrespected" lines
-        # from plug-and-play t=838-925 are what he PREFERS on top of
-        # that, not what makes a level QMR.
-        #
-        # `imbalance_overlap` has always been computed here and has only
-        # ever chosen a STOP RULE (the `plug_and_play` branch below). It
-        # has never decided whether a trade is taken, so the engine has
-        # been trading non-QMR levels constantly while measuring the
-        # condition and discarding it.
-        if require_qmr and not imbalance_overlap:
+        # Still worth having as its own filter: `imbalance_overlap` has
+        # always been computed here and has only ever chosen a STOP RULE
+        # (the `plug_and_play` branch below), never whether a trade is
+        # taken. This makes that measurable.
+        if require_imbalance_overlap and not imbalance_overlap:
             continue
 
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
@@ -2539,11 +2542,12 @@ def main():
                          help="Disable the external range liquidity target cap -- every trade targets a flat "
                               "--rr instead. For comparing against the (default) ERL-capped behavior.")
     parser.add_argument("--require-qmr", action="store_true",
-                         help="only trade levels that overlap an imbalance -- QMR key "
-                              "levels. video-14 t=180: 'a QMR key level, which is an "
-                              "A-shaped key level that is overlapping inside of an "
-                              "imbalance'. The engine has always computed this and used "
-                              "it only to pick a stop.")
+                         help="restrict H4 reaction levels to Quasimodo left shoulders "
+                              "(L->H->LL->HH, buy the original L; mirrored for sells).")
+    parser.add_argument("--require-imbalance-overlap", action="store_true",
+                         help="only trade levels that overlap an imbalance. A separate "
+                              "property from QMR -- any key level can have it. The engine "
+                              "has always computed this and used it only to pick a stop.")
     parser.add_argument("--bias-caveat", action="store_true",
                          help="let a Daily that only REJECTED off a key level satisfy "
                               "alignment, provided the Weekly also rejected and H4 "
@@ -2573,7 +2577,9 @@ def main():
                   "erl_cap": not args.no_erl_cap, "close_based_breakout": not args.wick_based_breakout,
                   "erl_mode": "target" if args.erl_as_target else "cap",
                   "confirmation_triggers": TRIGGERS_TAUGHT if args.taught_triggers else TRIGGERS_SHIPPED,
-                  "require_qmr": args.require_qmr, "bias_caveat": args.bias_caveat,
+                  "require_qmr": args.require_qmr,
+                  "require_imbalance_overlap": args.require_imbalance_overlap,
+                  "bias_caveat": args.bias_caveat,
                   "irl_mode": args.irl_mode}
     if args.rr is not None:
         run_kwargs["rr"] = args.rr
@@ -2594,6 +2600,8 @@ def main():
         suffix += "_taughttriggers"
     if args.require_qmr:
         suffix += "_qmr"
+    if args.require_imbalance_overlap:
+        suffix += "_imbalance"
     if args.bias_caveat:
         suffix += "_biascaveat"
     if args.wick_based_breakout:

@@ -30,7 +30,7 @@ it, stopping at the disrespect event (or end of data).
 from dataclasses import dataclass
 
 from .candles import Candle
-from .structure import Direction, body_closes_beyond
+from .structure import Direction, body_closes_beyond, is_swing_high, is_swing_low
 from .timeframes import bar_length as _infer_bar_length, closes_at
 
 
@@ -177,3 +177,75 @@ def count_tests_before_disrespect(candles_after: list[Candle], level: KeyLevel) 
 def is_qmr_level(test_count: int) -> bool:
     """Section 5/9's resolved QMR threshold: 2+ prior tests before disrespect."""
     return test_count >= 2
+
+
+def _alternating_swings(candles: list[Candle], n: int) -> list[tuple]:
+    """The candles' swing points as a clean zigzag: (idx, kind, price).
+
+    Consecutive swings of the same kind are collapsed to the more
+    extreme one, so the sequence always alternates high/low. Without
+    that, a run of three highs would be read as high-low-high and the
+    pattern below would match on noise."""
+    raw = []
+    for i in range(len(candles)):
+        if is_swing_high(candles, i, n):
+            raw.append((i, "high", candles[i].high))
+        elif is_swing_low(candles, i, n):
+            raw.append((i, "low", candles[i].low))
+
+    out: list[tuple] = []
+    for point in raw:
+        if out and out[-1][1] == point[1]:
+            better = (point[2] > out[-1][2]) if point[1] == "high" else (point[2] < out[-1][2])
+            if better:
+                out[-1] = point
+            continue
+        out.append(point)
+    return out
+
+
+def detect_quasimodo_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]:
+    """Quasimodo (QM / QMR) key levels.
+
+    Operator, 2026-09-22, correcting two wrong readings of mine in a
+    row: "a QMR is a QMR, nothing much about it. It must NOT overlap an
+    imbalance. Any kl can overlap an imbalance." So the pattern is the
+    whole definition, and the imbalance business belongs to a different
+    question entirely.
+
+    From the diagram he supplied, bullish:
+
+        L  ->  H  ->  LL  ->  HH  ->  price returns to L  ->  buy
+                      (below L)  (above H)
+
+    The tradeable level is the LEFT SHOULDER -- the price of that first
+    L -- and the diagram labels it exactly that. Bearish mirrors:
+
+        H  ->  L  ->  HH  ->  LL  ->  price returns to H  ->  sell
+
+    So four alternating swings, where the third exceeds the first and
+    the fourth exceeds the second. A bullish QM yields a V-shaped level
+    to buy from; a bearish one an A-shaped level to sell from.
+
+    `confirmed_at` is set from the FOURTH swing, since the pattern does
+    not exist until HH (or LL) is itself confirmed -- n bars after its
+    own pivot. Dating it from the left shoulder would make the level
+    appear long before anyone could have seen it, which is the
+    look-ahead removed on 2026-09-18."""
+    length = _infer_bar_length(candles)
+    swings = _alternating_swings(candles, n)
+    levels = []
+    for a, b, c, d in zip(swings, swings[1:], swings[2:], swings[3:]):
+        confirm_idx = d[0] + n
+        if confirm_idx >= len(candles):
+            continue
+        confirmed = closes_at(candles[confirm_idx].time, length)
+        if (a[1] == "low" and c[2] < a[2] and d[2] > b[2]):
+            # L, H, LL, HH -> buy from the left shoulder L.
+            levels.append(KeyLevel(candles[a[0]].time, a[2], "V", Direction.BULLISH,
+                                   confirmed_at=confirmed))
+        elif (a[1] == "high" and c[2] > a[2] and d[2] < b[2]):
+            # H, L, HH, LL -> sell from the left shoulder H.
+            levels.append(KeyLevel(candles[a[0]].time, a[2], "A", Direction.BEARISH,
+                                   confirmed_at=confirmed))
+    return sorted(levels, key=lambda lvl: lvl.time)

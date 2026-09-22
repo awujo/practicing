@@ -2276,15 +2276,31 @@ def test_an_unconfirmed_av_pivot_is_not_eligible():
     assert "i + n < idx" in inspect.getsource(disrespect_entry)
 
 
-def test_qmr_and_bias_caveat_are_both_off_by_default():
-    """Both change which trades exist. Every recorded backtest was
+def test_the_new_gates_are_all_off_by_default():
+    """Each changes which trades exist. Every recorded backtest was
     produced with them off and must stay comparable."""
     import inspect
     from ..runner import run_backtest
 
     params = inspect.signature(run_backtest).parameters
-    assert params["require_qmr"].default is False
-    assert params["bias_caveat"].default is False
+    for name in ("require_qmr", "require_imbalance_overlap", "bias_caveat"):
+        assert params[name].default is False, name
+
+
+def test_qmr_and_imbalance_overlap_are_separate_gates():
+    """They were conflated once. Operator, 2026-09-22: "a QMR is a QMR,
+    nothing much about it. It must NOT overlap an imbalance. Any kl can
+    overlap an imbalance." QMR restricts the LEVEL POOL to Quasimodo
+    left shoulders; imbalance overlap is a property any level may have
+    and gates the trade."""
+    import inspect
+    from ..runner import run_backtest
+
+    src = inspect.getsource(run_backtest)
+    assert "detect_quasimodo_levels(h4, n) if require_qmr" in src
+    assert "if require_imbalance_overlap and not imbalance_overlap" in src
+    # The QMR flag must not touch the imbalance test.
+    assert "require_qmr and not imbalance_overlap" not in src
 
 
 def test_a_rejection_is_a_wick_through_with_a_close_back():
