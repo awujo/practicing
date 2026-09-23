@@ -77,17 +77,58 @@ def _f(row, key):
         return None
 
 
-def _hours(value):
-    """A CSV timestamp as epoch seconds, or None when blank/unparseable.
+def _ts(value):
+    """A CSV timestamp, or None when blank/unparseable.
 
     Blank is expected on any CSV written before 2026-09-23, when the
     setup's own timestamps were first recorded."""
     if not value or not str(value).strip():
         return None
     try:
-        return pd.Timestamp(value).timestamp()
+        return pd.Timestamp(value)
     except (ValueError, TypeError):
         return None
+
+
+class BarClock:
+    """Distance between two timestamps counted in H1 BARS.
+
+    The first version of this measured wall-clock hours and printed
+    "H1 candles", which is wrong by up to a weekend. Forex closes Friday
+    night, so a 40-bar gap that straddles a weekend reads as ~88 hours,
+    and the table showed a touch-to-entry max of 82 when
+    REACTION_LOOKAHEAD caps it at 40. A diagnostic nobody can take at
+    face value is worse than none, because this one is about to justify
+    changing the entry rule.
+
+    Falls back to hours -- and says so -- when the instrument's candles
+    are not cached, rather than silently mixing two units in one
+    column."""
+
+    def __init__(self, source):
+        self._source = source
+        self._times = {}
+        self.exact = True
+
+    def _for(self, instrument):
+        if instrument not in self._times:
+            try:
+                from ..engine.candles import load_candles
+                self._times[instrument] = [c.time for c in
+                                           load_candles(self._source, instrument, "H1")]
+            except Exception:
+                self._times[instrument] = None
+        return self._times[instrument]
+
+    def bars(self, instrument, a, b):
+        if a is None or b is None:
+            return None
+        times = self._for(instrument)
+        if not times:
+            self.exact = False
+            return (b - a).total_seconds() / 3600.0
+        import bisect
+        return bisect.bisect_left(times, b) - bisect.bisect_left(times, a)
 
 
 def load(results_dir, suffix, instruments=None):
@@ -179,6 +220,9 @@ def main():
                              "meaningless once stop sizes vary. 1.5 is a rough\n"
                              "cross-pair figure -- still an assumption, but one\n"
                              "that scales the right way.")
+    parser.add_argument("--source", default="dukascopy",
+                        help="candle cache to count BARS against, so stage gaps "
+                             "are not wall-clock hours inflated by weekends")
     args = parser.parse_args()
 
     only = {s.strip().upper() for s in args.instruments.split(",") if s.strip()}
@@ -318,26 +362,26 @@ def main():
     # level. If the median trade confirms many candles after touching
     # it, price has already left, and the entry is not the one taught --
     # it is whatever fired before the window closed.
-    print("SETUP SHAPE  (H1 candles between stages, per trade)")
+    clock = BarClock(args.source)
     stages = (("h4_breakout_time", "liquidity_time", "breakout -> pool forms"),
               ("liquidity_time", "sweep_time", "pool -> swept"),
               ("sweep_time", "level_touch_time", "sweep -> touches KL"),
               ("level_touch_time", "entry_time", "touches KL -> ENTRY"))
-    any_stage = False
+    measured = []
     for a, b, label in stages:
         gaps = []
         for r in cl:
-            ta, tb = _hours(r.get(a)), _hours(r.get(b))
-            if ta is None or tb is None:
-                continue
-            gaps.append((tb - ta) / 3600.0)
-        if not gaps:
-            continue
-        any_stage = True
-        gaps.sort()
+            g = clock.bars(r.get("instrument"), _ts(r.get(a)), _ts(r.get(b)))
+            if g is not None:
+                gaps.append(g)
+        if gaps:
+            measured.append((label, sorted(gaps)))
+    unit = "H1 bars" if clock.exact else "HOURS (candles not cached)"
+    print(f"SETUP SHAPE  ({unit} between stages, per trade)")
+    for label, gaps in measured:
         print(f"    {label:<26} median {gaps[len(gaps)//2]:>6.0f}   "
               f"p90 {gaps[int(len(gaps)*.9)]:>6.0f}   max {gaps[-1]:>6.0f}")
-    if not any_stage:
+    if not measured:
         print("    Not recorded in these CSVs -- re-run to populate "
               "(added 2026-09-23).")
     else:
