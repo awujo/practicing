@@ -72,6 +72,31 @@ SLK_SYSTEM = {
     "liquidity_mode": "both",
 }
 
+# Settings where the TAUGHT system deliberately departs from a live
+# default. Its own bundle, because it is neither a pure course rule
+# (SLK_SYSTEM) nor a deployment setting (SLK_OPERATIONAL) -- it is a
+# live setting the course overrules, and collapsing it into either one
+# would lose that. Nobody reading SLK_SYSTEM should be able to cite the
+# course for a number the bots chose, and nobody reading
+# SLK_OPERATIONAL should think this one is still in force.
+SLK_TAUGHT_OVERRIDES = {
+    # The target IS the liquidity, so a setup whose liquidity sits close
+    # by is not a small win -- it is a trade Bishop would not take. He
+    # goes to the previous weekly high; he does not risk one to make one.
+    #
+    # The live floor is 1.0, set when the target was min(3R, ERL) and
+    # could never be large. Pairing that floor with an uncapped target is
+    # a combination nobody chose, and the 2026-09-23 live-windows run
+    # shows what it cost -- 39% of all trades taken below 3R, and 67% of
+    # the entire loss:
+    #
+    #     target    trades    net
+    #     0-2R        1523   -337.1R
+    #     2-3R         936   -204.5R
+    #     8-12R        546    +60.4R
+    "min_reward_r": 3.0,
+}
+
 # Operational settings that are not strategy: the rollover-window skip
 # and the 1R floor both came from live incidents and direct
 # instructions, not from the course. Kept separate so nobody later
@@ -92,5 +117,10 @@ SLK_VARIANTS = {
 
 
 def slk_kwargs(**overrides) -> dict:
-    """Everything `run_backtest` needs to run the system."""
-    return {**SLK_SYSTEM, **SLK_OPERATIONAL, **overrides}
+    """Everything `run_backtest` needs to run the system.
+
+    Order is load-bearing: operational first, then the taught rules,
+    then the deliberate overrides of an operational default. Merging
+    SLK_OPERATIONAL last -- the original ordering -- would let
+    LIVE_FIXED_FLAGS silently put the 1.0 reward floor back."""
+    return {**SLK_OPERATIONAL, **SLK_SYSTEM, **SLK_TAUGHT_OVERRIDES, **overrides}

@@ -1104,7 +1104,8 @@ TRIGGERS_TAUGHT = ("sweep_break", "breakout", "disrespect", "fourth_man")
 
 
 def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
-                      triggers: tuple[str, ...] = TRIGGERS_SHIPPED) -> str | None:
+                      triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
+                      since: int | None = None) -> str | None:
     """Which confirmation-entry trigger, if any, fires at `idx`.
 
     Checked in the order `triggers` lists them, so the caller's ordering
@@ -1114,7 +1115,12 @@ def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
     Takes the whole series rather than a (prev, curr) pair because
     `open_close_disrespect_entry()` needs to look BACK for the key level
     that was disrespected -- the pattern spans more than two candles by
-    definition."""
+    definition.
+
+    `since` is the index at which price first reached the key level in
+    this reaction window. The two break triggers measure their whole
+    geometry from it (see `_reaction_structure`); the others do not need
+    it."""
     prev, curr = candles[idx - 1], candles[idx]
     for name in triggers:
         if name == "engulfing":
@@ -1131,10 +1137,10 @@ def _reaction_trigger(candles: list[Candle], idx: int, direction: Direction,
             if open_close_disrespect_entry(candles, idx, direction) is not None:
                 return "open_close"
         elif name == "breakout":
-            if breakout_entry(candles, idx, direction):
+            if breakout_entry(candles, idx, direction, since):
                 return "breakout"
         elif name == "sweep_break":
-            if sweep_break_entry(candles, idx, direction):
+            if sweep_break_entry(candles, idx, direction, since):
                 return "sweep_break"
         elif name == "fourth_man":
             fourth_man = fourth_man_confirmation_level(prev, curr)
@@ -1234,10 +1240,20 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
             level_price = level.price
             found: list[EntryCandidate] = []
             touched_yet = False
+            # WHERE the reaction started, not just whether it did. The
+            # two break triggers measure their low, their lift and their
+            # minor swing high from this index; without it they fall back
+            # to the nearest fractal, which is noise (see
+            # `_reaction_structure`).
+            touch_idx: int | None = None
             for idx in range(sweep_idx + 1, min(sweep_idx + 1 + REACTION_LOOKAHEAD, len(h1))):
                 prev, curr = h1[idx - 1], h1[idx]
                 touches_now = ((prev.low <= level_price <= prev.high)
                                or (curr.low <= level_price <= curr.high))
+                if touches_now and touch_idx is None:
+                    # The earlier of the two candles that spans the level
+                    # is where price actually arrived.
+                    touch_idx = idx - 1 if prev.low <= level_price <= prev.high else idx
                 touched_yet = touched_yet or touches_now
                 # "candle": the trigger candle itself must span the level.
                 # "window": price must have REACHED the level at some point
@@ -1260,7 +1276,8 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                 gate = touched_yet if reaction_gate == "window" else touches_now
                 if not gate or idx in seen_indices:
                     continue
-                trigger = _reaction_trigger(h1, idx, setup.direction, triggers)
+                trigger = _reaction_trigger(h1, idx, setup.direction, triggers,
+                                            since=touch_idx)
                 if trigger is not None:
                     found.append(EntryCandidate(idx, setup.direction, level,
                                                 setup.liquidity_price, trigger,
@@ -2143,7 +2160,18 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                 widest_imbalance.low, widest_imbalance.high, effective, pip_size=pip_size
             )
             stop_kind = "plug_and_play"
-            trigger_type = "plug_and_play"
+            # `trigger_type` used to be overwritten with "plug_and_play"
+            # here. That conflated two different facts -- WHICH PATTERN
+            # FIRED and WHICH STOP RULE WAS USED -- and destroyed the
+            # first, which nothing else records. `stop_kind` above already
+            # carries the stop rule, so the overwrite bought nothing and
+            # cost the only copy of the trigger.
+            #
+            # It is not cosmetic. In the 2026-09-23 live-windows run it
+            # relabelled 1,356 of 6,243 trades (22%), so the trigger
+            # breakdown -- the table that decides which confirmations
+            # earn their place -- could not be read at all.
+            trigger_type = candidate.trigger
             natural_stop_loss = stop_loss
             stop_fallback_used = False
         elif candidate.trigger == "engulfing":

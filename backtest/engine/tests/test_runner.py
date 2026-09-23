@@ -519,7 +519,13 @@ def test_run_backtest_uses_imbalance_stop_for_plug_and_play_continuation_trades(
     trade = records[1]
 
     assert trade.imbalance_overlap is True
-    assert trade.trigger_type == "plug_and_play"
+    # The two are DIFFERENT FACTS and each gets its own field. An earlier
+    # version of both the code and this test had `trigger_type` overwritten
+    # with "plug_and_play" here, which erased the only record of which
+    # pattern fired -- and in the 2026-09-23 run that was 22% of all
+    # trades, making the trigger breakdown unreadable. The stop rule is
+    # plug-and-play; the trigger that fired is still the engulfing.
+    assert trade.trigger_type == "engulfing"
     assert trade.stop_kind == "plug_and_play"
     # Far edge of the overlapping imbalance (1.1009, A's high) minus a
     # 1-pip pad -- NOT the engulfing-wick-anchored stop this same reaction
@@ -2080,6 +2086,75 @@ def test_the_two_triggers_are_mutually_exclusive():
     swept = _leg(pullback_low=1.0990, break_close=1.1055)
     assert sweep_break_entry(swept, 5, Direction.BULLISH) is True
     assert breakout_entry(swept, 5, Direction.BULLISH) is False
+
+
+def _noise_leg():
+    """A reaction whose real high is 1.1080, followed by a small bump at
+    idx 5 that is a 1-bar fractal high at 1.1035, and a close above THAT
+    bump at idx 7.
+
+    This is the shape the 2026-09-23 post-mortem turned up: 6,243 trades
+    of which breakout and sweep+break were 2% each, while `disrespect`
+    took 62% -- and the two Bishop rates highest were the only two with
+    a decent win rate (34.0% and 39.7% against 19.0%)."""
+    return [
+        H1(0, 1.1025, 1.1030, 1.1020, 1.1028),
+        H1(1, 1.1012, 1.1015, 1.1000, 1.1010),   # reaction LOW, at the level
+        H1(2, 1.1015, 1.1050, 1.1010, 1.1048),
+        H1(3, 1.1050, 1.1080, 1.1045, 1.1075),   # the reaction's HIGH
+        H1(4, 1.1028, 1.1030, 1.1020, 1.1026),
+        H1(5, 1.1026, 1.1035, 1.1025, 1.1032),   # a bump, not the reaction high
+        H1(6, 1.1030, 1.1032, 1.1022, 1.1029),
+        H1(7, 1.1030, 1.1050, 1.1028, 1.1040),   # closes above the BUMP only
+    ]
+
+
+def test_anchored_breakout_ignores_a_wiggle_that_is_not_the_reactions_high():
+    """The correction of 2026-09-23, and the reason the taught system
+    measured as noise.
+
+    Unanchored, the reference is whatever 1-bar fractal is nearest --
+    median three candles back on a random walk -- so closing over the
+    little bump at 1.1035 counted as a breakout. Bishop's drawing is
+    price coming into the KEY LEVEL, lifting, and closing back above the
+    high THAT lift left: 1.1080 here, which 1.1040 does not clear.
+
+    `since` is the index where price reached the level, so the whole
+    pattern is measured from the reaction rather than from the last
+    wiggle."""
+    from ..entries import breakout_entry, _recent_swing
+
+    candles = _noise_leg()
+    # The old reference really is the bump, not the reaction's high.
+    assert _recent_swing(candles, 7, "high") == 5
+
+    assert breakout_entry(candles, 7, Direction.BULLISH) is True      # unanchored
+    assert breakout_entry(candles, 7, Direction.BULLISH, since=1) is False
+
+
+def test_anchored_break_fires_on_the_reactions_own_high():
+    """The same leg, with a close that DOES clear 1.1080. Anchoring
+    makes the trigger stricter, not dead -- if it never fired we would
+    have swapped one wrong answer for another."""
+    from ..entries import breakout_entry, sweep_break_entry
+
+    candles = _noise_leg()
+    candles[7] = H1(7, 1.1030, 1.1095, 1.1028, 1.1090)
+    assert breakout_entry(candles, 7, Direction.BULLISH, since=1) is True
+    # Nothing dipped under the 1.1000 reaction low, so it is 5.4 not 5.5.
+    assert sweep_break_entry(candles, 7, Direction.BULLISH, since=1) is False
+
+
+def test_anchored_sweep_break_needs_the_reaction_low_taken():
+    """5.5 is 5.4 plus one leg: after the minor high, price runs the
+    reaction low's liquidity before breaking out."""
+    from ..entries import breakout_entry, sweep_break_entry
+
+    candles = _noise_leg()
+    candles[6] = H1(6, 1.1030, 1.1032, 1.0995, 1.1029)   # digs under 1.1000
+    candles[7] = H1(7, 1.1030, 1.1095, 1.1028, 1.1090)
+    assert sweep_break_entry(candles, 7, Direction.BULLISH, since=1) is True
+    assert breakout_entry(candles, 7, Direction.BULLISH, since=1) is False
 
 
 def test_the_swing_used_must_be_confirmed_by_entry_time():

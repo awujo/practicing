@@ -95,3 +95,21 @@ def test_operational_settings_are_kept_separate_from_taught_ones():
     assert not (set(SLK_SYSTEM) & set(SLK_OPERATIONAL))
     # slk_kwargs still merges both, since run_backtest needs them.
     assert set(slk_kwargs()) >= set(SLK_SYSTEM) | set(SLK_OPERATIONAL)
+
+
+def test_the_reward_floor_the_course_overrules_beats_the_live_default():
+    """`min_reward_r` is the one setting where a live default and a taught
+    rule collide, so the merge order is the whole point.
+
+    The live floor of 1.0 was chosen when the target was min(3R, ERL) and
+    could never be large. With erl_mode="target" there is no cap, and the
+    2026-09-23 run took 39% of its trades below 3R for 67% of the loss.
+    If SLK_OPERATIONAL were merged last, that 1.0 would come back and
+    nothing would say so."""
+    from ..slk_system import SLK_TAUGHT_OVERRIDES
+
+    assert SLK_OPERATIONAL["min_reward_r"] == 1.0
+    assert SLK_TAUGHT_OVERRIDES["min_reward_r"] == 3.0
+    assert slk_kwargs()["min_reward_r"] == 3.0
+    # An explicit caller still wins over all three bundles.
+    assert slk_kwargs(min_reward_r=2.0)["min_reward_r"] == 2.0

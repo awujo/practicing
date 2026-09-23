@@ -365,7 +365,8 @@ def _recent_swing(candles: list[Candle], before: int, kind: str) -> int | None:
     return None
 
 
-def _reaction_structure(candles: list[Candle], idx: int, direction: Direction):
+def _reaction_structure(candles: list[Candle], idx: int, direction: Direction,
+                        since: int | None = None):
     """(broke, swept) for the candle at `idx`.
 
     Both of Bishop's highest-rated confirmations share a skeleton, drawn
@@ -375,60 +376,120 @@ def _reaction_structure(candles: list[Candle], idx: int, direction: Direction):
         price comes into the key level, makes a low, lifts leaving a
         MINOR SWING HIGH, and then closes back above that high.
 
-    `broke` is that close. The frame settles what gets broken: at
-    part5 t=420 he marks the reference with an anchored segment at
-    1.86789, which sits ABOVE the key level at 1.86700. It is the minor
-    swing high the reaction itself created, NOT the key level.
+    `since` is where "comes into the key level" happened -- the index of
+    the touch. EVERYTHING in the pattern is measured from there, because
+    every part of it is something THE REACTION MADE.
 
-    `swept` is the one extra leg that separates the two. In 5.5 price
-    comes back down after the minor high and makes a LOWER low than the
-    first one -- measured off the drawing, ~1.86570 against ~1.86660 --
-    taking that low's liquidity before breaking up.
+    WHY THIS ARGUMENT EXISTS, which is the whole correction of
+    2026-09-23. The first version took the minor high to be
+    `_recent_swing(candles, idx, "high")`: the nearest 1-bar fractal,
+    searched backwards with no bound. Measured on a random walk, that
+    reference sat a MEDIAN OF 3 CANDLES BACK (p90 six), and the pattern
+    fired on 13.5% of all candles -- on noise, with no relationship to
+    any key level. It was not Bishop's pattern wearing a different
+    name; it was a different pattern.
 
-    The low being swept is found STRUCTURALLY: the swing low immediately
-    preceding the minor high, i.e. the other side of the same leg. It
-    used to be the minimum over a fixed 20-candle window, which is a
-    different and worse thing -- with no window to bound it that version
-    would have reduced to "a new all-time low", which no reaction ever
-    makes. Removing the window forced the definition to become the one
-    the drawing actually shows.
+    Anchored instead:
+
+      reaction extreme  the lowest low (bullish) from the touch to now.
+                        This is the "makes a low" of the drawing, and it
+                        is what the lift lifts away FROM.
+
+      minor swing high  the highest high between that low and now. One
+                        reference, the one the reaction actually left,
+                        rather than whichever wiggle happens to be
+                        nearest. At part5 t=420 he marks it with an
+                        anchored segment at 1.86789, ABOVE the key level
+                        at 1.86700 -- so it is the reaction's high, not
+                        the level itself.
+
+      broke             a BODY close beyond that high.
+
+      swept             between the minor high and the break, price made
+                        a LOWER low than the reaction low -- ~1.86570
+                        against ~1.86660 off his drawing. That extra leg
+                        is the only thing separating 5.5 from 5.4.
+
+    With `since=None` the old unanchored behaviour is kept, so callers
+    that have no key level to measure from (and the existing tests) do
+    not silently change meaning.
 
     Returned together so the two triggers stay mutually exclusive by
     construction rather than by the order a caller happens to check
     them in."""
-    swing_kind = "high" if direction == Direction.BULLISH else "low"
-    j = _recent_swing(candles, idx, swing_kind)
-    if j is None:
+    bullish = direction == Direction.BULLISH
+
+    if since is None:
+        swing_kind = "high" if bullish else "low"
+        j = _recent_swing(candles, idx, swing_kind)
+        if j is None:
+            return False, False
+        level = candles[j].high if bullish else candles[j].low
+        if not body_closes_beyond(candles[idx], level, direction):
+            return False, False
+        opposite = _recent_swing(candles, j, "low" if bullish else "high")
+        if opposite is None:
+            return True, False
+        first = candles[opposite].low if bullish else candles[opposite].high
+        swept = (any(c.low < first for c in candles[j + 1:idx + 1]) if bullish
+                 else any(c.high > first for c in candles[j + 1:idx + 1]))
+        return True, swept
+
+    # Anchored. The reaction needs room for a low, a lift and a break:
+    # three candles at the absolute minimum.
+    if since < 0 or idx - since < 2:
         return False, False
 
-    level = candles[j].high if direction == Direction.BULLISH else candles[j].low
-    if not body_closes_beyond(candles[idx], level, direction):
+    # ORDER MATTERS, and getting it backwards is not a subtle error.
+    # Taking the reaction low first (argmin over the whole window) put it
+    # wherever the series happened to bottom out -- often at idx-1 on a
+    # drifting market -- which left a one-candle "lift" whose high the
+    # next close clears trivially. Measured on a random walk that fired
+    # on 18% of candles, MORE noise than the unanchored version it was
+    # meant to replace.
+    #
+    # The drawing reads touch -> low -> HIGH -> break, and the high is
+    # the top of the whole reaction. So the high is found first, over
+    # everything since the touch, and the low is the bottom BEFORE it.
+    # A close must then clear the reaction's highest point, not some
+    # interior wiggle.
+    span = range(since, idx)
+    high_i = max(span, key=lambda k: candles[k].high) if bullish \
+        else min(span, key=lambda k: candles[k].low)
+
+    before_high = range(since, high_i + 1)
+    low_i = min(before_high, key=lambda k: candles[k].low) if bullish \
+        else max(before_high, key=lambda k: candles[k].high)
+
+    # A real lift: the high has to come after the low, not be the low.
+    if high_i <= low_i:
         return False, False
 
-    # The other side of the leg: the swing low (bullish) that the minor
-    # high lifted away from. That is the liquidity a sweep goes after.
-    opposite = _recent_swing(candles, j,
-                             "low" if direction == Direction.BULLISH else "high")
-    if opposite is None:
-        return True, False
+    minor = candles[high_i].high if bullish else candles[high_i].low
+    if not body_closes_beyond(candles[idx], minor, direction):
+        return False, False
 
-    if direction == Direction.BULLISH:
-        first = candles[opposite].low
-        swept = any(c.low < first for c in candles[j + 1:idx + 1])
-    else:
-        first = candles[opposite].high
-        swept = any(c.high > first for c in candles[j + 1:idx + 1])
+    # 5.5's extra leg: after the minor high, price ran the reaction low's
+    # liquidity before breaking out.
+    reaction_extreme = candles[low_i].low if bullish else candles[low_i].high
+    tail = candles[high_i + 1:idx + 1]
+    swept = (any(c.low < reaction_extreme for c in tail) if bullish
+             else any(c.high > reaction_extreme for c in tail))
     return True, swept
 
 
-def breakout_entry(candles: list[Candle], idx: int, direction: Direction) -> bool:
+def breakout_entry(candles: list[Candle], idx: int, direction: Direction,
+                   since: int | None = None) -> bool:
     """SLK_SPEC.md 5.4. A close beyond the minor swing the reaction left,
-    with NO prior sweep of the earlier extreme -- that case is 5.5."""
-    broke, swept = _reaction_structure(candles, idx, direction)
+    with NO prior sweep of the earlier extreme -- that case is 5.5.
+
+    `since`: index of the key-level touch this reaction came off."""
+    broke, swept = _reaction_structure(candles, idx, direction, since)
     return broke and not swept
 
 
-def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction) -> bool:
+def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction,
+                      since: int | None = None) -> bool:
     """SLK_SPEC.md 5.5. The same break, but price first took out the
     earlier low's (or high's) liquidity.
 
@@ -436,7 +497,7 @@ def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction) -> 
     ask me which ones are likely best, personally I would tell you these
     two ... if you have these two, [missing it] is a missed entry"
     (part5 t=420-435)."""
-    broke, swept = _reaction_structure(candles, idx, direction)
+    broke, swept = _reaction_structure(candles, idx, direction, since)
     return broke and swept
 
 
