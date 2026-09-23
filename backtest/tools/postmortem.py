@@ -58,6 +58,8 @@ import glob
 import os
 from collections import Counter, defaultdict
 
+import pandas as pd
+
 # Used only when a row has no `risk_pips` -- the old flat assumption,
 # kept solely so an older CSV still produces a number rather than a zero.
 FLAT_FALLBACK_R = 0.12
@@ -72,6 +74,19 @@ def _f(row, key):
     try:
         return float(v)
     except ValueError:
+        return None
+
+
+def _hours(value):
+    """A CSV timestamp as epoch seconds, or None when blank/unparseable.
+
+    Blank is expected on any CSV written before 2026-09-23, when the
+    setup's own timestamps were first recorded."""
+    if not value or not str(value).strip():
+        return None
+    try:
+        return pd.Timestamp(value).timestamp()
+    except (ValueError, TypeError):
         return None
 
 
@@ -289,7 +304,49 @@ def main():
         print("    could have placed. See runner.stop_too_tight / min_stop_pips.")
     print()
 
-    # 5. Is this a portfolio result or a pile of simultaneous bets?
+    # 5. The SHAPE of the setup, in hours between its stages.
+    #
+    # Added after the operator read a rendered chart and said what no
+    # aggregate had: "after the 4H break I'm seeing a lot of single
+    # candle liquidity that was ignored before it detected one", and
+    # "after the liquidity is taken I was seeing a lot of confirmation
+    # before it then chose one".
+    #
+    # Both are about SELECTION, and both are measurable now that the
+    # setup's own timestamps are recorded. The last gap is the one that
+    # matters most: a confirmation is part of the REACTION off the
+    # level. If the median trade confirms many candles after touching
+    # it, price has already left, and the entry is not the one taught --
+    # it is whatever fired before the window closed.
+    print("SETUP SHAPE  (H1 candles between stages, per trade)")
+    stages = (("h4_breakout_time", "liquidity_time", "breakout -> pool forms"),
+              ("liquidity_time", "sweep_time", "pool -> swept"),
+              ("sweep_time", "level_touch_time", "sweep -> touches KL"),
+              ("level_touch_time", "entry_time", "touches KL -> ENTRY"))
+    any_stage = False
+    for a, b, label in stages:
+        gaps = []
+        for r in cl:
+            ta, tb = _hours(r.get(a)), _hours(r.get(b))
+            if ta is None or tb is None:
+                continue
+            gaps.append((tb - ta) / 3600.0)
+        if not gaps:
+            continue
+        any_stage = True
+        gaps.sort()
+        print(f"    {label:<26} median {gaps[len(gaps)//2]:>6.0f}   "
+              f"p90 {gaps[int(len(gaps)*.9)]:>6.0f}   max {gaps[-1]:>6.0f}")
+    if not any_stage:
+        print("    Not recorded in these CSVs -- re-run to populate "
+              "(added 2026-09-23).")
+    else:
+        print("    The LAST row is the one to judge. The confirmation is part of")
+        print("    the reaction off the level, so a median far above a couple of")
+        print("    candles means price had already left when the engine entered.")
+    print()
+
+    # 6. Is this a portfolio result or a pile of simultaneous bets?
     print("CONCURRENCY AT ENTRY")
     conc = [int(float(r["concurrent_open_positions_at_entry"]))
             for r in cl if (r.get("concurrent_open_positions_at_entry") or "").strip()]
