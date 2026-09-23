@@ -79,58 +79,40 @@ SLK_SYSTEM = {
 # would lose that. Nobody reading SLK_SYSTEM should be able to cite the
 # course for a number the bots chose, and nobody reading
 # SLK_OPERATIONAL should think this one is still in force.
+# Settings where the TAUGHT system deliberately departs from a live
+# default. Its own bundle, because it is neither a pure course rule
+# (SLK_SYSTEM) nor a deployment setting (SLK_OPERATIONAL) -- it is a
+# live setting the course overrules, and collapsing it into either one
+# would lose that.
+#
+# NOTHING HERE MAY BE A NUMBER I CHOSE. Two were, and both are gone:
+#
+#   min_stop_pips = 2.0   Mine. Operator, 2026-09-23: "I invented that
+#                         number -- what the heck is this guy. Is this
+#                         what you were taught?" No, it is not. It was
+#                         put there to stop 0.2-pip stops, which are a
+#                         real problem, but a filter nobody taught is
+#                         not a fix -- it is me overruling the course
+#                         with a guess. The honest treatment is already
+#                         in place: postmortem charges spread as
+#                         spread_pips/risk_pips, so a 0.2-pip stop
+#                         shows up costing 7.5R instead of being
+#                         quietly excluded. Let the cost be visible
+#                         rather than hiding the trade.
+#
+#   min_reward_r = 3.0    Also mine, and the operator did not even have
+#                         to point at it. I justified it with a loss
+#                         table, but erl_mode="target" means the target
+#                         IS the liquidity at whatever distance it
+#                         sits, so a 1.5R run to the previous weekly
+#                         high is a trade the course takes. The 1.0
+#                         floor in LIVE_FIXED_FLAGS stays, because that
+#                         one IS sourced -- "a trade of less than 1R
+#                         doesn't make sense to hold" (2026-09-01).
+#
+# Both mechanisms remain in run_backtest, off by default, so the
+# question can be MEASURED later. Neither is part of the system.
 SLK_TAUGHT_OVERRIDES = {
-    # The target IS the liquidity, so a setup whose liquidity sits close
-    # by is not a small win -- it is a trade Bishop would not take. He
-    # goes to the previous weekly high; he does not risk one to make one.
-    #
-    # The live floor is 1.0, set when the target was min(3R, ERL) and
-    # could never be large. Pairing that floor with an uncapped target is
-    # a combination nobody chose, and the 2026-09-23 live-windows run
-    # shows what it cost -- 39% of all trades taken below 3R, and 67% of
-    # the entire loss:
-    #
-    #     target    trades    net
-    #     0-2R        1523   -337.1R
-    #     2-3R         936   -204.5R
-    #     8-12R        546    +60.4R
-    #
-    # It only means anything alongside min_stop_pips below. R is a ratio,
-    # so on its own a reward floor prefers a TINY denominator -- which is
-    # why raising it made the two instruments measured on 2026-09-23
-    # worse, not better.
-    "min_reward_r": 3.0,
-
-    # The stop must be an invalidation zone, not a rounding error.
-    # AUDJPY 2025-09-25 18:00 was entered at 97.930 with a stop at
-    # 97.928 -- two tenths of a pip, on a cross whose spread is about
-    # 1.5. It scored 125R against the reward floor and lost, as it
-    # always would have.
-    #
-    # 2.0 is a judgement, not a citation, and is deliberately modest:
-    # roughly one spread on a major, under one on a cross. Bishop never
-    # gives a pip figure because he never needs one -- a real confirming
-    # candle has a real wick. This declines the setups where it does not
-    # rather than inventing a wider stop for them.
-    "min_stop_pips": 2.0,
-
-    # Take the setup the FIRST time price presents it, and only then.
-    #
-    # Operator, 2026-09-23, after reading a rendered chart: "it's not
-    # about putting a boundary, a cage around it. It's about using it
-    # the first time it presented itself... if you use it the first
-    # time it presented itself it will not take long."
-    #
-    # That is the whole answer to the two gaps the charts exposed --
-    # breakout-to-pool running to 180 bars, and the engine watching
-    # confirmations go past before taking a late one. Both came from
-    # rules that went looking for a SECOND chance: every 4H candle in
-    # the leg as its own setup, and MAX_CANDIDATES_PER_SETUP=3 letting
-    # a rejected first confirmation fall through. Neither is a window
-    # that was too wide.
-    #
-    # Unlike min_stop_pips this needs no number, which is why it is the
-    # better fix: there is nothing to tune and nothing to be late for.
     "first_presentation_only": True,
 
     # Rank the confirmations, do not race them.

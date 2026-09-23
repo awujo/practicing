@@ -97,19 +97,27 @@ def test_operational_settings_are_kept_separate_from_taught_ones():
     assert set(slk_kwargs()) >= set(SLK_SYSTEM) | set(SLK_OPERATIONAL)
 
 
-def test_the_reward_floor_the_course_overrules_beats_the_live_default():
-    """`min_reward_r` is the one setting where a live default and a taught
-    rule collide, so the merge order is the whole point.
+def test_the_taught_system_contains_no_number_i_chose():
+    """The rule this bundle exists to enforce.
 
-    The live floor of 1.0 was chosen when the target was min(3R, ERL) and
-    could never be large. With erl_mode="target" there is no cap, and the
-    2026-09-23 run took 39% of its trades below 3R for 67% of the loss.
-    If SLK_OPERATIONAL were merged last, that 1.0 would come back and
-    nothing would say so."""
+    Two settings here were numbers I picked, not rules anyone taught:
+    min_stop_pips=2.0 and min_reward_r=3.0. Operator, 2026-09-23: "I
+    invented that number -- what the heck is this guy. Is this what you
+    were taught?" No. A filter nobody taught is not a fix, it is the
+    course being overruled by a guess, and it is exactly how a system
+    stops being the one that was taught.
+
+    The reward floor that remains is 1.0, from LIVE_FIXED_FLAGS, and
+    that one IS sourced -- "a trade of less than 1R doesn't make sense
+    to hold" (2026-09-01)."""
     from ..slk_system import SLK_TAUGHT_OVERRIDES
 
-    assert SLK_OPERATIONAL["min_reward_r"] == 1.0
-    assert SLK_TAUGHT_OVERRIDES["min_reward_r"] == 3.0
-    assert slk_kwargs()["min_reward_r"] == 3.0
-    # An explicit caller still wins over all three bundles.
-    assert slk_kwargs(min_reward_r=2.0)["min_reward_r"] == 2.0
+    assert "min_stop_pips" not in SLK_TAUGHT_OVERRIDES
+    assert "min_reward_r" not in SLK_TAUGHT_OVERRIDES
+    assert slk_kwargs()["min_reward_r"] == 1.0
+    assert "min_stop_pips" not in slk_kwargs()
+
+    # What is left must be mechanism, not magnitude: every value here is
+    # a switch, never a threshold someone has to justify.
+    assert all(isinstance(v, bool) for v in SLK_TAUGHT_OVERRIDES.values()), \
+        SLK_TAUGHT_OVERRIDES

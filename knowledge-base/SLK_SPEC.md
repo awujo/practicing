@@ -476,18 +476,47 @@ Two measured examples, read off full-resolution frames:
 | 2 | "engulfing" = a disrespected key level | `is_engulfing()`, a candlestick engulfing | `disrespect_entry()` |
 | 3 | disrespect applies to all four shapes | open-close only | **built** -- A/V/open-close, overshoot allowed, opposite-breakout invalidation |
 | 4 | breakout + sweep/break, rated highest | absent | **built** -- 5.4/5.5 off the frames |
-| 5 | ladder H3..M5, written on his chart | H1 only | **deliberate** -- scoped by the operator |
+| 5 | ladder H3..M5, written on his chart | H1 only | **deliberate** -- scoped by the operator, reaffirmed 2026-09-23: "1h is ok" |
 | 6 | QMR key level | not detected at all | **built** -- `detect_quasimodo_levels()`, `--require-qmr` |
 | 6b | (imbalance overlap, a separate property) | computed, only picked a stop | `--require-imbalance-overlap` |
 | 7 | the bias caveat: daily rejects, condition 3 descends to H4 | daily must break out | `--bias-caveat` |
 | 8 | stop at the setup's invalidation zone | per-trigger | **built** for the new triggers |
-| 9 | **origin vs continuation are different trades** | `origin_kind="any"` | **NOT BUILT** |
+| 9 | origin vs continuation are different trades | `origin_kind="any"` | **DROPPED** -- operator, 2026-09-23: "forget" |
 | 10 | **daily-only bias with a REDUCED target** | absent | **NOT BUILT** |
-| 11 | trendline liquidity | absent | **NOT BUILT** (bd2 t=1125, one mention) |
-| 12 | the breakout candle's own extremes are liquidity | not modelled | **NOT BUILT** (bias-2 t=795-885) |
+| 11 | trendline liquidity | absent | **DROPPED** -- operator, 2026-09-23: "forget" |
+| 12 | the breakout candle's own extremes are liquidity | retracement side only | **MINOR** -- operator, 2026-09-23: "ok but a minor liquidity, especially in the lower time frame". The retracement-side extreme already counts; the opposite side is the unbuilt part, and at H1-only scope it is the least of these. |
 
 Everything marked built defaults OFF, so no recorded number has moved.
 **Nothing in this table has been measured on the fixed engine.**
+
+### Two rows that are NOT in this table, and must never be
+
+`min_stop_pips = 2.0` and `min_reward_r = 3.0` were numbers I chose, not
+rules anyone taught, and both were briefly part of the taught system.
+Operator, 2026-09-23: *"min_stop_pips = 2.0 -- I invented that number.
+What the heck is this guy. Is this what you were taught?"*
+
+No. Both are removed. The problems they were aimed at are real -- 0.2-pip
+stops exist and cost 7.5R in spread each -- but the honest treatment is
+to MEASURE the cost, which `postmortem` now does per trade, rather than
+to filter the trade away behind a threshold with no source. A filter
+nobody taught is the course being overruled by a guess.
+
+The surviving reward floor is 1.0, and that one is sourced: *"a trade of
+less than 1R doesn't make sense to hold"* (operator, 2026-09-01).
+
+`test_the_taught_system_contains_no_number_i_chose` enforces this: every
+value in `SLK_TAUGHT_OVERRIDES` must be a boolean switch, never a
+magnitude.
+
+### On discretion
+
+The engine takes every setup that qualifies; Bishop takes a handful a
+week. I had listed that as a gap. Operator, 2026-09-23: *"he is human,
+you are machine."* It is not a gap to be closed by inventing a quality
+score -- that would be the same offence as the two numbers above. The
+machine's job is to apply the rules exactly; if the rules admit trades he
+would decline, the rules are wrong, not the discipline.
 
 ---
 
