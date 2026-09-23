@@ -2464,3 +2464,27 @@ def test_a_reward_floor_alone_prefers_the_broken_trades():
     assert broken_r > 100
     # The floor alone keeps the wrong one.
     assert broken_r > real_r
+
+
+def test_the_setup_that_produced_a_trade_is_recorded_on_it(synthetic_cache):
+    """The liquidity pool, the sweep and the H4 breakout must reach the
+    trade log, not just the entry.
+
+    Without these the rendered chart cannot show the setup at all, which
+    is what made it unreadable: "I couldn't understand where single
+    candle liquidity was." A blank column and a wrong column look
+    identical downstream, so this asserts they arrive POPULATED rather
+    than merely present."""
+    records = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    assert records
+    t = records[0]
+
+    assert t.liquidity_price, "the pool price price came back for"
+    assert t.liquidity_time is not None, "when that pool formed"
+    assert t.sweep_time is not None, "when price took it"
+    assert t.h4_breakout_time is not None, "the breakout that opened the window"
+
+    # And in the order the strategy builds them.
+    assert t.h4_breakout_time <= t.sweep_time
+    assert t.liquidity_time <= t.sweep_time
+    assert t.sweep_time <= t.entry_time
