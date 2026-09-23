@@ -2423,3 +2423,44 @@ def test_rejected_recently_respects_the_window():
     # Nothing before the query time.
     assert _rejected_recently(times, t0 - pd.Timedelta(days=1), pd.Timedelta(days=45)) is False
     assert _rejected_recently([], t0, pd.Timedelta(days=45)) is False
+
+
+def test_a_stop_inside_the_spread_is_not_an_invalidation_zone():
+    """AUDJPY 2025-09-25 18:00, from the real run: entry 97.930, stop
+    97.928. Two tenths of a pip on a cross whose spread is ~1.5, so the
+    trade is stopped by the spread before price moves.
+
+    `_natural_stop_too_wide` policed one end for a year while nothing
+    watched the other, and the other end is where the damage was."""
+    from ..runner import stop_too_tight
+
+    assert stop_too_tight(97.930, 97.928, 0.01, min_pips=2.0) is True
+    # 7.6 pips -- the one winner among those six -- must survive.
+    assert stop_too_tight(97.952, 97.876, 0.01, min_pips=2.0) is False
+    # Direction must not matter.
+    assert stop_too_tight(97.928, 97.930, 0.01, min_pips=2.0) is True
+
+
+def test_the_tight_stop_guard_is_off_by_default():
+    """0.0 is every trade this engine has ever produced. A new gate must
+    not silently reprice the entire backtest history."""
+    from ..runner import stop_too_tight
+
+    assert stop_too_tight(97.930, 97.928, 0.01, min_pips=0.0) is False
+
+
+def test_a_reward_floor_alone_prefers_the_broken_trades():
+    """Why min_reward_r had to be paired with min_stop_pips.
+
+    R is a RATIO. The 0.2-pip stop scores 125R against the same target
+    the 7.6-pip stop scores 3.0R against -- so raising the floor to 3.0
+    keeps the unplaceable trade and discards the real one. That is the
+    mechanism behind both instruments measuring worse on 2026-09-23."""
+    target = 98.181
+    real_r = abs(target - 97.952) / abs(97.952 - 97.876)
+    broken_r = abs(target - 97.930) / abs(97.930 - 97.928)
+
+    assert real_r == pytest.approx(3.01, abs=0.01)
+    assert broken_r > 100
+    # The floor alone keeps the wrong one.
+    assert broken_r > real_r

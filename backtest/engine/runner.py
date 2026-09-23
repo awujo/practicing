@@ -326,6 +326,46 @@ def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float
     return abs(entry_price - stop_loss) / pip_size > max_pips
 
 
+def stop_too_tight(entry_price: float, stop_loss: float, pip_size: float,
+                   min_pips: float) -> bool:
+    """A stop so close that the spread takes it before price moves.
+
+    The counterpart to `_natural_stop_too_wide`, which existed on its own
+    for a year while nothing checked the other end -- and the other end
+    is where the damage was. AUDJPY 2025-09-25 18:00 was entered at
+    97.930 with the stop at 97.928: a TWO-TENTHS OF A PIP invalidation on
+    a cross whose spread is around 1.5 pips. It cannot win. It is not a
+    trade anyone could place.
+
+    Bishop's stop goes on the wick of the candle that confirmed --
+    video-14, "a little bit above this particular high". That is an
+    INVALIDATION ZONE. If the confirming candle's wick sits a fifth of a
+    pip from the entry, there was no confirming candle; there was a doji,
+    and the setup should be declined rather than given a wider stop it
+    was never entitled to. So this SKIPS, and deliberately does not
+    widen: moving the stop to make a trade fit is how a system stops
+    being the one that was taught.
+
+    Two things this repairs at once, because they are the same bug:
+
+      the spread model  Every report charges a flat 0.12R per round
+                        trip, which assumes the stop is a fixed size. It
+                        is not. Cost in R is spread_pips/risk_pips, so
+                        those six trades really cost 0.20R, 1.07R, 0.39R,
+                        7.50R, 1.25R and 0.30R.
+
+      min_reward_r      R is a RATIO, so a 0.2-pip stop scores 125R and
+                        clears any reward floor trivially. Raising that
+                        floor to 3.0 on 2026-09-23 therefore selected FOR
+                        the most broken trades, which is why the two
+                        instruments measured that day both got worse. A
+                        reward floor is only meaningful once the
+                        denominator is real."""
+    if min_pips <= 0:
+        return False
+    return abs(entry_price - stop_loss) / pip_size < min_pips
+
+
 def _reaction_leg_extreme(h1, entry_idx: int, direction: Direction, key_level_time,
                            max_lookback: int = REACTION_LOOKAHEAD) -> float | None:
     """The extreme price THIS setup's own reaction leg actually reached --
@@ -1557,6 +1597,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   close_based_sweep_break: bool = False,
                   liquidity_mode: str = "swing",
                   single_candle_max_pools: int | None = None,
+                  min_stop_pips: float = 0.0,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1622,7 +1663,15 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     doesn't make sense to hold." None (default) applies no minimum,
     matching every trade this engine has ever produced; compare against
     the default before trusting a given threshold as the new normal,
-    same as avoid_rollover_entries above.
+    same as avoid_rollover_entries above. NOTE that a reward floor is
+    only meaningful once the DENOMINATOR is real -- see min_stop_pips,
+    without which a 0.2-pip stop scores 125R and clears any floor.
+    min_stop_pips: skip any entry whose stop sits closer than this many
+    pips to it. 0.0 (default) is the old behavior, which had no lower
+    bound at all while `_natural_stop_too_wide` policed the upper one.
+    A stop inside the spread is not an invalidation zone, and the trade
+    is DECLINED rather than given a wider stop it never earned. See
+    `stop_too_tight()` for the AUDJPY trades that exposed this.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -2360,6 +2409,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # construction sits on the correct side, but this guard stays as a
         # defensive check for all stop kinds.
         if not _stop_on_correct_side(entry_price, stop_loss, effective):
+            continue
+        # ... and on the right side is not enough: it must also be far
+        # enough away to be an invalidation rather than a rounding error.
+        # Checked HERE, after every stop_anchor branch above has had its
+        # say, so no anchor can route around it. See `stop_too_tight`.
+        if stop_too_tight(entry_price, stop_loss, pip_size, min_stop_pips):
             continue
         # Target is ERL-capped, not a fixed 3:1 (direct user correction --
         # "price wants to go from internal range liquidity to external",

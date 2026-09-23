@@ -94,7 +94,25 @@ SLK_TAUGHT_OVERRIDES = {
     #     0-2R        1523   -337.1R
     #     2-3R         936   -204.5R
     #     8-12R        546    +60.4R
+    #
+    # It only means anything alongside min_stop_pips below. R is a ratio,
+    # so on its own a reward floor prefers a TINY denominator -- which is
+    # why raising it made the two instruments measured on 2026-09-23
+    # worse, not better.
     "min_reward_r": 3.0,
+
+    # The stop must be an invalidation zone, not a rounding error.
+    # AUDJPY 2025-09-25 18:00 was entered at 97.930 with a stop at
+    # 97.928 -- two tenths of a pip, on a cross whose spread is about
+    # 1.5. It scored 125R against the reward floor and lost, as it
+    # always would have.
+    #
+    # 2.0 is a judgement, not a citation, and is deliberately modest:
+    # roughly one spread on a major, under one on a cross. Bishop never
+    # gives a pip figure because he never needs one -- a real confirming
+    # candle has a real wick. This declines the setups where it does not
+    # rather than inventing a wider stop for them.
+    "min_stop_pips": 2.0,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

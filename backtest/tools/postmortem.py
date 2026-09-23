@@ -58,6 +58,10 @@ import glob
 import os
 from collections import Counter, defaultdict
 
+# Used only when a row has no `risk_pips` -- the old flat assumption,
+# kept solely so an older CSV still produces a number rather than a zero.
+FLAT_FALLBACK_R = 0.12
+
 
 def _f(row, key):
     """A float, or None when the column is blank. Blank is normal here:
@@ -90,19 +94,41 @@ def closed(rows):
             and _f(r, "r_multiple") is not None]
 
 
-def _agg(rows, spread):
+def cost_r(row, spread_pips):
+    """What the spread really costs THIS trade, in R.
+
+    A flat charge per round trip -- 0.12R in every report this project
+    has produced -- silently assumes every trade risks the same
+    distance. They do not. Cost in R is spread_pips/risk_pips, so a
+    trade risking 0.2 pips on a pair with a 1.5-pip spread pays 7.5R,
+    not 0.12R, and the flat figure understates it sixty-fold.
+
+    `risk_pips` is recorded per trade, so this needs no re-run. Falls
+    back to the flat charge only when it is missing."""
+    if not spread_pips:
+        return 0.0
+    risk = _f(row, "risk_pips")
+    if not risk:
+        return FLAT_FALLBACK_R
+    return spread_pips / risk
+
+
+def _agg(rows, spread_pips):
     n = len(rows)
     if not n:
         return None
     wins = [r for r in rows if r["exit_reason"] == "target_hit"]
     total = sum(_f(r, "r_multiple") for r in rows)
+    costs = [cost_r(r, spread_pips) for r in rows]
+    cost_total = sum(costs)
     return {
         "n": n,
         "win": 100.0 * len(wins) / n,
         "total": total,
         "per": total / n,
-        "net": total / n - spread,
-        "net_total": total - spread * n,
+        "net": (total - cost_total) / n,
+        "net_total": total - cost_total,
+        "cost_per": cost_total / n,
     }
 
 
@@ -132,7 +158,12 @@ def main():
                         help="filename suffix identifying the run, e.g. _slk")
     parser.add_argument("--instruments", default="",
                         help="comma-separated; default is every file found")
-    parser.add_argument("--spread", type=float, default=0.12)
+    parser.add_argument("--spread-pips", type=float, default=1.5,
+                        help="spread in PIPS, not R. Cost in R depends on how\n"
+                             "far each trade's stop sits, so a flat R charge is\n"
+                             "meaningless once stop sizes vary. 1.5 is a rough\n"
+                             "cross-pair figure -- still an assumption, but one\n"
+                             "that scales the right way.")
     args = parser.parse_args()
 
     only = {s.strip().upper() for s in args.instruments.split(",") if s.strip()}
@@ -146,10 +177,10 @@ def main():
         return
 
     print(f"POST-MORTEM  ({len(files)} files, {len(rows)} rows, {len(cl)} closed)")
-    print(f"  spread assumption = {args.spread} R/round trip")
+    print(f"  spread assumption = {args.spread_pips} PIPS/round trip, charged per trade as spread/risk_pips")
     print()
 
-    pooled = _agg(cl, args.spread)
+    pooled = _agg(cl, args.spread_pips)
     print("POOLED")
     _line("all", pooled)
     print()
@@ -160,7 +191,7 @@ def main():
     for r in cl:
         by_trigger[r.get("trigger_type") or "(none)"].append(r)
     for name, group in sorted(by_trigger.items(), key=lambda kv: -len(kv[1])):
-        s = _agg(group, args.spread)
+        s = _agg(group, args.spread_pips)
         share = 100.0 * s["n"] / pooled["n"]
         _line(f"{name} ({share:.0f}%)", s)
     print()
@@ -188,7 +219,7 @@ def main():
         if not group:
             continue
         label = f"{lo}-{hi}R" if hi < 1e9 else f"{lo}R+"
-        _line(label, _agg(group, args.spread))
+        _line(label, _agg(group, args.spread_pips))
     if missing:
         print(f"  ({missing} trades had no usable target geometry)")
     print()
@@ -226,14 +257,36 @@ def main():
     print("SPREAD SENSITIVITY")
     gross_per = pooled["per"]
     print(f"  gross edge            {gross_per:>6.3f} R/trade over {pooled['n']} trades")
-    print(f"  breakeven spread      {gross_per:>6.3f} R/round trip")
+    print(f"  mean real cost        {pooled['cost_per']:>6.3f} R/trade  (a flat 0.12R was assumed before)")
+    print(f"  net after real cost   {pooled['net_total']:>8.1f}R "
+          f"({pooled['net']:+.3f} R/trade)")
     if gross_per <= 0:
         print("  The system is negative BEFORE costs. Spread is not the problem")
         print("  here and reducing the trade count will not fix it on its own.")
     else:
-        print(f"  at {args.spread} R assumed:  {pooled['net_total']:>8.1f}R net")
         print("  Cost scales with the NUMBER of trades while edge scales with R,")
         print("  so an overtrading system dies on costs even with a real edge.")
+
+    # The trades a human could not have placed. A stop tighter than the
+    # spread is not an invalidation zone, and until min_stop_pips existed
+    # nothing stopped the engine taking them -- they are also the trades a
+    # reward floor likes most, since R is a ratio.
+    tight = sorted((_f(r, "risk_pips") or 0.0) for r in cl)
+    tight = [x for x in tight if x > 0]
+    if tight:
+        print()
+        print("  STOP DISTANCE (the denominator of every R above)")
+        print(f"    min {tight[0]:.2f}p   p10 {tight[int(len(tight)*.1)]:.2f}p   "
+              f"median {tight[len(tight)//2]:.2f}p   max {tight[-1]:.1f}p")
+        for limit in (1.0, 2.0, 3.0, 5.0):
+            under = [x for x in tight if x < limit]
+            if under:
+                print(f"    under {limit:.0f} pip: {len(under):>5} trades "
+                      f"({100.0*len(under)/len(tight):>4.1f}%), costing "
+                      f"{sum(args.spread_pips/x for x in under):>8.1f}R in spread alone")
+        print("    A stop tighter than the spread cannot win. Those trades are")
+        print("    not losses the strategy chose -- they are trades no human")
+        print("    could have placed. See runner.stop_too_tight / min_stop_pips.")
     print()
 
     # 5. Is this a portfolio result or a pile of simultaneous bets?
