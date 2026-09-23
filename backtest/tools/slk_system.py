@@ -129,6 +129,26 @@ SLK_TAUGHT_OVERRIDES = {
     # beyond it. So the earliest always won and the ordering in
     # confirmation_triggers only ever broke ties inside one candle.
     "trigger_priority": True,
+
+    # The weekly may be set aside when the daily persistently
+    # contradicts it.
+    #
+    # "Weekly [is] saying bullish, [and] daily is now saying bearish. In
+    # that case those two timeframes are not in alignment, so [I] go to
+    # the four hours ... I can leave the weekly, I use my daily and my
+    # four hours, [and] I probably just target a good liquidity"
+    # (routine t=390-435), confirmed deliberate at t=465: "I built it
+    # from the daily alone."
+    #
+    # Without it the weekly wins every split -- it is first in
+    # TIMEFRAME_PRIORITY -- so a disagreement killed the trade outright
+    # and this whole class of setups was unreachable.
+    #
+    # The reduced target that makes it safe needs no number: the weekly
+    # is set aside for the TARGET too, so the ERL comes from the daily's
+    # own extremes, which are nearer by construction. A fraction of R
+    # here would have been min_stop_pips all over again.
+    "daily_only_when_split": True,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

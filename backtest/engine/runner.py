@@ -326,6 +326,25 @@ def _natural_stop_too_wide(entry_price: float, stop_loss: float, pip_size: float
     return abs(entry_price - stop_loss) / pip_size > max_pips
 
 
+def weekly_set_aside(weekly_bias, daily_bias, enabled: bool) -> bool:
+    """May the weekly be dropped for this entry?
+
+    Only when BOTH timeframes have a bias and those biases DISAGREE.
+    SLK_SPEC 1, routine t=390-435: *"Weekly [is] saying bullish, [and]
+    daily is now saying bearish. In that case those two timeframes are
+    not in alignment, so [I] go to the four hours ... I can leave the
+    weekly, I use my daily and my four hours."*
+
+    A weekly with no bias yet is NOT a disagreement and must not trigger
+    this -- `resolve_effective_bias` already falls through to the daily
+    in that case, and treating silence as conflict would quietly convert
+    every early-history trade to the reduced-target path."""
+    return bool(enabled
+                and weekly_bias is not None
+                and daily_bias is not None
+                and weekly_bias != daily_bias)
+
+
 def stop_too_tight(entry_price: float, stop_loss: float, pip_size: float,
                    min_pips: float) -> bool:
     """A stop so close that the spread takes it before price moves.
@@ -1637,6 +1656,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   min_stop_pips: float = 0.0,
                   first_presentation_only: bool = False,
                   trigger_priority: bool = False,
+                  daily_only_when_split: bool = False,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1724,6 +1744,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     candle after the touch, a breakout needs two at minimum -- so without this
     the earliest always wins and `confirmation_triggers`' ordering only
     breaks ties inside a single candle. False (default) keeps the race.
+    daily_only_when_split: when the Weekly and Daily biases DISAGREE,
+    set the weekly aside and build the bias from Daily + H4 -- and take
+    the target from the daily's extremes alone, which is the "reduced
+    target" that makes it safe. SLK_SPEC 1, routine t=390-435. False
+    (default) keeps the weekly winning every split, which killed the
+    trade outright.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -2076,9 +2102,36 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         daily_bias = bias_at(daily_breakpoints, curr.time)
         h4_bias = _last_direction_at(h4_lookup, curr.time)
         h1_bias = _last_direction_at(h1_lookup, curr.time)
-        effective, effective_tf = resolve_effective_bias(
-            {"Weekly": weekly_bias, "Daily": daily_bias, "H4": h4_bias}
-        )
+        # THE WEEKLY MAY BE SET ASIDE WHEN THE DAILY PERSISTENTLY
+        # DISAGREES WITH IT. SLK_SPEC 1, from routine t=390-435:
+        #
+        #   "Weekly [is] saying bullish, [and] daily is now saying
+        #    bearish. In that case those two timeframes are not in
+        #    alignment, so [I] go to the four hours ... I can leave the
+        #    weekly, I use my daily and my four hours, [and] I probably
+        #    just target a good liquidity."
+        #
+        # Confirmed deliberate at t=465: "I built it from the daily
+        # alone." Without this the weekly always wins -- it is first in
+        # TIMEFRAME_PRIORITY -- so every split simply killed the trade,
+        # and a whole class of setups he takes was unreachable.
+        #
+        # The reduced target is what makes it safe, and it needs no
+        # number: having set the weekly aside for the BIAS, it is set
+        # aside for the TARGET too, so the ERL comes from the daily's
+        # own extremes. Those are nearer than the weekly's by
+        # construction, which is the reduction. Inventing a fraction of
+        # R here would be the same mistake as min_stop_pips.
+        weekly_dropped = weekly_set_aside(weekly_bias, daily_bias,
+                                          daily_only_when_split)
+        if weekly_dropped:
+            effective, effective_tf = resolve_effective_bias(
+                {"Daily": daily_bias, "H4": h4_bias}
+            )
+        else:
+            effective, effective_tf = resolve_effective_bias(
+                {"Weekly": weekly_bias, "Daily": daily_bias, "H4": h4_bias}
+            )
         # The higher-timeframe bias must still align with the cascade's
         # breakout direction at actual entry time -- bias can flip in the
         # (bounded) time between the H4 breakout and the eventual H1
@@ -2512,7 +2565,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # excluded (it's the cascade's own internal timeframe, not external
         # relative to it -- see _nearest_erl()'s docstring). Weekly may be [].
         raw_target = primary_target(entry_price, stop_loss, effective, rr=rr)
-        erl_price = _nearest_erl(effective, entry_price, curr.time, daily, weekly) if erl_cap else None
+        # The reduced target of the daily-only path: the weekly was set
+        # aside for the bias, so it is set aside here too and the ERL
+        # comes from the daily's own extremes. "I probably just target a
+        # good liquidity" (routine t=390-435).
+        erl_series = (daily,) if weekly_dropped else (daily, weekly)
+        erl_price = (_nearest_erl(effective, entry_price, curr.time, *erl_series)
+                     if erl_cap else None)
         target = primary_target(entry_price, stop_loss, effective, rr=rr, erl_price=erl_price,
                                 erl_mode=erl_mode)
         erl_capped = target != raw_target

@@ -2571,3 +2571,47 @@ def test_trigger_priority_is_off_by_default(synthetic_cache):
     b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
                      trigger_priority=False)
     assert [t.entry_time for t in a] == [t.entry_time for t in b]
+
+
+def test_the_weekly_is_set_aside_only_on_a_real_disagreement():
+    """SLK_SPEC 1, routine t=390-435. The weekly is dropped when the
+    daily contradicts it -- not when it simply has nothing to say.
+
+    Without the rule the weekly always wins (it is first in
+    TIMEFRAME_PRIORITY), so every split killed the trade outright and a
+    class of setups he takes was unreachable. With it applied too
+    eagerly, every early-history entry would silently become a
+    reduced-target trade."""
+    from ..runner import weekly_set_aside
+
+    B, S = Direction.BULLISH, Direction.BEARISH
+    assert weekly_set_aside(B, S, True) is True
+    assert weekly_set_aside(S, B, True) is True
+    # Agreement is not a split.
+    assert weekly_set_aside(B, B, True) is False
+    # Silence is not disagreement -- resolve_effective_bias already
+    # falls through to the daily when the weekly has no bias.
+    assert weekly_set_aside(None, B, True) is False
+    assert weekly_set_aside(B, None, True) is False
+    # Off by default.
+    assert weekly_set_aside(B, S, False) is False
+
+
+def test_the_reduced_target_is_the_dailys_own_liquidity():
+    """What makes the daily-only path safe: "I probably just target a
+    good liquidity" (routine t=390-435).
+
+    The weekly was set aside for the BIAS, so it is set aside for the
+    TARGET too -- and a daily extreme is nearer than a weekly one by
+    construction, which IS the reduction. No fraction of R had to be
+    invented for it."""
+    daily = [D(i, 1.100 + i * 0.001, 1.102 + i * 0.001,
+               1.098 + i * 0.001, 1.101 + i * 0.001) for i in range(6)]
+    # One weekly candle whose high sits far above every daily high.
+    weekly = [Candle(D(0, 0, 0, 0, 0).time, 1.100, 1.200, 1.090, 1.150, 1000)]
+    at = D(9, 0, 0, 0, 0).time
+
+    both = _nearest_erl(Direction.BULLISH, 1.1005, at, daily, weekly)
+    daily_only = _nearest_erl(Direction.BULLISH, 1.1005, at, daily)
+    assert both is not None and daily_only is not None
+    assert daily_only <= both, "dropping the weekly cannot widen the target"

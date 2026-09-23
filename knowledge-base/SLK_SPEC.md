@@ -482,7 +482,7 @@ Two measured examples, read off full-resolution frames:
 | 7 | the bias caveat: daily rejects, condition 3 descends to H4 | daily must break out | `--bias-caveat` |
 | 8 | stop at the setup's invalidation zone | per-trigger | **built** for the new triggers |
 | 9 | origin vs continuation are different trades | `origin_kind="any"` | **DROPPED** -- operator, 2026-09-23: "forget" |
-| 10 | **daily-only bias with a REDUCED target** | absent | **NOT BUILT** |
+| 10 | daily-only bias with a REDUCED target | weekly always won the split | **built** -- `daily_only_when_split`; the weekly is dropped from the bias AND from the ERL, which is the reduction |
 | 11 | trendline liquidity | absent | **DROPPED** -- operator, 2026-09-23: "forget" |
 | 12 | the breakout candle's own extremes are liquidity | retracement side only | **MINOR** -- operator, 2026-09-23: "ok but a minor liquidity, especially in the lower time frame". The retracement-side extreme already counts; the opposite side is the unbuilt part, and at H1-only scope it is the least of these. |
 
