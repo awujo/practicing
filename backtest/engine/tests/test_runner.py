@@ -2615,3 +2615,98 @@ def test_the_reduced_target_is_the_dailys_own_liquidity():
     daily_only = _nearest_erl(Direction.BULLISH, 1.1005, at, daily)
     assert both is not None and daily_only is not None
     assert daily_only <= both, "dropping the weekly cannot widen the target"
+
+
+def _synthetic_walk(seed, bars=1500, n_setups=60):
+    """A random walk plus overlapping setups, for equivalence checks."""
+    import random
+    from ..key_levels import KeyLevel
+    random.seed(seed)
+    px, h1 = 1.1000, []
+    for i in range(bars):
+        o = px
+        c = px + random.gauss(0, 0.0008)
+        h1.append(Candle(time=H1_BASE + pd.Timedelta(hours=i), open=o,
+                         high=max(o, c) + abs(random.gauss(0, .0003)),
+                         low=min(o, c) - abs(random.gauss(0, .0003)),
+                         close=c, volume=1000))
+        px = c
+    setups = []
+    for n in range(n_setups):
+        i = 20 + n * 18
+        lvl = KeyLevel(time=h1[i].time, price=h1[i].close, shape="V",
+                       default_bias=Direction.BULLISH, confirmed_at=h1[i].time)
+        setups.append(LiquiditySetup(
+            direction=Direction.BULLISH, breakout_time=h1[i].time,
+            liquidity_price=h1[i].low, liquidity_time=h1[i].time,
+            liquidity_known_at=h1[i].time, sweep_from=h1[i].time,
+            reaction_level_candidates=[lvl], setup_id=n, h4_validated=True))
+    return h1, setups
+
+
+def _rank_by_full_scan(h1, setups):
+    """Deliberately naive: scan the whole window, pick by (rank, index).
+
+    The reference the pruned implementation must agree with. Written
+    without any of its shortcuts on purpose."""
+    import bisect
+    from ..runner import REACTION_LOOKAHEAD
+    rank = {n: i for i, n in enumerate(TRIGGERS_TAUGHT)}
+    times = [c.time for c in h1]
+    seen, out = set(), []
+    for s in setups:
+        start = bisect.bisect_left(times, s.sweep_from)
+        lvl = s.reaction_level_candidates[0]
+        hits, touched, t_idx = [], False, None
+        for idx in range(start + 1, min(start + 1 + REACTION_LOOKAHEAD, len(h1))):
+            prev, curr = h1[idx - 1], h1[idx]
+            now = ((prev.low <= lvl.price <= prev.high)
+                   or (curr.low <= lvl.price <= curr.high))
+            if now and t_idx is None:
+                t_idx = idx - 1 if prev.low <= lvl.price <= prev.high else idx
+            touched = touched or now
+            if not touched or idx in seen:
+                continue
+            t = _reaction_trigger(h1, idx, s.direction, TRIGGERS_TAUGHT, since=t_idx)
+            if t:
+                hits.append((rank[t], idx, t))
+        if hits:
+            hits.sort()
+            out.append((s.setup_id, hits[0][1], hits[0][2]))
+            seen.add(hits[0][1])
+    return sorted(out, key=lambda r: r[1])
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3, 4])
+def test_rank_pruning_changes_cost_not_answers(seed):
+    """Ranking without pruning scanned the entire reaction window and
+    cost 20x the trigger calls of racing -- 11,952 against 640 on a
+    300-setup benchmark, 1.62s against 0.08s. That is the live cycle
+    budget, not a tidiness point.
+
+    Pruning is exact: once a rank-2 confirmation has fired only ranks 0
+    and 1 can improve on it, and among equal ranks the earliest already
+    won. This asserts it against a naive full scan rather than trusting
+    that argument."""
+    h1, setups = _synthetic_walk(seed)
+    got = [(c.setup_id, c.index, c.trigger) for c in
+           _find_entry_candidates(h1, setups, max_per_setup=1,
+                                  triggers=TRIGGERS_TAUGHT, trigger_priority=True)]
+    assert got == _rank_by_full_scan(h1, setups)
+
+
+def test_ranking_actually_shifts_the_mix_towards_the_rated_triggers():
+    """The point of the whole exercise. On the same synthetic data,
+    racing gives disrespect most of the entries; ranking gives them to
+    breakout and sweep+break -- the two Bishop rates above all others."""
+    from collections import Counter
+
+    h1, setups = _synthetic_walk(11, bars=3000, n_setups=150)
+    raced = Counter(c.trigger for c in _find_entry_candidates(
+        h1, setups, max_per_setup=1, triggers=TRIGGERS_TAUGHT))
+    ranked = Counter(c.trigger for c in _find_entry_candidates(
+        h1, setups, max_per_setup=1, triggers=TRIGGERS_TAUGHT, trigger_priority=True))
+
+    rated = lambda c: c["breakout"] + c["sweep_break"]
+    assert rated(ranked) > rated(raced) * 2, (raced, ranked)
+    assert ranked["disrespect"] < raced["disrespect"]

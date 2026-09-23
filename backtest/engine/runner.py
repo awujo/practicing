@@ -1307,6 +1307,11 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
         for level in setup.reaction_level_candidates:
             level_price = level.price
             found: list[EntryCandidate] = []
+            # Ranking one candidate out of the window can prune; ranking
+            # several cannot, because the later equal-rank hits are part
+            # of what is being asked for.
+            prune = trigger_priority and max_per_setup == 1
+            best_rank = len(triggers)
             touched_yet = False
             # WHERE the reaction started, not just whether it did. The
             # two break triggers measure their low, their lift and their
@@ -1344,7 +1349,23 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                 gate = touched_yet if reaction_gate == "window" else touches_now
                 if not gate or idx in seen_indices:
                     continue
-                trigger = _reaction_trigger(h1, idx, setup.direction, triggers,
+                # Once a rank-2 confirmation has fired, only ranks 0 and
+                # 1 can still improve on it, so the rest need not be
+                # tested again on every later candle. Exact -- among
+                # equal ranks the earliest already won and is held --
+                # and it matters: without it, ranking scanned the whole
+                # window and cost 20x the trigger calls of racing
+                # (11,952 against 640 on a 300-setup benchmark, 1.62s
+                # against 0.08s). That is the live cycle budget, not a
+                # tidiness point.
+                #
+                # Only safe to prune when one candidate is wanted. With
+                # max_per_setup > 1 the later equal-rank hits are part
+                # of the answer, so the full scan stays.
+                active = triggers[:best_rank] if prune else triggers
+                if not active:
+                    break
+                trigger = _reaction_trigger(h1, idx, setup.direction, active,
                                             since=touch_idx)
                 if trigger is not None:
                     found.append(EntryCandidate(idx, setup.direction, level,
@@ -1353,7 +1374,11 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                                                 sweep_index=sweep_idx,
                                                 touch_index=(touch_idx if touch_idx
                                                              is not None else -1)))
-                    if not trigger_priority and len(found) >= max_per_setup:
+                    if prune:
+                        best_rank = triggers.index(trigger)
+                        if best_rank == 0:
+                            break          # nothing can beat the top rank
+                    elif not trigger_priority and len(found) >= max_per_setup:
                         break
 
             # RANK the confirmations in this reaction, do not race them.
