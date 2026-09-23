@@ -131,16 +131,43 @@ class BarClock:
         return bisect.bisect_left(times, b) - bisect.bisect_left(times, a)
 
 
+# A column that only exists in CSVs written on or after 2026-09-23.
+# Its presence is a cheap, exact schema stamp: a file without it was
+# produced by different rules, whatever its timestamp says.
+SCHEMA_MARKER = "sweep_time"
+
+
 def load(results_dir, suffix, instruments=None):
+    """Rows, plus enough about WHERE they came from to catch a mix.
+
+    Pooling files written under different rules is how this project has
+    repeatedly drawn a confident wrong conclusion, and the glob makes it
+    the default behaviour: re-run one instrument and the other fourteen
+    stale CSVs join the average silently. The 2026-09-23 run reported
+    4,381 trades including 276 labelled `plug_and_play` -- a label
+    deleted the day before -- and a 0.10 pip stop that `min_stop_pips`
+    had already made impossible.
+
+    So each file is returned with its age and whether it carries the
+    current schema, and the caller refuses to average across a mix."""
     pattern = os.path.join(results_dir, f"*{suffix}.csv")
     rows = []
-    files = sorted(glob.glob(pattern))
-    for path in files:
+    files = []
+    for path in sorted(glob.glob(pattern)):
         with open(path, newline="") as fh:
-            for row in csv.DictReader(fh):
+            reader = csv.DictReader(fh)
+            current = SCHEMA_MARKER in (reader.fieldnames or [])
+            n = 0
+            for row in reader:
                 if instruments and row.get("instrument") not in instruments:
                     continue
+                row["__file"] = os.path.basename(path)
+                row["__current"] = current
                 rows.append(row)
+                n += 1
+        files.append({"path": path, "name": os.path.basename(path),
+                      "mtime": os.path.getmtime(path), "current": current,
+                      "rows": n})
     return rows, files
 
 
@@ -235,7 +262,35 @@ def main():
         print(f"{len(rows)} rows, none closed. Nothing to diagnose.")
         return
 
-    print(f"POST-MORTEM  ({len(files)} files, {len(rows)} rows, {len(cl)} closed)")
+    # REFUSE TO AVERAGE ACROSS A MIX. See load()'s note: this silently
+    # pooled a fresh run with fourteen stale CSVs and reported a
+    # confident number for a system that never existed.
+    stale = [f for f in files if not f["current"] and f["rows"]]
+    fresh = [f for f in files if f["current"] and f["rows"]]
+    if stale:
+        newest = max((f["mtime"] for f in files if f["rows"]), default=0)
+        print("=" * 78)
+        print("REFUSING TO POOL: these CSVs were written under DIFFERENT RULES.")
+        print()
+        print(f"  {len(fresh)} file(s) carry the current schema, {len(stale)} do not.")
+        print("  Averaging them describes a system that was never run. Stale:")
+        for f in sorted(stale, key=lambda f: f["mtime"])[:12]:
+            age = (newest - f["mtime"]) / 3600.0
+            print(f"    {f['name']:<44} {f['rows']:>6} rows  {age:>6.1f}h older")
+        if len(stale) > 12:
+            print(f"    ... and {len(stale)-12} more")
+        print()
+        print("  Re-run those instruments, or narrow with --instruments to the")
+        print("  ones you re-ran. Showing the CURRENT files only from here.")
+        print("=" * 78)
+        print()
+        rows = [r for r in rows if r.get("__current")]
+        cl = closed(rows)
+        if not cl:
+            print("No current-schema trades to report.")
+            return
+
+    print(f"POST-MORTEM  ({len(fresh)} current files, {len(rows)} rows, {len(cl)} closed)")
     print(f"  spread assumption = {args.spread_pips} PIPS/round trip, charged per trade as spread/risk_pips")
     print()
 
