@@ -57,6 +57,8 @@ import csv
 import html
 import os
 
+import pandas as pd
+
 from ..engine.candles import Candle, load_candles
 from ..engine.runner import default_pip_size
 
@@ -94,6 +96,24 @@ def _f(row, key):
 def _fmt(p, pip):
     d = 1 if pip >= 1.0 else (3 if pip >= 0.01 else 5)
     return f"{p:.{d}f}"
+
+
+def _when(value):
+    """A trade time as a Timestamp, whatever the caller had.
+
+    `write_trade_log` serialises times with `.isoformat()`, so a CSV row
+    hands back a STRING while `Candle.time` is a `pd.Timestamp` -- and
+    `Timestamp <= str` does not compare, it raises TypeError. Every
+    panel in this tool is windowed by that comparison, so the whole
+    thing died on the first real trade it was pointed at. The first
+    smoke test missed it by passing a datetime directly instead of
+    going through the CSV."""
+    if value is None or isinstance(value, pd.Timestamp):
+        return value
+    try:
+        return pd.Timestamp(value)
+    except (ValueError, TypeError):
+        return None
 
 
 def _window(candles, at_time, before, after):
@@ -247,7 +267,9 @@ def render(instrument, rows, source, entry_style, out_path):
     ]
 
     for row in rows:
-        entry_t = row["entry_time"]
+        entry_t = _when(row["entry_time"])
+        if entry_t is None:
+            continue
         bullish = "BULL" in (row.get("direction") or "").upper()
         entry = _f(row, "entry_price")
         stop = _f(row, "stop_loss")
