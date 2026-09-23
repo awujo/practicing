@@ -1609,6 +1609,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   liquidity_mode: str = "swing",
                   single_candle_max_pools: int | None = None,
                   min_stop_pips: float = 0.0,
+                  first_presentation_only: bool = False,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1683,6 +1684,13 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     A stop inside the spread is not an invalidation zone, and the trade
     is DECLINED rather than given a wider stop it never earned. See
     `stop_too_tight()` for the AUDJPY trades that exposed this.
+    first_presentation_only: take each breakout's setup the FIRST time
+    price presents it, and only then -- one trade per breakout rather
+    than one per pool, and the first confirmation rather than the best
+    of three. Not a window: nothing is rejected for being late, there
+    is simply no second opportunity to be late for. False (default)
+    keeps the old behavior. Operator, 2026-09-23: "it's not about
+    putting a boundary, a cage around it."
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -1974,7 +1982,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     # mode, not with the thing it is being measured against.
     entry_candidates = _find_entry_candidates(
         h1, liquidity_setups,
-        max_per_setup=1 if liquidity_mode == "swing" else MAX_CANDIDATES_PER_SETUP,
+        # 1 under first_presentation_only for the same reason as the
+        # breakout gate below: MAX_CANDIDATES_PER_SETUP=3 exists purely
+        # so a REJECTED first confirmation can fall through to a later
+        # one, which is the definition of not taking the first.
+        max_per_setup=(1 if (liquidity_mode == "swing" or first_presentation_only)
+                       else MAX_CANDIDATES_PER_SETUP),
         triggers=confirmation_triggers,
     )
 
@@ -1991,10 +2004,37 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     # gate below is traded -- the rest of that setup's candidates are
     # skipped here.
     traded_setups: set[int] = set()
+    # (breakout_time, direction) already traded -- see the gate below.
+    traded_breakouts: set = set()
 
     for candidate in entry_candidates:
         if candidate.setup_id in traded_setups:
             continue
+        # THE FIRST TIME IT PRESENTS ITSELF, and only that time.
+        #
+        # Operator, 2026-09-23: "it's not about putting a boundary, a
+        # cage around it. It's about using it the first time it
+        # presented itself... if you use it the first time it presented
+        # itself it will not take long."
+        #
+        # A breakout leaves liquidity behind ONCE, price comes back for
+        # it ONCE, and that is the trade. What the engine did instead
+        # was make every 4H candle in the leg its own setup, each
+        # hunting independently, so one breakout could produce a trade
+        # off its twentieth pool -- measured on AUDJPY as a median of 24
+        # bars from breakout to pool, p90 70, max 180. The late ones are
+        # not that retracement any more.
+        #
+        # Note this is NOT a window and deliberately not one: nothing is
+        # rejected for being too far away. The first presentation is
+        # taken and the rest of that breakout's pools are simply not
+        # separate opportunities, which is what makes the timing look
+        # after itself.
+        if first_presentation_only:
+            setup = setup_by_id.get(candidate.setup_id)
+            key = (setup.breakout_time, setup.direction) if setup else None
+            if key is not None and key in traded_breakouts:
+                continue
         i = candidate.index
         prev, curr = h1[i - 1], h1[i]
 
@@ -2507,6 +2547,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         entry_candle = h1[entry_idx]
 
         traded_setups.add(candidate.setup_id)
+        if first_presentation_only:
+            setup = setup_by_id.get(candidate.setup_id)
+            if setup is not None:
+                traded_breakouts.add((setup.breakout_time, setup.direction))
         concurrent = len(mgr.open_positions(effective))
         pos = mgr.open_position(effective, entry_price, stop_loss, entry_candle.time, "H1", target)
 

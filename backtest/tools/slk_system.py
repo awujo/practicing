@@ -113,6 +113,25 @@ SLK_TAUGHT_OVERRIDES = {
     # candle has a real wick. This declines the setups where it does not
     # rather than inventing a wider stop for them.
     "min_stop_pips": 2.0,
+
+    # Take the setup the FIRST time price presents it, and only then.
+    #
+    # Operator, 2026-09-23, after reading a rendered chart: "it's not
+    # about putting a boundary, a cage around it. It's about using it
+    # the first time it presented itself... if you use it the first
+    # time it presented itself it will not take long."
+    #
+    # That is the whole answer to the two gaps the charts exposed --
+    # breakout-to-pool running to 180 bars, and the engine watching
+    # confirmations go past before taking a late one. Both came from
+    # rules that went looking for a SECOND chance: every 4H candle in
+    # the leg as its own setup, and MAX_CANDIDATES_PER_SETUP=3 letting
+    # a rejected first confirmation fall through. Neither is a window
+    # that was too wide.
+    #
+    # Unlike min_stop_pips this needs no number, which is why it is the
+    # better fix: there is nothing to tune and nothing to be late for.
+    "first_presentation_only": True,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

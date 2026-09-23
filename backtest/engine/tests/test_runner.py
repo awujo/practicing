@@ -2488,3 +2488,37 @@ def test_the_setup_that_produced_a_trade_is_recorded_on_it(synthetic_cache):
     assert t.h4_breakout_time <= t.sweep_time
     assert t.liquidity_time <= t.sweep_time
     assert t.sweep_time <= t.entry_time
+
+
+def test_first_presentation_only_takes_one_trade_per_breakout(synthetic_cache):
+    """Operator, 2026-09-23: "it's about using it the first time it
+    presented itself."
+
+    A breakout leaves liquidity behind once and price comes back for it
+    once. Making every 4H candle in the leg its own independent setup
+    let one breakout produce a trade off its twentieth pool, which is no
+    longer that retracement. This is a SELECTION rule, not a window --
+    nothing is rejected for being late."""
+    from ..runner import _find_liquidity_setups
+
+    loose = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    strict = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                          first_presentation_only=True)
+
+    assert len(strict) <= len(loose), "taking only the first cannot add trades"
+
+    # At most one trade per (breakout, direction).
+    seen = set()
+    for t in strict:
+        key = (t.h4_breakout_time, t.direction)
+        assert key not in seen, f"two trades from one breakout: {key}"
+        seen.add(key)
+
+
+def test_first_presentation_only_is_off_by_default(synthetic_cache):
+    """It changes which trades exist, so every historical backtest must
+    be reproducible without it."""
+    a = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                     first_presentation_only=False)
+    assert [t.entry_time for t in a] == [t.entry_time for t in b]
