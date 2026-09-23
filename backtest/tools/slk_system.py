@@ -132,6 +132,21 @@ SLK_TAUGHT_OVERRIDES = {
     # Unlike min_stop_pips this needs no number, which is why it is the
     # better fix: there is nothing to tune and nothing to be late for.
     "first_presentation_only": True,
+
+    # Rank the confirmations, do not race them.
+    #
+    # "If you ask me which ones are likely best, personally I would tell
+    # you these two ... if you have these two, [missing it] is a missed
+    # entry" (entries-part5 t=420-435) -- breakout and sweep+break. On
+    # eight instruments the engine produced disrespect 74% of trades
+    # against breakout 2% and sweep_break 1%, the exact inverse.
+    #
+    # Not a scoring system and not a preference of mine: the triggers
+    # simply cannot form at the same speed. disrespect can fire the
+    # candle after the touch; a breakout needs a low, a lift and a close
+    # beyond it. So the earliest always won and the ordering in
+    # confirmation_triggers only ever broke ties inside one candle.
+    "trigger_priority": True,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

@@ -1218,7 +1218,8 @@ def resolve_reaction_gate(triggers: tuple[str, ...]) -> str:
 def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                             max_per_setup: int = MAX_CANDIDATES_PER_SETUP,
                             triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
-                            reaction_gate: str | None = None
+                            reaction_gate: str | None = None,
+                            trigger_priority: bool = False
                             ) -> list[EntryCandidate]:
     """For each setup: bounded forward-scan H1 for the sweep of
     `liquidity_price`, then -- "we don't predict, we react" -- try each of
@@ -1333,9 +1334,34 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                                                 sweep_index=sweep_idx,
                                                 touch_index=(touch_idx if touch_idx
                                                              is not None else -1)))
-                    seen_indices.add(idx)
-                    if len(found) >= max_per_setup:
+                    if not trigger_priority and len(found) >= max_per_setup:
                         break
+
+            # RANK the confirmations in this reaction, do not race them.
+            #
+            # Without this the earliest wins, and the triggers cannot
+            # fire at the same speed: `disrespect_entry` can hit on the
+            # FIRST candle after the touch, while a breakout needs a low,
+            # a lift and a close beyond it -- three candles minimum, by
+            # construction. So disrespect always got there first and the
+            # ordering in `triggers` only ever broke ties inside one
+            # candle. Measured on eight instruments: disrespect 74% of
+            # trades, breakout 2%, sweep_break 1% -- of the two Bishop
+            # rates above everything else, "if you have these two,
+            # [missing it] is a missed entry" (entries-part5 t=420-435).
+            #
+            # This is NOT hunting for a second chance: it is one
+            # reaction, off one level, from one setup -- still the first
+            # presentation. It only stops the slowest-forming and
+            # best-rated confirmation from being beaten to the punch by
+            # the fastest-forming and worst-rated one.
+            if trigger_priority and found:
+                rank = {name: i for i, name in enumerate(triggers)}
+                found.sort(key=lambda c: (rank.get(c.trigger, len(rank)), c.index))
+                found = found[:max_per_setup]
+            found = [c for c in found if c.index not in seen_indices]
+            for c in found:
+                seen_indices.add(c.index)
             if found:
                 candidates.extend(found)
                 break
@@ -1610,6 +1636,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   single_candle_max_pools: int | None = None,
                   min_stop_pips: float = 0.0,
                   first_presentation_only: bool = False,
+                  trigger_priority: bool = False,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1691,6 +1718,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     is simply no second opportunity to be late for. False (default)
     keeps the old behavior. Operator, 2026-09-23: "it's not about
     putting a boundary, a cage around it."
+    trigger_priority: within one reaction, take the confirmation the
+    course rates HIGHEST rather than the one that forms fastest. The
+    triggers cannot fire at the same speed -- disrespect can hit one
+    candle after the touch, a breakout needs two at minimum -- so without this
+    the earliest always wins and `confirmation_triggers`' ordering only
+    breaks ties inside a single candle. False (default) keeps the race.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -1989,6 +2022,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         max_per_setup=(1 if (liquidity_mode == "swing" or first_presentation_only)
                        else MAX_CANDIDATES_PER_SETUP),
         triggers=confirmation_triggers,
+        trigger_priority=trigger_priority,
     )
 
     # So a recorded trade can name the setup it came from -- the pool,

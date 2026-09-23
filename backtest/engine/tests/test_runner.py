@@ -5,13 +5,13 @@ from ...data_pipeline import cache
 from ..candles import Candle
 from ..structure import Direction
 from ..bias import detect_confirmations, Confirmation, ConfirmationKind
-from ..key_levels import detect_key_levels
+from ..key_levels import detect_key_levels, KeyLevel
 from ..entries import imbalance_stop_loss
 from ..runner import (
     run_backtest, _stop_on_correct_side, _find_liquidity_setups, _find_entry_candidates,
     _aligned_timeframes, _reaction_trigger, _natural_stop_too_wide, _nearest_erl, _unswept_period_extremes,
     _resolve_date_range, _parse_rr, _resolve_trade_outcome, _reaction_leg_extreme, _bootstrap_origin,
-    _trim_to_recent_years, LiquiditySetup,
+    _trim_to_recent_years, LiquiditySetup, TRIGGERS_TAUGHT,
 )
 from ..structure import StructureEvent
 from ..bias import Confirmation, ConfirmationKind
@@ -2521,4 +2521,53 @@ def test_first_presentation_only_is_off_by_default(synthetic_cache):
     a = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
     b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
                      first_presentation_only=False)
+    assert [t.entry_time for t in a] == [t.entry_time for t in b]
+
+
+def test_trigger_priority_ranks_confirmations_instead_of_racing_them(monkeypatch):
+    """Bishop rates breakout and sweep+break above everything else, but
+    they cannot form as fast as disrespect: disrespect can fire on the
+    candle right after the touch, while a breakout needs a low, a lift
+    and a close beyond it -- two bars at the very least.
+
+    So whichever fires first wins, always, and the ordering in
+    `confirmation_triggers` only ever broke ties inside one candle. On
+    eight instruments that produced disrespect 74% of trades against
+    breakout 2% -- the opposite of how the course rates them.
+
+    The triggers are scripted here rather than coaxed out of synthetic
+    price, because what is under test is the SELECTION, not the
+    detectors: a fast low-rated confirmation and a slow high-rated one
+    in the same reaction."""
+    from .. import runner as R
+
+    level = KeyLevel(time=H1_BASE, price=1.1000, shape="V",
+                     default_bias=Direction.BULLISH, confirmed_at=H1_BASE)
+    candles = [H1(i, 1.1000, 1.1010, 1.0990, 1.1005) for i in range(30)]
+    setup = R.LiquiditySetup(
+        direction=Direction.BULLISH, breakout_time=H1_BASE,
+        liquidity_price=1.0990, liquidity_time=H1_BASE,
+        liquidity_known_at=H1_BASE, sweep_from=H1_BASE,
+        reaction_level_candidates=[level], setup_id=0, h4_validated=True)
+
+    # Fast but lowest-rated at 5; slow but highest-rated at 9.
+    monkeypatch.setattr(R, "_reaction_trigger",
+                        lambda c, idx, d, t, since=None:
+                        {5: "disrespect", 9: "breakout"}.get(idx))
+
+    raced = R._find_entry_candidates(candles, [setup], max_per_setup=1,
+                                     triggers=TRIGGERS_TAUGHT)
+    assert [c.trigger for c in raced] == ["disrespect"], "fastest wins"
+
+    ranked = R._find_entry_candidates(candles, [setup], max_per_setup=1,
+                                      triggers=TRIGGERS_TAUGHT,
+                                      trigger_priority=True)
+    assert [c.trigger for c in ranked] == ["breakout"], "best-rated wins"
+    assert ranked[0].index == 9
+
+
+def test_trigger_priority_is_off_by_default(synthetic_cache):
+    a = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                     trigger_priority=False)
     assert [t.entry_time for t in a] == [t.entry_time for t in b]
