@@ -793,6 +793,14 @@ class EntryCandidate:
     liquidity_price: float
     trigger: str
     setup_id: int = 0
+    # H1 index of the candle that actually took the pool, and the index
+    # where price first reached the key level afterwards. Carried purely
+    # so a chart can DRAW the setup: the operator could not tell from a
+    # rendered trade "where single candle liquidity was" or where the
+    # breakout happened, because neither was ever recorded. A strategy
+    # you cannot see is a strategy you cannot check.
+    sweep_index: int = -1
+    touch_index: int = -1
 
 
 def _pool_known_at(point):
@@ -1321,7 +1329,10 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
                 if trigger is not None:
                     found.append(EntryCandidate(idx, setup.direction, level,
                                                 setup.liquidity_price, trigger,
-                                                setup.setup_id))
+                                                setup.setup_id,
+                                                sweep_index=sweep_idx,
+                                                touch_index=(touch_idx if touch_idx
+                                                             is not None else -1)))
                     seen_indices.add(idx)
                     if len(found) >= max_per_setup:
                         break
@@ -1967,6 +1978,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         triggers=confirmation_triggers,
     )
 
+    # So a recorded trade can name the setup it came from -- the pool,
+    # the breakout that left it there -- rather than only the entry.
+    setup_by_id = {s.setup_id: s for s in liquidity_setups}
+
     mgr = PositionManager()
     records: list[TradeRecord] = []
     trade_id = 0
@@ -2539,6 +2554,16 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             bias_h1=h1_bias,
             effective_bias_timeframe=effective_tf,
             aligned_timeframes=",".join(aligned),
+            setup_id=candidate.setup_id,
+            liquidity_price=candidate.liquidity_price,
+            liquidity_time=(setup_by_id[candidate.setup_id].liquidity_time
+                            if candidate.setup_id in setup_by_id else None),
+            h4_breakout_time=(setup_by_id[candidate.setup_id].breakout_time
+                              if candidate.setup_id in setup_by_id else None),
+            sweep_time=(h1[candidate.sweep_index].time
+                        if 0 <= candidate.sweep_index < len(h1) else None),
+            level_touch_time=(h1[candidate.touch_index].time
+                              if 0 <= candidate.touch_index < len(h1) else None),
             key_level_price=new_key_level.price,
             key_level_shape=new_key_level.shape,
             imbalance_overlap=imbalance_overlap,

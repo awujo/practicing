@@ -122,7 +122,7 @@ def test_the_reaction_geometry_is_marked_for_a_break_trigger(rendered):
     _, html, _ = rendered
     assert ">touch<" in html
     assert "reaction low" in html
-    assert "minor high (recomputed)" in html
+    assert "broke this high (recomputed)" in html
 
 
 def test_recomputed_marks_are_labelled_as_recomputed(rendered):

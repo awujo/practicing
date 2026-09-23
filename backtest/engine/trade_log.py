@@ -93,6 +93,28 @@ class TradeRecord:
     effective_bias_timeframe: str | None = None
     aligned_timeframes: str = ""        # comma-joined subset of "Weekly,Daily,H4" -- see _aligned_timeframes()
 
+    # THE SETUP ITSELF -- what price came for, and when.
+    #
+    # Added 2026-09-23 because none of it was recorded, and that made
+    # every rendered chart unreadable. The operator, looking at one:
+    # "I couldn't even understand what was going on. I couldn't
+    # understand where single candle liquidity was." It was not a
+    # drawing problem. The liquidity pool, the sweep that took it and
+    # the H4 breakout that opened the window had no columns, so nothing
+    # downstream could show them, and a trade drawn without them is an
+    # entry arrow with no reason attached.
+    #
+    # These are what the strategy is ABOUT -- price leaving a breakout,
+    # coming back for the liquidity that breakout left behind, and
+    # reacting off a key level -- so they belong in the log beside the
+    # entry they produced.
+    setup_id: int = 0                   # one setup may be re-entered; this shows it
+    liquidity_price: float = 0.0        # the pool price came back to take
+    liquidity_time: object = None       # when the candle forming that pool opened
+    sweep_time: object = None           # when price actually took it
+    level_touch_time: object = None     # when price then reached the key level
+    h4_breakout_time: object = None     # the breakout that opened this window
+
     # Key-level ranking factors (Phase 2)
     key_level_price: float = 0.0
     key_level_shape: str = ""

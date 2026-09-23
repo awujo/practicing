@@ -188,16 +188,22 @@ def _svg(window, anchor_i, lines, pip, marks=()):
         out.append(f'<rect x="{x-bw/2:.1f}" y="{top:.1f}" width="{bw:.1f}" '
                    f'height="{max(1.0, bot-top):.1f}" fill="{colour}"/>')
 
-    # Pattern marks: (index, colour, caption), drawn on the candle.
-    for idx, colour, caption in marks:
-        if not (0 <= idx < len(window)):
-            continue
+    # Event marks: (index, colour, caption). Drawn as a full-height rule
+    # with the caption stacked at a different level each time, because
+    # five events on one panel as little circles above the wicks is
+    # exactly the unreadable mess this tool exists to stop producing.
+    seen = [m for m in marks if 0 <= m[0] < len(window)]
+    for slot, (idx, colour, caption) in enumerate(seen):
         x = PAD_L + idx * step + step / 2
-        out.append(f'<circle cx="{x:.1f}" cy="{y(window[idx].high)-8:.1f}" r="4" '
-                   f'fill="none" stroke="{colour}" stroke-width="1.5"/>')
-        out.append(f'<text x="{x:.1f}" y="{y(window[idx].high)-14:.1f}" fill="{colour}" '
-                   f'font-size="10" font-family="monospace" text-anchor="middle">'
-                   f'{html.escape(caption)}</text>')
+        ty = PAD_T + 12 + (slot % 4) * 13
+        out.append(f'<line x1="{x:.1f}" y1="{PAD_T}" x2="{x:.1f}" '
+                   f'y2="{PAD_T+plot_h}" stroke="{colour}" stroke-width="1" '
+                   f'stroke-dasharray="2,3" opacity="0.75"/>')
+        anchor = "start" if idx < len(window) * 0.75 else "end"
+        dx = 4 if anchor == "start" else -4
+        out.append(f'<text x="{x+dx:.1f}" y="{ty:.1f}" fill="{colour}" '
+                   f'font-size="10" font-family="monospace" '
+                   f'text-anchor="{anchor}">{html.escape(caption)}</text>')
 
     out.append("</svg>")
     return "".join(out)
@@ -298,14 +304,47 @@ def render(instrument, rows, source, entry_style, out_path):
             for k in ("bias_weekly", "bias_daily", "bias_h4")))
         parts.append("<div class=meta>" + " &nbsp;|&nbsp; ".join(meta) + "</div>")
 
+        # The setup, not just the entry. These four are what the strategy
+        # is ABOUT, and none of them was drawable until they were
+        # recorded: the breakout that opened the window, the liquidity it
+        # left behind, the sweep that took that liquidity, and the touch
+        # of the key level that followed.
+        liq = _f(row, "liquidity_price")
+        t_liq = _when(row.get("liquidity_time"))
+        t_sweep = _when(row.get("sweep_time"))
+        t_touch = _when(row.get("level_touch_time"))
+        t_brk = _when(row.get("h4_breakout_time"))
+
         for tf in PANEL_ORDER:
             before, after = CONTEXT[tf]
             win, a_i, base = _window(series[tf], entry_t, before, after)
             if not win:
                 parts.append(f"<h3>{PANEL_TITLE[tf]}</h3><p class=note>no data</p>")
                 continue
-            lines = [(level, "#d29922", "KL", False)]
+
+            def at(ts, _win=win):
+                """Index of `ts` within this panel, or -1."""
+                if ts is None:
+                    return -1
+                for k in range(len(_win) - 1, -1, -1):
+                    if _win[k].time <= ts:
+                        return k
+                return -1
+
+            lines = [(level, "#d29922", "key level", False)]
             marks = []
+            # Single candle liquidity, on every panel that can show it.
+            if liq:
+                lines.append((liq, "#f778ba", "liquidity (single candle)", False))
+            for ts, colour, caption in ((t_brk, "#e3b341", "H4 breakout"),
+                                        (t_liq, "#f778ba", "pool forms"),
+                                        (t_sweep, "#f778ba", "SWEEP"),
+                                        (t_touch, "#d29922", "touches KL")):
+                k = at(ts)
+                if k >= 0:
+                    marks.append((k, colour, caption))
+            marks.append((a_i, "#58a6ff", "ENTRY"))
+
             if tf == "H1":
                 lines += [(entry, "#58a6ff", "entry", False),
                           (stop, "#f85149", "stop", False),
@@ -313,16 +352,24 @@ def render(instrument, rows, source, entry_style, out_path):
                 if row.get("trigger_type") in ("breakout", "sweep_break") and level:
                     found, minor = _reaction_marks(series[tf], base + a_i,
                                                    bullish, level)
-                    marks = [(i - base, c, t) for i, c, t in found]
+                    marks += [(i - base, c, t) for i, c, t in found]
                     if minor is not None:
-                        lines.append((minor, "#bc8cff", "minor high (recomputed)", True))
-            elif tf in ("D", "W"):
-                lines.append((target, "#3fb950", "target", True))
+                        lines.append((minor, "#bc8cff", "broke this high (recomputed)", True))
             else:
                 lines += [(target, "#3fb950", "target", True),
-                          (entry, "#58a6ff", "entry", True)]
+                          (entry, "#58a6ff", "entry", True),
+                          (stop, "#f85149", "stop", True)]
+
             parts.append(f"<h3>{PANEL_TITLE[tf]}</h3>")
             parts.append(_svg(win, a_i, lines, pip, marks))
+
+        parts.append(
+            "<div class=note>Read it in this order: <b>H4 breakout</b> sets the "
+            "direction &rarr; it leaves <b>single candle liquidity</b> behind &rarr; "
+            "price comes back and <b>sweeps</b> it &rarr; then <b>touches the key "
+            "level</b> &rarr; and the confirmation fires at <b>ENTRY</b>. If those "
+            "marks are not in that order, or the liquidity line is nowhere near "
+            "where price turned, the engine is not trading this setup.</div>")
 
     with open(out_path, "w") as fh:
         fh.write("\n".join(parts))
