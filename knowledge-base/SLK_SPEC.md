@@ -473,8 +473,7 @@ invalidated**, which is beyond the structure that defines it.
 
 ## 7. Targets
 
-**The target is the external liquidity.** Seven statements, no
-counter-evidence:
+**The target is the external liquidity.** Seven statements from Bishop:
 
 | source | words |
 |---|---|
@@ -488,6 +487,37 @@ counter-evidence:
 
 It is a **floor and a ceiling**: run to the first ERL, and do not hold
 through it.
+
+### But 4th man's continuation targets 1:3 or 1:4, and that IS counter-evidence
+
+This section said "seven statements, NO COUNTER-EVIDENCE" until
+2026-09-24. That was wrong, and the counter-evidence is in the same
+course, thirty seconds after the win-rate claim everyone quotes:
+
+> *"Like I said, 10 to 11 pips is enough. **1 to 3, 1 to 4, you are
+> done.**"* (video-14 t=349-354)
+
+That is an R target, not a liquidity run, and it attaches to the setup
+4th man says has *"over like a 70 to 80% win rate"* (t=296-301).
+
+The two cannot both be true of one trade, and the engine's own numbers
+say which is which. Under `erl_mode="target"` the distance distribution
+is 3-5R winning 18.3%, 5-8R winning 6.4%, 8-12R winning 3.3%, 12R+
+winning 3.8% (8-instrument run, 2026-09-24). **An unbounded liquidity
+target cannot produce a 70% win rate**; it is arithmetically excluded.
+
+So the likely reading is that these are two different trades:
+
+  Bishop's ERL run   low win rate, large R, the target IS the
+                     liquidity. What the engine currently trades.
+  4th man's          high win rate, 3-4R, taken close to a
+  continuation       disrespected V-shaped key level that ALSO
+                     overlaps an imbalance, after an impulsive break
+                     and a SHALLOW retracement (t=316-348).
+
+`erl_mode="cap"` -- min(3R, ERL) -- is the first reading of the
+second. It was the shipped default before 2026-09-22 and was moved away
+from on the strength of the "no counter-evidence" claim above.
 
 R multiples are outputs, never targets — 2.72R, 3.4R, 3.6R, 4R, 4.9R,
 5R, 5.6R, 5.9R, 6R, *"almost 7R"* across the worked trades.
