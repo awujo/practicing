@@ -143,16 +143,23 @@ def _stats(recs, spread):
         "profit_factor": (gross_win / gross_loss) if gross_loss else float("inf"),
         "max_dd": max_dd,
         "worst_streak": worst_streak,
+        "spread": spread,
         "by_trigger": Counter(r.trigger_type for r in closed),
         "closed": closed,
     }
 
 
 def _report(label, s, width=12):
+    # TOTAL R as well as R/trade. A per-trade figure says nothing about
+    # how much a year actually produced -- 0.5 R/trade over 20 trades
+    # and over 200 trades are different businesses -- and the operator
+    # asked for the year's own number, which is this one.
+    net_total = s["total"] - s["spread"] * s["n"]
     print(f"  {label:<{width}} {s['n']:>5} trades  {s['win']:>5.1f}% win  "
           f"{s['per']:>6.2f} R/trade  {s['net']:>6.2f} net  "
+          f"{s['total']:>8.1f}R gross  {net_total:>8.1f}R net  "
           f"PF {s['profit_factor']:>5.2f}  maxDD {s['max_dd']:>7.1f}R  "
-          f"worst streak {s['worst_streak']:>3}", flush=True)
+          f"streak {s['worst_streak']:>3}", flush=True)
 
 
 def main():
