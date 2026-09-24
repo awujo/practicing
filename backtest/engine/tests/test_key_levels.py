@@ -175,3 +175,56 @@ def test_same_kind_swings_collapse_so_the_zigzag_alternates():
               (1.1040, 1.1050), (1.1005, 1.1015), (1.1000, 1.1008)])
     kinds = [k for _, k, _ in _alternating_swings(c, n=1)]
     assert all(a != b for a, b in zip(kinds, kinds[1:])), kinds
+
+
+def test_a_level_that_only_paused_price_has_not_sponsored_a_move():
+    """plug-and-play t=869: "that A-shaped key level MUST HAVE SPONSORED
+    some level of sales to the downside".
+
+    The engine traded every level its detector emitted, which is many
+    times what anyone draws by hand. This is the qualification that was
+    missing: the level has to have already worked."""
+    from ..key_levels import sponsored_a_move, KeyLevel
+    from ..structure import Direction
+
+    level = KeyLevel(time=0, price=1.1050, shape="A",
+                     default_bias=Direction.BEARISH, confirmed_at=0)
+
+    def bar(i, lo, hi):
+        return Candle(time=i, open=(lo + hi) / 2, high=hi, low=lo,
+                      close=(lo + hi) / 2, volume=0)
+
+    # Price rises from 1.1000 into the level, then falls back THROUGH
+    # where the rise began: the level did its job.
+    worked = [bar(0, 1.1000, 1.1010), bar(1, 1.1020, 1.1035),
+              bar(2, 1.1040, 1.1055),            # touches 1.1050
+              bar(3, 1.1015, 1.1045), bar(4, 1.0990, 1.1020)]
+    assert sponsored_a_move(worked, level) is True
+
+    # Same approach, but price only stalls -- it never undoes the leg
+    # that brought it there.
+    paused = [bar(0, 1.1000, 1.1010), bar(1, 1.1020, 1.1035),
+              bar(2, 1.1040, 1.1055),
+              bar(3, 1.1030, 1.1048), bar(4, 1.1035, 1.1052)]
+    assert sponsored_a_move(paused, level) is False
+
+    # Never reached: no record, so no claim.
+    untested = [bar(0, 1.1000, 1.1010), bar(1, 1.1005, 1.1015)]
+    assert sponsored_a_move(untested, level) is False
+
+
+def test_sponsored_a_move_mirrors_for_a_bullish_level():
+    from ..key_levels import sponsored_a_move, KeyLevel
+    from ..structure import Direction
+
+    level = KeyLevel(time=0, price=1.0950, shape="V",
+                     default_bias=Direction.BULLISH, confirmed_at=0)
+
+    def bar(i, lo, hi):
+        return Candle(time=i, open=(lo + hi) / 2, high=hi, low=lo,
+                      close=(lo + hi) / 2, volume=0)
+
+    worked = [bar(0, 1.0990, 1.1000), bar(1, 1.0965, 1.0980),
+              bar(2, 1.0945, 1.0960),            # touches 1.0950
+              bar(3, 1.0955, 1.0985), bar(4, 1.0980, 1.1010)]
+    assert sponsored_a_move(worked, level) is True

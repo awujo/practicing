@@ -193,8 +193,9 @@ from .candles import Candle, load_candles
 from .structure import (Direction, StructureTracker, wick_sweeps_without_close,
                         known_at as point_known_at)
 from .timeframes import bar_length, closes_at
-from .key_levels import (KeyLevel, detect_key_levels, detect_quasimodo_levels,
-                         count_tests_before_disrespect, known_at as level_known_at)
+from .key_levels import (
+    KeyLevel, detect_key_levels, detect_quasimodo_levels, sponsored_a_move,
+    count_tests_before_disrespect, known_at as level_known_at)
 from .liquidity import single_candle_liquidity, structural_liquidity_points
 from .imbalance import detect_imbalances, overlaps_level
 from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective_bias,
@@ -1663,6 +1664,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   confirmation_triggers: tuple[str, ...] = TRIGGERS_SHIPPED,
                   require_qmr: bool = False,
                   require_imbalance_overlap: bool = False,
+                  require_sponsored_level: bool = False,
                   bias_caveat: bool = False,
                   close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
@@ -1782,6 +1784,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     runs -- so this cannot move a historical backtest and can stop a
     live bias flipping on no evidence. False (default) reproduces every
     recorded number.
+    require_sponsored_level: only react from a key level that has
+    already produced a move in its own direction -- plug-and-play
+    t=869, "that A-shaped key level must have sponsored some level of
+    sales". Structural, not a pip count: the level sponsored a move
+    when price arrived and then undid the leg that brought it there.
+    False (default) keeps every detected level tradeable.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -2365,6 +2373,17 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # (the `plug_and_play` branch below), never whether a trade is
         # taken. This makes that measurable.
         if require_imbalance_overlap and not imbalance_overlap:
+            continue
+
+        # THE LEVEL MUST ALREADY HAVE WORKED. plug-and-play t=869: "that
+        # A-shaped key level MUST HAVE SPONSORED some level of sales to
+        # the downside". Not a shape on the chart -- a shape with a
+        # record. The engine traded every level its detector emitted,
+        # which is many times what anyone draws by hand, and that is the
+        # likeliest reason `disrespect` reached 73% of trades at a 7.5%
+        # win rate on 2026-09-24.
+        if require_sponsored_level and not sponsored_a_move(
+                h4, new_key_level, start_idx=0):
             continue
 
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)

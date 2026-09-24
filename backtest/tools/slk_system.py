@@ -165,6 +165,34 @@ SLK_TAUGHT_OVERRIDES = {
     # LIVE always runs. It cannot move a backtest and can flip a live
     # bias on nothing.
     "require_flip_confirmation": True,
+
+    # THE SETUP QUALIFICATIONS. Operator, 2026-09-24: "if you model
+    # everything right as SLK the results will speak for itself, so it
+    # means you are missing something." This is what was missing, and
+    # it is neither a trigger nor a target -- it is which LEVELS are
+    # tradeable at all.
+    #
+    # plug-and-play t=863-878, the setup definition:
+    #
+    #   "A-shaped key levels [that] got disrespected, that is
+    #    overlapping inside of an imbalance ... that A-shaped key level
+    #    MUST HAVE SPONSORED SOME LEVEL OF SALES to the downside"
+    #
+    # And the two market conditions, stated five separate times in the
+    # same video (t=1035, 1081, 1477, 1618, 2461): take the liquidity
+    # AND rebalance the imbalance, at a key level. The engine enforced
+    # the liquidity half and not the other.
+    #
+    # Trading every level the detector emits is many times what anyone
+    # draws by hand, which is the likeliest reason `disrespect` reached
+    # 73% of trades at a 7.5% win rate.
+    #
+    # NOT a QMR gate -- that correction stands, a QMR is the Quasimodo
+    # pattern and overlap is incidental to it. This is the SETUP
+    # requiring an imbalance, which is a different claim from the same
+    # source.
+    "require_imbalance_overlap": True,
+    "require_sponsored_level": True,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

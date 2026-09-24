@@ -233,8 +233,23 @@ which is the authority on it. Overlapping an imbalance is a separate
 property that any key level may or may not have, and is NOT what makes
 a level a QMR.
 
-The four points above are therefore what Bishop PREFERS to see on a
-level, not a definition and not a gate. Two flags, deliberately
+The four points are not the DEFINITION of a QMR. But three of them are
+SETUP CONDITIONS, which is a different claim from the same source, and
+treating "not a QMR definition" as "not required at all" was my error
+(corrected 2026-09-24). plug-and-play t=863-878:
+
+> *"A-shaped key levels [that] got disrespected, that is overlapping
+> inside of an imbalance ... that A-shaped key level **must have
+> sponsored some level of sales** to the downside"*
+
+and the **two market conditions**, stated five separate times in that
+one video (t=1035, 1081, 1477, 1618, 2461): take the liquidity AND
+rebalance the imbalance, at a key level. The engine enforced the
+liquidity half and left the other switched off.
+
+Built as `require_sponsored_level` (new) and `require_imbalance_overlap`
+(existed, was off). Both now on for the taught system. Trading every
+level the detector emits is many times what anyone draws by hand. Two flags, deliberately
 separate, both default off:
 
   `require_qmr`                 restricts H4 reaction levels to

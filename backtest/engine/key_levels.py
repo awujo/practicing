@@ -249,3 +249,54 @@ def detect_quasimodo_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]
             levels.append(KeyLevel(candles[a[0]].time, a[2], "A", Direction.BEARISH,
                                    confirmed_at=confirmed))
     return sorted(levels, key=lambda lvl: lvl.time)
+
+
+def sponsored_a_move(candles: list[Candle], level: KeyLevel,
+                     start_idx: int = 0) -> bool:
+    """Did this level already WORK once, before the trade being considered?
+
+    The setup definition, plug-and-play t=863-878:
+
+        "A-shaped key levels [that] got disrespected, that is
+         overlapping inside of an imbalance ... that A-shaped key level
+         MUST HAVE SPONSORED SOME LEVEL OF SALES to the downside, then
+         he gives [it] disrespect to the other [side]"
+
+    So the level is not just a shape on the chart: it is a shape that
+    has already produced a move in its own direction. The engine has
+    never checked this, and has therefore been trading every level its
+    detector emits, which is many times more than anyone draws by hand.
+    On the 2026-09-24 run that showed up as `disrespect` taking 73% of
+    all trades at a 7.5% win rate.
+
+    "Sponsored" is read structurally, not as a pip count -- the same
+    reasoning that keeps min_stop_pips out of the system. The level
+    sponsored a move when price arrived at it and then travelled far
+    enough in the level's own direction to UNDO THE LEG THAT BROUGHT IT
+    THERE: for a bearish level, price rose into it and then fell back
+    below the low that rise started from. A level that only paused
+    price has not sponsored anything.
+
+    Returns False when the level has not yet been reached at all, which
+    is correct -- an untested level has no record."""
+    bearish = level.default_bias == Direction.BEARISH
+    n = len(candles)
+
+    touch = None
+    for i in range(max(0, start_idx), n):
+        if candles[i].low <= level.price <= candles[i].high:
+            touch = i
+            break
+    if touch is None or touch == 0:
+        return False
+
+    # The leg that delivered price to the level: its origin is the
+    # extreme price came FROM, on the opposite side.
+    leg = range(max(0, start_idx), touch)
+    if not leg:
+        return False
+    if bearish:
+        origin = min(candles[k].low for k in leg)
+        return any(c.low < origin for c in candles[touch + 1:])
+    origin = max(candles[k].high for k in leg)
+    return any(c.high > origin for c in candles[touch + 1:])
