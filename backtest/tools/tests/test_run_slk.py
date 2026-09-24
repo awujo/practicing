@@ -74,7 +74,6 @@ def test_the_system_is_the_taught_rules_and_nothing_unsourced():
         "confirmation_triggers": TRIGGERS_TAUGHT,
         "erl_mode": "target",
         "bias_caveat": True,
-        "liquidity_mode": "both",
     }
 
 
@@ -95,6 +94,26 @@ def test_operational_settings_are_kept_separate_from_taught_ones():
     assert not (set(SLK_SYSTEM) & set(SLK_OPERATIONAL))
     # slk_kwargs still merges both, since run_backtest needs them.
     assert set(slk_kwargs()) >= set(SLK_SYSTEM) | set(SLK_OPERATIONAL)
+
+
+def test_nothing_is_switched_on_without_a_measurement():
+    """The rule that came out of 2026-09-24.
+
+    SLK_TAUGHT_OVERRIDES held seven settings, none of them measured on
+    its own. Against the plain reading, on the same full history and
+    pairs: 2063 trades at ~+0.9 R/trade became 212 trades at -0.08.
+    They threw away ninety percent of the trades and kept the losing
+    ones.
+
+    Empty is the correct state. Anything added back has to arrive with
+    a number showing it helps, which is what this asserts against."""
+    from ..slk_system import SLK_TAUGHT_OVERRIDES
+
+    assert SLK_TAUGHT_OVERRIDES == {}
+    # And the baseline stays the plain reading: no liquidity_mode, so
+    # run_backtest's own default ("swing") applies -- the setting the
+    # profitable arm actually ran.
+    assert "liquidity_mode" not in slk_kwargs()
 
 
 def test_the_taught_system_contains_no_number_i_chose():

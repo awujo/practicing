@@ -69,131 +69,43 @@ SLK_SYSTEM = {
     "confirmation_triggers": TRIGGERS_TAUGHT,
     "erl_mode": "target",
     "bias_caveat": True,
-    "liquidity_mode": "both",
 }
 
-# Settings where the TAUGHT system deliberately departs from a live
-# default. Its own bundle, because it is neither a pure course rule
-# (SLK_SYSTEM) nor a deployment setting (SLK_OPERATIONAL) -- it is a
-# live setting the course overrules, and collapsing it into either one
-# would lose that. Nobody reading SLK_SYSTEM should be able to cite the
-# course for a number the bots chose, and nobody reading
-# SLK_OPERATIONAL should think this one is still in force.
-# Settings where the TAUGHT system deliberately departs from a live
-# default. Its own bundle, because it is neither a pure course rule
-# (SLK_SYSTEM) nor a deployment setting (SLK_OPERATIONAL) -- it is a
-# live setting the course overrules, and collapsing it into either one
-# would lose that.
+# EMPTY, AND THAT IS THE RESULT OF A MEASUREMENT.
 #
-# NOTHING HERE MAY BE A NUMBER I CHOSE. Two were, and both are gone:
+# This held seven settings until 2026-09-24. Measured against the plain
+# reading above, on the same full history and the same three pairs:
 #
-#   min_stop_pips = 2.0   Mine. Operator, 2026-09-23: "I invented that
-#                         number -- what the heck is this guy. Is this
-#                         what you were taught?" No, it is not. It was
-#                         put there to stop 0.2-pip stops, which are a
-#                         real problem, but a filter nobody taught is
-#                         not a fix -- it is me overruling the course
-#                         with a guess. The honest treatment is already
-#                         in place: postmortem charges spread as
-#                         spread_pips/risk_pips, so a 0.2-pip stop
-#                         shows up costing 7.5R instead of being
-#                         quietly excluded. Let the cost be visible
-#                         rather than hiding the trade.
+#     plain taught    2063 trades   ~42% win   ~+0.9 R/trade  ~+1800R
+#     plus my seven    212 trades   27.4% win   -0.08 R/trade    -17R
 #
-#   min_reward_r = 3.0    Also mine, and the operator did not even have
-#                         to point at it. I justified it with a loss
-#                         table, but erl_mode="target" means the target
-#                         IS the liquidity at whatever distance it
-#                         sits, so a 1.5R run to the previous weekly
-#                         high is a trade the course takes. The 1.0
-#                         floor in LIVE_FIXED_FLAGS stays, because that
-#                         one IS sourced -- "a trade of less than 1R
-#                         doesn't make sense to hold" (2026-09-01).
+# The seven threw away NINETY PERCENT OF THE TRADES AND KEPT THE LOSING
+# ONES. Not one of them was measured on its own before being switched
+# on; they were assembled together and the stack was judged as a whole,
+# which is how a system ends up worse than the thing it was meant to
+# improve.
 #
-# Both mechanisms remain in run_backtest, off by default, so the
-# question can be MEASURED later. Neither is part of the system.
-SLK_TAUGHT_OVERRIDES = {
-    "first_presentation_only": True,
-
-    # Rank the confirmations, do not race them.
-    #
-    # "If you ask me which ones are likely best, personally I would tell
-    # you these two ... if you have these two, [missing it] is a missed
-    # entry" (entries-part5 t=410-431) -- breakout and sweep+break. On
-    # eight instruments the engine produced disrespect 74% of trades
-    # against breakout 2% and sweep_break 1%, the exact inverse.
-    #
-    # Not a scoring system and not a preference of mine: the triggers
-    # simply cannot form at the same speed. disrespect can fire the
-    # candle after the touch; a breakout needs a low, a lift and a close
-    # beyond it. So the earliest always won and the ordering in
-    # confirmation_triggers only ever broke ties inside one candle.
-    "trigger_priority": True,
-
-    # The weekly may be set aside when the daily persistently
-    # contradicts it.
-    #
-    # "Weekly [is] saying bullish, [and] daily is now saying bearish. In
-    # that case those two timeframes are not in alignment, so [I] go to
-    # the four hours ... I can leave the weekly, I use my daily and my
-    # four hours, [and] I probably just target a good liquidity"
-    # (routine t=390-435), confirmed deliberate at t=465: "I built it
-    # from the daily alone."
-    #
-    # Without it the weekly wins every split -- it is first in
-    # TIMEFRAME_PRIORITY -- so a disagreement killed the trade outright
-    # and this whole class of setups was unreachable.
-    #
-    # The reduced target that makes it safe needs no number: the weekly
-    # is set aside for the TARGET too, so the ERL comes from the daily's
-    # own extremes, which are nearer by construction. A fraction of R
-    # here would have been min_stop_pips all over again.
-    "daily_only_when_split": True,
-
-    # An empty confirmation window is not a confirmation.
-    #
-    # Condition (c) of the flip test is written as a negative -- the
-    # lower timeframe must ALSO fail to confirm the OLD direction
-    # (video-16) -- and nothing at all satisfies that literally, so the
-    # bias could flip on no evidence. BIAS_CONFIRMATION_WINDOW's own
-    # comment states the intent positively: "you look at the lower
-    # timeframe's most recent breakout, and if it points the new way,
-    # the bias has flipped." No breakout does not point the new way.
-    #
-    # Filed as harmless on 2026-09-22 because the window is empty only
-    # at the tail of the series. That was incomplete: the tail is where
-    # LIVE always runs. It cannot move a backtest and can flip a live
-    # bias on nothing.
-    "require_flip_confirmation": True,
-
-    # THE SETUP QUALIFICATIONS. Operator, 2026-09-24: "if you model
-    # everything right as SLK the results will speak for itself, so it
-    # means you are missing something." This is what was missing, and
-    # it is neither a trigger nor a target -- it is which LEVELS are
-    # tradeable at all.
-    #
-    # plug-and-play t=863-878, the setup definition:
-    #
-    #   "A-shaped key levels [that] got disrespected, that is
-    #    overlapping inside of an imbalance ... that A-shaped key level
-    #    MUST HAVE SPONSORED SOME LEVEL OF SALES to the downside"
-    #
-    # And the two market conditions, stated five separate times in the
-    # same video (t=1035, 1081, 1477, 1618, 2461): take the liquidity
-    # AND rebalance the imbalance, at a key level. The engine enforced
-    # the liquidity half and not the other.
-    #
-    # Trading every level the detector emits is many times what anyone
-    # draws by hand, which is the likeliest reason `disrespect` reached
-    # 73% of trades at a 7.5% win rate.
-    #
-    # NOT a QMR gate -- that correction stands, a QMR is the Quasimodo
-    # pattern and overlap is incidental to it. This is the SETUP
-    # requiring an imbalance, which is a different claim from the same
-    # source.
-    "require_imbalance_overlap": True,
-    "require_sponsored_level": True,
-}
+# What each one was, and whose idea it actually was:
+#
+#   liquidity_mode="both"       concept theirs (bias-2 t=1137, bd2
+#                               t=825 -- single-candle and structural
+#                               are one pool at two zoom levels), but
+#                               "every candle, unbounded" was MINE.
+#   daily_only_when_split       theirs, routine t=390-435.
+#   require_imbalance_overlap   theirs, plug-and-play's two market
+#                               conditions.
+#   require_sponsored_level     condition theirs (t=869), but what
+#                               counts as "sponsored" was mine.
+#   first_presentation_only     the operator's, 2026-09-23.
+#   trigger_priority            MINE. He rates two confirmations
+#                               highest; he never says to pass on a
+#                               weaker one that fires first.
+#   require_flip_confirmation   MINE.
+#
+# Every mechanism survives in run_backtest, off by default, so each can
+# be measured ON TOP of this baseline one at a time. Nothing returns
+# here without a number showing it helps.
+SLK_TAUGHT_OVERRIDES = {}
 
 # Operational settings that are not strategy: the rollover-window skip
 # and the 1R floor both came from live incidents and direct
