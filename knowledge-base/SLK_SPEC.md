@@ -139,6 +139,24 @@ Four shapes (bias-1 t=60-180):
 | **bullish open-close** | buys | two consecutive candles whose open/close meet |
 | **bearish open-close** | sells | as above, to the downside |
 
+### "Engulfing" means a disrespected key level, not a candlestick
+
+Two independent sources, both found by re-reading the transcripts on
+2026-09-24 rather than by re-reading my own notes:
+
+> *"the moment [the candle] closes above this guy ... that's when we
+> now use it for a buy, or you can call it an engulfing."*
+> (bias-1 t=271-276)
+
+> *"You can also use what an engulfing -- that's an engulfed open close
+> key level."* (next t=389-395)
+
+This is the single most consequential vocabulary error the engine ever
+had: `is_engulfing()` tested a two-candle price pattern, while the
+course means a key level that price has closed through. Fixed as
+`disrespect_entry()`; recorded here with sources so it cannot be
+re-introduced by someone reading the word at face value.
+
 ### Polarity flips on a close through
 
 > *"This is what the key level should be used for **until they get
@@ -322,7 +340,7 @@ The near-miss candle becomes the liquidity. Price sweeps it, then plays
 the key level. This is the 4th-man pattern in its general form.
 
 > *"As it is in the origin of a trade, so it is in this particular
-> continuation."*
+> continuation."* (video-14 t=741-746)
 
 ### Bishop's four triggers map onto these
 
@@ -488,7 +506,7 @@ Two measured examples, read off full-resolution frames:
 | # | taught | engine | state |
 |---|---|---|---|
 | 1 | target IS the ERL | `min(3R, ERL)` | `--erl-as-target` |
-| 2 | "engulfing" = a disrespected key level | `is_engulfing()`, a candlestick engulfing | `disrespect_entry()` |
+| 2 | "engulfing" = a disrespected key level | `is_engulfing()`, a candlestick engulfing | `disrespect_entry()` -- sourced twice, see below |
 | 3 | disrespect applies to all four shapes | open-close only | **built** -- A/V/open-close, overshoot allowed, opposite-breakout invalidation |
 | 4 | breakout + sweep/break, rated highest | absent | **built** -- 5.4/5.5 off the frames |
 | 5 | ladder H3..M5, written on his chart | H1 only | **deliberate** -- scoped by the operator, reaffirmed 2026-09-23: "1h is ok" |
