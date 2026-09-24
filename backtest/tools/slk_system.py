@@ -149,6 +149,22 @@ SLK_TAUGHT_OVERRIDES = {
     # own extremes, which are nearer by construction. A fraction of R
     # here would have been min_stop_pips all over again.
     "daily_only_when_split": True,
+
+    # An empty confirmation window is not a confirmation.
+    #
+    # Condition (c) of the flip test is written as a negative -- the
+    # lower timeframe must ALSO fail to confirm the OLD direction
+    # (video-16) -- and nothing at all satisfies that literally, so the
+    # bias could flip on no evidence. BIAS_CONFIRMATION_WINDOW's own
+    # comment states the intent positively: "you look at the lower
+    # timeframe's most recent breakout, and if it points the new way,
+    # the bias has flipped." No breakout does not point the new way.
+    #
+    # Filed as harmless on 2026-09-22 because the window is empty only
+    # at the tail of the series. That was incomplete: the tail is where
+    # LIVE always runs. It cannot move a backtest and can flip a live
+    # bias on nothing.
+    "require_flip_confirmation": True,
 }
 
 # Operational settings that are not strategy: the rollover-window skip

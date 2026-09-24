@@ -169,7 +169,8 @@ class BiasCascade:
         self.origin_time = time
 
     def check_flip(self, origin_tf_next_key_level: KeyLevel, rejection_candle: Candle,
-                    lower_tf_confirmations_after_rejection: list[Confirmation]) -> bool:
+                    lower_tf_confirmations_after_rejection: list[Confirmation],
+                    require_confirmation: bool = False) -> bool:
         """
         Evaluates conditions (b) and (c) of the flip test -- the caller is
         responsible for condition (a) (confirming price has actually
@@ -200,6 +201,29 @@ class BiasCascade:
         if still_confirms_original:
             return False  # Video 16's resolved ambiguity: not flipped yet
 
+        # AN EMPTY WINDOW IS NOT A CONFIRMATION.
+        #
+        # The test above is a negative, and video-16 does state it that
+        # way -- "the next lower timeframe must ALSO fail to give any
+        # further continuation confirmation in the original direction".
+        # An empty window satisfies that literally, so the bias flips on
+        # NO EVIDENCE AT ALL, which is not what BIAS_CONFIRMATION_WINDOW's
+        # own comment describes: "you look at the lower timeframe's MOST
+        # RECENT breakout, and if it points the new way, the bias has
+        # flipped." No breakout does not point the new way.
+        #
+        # The 2026-09-22 audit recorded this as real but harmless,
+        # reasoning that the window is empty only when the rejection
+        # falls after the last confirmation in the series -- the tail of
+        # the data, not mid-history. That reasoning was incomplete:
+        # THE TAIL OF THE DATA IS WHERE LIVE ALWAYS RUNS. It cannot move
+        # a historical backtest and can absolutely flip a live bias on
+        # nothing.
+        #
+        # Off by default so every recorded number reproduces.
+        if require_confirmation and not lower_tf_confirmations_after_rejection:
+            return False
+
         self.direction = Direction.BULLISH if self.direction == Direction.BEARISH else Direction.BEARISH
         self.origin_time = rejection_candle.time
         return True
@@ -227,7 +251,8 @@ def resolve_effective_bias(biases: dict[str, Direction | None]) -> tuple[Directi
 
 def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: list[Confirmation],
                  initial_direction: Direction, timeframe_label: str,
-                 confirmation_window: int = 1) -> list[tuple[object, Direction]]:
+                 confirmation_window: int = 1,
+                 require_confirmation: bool = False) -> list[tuple[object, Direction]]:
     """
     Backtest driver for BiasCascade: walks `candles` forward, applying
     check_flip() whenever price trades into the next same-direction key
@@ -346,7 +371,8 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
         # correctly caught the attempt to smuggle it in.
         start = bisect.bisect_right(confirmation_times, c.time)
         window = confirmations_sorted[start:start + confirmation_window]
-        if cascade.check_flip(eligible, c, window):
+        if cascade.check_flip(eligible, c, window,
+                              require_confirmation=require_confirmation):
             breakpoints.append((c.time, cascade.direction, closes_at(c.time, length)))
 
     return breakpoints

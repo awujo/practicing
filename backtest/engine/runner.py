@@ -1682,6 +1682,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   first_presentation_only: bool = False,
                   trigger_priority: bool = False,
                   daily_only_when_split: bool = False,
+                  require_flip_confirmation: bool = False,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1775,6 +1776,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     target" that makes it safe. SLK_SPEC 1, routine t=390-435. False
     (default) keeps the weekly winning every split, which killed the
     trade outright.
+    require_flip_confirmation: do not flip the bias when the lower
+    timeframe's confirmation window is EMPTY. The window is empty only
+    at the tail of the series -- which is exactly where live always
+    runs -- so this cannot move a historical backtest and can stop a
+    live bias flipping on no evidence. False (default) reproduces every
+    recorded number.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -2036,7 +2043,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
-                                     confirmation_window=confirmation_window)
+                                     confirmation_window=confirmation_window,
+                                     require_confirmation=require_flip_confirmation)
 
     weekly_breakpoints = []
     if weekly:
@@ -2046,7 +2054,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         if weekly_first_origin is not None:
             weekly_breakpoints = replay_bias(weekly, weekly_levels_all, daily_confirmations,
                                               weekly_first_origin.direction, "Weekly",
-                                              confirmation_window=confirmation_window)
+                                              confirmation_window=confirmation_window,
+                                              require_confirmation=require_flip_confirmation)
 
     h4_lookup = _direction_lookup(h4_confirmations)
     # Built once here, not per entry candidate -- see _aligned_timeframes().

@@ -6,6 +6,7 @@ from ..structure import Direction
 from ..key_levels import KeyLevel
 from ..bias import (
     detect_confirmations, ConfirmationKind, BiasCascade, resolve_effective_bias,
+    Confirmation,
 )
 
 
@@ -158,3 +159,47 @@ def test_falls_through_to_lower_timeframe_when_higher_ones_have_no_bias():
     direction, source_tf = resolve_effective_bias(biases)
     assert direction == Direction.BULLISH
     assert source_tf == "H4"
+
+
+def test_an_empty_confirmation_window_is_not_a_confirmation():
+    """The bias must not flip on no evidence at all.
+
+    Condition (c) is written as a negative -- "the next lower timeframe
+    must ALSO fail to give any further continuation confirmation in the
+    original direction" (video-16) -- and an empty window satisfies that
+    literally. But BIAS_CONFIRMATION_WINDOW's own comment describes the
+    intent positively: "you look at the lower timeframe's MOST RECENT
+    breakout, and if it points the new way, the bias has flipped." No
+    breakout does not point the new way.
+
+    The 2026-09-22 audit filed this as real but harmless, since the
+    window is empty only when the rejection falls after the last
+    confirmation -- the tail of the series. That reasoning was
+    incomplete: the tail is where LIVE always runs."""
+    level = KeyLevel(time=pd.Timestamp("2024-01-10"), price=1.1000, shape="A",
+                     default_bias=Direction.BULLISH, confirmed_at=pd.Timestamp("2024-01-10"))
+    # A candle that closes through the level -- condition (b) satisfied.
+    rejection = Candle(pd.Timestamp("2024-01-11"), 1.1010, 1.1012, 1.0980, 1.0985, 1000)
+
+    # Default: flips on an empty window, which is the behaviour every
+    # recorded backtest was produced under.
+    loose = BiasCascade("Daily")
+    loose.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert loose.check_flip(level, rejection, []) is True
+    assert loose.direction == Direction.BEARISH
+
+    # With the guard: no evidence, no flip.
+    strict = BiasCascade("Daily")
+    strict.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert strict.check_flip(level, rejection, [], require_confirmation=True) is False
+    assert strict.direction == Direction.BULLISH
+
+    # And the guard must not block a REAL flip: a confirmation exists and
+    # points the new way.
+    new_way = Confirmation(time=pd.Timestamp("2024-01-11 06:00"),
+                           direction=Direction.BEARISH,
+                           kind=ConfirmationKind.BREAKOUT, price=1.0980)
+    ok = BiasCascade("Daily")
+    ok.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert ok.check_flip(level, rejection, [new_way], require_confirmation=True) is True
+    assert ok.direction == Direction.BEARISH

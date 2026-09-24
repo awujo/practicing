@@ -199,20 +199,35 @@ An A-shaped or V-shaped key level that:
 3. **overlaps an imbalance**
 4. has **liquidity resting beyond it**
 
-**Correction, operator 2026-09-22: these are not four required
-conditions.** *"It's not all of them -- the key level overlapping
-inside an imbalance WILL be a QMR kl."*
+**Corrected TWICE, and the second correction is the one that stands.**
 
-So the DEFINITION is two things: a key level, overlapping an imbalance.
-That is what video-14 t=180 says outright — *"a QMR key level, which is
-an A-shaped key level that is overlapping inside of an imbalance"*. The
-"sponsored some level of sales" and "got disrespected" lines are what he
-PREFERS on top of a QMR level, not what makes one.
+First (2026-09-22): *"It's not all of them -- the key level overlapping
+inside an imbalance WILL be a QMR kl."* Which I read as "QMR = a key
+level overlapping an imbalance", and wrote into this section.
 
-Built as `require_qmr` (default off). `imbalance_overlap` has always
-been computed and has only ever chosen a stop rule, so the engine has
-been trading non-QMR levels constantly while measuring the condition
-and discarding it.
+Then, the same day, the operator overruled that outright:
+
+> *"No, a QMR is a QMR, nothing much about it. It MUST NOT overlap an
+> imbalance. ANY kl can overlap an imbalance."*
+
+So **a QMR is the Quasimodo pattern and nothing else** -- see section 3,
+which is the authority on it. Overlapping an imbalance is a separate
+property that any key level may or may not have, and is NOT what makes
+a level a QMR.
+
+The four points above are therefore what Bishop PREFERS to see on a
+level, not a definition and not a gate. Two flags, deliberately
+separate, both default off:
+
+  `require_qmr`                 restricts H4 reaction levels to
+                                `detect_quasimodo_levels()` -- section
+                                3's pattern.
+  `require_imbalance_overlap`   restricts them to levels overlapping an
+                                imbalance. A different question.
+
+`imbalance_overlap` has always been computed and, until 2026-09-23,
+only ever chose a stop rule -- so the engine traded non-QMR levels
+constantly while measuring the condition and discarding it.
 
 ### Origin and continuation
 
