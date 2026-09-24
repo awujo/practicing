@@ -199,18 +199,18 @@ def test_a_level_that_only_paused_price_has_not_sponsored_a_move():
     worked = [bar(0, 1.1000, 1.1010), bar(1, 1.1020, 1.1035),
               bar(2, 1.1040, 1.1055),            # touches 1.1050
               bar(3, 1.1015, 1.1045), bar(4, 1.0990, 1.1020)]
-    assert sponsored_a_move(worked, level) is True
+    assert sponsored_a_move(worked, level, 0, len(worked)) is True
 
     # Same approach, but price only stalls -- it never undoes the leg
     # that brought it there.
     paused = [bar(0, 1.1000, 1.1010), bar(1, 1.1020, 1.1035),
               bar(2, 1.1040, 1.1055),
               bar(3, 1.1030, 1.1048), bar(4, 1.1035, 1.1052)]
-    assert sponsored_a_move(paused, level) is False
+    assert sponsored_a_move(paused, level, 0, len(paused)) is False
 
     # Never reached: no record, so no claim.
     untested = [bar(0, 1.1000, 1.1010), bar(1, 1.1005, 1.1015)]
-    assert sponsored_a_move(untested, level) is False
+    assert sponsored_a_move(untested, level, 0, len(untested)) is False
 
 
 def test_sponsored_a_move_mirrors_for_a_bullish_level():
@@ -227,4 +227,63 @@ def test_sponsored_a_move_mirrors_for_a_bullish_level():
     worked = [bar(0, 1.0990, 1.1000), bar(1, 1.0965, 1.0980),
               bar(2, 1.0945, 1.0960),            # touches 1.0950
               bar(3, 1.0955, 1.0985), bar(4, 1.0980, 1.1010)]
-    assert sponsored_a_move(worked, level) is True
+    assert sponsored_a_move(worked, level, 0, len(worked)) is True
+
+
+def test_sponsored_a_move_cannot_see_past_the_trade():
+    """The look-ahead this shipped with, for one hour, on 2026-09-24.
+
+    Without an upper bound the scan ran to the END of the series, so a
+    level "had worked" on the strength of a move that happened AFTER
+    the trade being judged. Results got worse, not better, which is how
+    it was caught -- but a look-ahead usually flatters results, so the
+    next one might not announce itself."""
+    from ..key_levels import sponsored_a_move, KeyLevel
+    from ..structure import Direction
+
+    level = KeyLevel(time=0, price=1.1050, shape="A",
+                     default_bias=Direction.BEARISH, confirmed_at=0)
+
+    def bar(i, lo, hi):
+        return Candle(time=i, open=(lo + hi) / 2, high=hi, low=lo,
+                      close=(lo + hi) / 2, volume=0)
+
+    # The level only proves itself at bar 5 -- after the entry at 4.
+    series = [bar(0, 1.1000, 1.1010), bar(1, 1.1020, 1.1035),
+              bar(2, 1.1040, 1.1055),            # touch
+              bar(3, 1.1030, 1.1048), bar(4, 1.1035, 1.1052),
+              bar(5, 1.0980, 1.1020)]            # the move, too late
+
+    assert sponsored_a_move(series, level, 0, 5) is False, "must not see bar 5"
+    assert sponsored_a_move(series, level, 0, len(series)) is True
+
+
+def test_sponsored_a_move_starts_at_the_levels_own_formation():
+    """The other half of the same bug: start_idx defaulted to 0, so the
+    scan hunted the first touch of that PRICE anywhere in history --
+    possibly years before the level existed -- and measured "the leg
+    that brought price there" from unrelated candles."""
+    from ..key_levels import sponsored_a_move, KeyLevel
+    from ..structure import Direction
+
+    level = KeyLevel(time=7, price=1.1050, shape="A",
+                     default_bias=Direction.BEARISH, confirmed_at=7)
+
+    def bar(i, lo, hi):
+        return Candle(time=i, open=(lo + hi) / 2, high=hi, low=lo,
+                      close=(lo + hi) / 2, volume=0)
+
+    # Bars 0-2 touch the same price long before the level exists, and a
+    # drop follows. Reading from 0 would call that sponsorship.
+    series = [bar(0, 1.0990, 1.1005),            # rise begins here
+              bar(1, 1.1045, 1.1060),            # touches the price
+              bar(2, 1.0900, 1.1000),
+              bar(3, 1.0800, 1.0900),            # and drops hard
+              bar(4, 1.1000, 1.1010), bar(5, 1.1020, 1.1035),
+              bar(6, 1.1040, 1.1055), bar(7, 1.1042, 1.1052),
+              bar(8, 1.1038, 1.1050)]
+
+    # Read from 0, that ancient drop counts as sponsorship.
+    assert sponsored_a_move(series, level, 0, len(series)) is True
+    # From the level's own formation there is no such record.
+    assert sponsored_a_move(series, level, 7, len(series)) is False

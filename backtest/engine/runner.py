@@ -2096,6 +2096,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     # So a recorded trade can name the setup it came from -- the pool,
     # the breakout that left it there -- rather than only the entry.
     setup_by_id = {s.setup_id: s for s in liquidity_setups}
+    # For bounding `sponsored_a_move` to what was knowable at entry.
+    h4_times = [c.time for c in h4]
 
     mgr = PositionManager()
     records: list[TradeRecord] = []
@@ -2382,9 +2384,14 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
         # which is many times what anyone draws by hand, and that is the
         # likeliest reason `disrespect` reached 73% of trades at a 7.5%
         # win rate on 2026-09-24.
-        if require_sponsored_level and not sponsored_a_move(
-                h4, new_key_level, start_idx=0):
-            continue
+        if require_sponsored_level:
+            # Bounded at BOTH ends: from the level's own formation, and
+            # only on candles closed before this entry. See
+            # `sponsored_a_move` for what each unbounded version did.
+            _lvl_i = bisect.bisect_left(h4_times, level_known_at(new_key_level))
+            _now_i = bisect.bisect_right(h4_times, curr.time)
+            if not sponsored_a_move(h4, new_key_level, _lvl_i, _now_i):
+                continue
 
         widest_imbalance = max(overlapping, key=lambda im: im.high - im.low, default=None)
         fill_size = widest_imbalance.high - widest_imbalance.low if widest_imbalance else 0.0

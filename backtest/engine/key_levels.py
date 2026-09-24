@@ -252,7 +252,7 @@ def detect_quasimodo_levels(candles: list[Candle], n: int = 2) -> list[KeyLevel]
 
 
 def sponsored_a_move(candles: list[Candle], level: KeyLevel,
-                     start_idx: int = 0) -> bool:
+                     start_idx: int, before_idx: int) -> bool:
     """Did this level already WORK once, before the trade being considered?
 
     The setup definition, plug-and-play t=863-878:
@@ -278,12 +278,32 @@ def sponsored_a_move(candles: list[Candle], level: KeyLevel,
     price has not sponsored anything.
 
     Returns False when the level has not yet been reached at all, which
-    is correct -- an untested level has no record."""
+    is correct -- an untested level has no record.
+
+    BOTH BOUNDS ARE REQUIRED, and the first version of this shipped
+    without either (2026-09-24, same day, corrected within the hour
+    after the numbers got worse instead of better):
+
+      start_idx    the level's own formation. Defaulting it to 0 made
+                   the scan look for the first touch of that PRICE
+                   anywhere in history -- possibly years before the
+                   level existed -- so "the leg that brought price
+                   there" was computed from unrelated candles.
+
+      before_idx   the candle being traded. Without it the scan ran to
+                   the END of the series and decided whether a level
+                   had worked using data from AFTER the trade. That is
+                   look-ahead, the exact class of bug this project
+                   removed once already (2026-09-18, finding 1).
+
+    Neither has a default. A caller that has not thought about which
+    window it means should not compile."""
     bearish = level.default_bias == Direction.BEARISH
     n = len(candles)
 
+    hi = min(before_idx, n)
     touch = None
-    for i in range(max(0, start_idx), n):
+    for i in range(max(0, start_idx), hi):
         if candles[i].low <= level.price <= candles[i].high:
             touch = i
             break
@@ -295,8 +315,9 @@ def sponsored_a_move(candles: list[Candle], level: KeyLevel,
     leg = range(max(0, start_idx), touch)
     if not leg:
         return False
+    after = candles[touch + 1:hi]
     if bearish:
         origin = min(candles[k].low for k in leg)
-        return any(c.low < origin for c in candles[touch + 1:])
+        return any(c.low < origin for c in after)
     origin = max(candles[k].high for k in leg)
-    return any(c.high > origin for c in candles[touch + 1:])
+    return any(c.high > origin for c in after)
