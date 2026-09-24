@@ -496,7 +496,7 @@ def sweep_break_entry(candles: list[Candle], idx: int, direction: Direction,
     Bishop rates this and 5.4 above every other confirmation: "if you
     ask me which ones are likely best, personally I would tell you these
     two ... if you have these two, [missing it] is a missed entry"
-    (part5 t=420-435)."""
+    (part5 t=410-431)."""
     broke, swept = _reaction_structure(candles, idx, direction, since)
     return broke and swept
 

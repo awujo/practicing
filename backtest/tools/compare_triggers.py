@@ -17,7 +17,7 @@ the course teaches.
            to it, and the return is the entry (SLK_SPEC 5.2). The
            breakout and sweep+break are the two he rates above all the
            rest: "if you have these two, [missing it] is a missed entry"
-           (bishop-entries-part5 t=420-435).
+           (bishop-entries-part5 t=410-431).
 
 Read SLK_SPEC.md sections 5.1-5.5 before interpreting anything here.
 

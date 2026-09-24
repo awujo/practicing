@@ -1155,7 +1155,7 @@ TRIGGERS_SHIPPED = ("engulfing", "fourth_man")
 # and sweep+break come first because he puts them there: "if you ask me
 # which ones are likely best, personally I would tell you these two ...
 # if you have these two, [missing it] is a missed entry"
-# (bishop-entries-part5 t=420-435).
+# (bishop-entries-part5 t=410-431).
 #
 # They were specified off the full-resolution frames where he draws both
 # side by side -- see SLK_SPEC.md 5.4 and 5.5. The reference broken is
@@ -1392,7 +1392,7 @@ def _find_entry_candidates(h1: list[Candle], setups: list[LiquiditySetup],
             # candle. Measured on eight instruments: disrespect 74% of
             # trades, breakout 2%, sweep_break 1% -- of the two Bishop
             # rates above everything else, "if you have these two,
-            # [missing it] is a missed entry" (entries-part5 t=420-435).
+            # [missing it] is a missed entry" (entries-part5 t=410-431).
             #
             # This is NOT hunting for a second chance: it is one
             # reaction, off one level, from one setup -- still the first

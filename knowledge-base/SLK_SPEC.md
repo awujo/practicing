@@ -405,7 +405,7 @@ He rates these two above all the others: *"if you ask me which ones are
 likely best, personally I would tell you these two ... if you have
 these two, [missing it] is a missed entry. Well, you might take losses,
 but your losses are going to be minimal compared to other forms of
-confirmation entry."* (part5 t=420-435)
+confirmation entry."* (part5 t=410-431)
 
 ### The entry timeframe ladder is written on the chart
 

@@ -18,7 +18,7 @@ WHAT IS IN
                           ones are likely best, personally I would tell
                           you these two ... if you have these two,
                           [missing it] is a missed entry"
-                          (entries-part5 t=420-435). SLK_SPEC 5.1-5.5.
+                          (entries-part5 t=410-431). SLK_SPEC 5.1-5.5.
 
   erl_mode="target"       The target IS the external liquidity, not a
                           3R cap. Seven separate statements, no
@@ -119,7 +119,7 @@ SLK_TAUGHT_OVERRIDES = {
     #
     # "If you ask me which ones are likely best, personally I would tell
     # you these two ... if you have these two, [missing it] is a missed
-    # entry" (entries-part5 t=420-435) -- breakout and sweep+break. On
+    # entry" (entries-part5 t=410-431) -- breakout and sweep+break. On
     # eight instruments the engine produced disrespect 74% of trades
     # against breakout 2% and sweep_break 1%, the exact inverse.
     #

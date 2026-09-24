@@ -21,7 +21,7 @@ Three things are in because the source states them as the rule:
 
   triggers      Bishop enumerates four and rates breakout and
                 sweep+break highest: "if you have these two, [missing
-                it] is a missed entry" (entries-part5 t=420-435).
+                it] is a missed entry" (entries-part5 t=410-431).
   erl target    Seven separate statements that the target IS the
                 liquidity, no counter-evidence. His own finished trades
                 read 3.4R to almost 7R.
