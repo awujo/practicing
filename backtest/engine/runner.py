@@ -197,7 +197,7 @@ from .key_levels import (
     KeyLevel, detect_key_levels, detect_quasimodo_levels, sponsored_a_move,
     count_tests_before_disrespect, known_at as level_known_at)
 from .liquidity import single_candle_liquidity, structural_liquidity_points
-from .imbalance import detect_imbalances, overlaps_level
+from .imbalance import detect_imbalances, overlaps_level, imbalance_known_at
 from .bias import (detect_confirmations, replay_bias, bias_at, resolve_effective_bias,
                     confirmation_known_at)
 from .entries import (
@@ -2046,7 +2046,10 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     # One inference for the whole run rather than per candidate.
     h1_bar_length = bar_length(h1)
     h1_imbalances = detect_imbalances(h1)
-    h1_imbalance_times = [im.time for im in h1_imbalances]
+    # Indexed by when each gap became VISIBLE (its third candle),
+    # not by its middle candle -- see `imbalance_known_at`.
+    h1_imbalances.sort(key=imbalance_known_at)
+    h1_imbalance_times = [imbalance_known_at(im) for im in h1_imbalances]
 
     weekly_levels_all = detect_key_levels(weekly, n) if weekly else []
     if bias_caveat:

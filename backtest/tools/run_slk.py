@@ -93,6 +93,24 @@ from .live_cycle_timing import load_windows
 from .slk_system import SLK_VARIANTS, slk_kwargs
 
 
+def _cost_r(r, spread_pips):
+    """What the spread really costs THIS trade, in R.
+
+    A flat charge assumes every trade risks the same distance. They do
+    not: measured on real logs the honest mean is ~0.25 R/trade against
+    the 0.12 this used to assume, and a trade risking 2 pips on a
+    1.5-pip spread pays 0.75R on its own. Cost in R is
+    spread_pips/risk_pips, which is what `postmortem` already charges --
+    the two tools disagreeing about costs is how a number gets believed
+    twice."""
+    if not spread_pips:
+        return 0.0
+    risk = getattr(r, "risk_pips", None)
+    if not risk:
+        return 0.12
+    return spread_pips / risk
+
+
 def _closed(recs):
     return [r for r in recs if r.exit_reason in ("target_hit", "stop_hit")
             and r.r_multiple is not None]
@@ -112,7 +130,7 @@ def _curve_stats(closed, spread):
     streak = 0
     worst_streak = 0
     for r in sorted(closed, key=_sort_key):
-        equity += r.r_multiple - spread
+        equity += r.r_multiple - _cost_r(r, spread)
         peak = max(peak, equity)
         max_dd = max(max_dd, peak - equity)
         if r.exit_reason == "target_hit":
@@ -132,12 +150,14 @@ def _stats(recs, spread):
     gross_win = sum(r.r_multiple for r in wins)
     gross_loss = -sum(r.r_multiple for r in losses)
     max_dd, worst_streak = _curve_stats(closed, spread)
+    cost_total = sum(_cost_r(r, spread) for r in closed)
     return {
         "n": n,
         "win": (100.0 * len(wins) / n) if n else 0.0,
         "total": total,
         "per": (total / n) if n else 0.0,
-        "net": (total / n - spread) if n else 0.0,
+        "net": ((total - cost_total) / n) if n else 0.0,
+        "cost_total": cost_total,
         "avg_win": (gross_win / len(wins)) if wins else 0.0,
         "avg_loss": (gross_loss / len(losses)) if losses else 0.0,
         "profit_factor": (gross_win / gross_loss) if gross_loss else float("inf"),
@@ -154,7 +174,7 @@ def _report(label, s, width=12):
     # how much a year actually produced -- 0.5 R/trade over 20 trades
     # and over 200 trades are different businesses -- and the operator
     # asked for the year's own number, which is this one.
-    net_total = s["total"] - s["spread"] * s["n"]
+    net_total = s["total"] - s["cost_total"]
     print(f"  {label:<{width}} {s['n']:>5} trades  {s['win']:>5.1f}% win  "
           f"{s['per']:>6.2f} R/trade  {s['net']:>6.2f} net  "
           f"{s['total']:>8.1f}R gross  {net_total:>8.1f}R net  "
@@ -180,9 +200,11 @@ def main():
                         help="'full' runs ~20 years per instrument. 'live' runs "
                              "the trimmed windows the bot actually loads, which "
                              "is a smaller sample but the only one live ever sees.")
-    parser.add_argument("--spread", type=float, default=0.12,
-                        help="R charged per round trip. An ASSUMPTION, not a "
-                             "measurement -- 0.12 is what earlier reports used.")
+    parser.add_argument("--spread", type=float, default=1.5,
+                        help="spread in PIPS per round trip, charged against each "
+                             "trade's own risk_pips. Still an assumption, but one "
+                             "that scales with stop size instead of pretending "
+                             "every trade risks the same distance.")
     parser.add_argument("--dump-trades", default="backtest/results")
     args = parser.parse_args()
 
@@ -207,7 +229,8 @@ def main():
     print("SLK SYSTEM")
     for k, v in sorted(kwargs.items()):
         print(f"  {k} = {v}")
-    print(f"  spread assumption = {args.spread} R/round trip")
+    print(f"  spread assumption = {args.spread} PIPS/round trip, "
+          f"charged per trade as spread/risk_pips")
     print(f"  history = {args.windows}"
           + ("  (bot/history_windows.json, same as live)"
              if args.windows == "live" else "  (~20 years per instrument)"))
@@ -234,10 +257,18 @@ def main():
             write_trade_log(recs, os.path.join(
                 args.dump_trades, f"{instrument}_{args.entry_style}{suffix}.csv"))
         s = _stats(recs, args.spread)
+        # Unresolved trades are EXCLUDED from every figure below, so
+        # say how many. If a large share never reach stop or target
+        # inside MAX_TRADE_DURATION_CANDLES, the reported stats describe
+        # the subset that happened to resolve, which is a selection.
+        open_n = len(recs) - s["n"]
         all_closed.extend(s["closed"])
         if s["closed"]:
             first_entry[instrument] = min(r.entry_time for r in s["closed"])
         _report(f"{instrument} [{time.time()-t0:.0f}s]", s, width=20)
+        if open_n:
+            print(f"  {'':<20} {open_n} unresolved and excluded "
+                  f"({100.0*open_n/len(recs):.1f}% of {len(recs)})", flush=True)
 
     if not all_closed:
         print("\nNo closed trades. Nothing to report.")

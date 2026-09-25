@@ -28,6 +28,13 @@ class Imbalance:
     low: float
     high: float
     direction: Direction  # BULLISH gap (untraded zone below price) or BEARISH (above price)
+    # When this gap could first be SEEN. A 3-candle pattern is not
+    # decidable until the third candle closes, so stamping it by the
+    # middle candle -- and then filtering on that -- admitted every
+    # imbalance one candle early. Small, but it chose the stop rule for
+    # plug-and-play trades, and "one candle early" is the same species
+    # of error as the entry-classification peek found on 2026-09-25.
+    known_at: object = None
 
 
 def detect_imbalances(candles: list[Candle]) -> list[Imbalance]:
@@ -36,10 +43,17 @@ def detect_imbalances(candles: list[Candle]) -> list[Imbalance]:
     for i in range(1, len(candles) - 1):
         a, b, c = candles[i - 1], candles[i], candles[i + 1]
         if a.high < c.low:
-            out.append(Imbalance(b.time, a.high, c.low, Direction.BULLISH))
+            out.append(Imbalance(b.time, a.high, c.low, Direction.BULLISH, c.time))
         elif a.low > c.high:
-            out.append(Imbalance(b.time, c.high, a.low, Direction.BEARISH))
+            out.append(Imbalance(b.time, c.high, a.low, Direction.BEARISH, c.time))
     return out
+
+
+def imbalance_known_at(im: Imbalance) -> object:
+    """When this gap became visible -- the third candle. Falls back to
+    the middle candle for any Imbalance built before `known_at` existed,
+    which is the old, one-candle-early behaviour."""
+    return im.known_at if im.known_at is not None else im.time
 
 
 def overlaps_level(imbalance: Imbalance, price: float) -> bool:

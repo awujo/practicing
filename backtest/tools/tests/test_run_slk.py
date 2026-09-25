@@ -7,13 +7,14 @@ from ..slk_system import SLK_OPERATIONAL, SLK_SYSTEM, SLK_VARIANTS, slk_kwargs
 
 class Rec:
     def __init__(self, r, exit_reason="target_hit", entry=0, exit=None,
-                 trigger_type="breakout"):
+                 trigger_type="breakout", risk_pips=None):
         b = pd.Timestamp("2026-01-01", tz="UTC")
         self.r_multiple = r
         self.exit_reason = exit_reason
         self.entry_time = b + pd.Timedelta(hours=entry)
         self.exit_time = b + pd.Timedelta(hours=exit if exit is not None else entry + 1)
         self.trigger_type = trigger_type
+        self.risk_pips = risk_pips
 
 
 def L(r=-1.0, **kw):
@@ -44,11 +45,23 @@ def test_the_curve_is_walked_in_EXIT_order():
 
 def test_spread_is_charged_inside_the_drawdown_too():
     """Charging it only on the average would understate the hole."""
-    trades = [L(entry=i) for i in range(5)]
+    trades = [L(entry=i, risk_pips=10.0) for i in range(5)]
     plain, _ = _curve_stats(trades, spread=0.0)
-    with_spread, _ = _curve_stats(trades, spread=0.1)
+    # 1 pip against a 10-pip stop is 0.1R per trade.
+    with_spread, _ = _curve_stats(trades, spread=1.0)
     assert plain == pytest.approx(5.0)
     assert with_spread == pytest.approx(5.5)
+
+
+def test_spread_costs_more_on_a_tighter_stop():
+    """The whole reason a flat R charge is wrong. The same 1.5-pip
+    spread is 0.15R against a 10-pip stop and 0.75R against a 2-pip
+    one, and the second trade needs to be four times as right to break
+    even. A flat charge hides that entirely."""
+    wide, _ = _curve_stats([L(entry=0, risk_pips=10.0)], spread=1.5)
+    tight, _ = _curve_stats([L(entry=0, risk_pips=2.0)], spread=1.5)
+    assert wide == pytest.approx(1.15)
+    assert tight == pytest.approx(1.75)
 
 
 def test_profit_factor_and_averages():
