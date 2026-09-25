@@ -176,6 +176,7 @@ def main():
                  "(reporting only -- nothing is traded)",
                  len(watchers), args.n)
 
+    first = True
     while True:
         started = time.time()
         total = 0
@@ -185,11 +186,44 @@ def main():
             except Exception:                           # noqa: BLE001
                 # One instrument's failure must never stop the rest.
                 logger.exception("%s: cycle failed", watcher.instrument)
+
+        if first:
+            # The first cycle is silent by design -- everything in the
+            # trimmed history is already in the past. But a watcher that
+            # starts up and says nothing for hours is indistinguishable
+            # from one that is broken, so it announces what it can
+            # already see, once. It doubles as the state of the book:
+            # where every pair currently stands before anything moves.
+            _announce(channel, watchers, args.n)
+            first = False
+
         logger.info("cycle done in %.0fs, %d message(s) sent",
                      time.time() - started, total)
         if args.once:
             return
         time.sleep(max(5, args.poll_seconds))
+
+
+def _announce(channel, watchers, n: int) -> None:
+    """One message at startup: what is being watched and where it stands."""
+    with_bias = [w for w in watchers if w.standing]
+    lines = [f"[SLK] watching {len(watchers)} instruments, n={n}",
+             "Reporting only — nothing is traded.", ""]
+    if with_bias:
+        lines.append(f"Bias standing right now ({len(with_bias)}):")
+        lines += [w.summary_line() for w in with_bias]
+    else:
+        lines.append("No bias standing on any pair right now.")
+    quiet = len(watchers) - len(with_bias)
+    if quiet:
+        lines.append(f"")
+        lines.append(f"The other {quiet} have no bias yet.")
+    lines += ["", "From here you will hear about changes only:",
+              "a bias forming, liquidity being taken, a confirmation."]
+    try:
+        channel.note("\n".join(lines))
+    except Exception:                                   # noqa: BLE001
+        logger.exception("could not send the startup announcement")
 
 
 if __name__ == "__main__":

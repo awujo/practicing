@@ -107,9 +107,10 @@ def test_n_is_required(monkeypatch):
         main()
 
 
-def test_one_cycle_runs_end_to_end_and_sends_nothing_first_time(monkeypatch):
-    """--once is the wiring check. The first cycle only learns where now
-    is, so a clean run is a silent one."""
+def test_the_first_cycle_reports_no_historical_events(monkeypatch):
+    """--once is the wiring check. Every event in the trimmed history is
+    already in the past, so none of them is news -- the only message is
+    the startup announcement, which is about the present."""
     from .. import run_slk_watch
 
     h1 = bars(600)
@@ -128,7 +129,8 @@ def test_one_cycle_runs_end_to_end_and_sends_nothing_first_time(monkeypatch):
                         ["run_slk_watch", "--instruments", "EURUSD,GBPJPY",
                          "--n", "2", "--once"])
     main()
-    assert sent == [], "the first cycle must be silent"
+    assert len(sent) == 1, "only the announcement, no replayed history"
+    assert "watching" in sent[0], "and that one message is the announcement"
 
 
 def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypatch):
@@ -161,3 +163,51 @@ def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypa
     assert len(seen) == 27
     assert "USOIL" in seen and "ETHUSD" in seen
     assert "EURUSD" in seen and "XAUUSD" in seen
+
+
+def test_startup_announces_what_it_can_see(monkeypatch):
+    """A watcher that starts up and says nothing for hours is
+    indistinguishable from a broken one. The first cycle is silent by
+    design, so it announces the state of the book instead -- which is
+    also the most useful single message it ever sends."""
+    from .. import run_slk_watch
+
+    h1 = bars(600)
+    monkeypatch.setattr(run_slk_watch, "load_candles", lambda *_a, **_k: h1)
+
+    sent = []
+
+    class Channel:
+        def note(self, text):
+            sent.append(text)
+            return True
+
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Channel()))
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "EURUSD,GBPJPY",
+                         "--n", "2", "--once"])
+    run_slk_watch.main()
+
+    assert len(sent) == 1, "exactly one announcement, not one per instrument"
+    text = sent[0]
+    assert "watching 2 instruments" in text
+    assert "nothing is traded" in text.lower()
+    assert "changes only" in text
+
+
+def test_a_failed_announcement_does_not_stop_the_watcher(monkeypatch):
+    from .. import run_slk_watch
+
+    monkeypatch.setattr(run_slk_watch, "load_candles", lambda *_a, **_k: bars(600))
+
+    class Exploding:
+        def note(self, _text):
+            raise RuntimeError("telegram is down")
+
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Exploding()))
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "EURUSD", "--n", "2",
+                         "--once"])
+    run_slk_watch.main()          # must not raise

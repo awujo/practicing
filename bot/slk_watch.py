@@ -70,11 +70,20 @@ class _Collector:
         self.bias = []
         self.setups = []
         self.confirmations = []
+        # The LAST bias seen, regardless of the watermark. The watermark
+        # decides what is news; this is what is TRUE right now, and on
+        # the first cycle -- when nothing is news because everything is
+        # history -- it is the only thing worth saying.
+        self.standing = None
 
     def _fresh(self, at) -> bool:
         return self.since is None or (at is not None and at > self.since)
 
     def on_bias(self, at=None, direction=None, cascade=None, was=None):
+        if direction is not None:
+            self.standing = {"at": at, "direction": direction,
+                              "upper": _evidence(cascade, "upper"),
+                              "lower": _evidence(cascade, "lower")}
         if self._fresh(at) and direction is not None:
             self.bias.append({"at": at, "direction": direction, "was": was,
                                "upper": _evidence(cascade, "upper"),
@@ -120,6 +129,7 @@ class SLKWatcher:
         self.channel = channel
         self.load = load_candles           # (instrument, granularity) -> list
         self.watermark = None              # nothing before this is news
+        self.standing = None               # the bias as it stands, if any
 
     def _series(self):
         out = {}
@@ -143,10 +153,12 @@ class SLKWatcher:
                self.n, observer=collector)
 
         sent = 0
+        self.standing = collector.standing
         if self.watermark is None:
             # First pass: the whole history is "new". Reporting it would
             # be years of messages, so the first cycle only learns where
-            # now is.
+            # now is -- and records the bias as it stands, which the
+            # runner announces once as a single summary.
             logger.info("%s: bootstrapped, watching from %s",
                          self.instrument, series["H1"][-1].time)
         else:
@@ -176,6 +188,18 @@ class SLKWatcher:
                     logger.exception("%s: could not send a %s message",
                                       self.instrument, send.__name__)
         return sent
+
+    def summary_line(self) -> str:
+        """One line for the startup announcement, or "" if there is no
+        bias standing. Short on purpose: 27 of these go in one message."""
+        if not self.standing:
+            return f"  {self.instrument:<8} no bias"
+        side = getattr(self.standing["direction"], "value", "")
+        evidence = self.standing.get("lower") or self.standing.get("upper")
+        kind = getattr(evidence, "kind", None)
+        how = {"sweep": "liquidity swept",
+               "rejection": "key level rejected"}.get(kind, "")
+        return f"  {self.instrument:<8} {side:<8} {how}"
 
     def _send_bias(self, change) -> bool:
         side = getattr(change["direction"], "value", change["direction"])
