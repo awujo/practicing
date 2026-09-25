@@ -127,7 +127,7 @@ from dataclasses import dataclass
 
 from ..engine.candles import Candle
 from ..engine.structure import Direction
-from .bias import rejected_at
+from .bias import breakout_after, rejected_at
 from .levels import KeyLevel, disrespected_by
 
 
@@ -178,6 +178,13 @@ def external_kind(bias: Direction) -> str:
 
 def role_of(kind: str, bias: Direction) -> str:
     return "internal" if kind == internal_kind(bias) else "external"
+
+
+def bias_from_internal(kind: str) -> Direction:
+    """The formation in which `kind` is the internal range -- the inverse
+    of `internal_kind`. A low taken is a bullish story, a high taken a
+    bearish one."""
+    return Direction.BULLISH if kind == "low" else Direction.BEARISH
 
 
 class LiquidityStream:
@@ -356,3 +363,110 @@ class SetupStream:
                                   same_candle=p.born_at == candle.time))
                 del self._pending[key]
         return live
+
+
+class LiquidityBias:
+    """Bias from Bishop's own checklist, which is not the key-level one.
+
+    bias-1 t=380-413 builds bias WITH KEY LEVELS: rejection, closure,
+    breakout on the next timeframe down (bias.py). That is one of the
+    two routes. His morning routine uses the other, and he reads it off
+    the same checklist three times in one video:
+
+        "I have my CHECKLIST: previous daily weekly low sweep, what's
+         daily breakout to the upside"      (daily-routine t=534-540)
+
+        "structure bearish, we had a PREVIOUS WEEKLY HIGH SWEEP WITH A
+         LOW STANDING, let's go to the daily. What's daily doing? Daily
+         also broke out to the downside"    (daily-routine t=1012-1024)
+
+        "we had this previous weekly [high] sweep ... that's good, so the
+         daily timeframe, I see ... bearish breakout"   (t=782-793)
+
+    Two items, not three, and the first is LIQUIDITY rather than a key
+    level. Same shape as the other route -- the higher timeframe does
+    something, the next one down breaks structure to confirm it -- which
+    is why both live behind one name in the driver. S, L and K are three
+    ways in, not a conjunction, and requiring a key level AND a sweep
+    would be inventing an "and" nobody said.
+
+    WHICH DIRECTION A SWEEP MEANS
+
+    Exactly the rule from video-18 t=321-331 again: a low taken is the
+    internal range of a bullish formation, a high taken the internal
+    range of a bearish one. "Previous weekly high sweep" -> bearish. And
+    "WITH A LOW STANDING" is the other half of the same single-candle
+    formation still untaken, which is what makes the expansion down to it
+    the thing to expect. A candle that takes both extremes of a previous
+    period leaves no story, and establishes nothing here.
+
+    THE WEEKLY IS NOT A GATE
+
+    It was tempting to require the Daily to agree with the Weekly. The
+    source forbids it, in as many words -- daily-routine t=399-417:
+
+        "daily is now saying bearish, in that case now those two time
+         frames are not in alignment, so that goes to the four hours ...
+         I CAN LEAVE THE WEEKLY, I use my daily at my four hours. I
+         probably just target a good liquidity"
+
+    So a disagreement drops the weekly and trades daily-to-H4, which is
+    what the driver does anyway, and the one consequence he names is on
+    the TARGET -- take a nearer liquidity -- which liquidity.py already
+    does by always taking the nearest. Making the weekly a filter would
+    have deleted trades he explicitly still takes.
+
+    THE AMBIGUITY, NAMED
+
+    A weekly candle says a low was swept during that week; it cannot say
+    on which day. So a daily break inside the same week might have come
+    BEFORE the sweep that is supposed to have caused it. `push` therefore
+    takes the week's CLOSE time and only daily candles after it count.
+    That loses some of his same-week entries, and it is still the right
+    way round: an engine that cannot tell cause from coincidence should
+    err towards fewer trades, not towards flattering ones.
+    """
+
+    def __init__(self):
+        self._stream = LiquidityStream()
+        self._taken: set[tuple[object, str]] = set()
+        self.latest: tuple[Direction, object] | None = None
+
+    def push(self, candle: Candle, closed_at: object) -> None:
+        """One CLOSED higher-timeframe candle, and the time it closed.
+
+        `closed_at` is passed rather than derived because the caller has
+        already computed it to decide this candle had closed at all, and
+        recomputing it here would be a second place to get it wrong.
+        """
+        sweeps = self._stream.push(candle)
+        for s in sweeps:
+            self._taken.add((s.point.time, s.point.kind))
+
+        implied = set()
+        for s in sweeps:
+            other = "high" if s.point.kind == "low" else "low"
+            if (s.point.time, other) in self._taken:
+                continue                  # both sides gone: no story left
+            implied.add(bias_from_internal(s.point.kind))
+
+        if len(implied) == 1:
+            self.latest = (implied.pop(), closed_at)
+        elif implied:
+            self.latest = None            # a high and a low: no story
+
+    def direction(self, lower: list[Candle], n: int) -> Direction | None:
+        """The bias this sweep has established, once `lower` confirms it.
+
+        `lower` is the next timeframe down, ending at now. None until it
+        breaks structure the same way -- the second checklist item is
+        something price must DO, the same as condition 3 of the other
+        route.
+        """
+        if self.latest is None:
+            return None
+        direction, when = self.latest
+        idx = next((j for j, c in enumerate(lower) if c.time >= when), None)
+        if idx is None:
+            return None
+        return direction if breakout_after(lower, idx, direction, n) else None

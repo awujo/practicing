@@ -21,8 +21,11 @@ the higher series are fed by close time rather than sliced by index.
 
 THE CASCADE, IN THE ORDER THE COURSE GIVES IT
 
-    bias        a Daily key level rejected and closed through, then H4
-                breaking structure the same way (bias.py)
+    bias        either route: a Daily key level rejected with H4 then
+                breaking the same way (bias.py), or a previous Weekly
+                extreme swept with the other side standing and the Daily
+                then breaking the same way (sweep.LiquidityBias). The
+                Daily route wins a disagreement.
     setup       on H4: internal range liquidity taken, the NEAREST key
                 level to it, and a rejection from that level (sweep.py)
     entry       on H1: two same-direction candles leave an open-close
@@ -52,7 +55,7 @@ from .levels import disrespected_by, returned_to
 from .liquidity import target_for
 from .orders import OrderBook, PendingOrder
 from .stream import LevelStream
-from .sweep import Setup, SetupStream, level_identity
+from .sweep import LiquidityBias, Setup, SetupStream, level_identity
 
 
 @dataclass
@@ -122,6 +125,7 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
     daily_levels = LevelStream(n)
     h4_levels = LevelStream(n)
     setups = SetupStream()
+    weekly_sweep = LiquidityBias()
     live: dict[object, Setup] = {}
     engulfs_pending = _EngulfBook()
     book = OrderBook()
@@ -143,15 +147,28 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             seen_daily.append(daily[di])
             di += 1
         while wi < len(weekly) and w_close[wi] <= now:
+            weekly_sweep.push(weekly[wi], w_close[wi])
             seen_weekly.append(weekly[wi])
             wi += 1
         while h4i < len(h4) and h4_close[h4i] <= now:
             h4_levels.push(h4[h4i])
-            # Bias: the most recent daily level price has rejected, with
-            # H4 then breaking the same way. Recomputed only when a new
-            # H4 candle closes, which is when it can change.
-            was, bias = bias, _bias_now(daily_levels, seen_daily,
-                                        h4[:h4i + 1], n) or bias
+            # Bias, by either of the two routes the course gives, and
+            # recomputed only when a new H4 candle closes, which is when
+            # it can change.
+            #
+            #   key levels   a Daily level rejected, H4 breaking the same
+            #                way                       (bias-1 t=380-413)
+            #   liquidity    a previous Weekly extreme swept with the
+            #                other side standing, Daily breaking the same
+            #                way                 (daily-routine t=534-540)
+            #
+            # The Daily route wins when they disagree, because that is
+            # what he does: "I can leave the weekly, I use my daily at my
+            # four hours" (daily-routine t=413-417).
+            was = bias
+            bias = (_bias_now(daily_levels, seen_daily, h4[:h4i + 1], n)
+                    or weekly_sweep.direction(seen_daily, n)
+                    or bias)
             if bias != was and was is not None:
                 # "I had to go and cancel my limit order ... because [I]
                 # was analyzing this from the three hours, it was
