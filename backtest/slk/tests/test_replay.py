@@ -189,16 +189,18 @@ def test_the_ambiguous_fill_is_carried_onto_the_trade():
     """It has to survive as far as the report, or it cannot be counted
     -- which was the whole point of making it an event.
 
-    Seed 4 rather than the 5 used elsewhere: with the liquidity gate in
-    place the default fixture takes only 2 trades and neither is
-    ambiguous, so it cannot demonstrate this. Picking a seed that does
-    is honest; asserting that a random walk must produce one is not."""
-    h1_bars = _random_series(seed=4)
+    A longer fixture than the default, because the stop is now the
+    open-close zone's far edge rather than the engulfing candle's
+    extreme, and that is usually a wider stop -- so bars that reach both
+    entry and stop got rarer, which is the point of the change. Picking a
+    fixture that produces them is honest; asserting that a random walk
+    must is not."""
+    h1_bars = _random_series(seed=4, bars=4000)
     trades = replay(_agg(h1_bars, 168), _agg(h1_bars, 24),
                     _agg(h1_bars, 4), h1_bars, n=2)
 
     flagged = [t for t in trades if t.same_candle_stop]
-    assert flagged, "this fixture does produce them -- 2 of 6"
+    assert flagged, "this fixture does produce them -- 3 of 32"
     assert all(t.outcome == "stop" for t in flagged), \
         "filled then stopped, by assumption, on the same bar"
 

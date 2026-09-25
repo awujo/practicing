@@ -122,14 +122,42 @@ def returned_to(candle: Candle, level: OpenCloseLevel) -> bool:
 
 
 def stop_for(engulf: Candle, level: OpenCloseLevel) -> float:
-    """The stop, on the engulfing candle's own far side.
+    """The stop: the FAR EDGE of the open-close zone being entered.
 
-    Operator: "putting your SL at the low of the engulf." 5.2 for the
-    mirrored case: "just going to be a little bit above this particular
-    high."
+    Measured from Bishop's own charts rather than inferred from words,
+    because inferring it from words is how it was got wrong. The
+    chart-examples PDF was read page by page (knowledge-base/
+    supplementary/bishop_pdf_sl_measurements.md) and the rule holds on
+    13 of 13 measured trades with zero exceptions:
 
-    No padding. A pip figure would be a number nobody stated, and the
-    last two of those I invented were removed on the operator's
-    instruction. The candle's extreme is the invalidation as given.
+        ENTRY = NEAR edge of the risk-side zone
+        STOP  = FAR edge of that same zone
+        (and it is trigger-INDEPENDENT: engulfing, 4th-man, breakout and
+         breakout-with-idm all show it)
+
+    One of them is a broker screenshot, which is as hard as evidence
+    gets -- p5-6 EURCHF: BUY LIMIT 0.93193, SL 0.93147, TP 0.93704. The
+    zone is 0.93147-0.93193; the entry is its top and the stop its
+    bottom. Risk 4.6 pips, R:R 11.1.
+
+    The zone IS this open-close key level. For a buy the two candles are
+    bearish, so `first_open` is its top (the entry, reached first coming
+    down) and `second_close` its bottom (the stop). For a sell the two
+    candles are bullish and it mirrors exactly. So both edges were
+    already here; the stop was simply being taken from the wrong object.
+
+    WHAT THIS REPLACES, AND WHY THAT WAS A MISREADING
+
+    This used to return the ENGULFING CANDLE's far side, on the
+    operator's "putting your SL at the low of the engulf" (2026-09-25).
+    Read again in its own sentence -- "wait for price to return back to
+    the open close that the engulfing closed, putting your SL at the low
+    of the engulf" -- "the engulf" is the open-close structure under
+    discussion, not the candle that broke it. The measured evidence and
+    the operator's instruction were never in conflict; the
+    implementation just took the wrong low.
+
+    Still no padding, and still no pip figure. The far edge is a price
+    the market drew.
     """
-    return engulf.high if level.direction == Direction.BEARISH else engulf.low
+    return level.second_close

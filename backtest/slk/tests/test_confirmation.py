@@ -77,15 +77,42 @@ def test_the_engulf_candle_trades_through_the_level_on_its_way_out():
     assert returned_to(comes_back, lvl) is True
 
 
-def test_the_stop_sits_beyond_the_engulfing_candles_own_extreme():
-    """Operator: "putting your SL at the low of the engulf". 5.2 for
-    the mirror: "a little bit above this particular high"."""
+def test_the_stop_is_the_far_edge_of_the_zone_being_entered():
+    """Measured from Bishop's charts, 13 of 13 with zero exceptions, one
+    of them a broker screenshot: entry at the zone's near edge, stop at
+    its far edge (bishop_pdf_sl_measurements.md).
+
+    This used to take the ENGULFING CANDLE's extreme, on "putting your SL
+    at the low of the engulf" -- but in its own sentence, "wait for price
+    to return back to the open close that the engulfing closed, putting
+    your SL at the low of the engulf", "the engulf" is the open-close
+    structure, not the candle that broke it."""
     bearish = OpenCloseLevel(T0, 1.1000, Direction.BEARISH, 1.1000, 1.1045)
     bullish = OpenCloseLevel(T0, 1.1000, Direction.BULLISH, 1.1000, 1.0955)
     engulf = c(2, 1.1020, 1.1035, 1.0960, 1.0970)
 
-    assert stop_for(engulf, bearish) == 1.1035, "selling: stop above its high"
-    assert stop_for(engulf, bullish) == 1.0960, "buying: stop at its low"
+    assert stop_for(engulf, bearish) == 1.1045, "the zone's top, above entry"
+    assert stop_for(engulf, bullish) == 1.0955, "the zone's bottom, below entry"
+
+    # And it does NOT come from the engulfing candle any more.
+    assert stop_for(engulf, bearish) != engulf.high
+    assert stop_for(engulf, bullish) != engulf.low
+
+
+def test_the_stop_sits_on_the_far_side_of_the_entry_in_the_normal_case():
+    """The property that makes it a stop at all.
+
+    NOT guaranteed, and the docstring here said it was until I checked: a
+    second candle that gaps can close back through the first one's open,
+    leaving the zone inverted. The driver refuses those orders
+    (`_stop_beyond` in replay.py) rather than this function pretending
+    they cannot happen."""
+    bearish = OpenCloseLevel(T0, 1.1000, Direction.BEARISH, 1.1000, 1.1045)
+    bullish = OpenCloseLevel(T0, 1.1000, Direction.BULLISH, 1.1000, 1.0955)
+    engulf = c(2, 1.1020, 1.1035, 1.0960, 1.0970)
+
+    assert stop_for(engulf, bearish) > bearish.price
+    assert stop_for(engulf, bullish) < bullish.price
 
 
 def test_the_whole_sequence_in_order():
@@ -109,9 +136,10 @@ def test_the_whole_sequence_in_order():
                    if returned_to(bars[i], lvl))
     assert entry_i == 4
 
-    # Entry AT the level, stop above the engulf's high. That is the
-    # whole trade, and the risk is the distance between them.
+    # Entry at the zone's near edge, stop at its far edge. That is the
+    # whole trade, and the risk is the distance between them -- here the
+    # two up candles span 1.1000 to 1.1045, so the risk is 45 pips.
     entry = lvl.price
     stop = stop_for(bars[engulf_i], lvl)
-    assert entry == 1.1000 and stop == 1.1048
+    assert entry == 1.1000 and stop == 1.1045
     assert stop > entry, "a sell's stop sits above its entry"
