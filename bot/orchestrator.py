@@ -238,6 +238,21 @@ class LiveBot:
     # so enabling this is a deliberate act and every existing caller and
     # test keeps its previous behavior.
     entry_order_type: str = "market"
+    # NOTIFY ONLY. No order is placed, nothing is sized, nothing is
+    # tracked -- the bot watches, reasons, and sends. Operator,
+    # 2026-09-25: "I'm not focused on them taking the trade for now. Let
+    # them just run bias notifications to my telegram ... I will validate
+    # it and take the trade if it looks good to me."
+    #
+    # A flag rather than a separate runner because every line that
+    # decides WHAT to notify -- the storyline gate, the signal search --
+    # is the same code that decided what to trade. Forking it would give
+    # two machines that could disagree, which is the mistake this
+    # project has already paid for twice.
+    notify_only: bool = False
+    # The bias/storyline/confirmation channel (bot/signal_channel.py).
+    # None disables it and the bot behaves exactly as before.
+    signals: object = None
     # How many multiples of the stop distance price must travel AWAY from
     # entry, in the trade's favour, before a limit order is actually
     # rested -- see check_setup()'s min_departure_r for the full reasoning
@@ -782,6 +797,31 @@ class LiveBot:
             self._consider_entry(instrument, record, state)
         self._last_entry_time[instrument] = new_candle.time
 
+    def _notify_confirmation(self, instrument: str, record):
+        """Send a confirmation with everything needed to judge it.
+
+        Reads only what the signal already carries. It does not recompute
+        anything: a notification that disagreed with the decision it is
+        reporting would be worse than none.
+        """
+        if self.signals is None:
+            return
+        storyline = self._storyline_stage.get(instrument) or ""
+        ctx_reason = ""
+        try:
+            self.signals.confirmation(
+                instrument, record.direction,
+                getattr(record, "trigger_type", None) or "confirmation",
+                float(record.entry_price), float(record.stop_loss),
+                float(record.primary_target) if record.primary_target else None,
+                storyline_reason=ctx_reason or f"storyline: {storyline}",
+                level_price=getattr(record, "key_level_price", None),
+                liquidity_price=getattr(record, "liquidity_price", None))
+        except Exception:                               # noqa: BLE001
+            # A notifier must never take down a trading process, and in
+            # notify-only mode it must never take down the watching either.
+            logger.exception("%s: could not send the confirmation", instrument)
+
     def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
         """Is this instrument in the hunting stage (Daily and H4 aligned,
         higher-timeframe bias agreeing) at `as_of_time`?
@@ -845,6 +885,11 @@ class LiveBot:
             ]
             suffix = f" ({', '.join(confirmed)})" if confirmed else ""
             logger.info("%s: %s -- %s%s", instrument, storyline.stage, storyline.reason, suffix)
+            if self.signals is not None:
+                # The transition, never the steady state: this is
+                # rechecked every cycle and would otherwise repeat every
+                # few seconds for days.
+                self.signals.storyline(instrument, storyline, previous)
             self._storyline_stage[instrument] = storyline.stage
         return storyline.stage == HUNTING
 
@@ -890,10 +935,23 @@ class LiveBot:
         compute_lot_size()'s drift guard (100% of stop distance) is far
         too loose to rule out -- a limit sidesteps this by only ever
         filling at the intended price."""
+        base_fields = _audit_fields_from_trade_record(record)
+
+        if self.notify_only:
+            # Everything above this point still ran: the storyline gate,
+            # the signal search, the setup validation. Only the order is
+            # withheld, so what reaches Telegram is exactly what would
+            # have been traded.
+            self._log_event("entry_attempt", "notify_only",
+                             "notify-only mode: reporting instead of placing",
+                             state, instrument=instrument,
+                             trade_id=str(record.trade_id), risk=0.0,
+                             **base_fields)
+            self._notify_confirmation(instrument, record)
+            return
+
         risk = self.risk_manager.risk_for_next_trade(state)
         decision = self.risk_manager.check_new_entry(state)
-
-        base_fields = _audit_fields_from_trade_record(record)
 
         if self._too_late_to_open():
             minutes = self._minutes_to_weekend_close()

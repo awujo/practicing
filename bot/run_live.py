@@ -56,7 +56,9 @@ from .config import load_personal_profile, load_prop_firm_profile
 from .audit_log import AuditLog
 from .mt5_data import MT5Client
 from .mt5_execution import MT5Execution
+from . import signal_channel
 from .orchestrator import LiveBot, STALE_ENTRY_CUTOFF_LIMIT
+from .signal_channel import SignalChannel
 from .shadow_book import ShadowBook
 from .telegram_notify import attach_if_configured
 
@@ -146,6 +148,15 @@ def main():
                               "long-standing per-trigger behavior. 'structural' anchors to the "
                               "setup's own reaction-leg extreme -- the invalidation point the "
                               "confirmation actually created.")
+    parser.add_argument("--notify-only", action="store_true",
+                        help="Watch and report, place nothing. The storyline "
+                             "gate and the signal search run exactly as they "
+                             "would when trading, so what reaches Telegram is "
+                             "what would have been traded -- only the order is "
+                             "withheld. Bias and storyline transitions and "
+                             "confirmations go to the signal channel "
+                             "(SLK_SIGNAL_TOKEN / SLK_SIGNAL_CHAT); the ordinary "
+                             "log channel is untouched.")
     parser.add_argument("--entry-order-type", choices=("market", "limit"), default="market",
                          help="'market' (default) sends at whatever price exists when the order "
                               "goes out. 'limit' rests the order AT the computed entry level, so "
@@ -313,8 +324,19 @@ def main():
         logger.info("shadow variant enabled: min_departure_r=%s -> %s_shadow_%s.db "
                     "(paper only, never reaches MT5)", raw, db_stem, raw)
 
+    signals = SignalChannel.from_env(label=args.style)
+    if signals is None:
+        logger.info("no signal channel configured (%s / %s unset) -- "
+                     "bias notifications are off",
+                     signal_channel.TOKEN_VAR, signal_channel.CHAT_VAR)
+    else:
+        logger.info("signal channel on: bias, storyline and confirmations")
+    if args.notify_only:
+        logger.info("NOTIFY-ONLY: no orders will be placed")
+
     bot = LiveBot(profile=profile, mt5_client=mt5_client, mt5_exec=mt5_exec,
                    audit_log=audit_log, instruments=instruments, entry_style=args.style,
+                   notify_only=args.notify_only, signals=signals,
                    entry_order_type=args.entry_order_type,
                    min_departure_r=args.min_departure_r,
                    stop_anchor=args.stop_anchor,

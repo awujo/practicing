@@ -2270,3 +2270,86 @@ def test_a_signal_born_later_than_predicted_is_not_lost(tmp_path):
         "a signal that appeared later than its predicted birth was never "
         "evaluated -- the selection window is too strict to tolerate the "
         "estimate being low")
+
+
+# --- notify-only: the bot watches and reports, and places nothing -------
+
+class _RecordingChannel:
+    def __init__(self):
+        self.storylines = []
+        self.confirmations = []
+
+    def storyline(self, instrument, storyline, previous):
+        self.storylines.append((instrument, storyline, previous))
+        return True
+
+    def confirmation(self, instrument, direction, form, entry, stop, target,
+                     **kwargs):
+        self.confirmations.append({"instrument": instrument, "form": form,
+                                   "entry": entry, "stop": stop,
+                                   "target": target, **kwargs})
+        return True
+
+
+def test_notify_only_places_nothing_at_all(tmp_path):
+    """The safety-critical property. Operator, 2026-09-25: "I'm not
+    focused on them taking the trade for now."
+
+    Not "places fewer orders" or "places only limits" -- NOTHING reaches
+    MT5. Asserted against the fake broker's own call list rather than a
+    mock's call count, so it holds however the order would have been
+    routed: market, limit, or the drift reroute between them."""
+    fake = FakeMT5()
+    channel = _RecordingChannel()
+    bot, audit, _ = make_bot(fake, tmp_path, notify_only=True, signals=channel)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert fake.order_send_calls == [], "notify-only must reach the broker never"
+    assert bot.tracked_positions == {}, "and must track no position"
+
+
+def test_notify_only_still_reports_what_it_would_have_traded(tmp_path):
+    """The whole point: the storyline gate and the signal search run
+    exactly as they would when trading, so the message carries the trade
+    that was withheld rather than a summary of it."""
+    fake = FakeMT5()
+    channel = _RecordingChannel()
+    bot, audit, _ = make_bot(fake, tmp_path, notify_only=True, signals=channel)
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())
+
+    assert len(channel.confirmations) == 1
+    sent = channel.confirmations[0]
+    assert sent["instrument"] == "EURUSD"
+    assert sent["entry"] == pytest.approx(float(record.entry_price))
+    assert sent["stop"] == pytest.approx(float(record.stop_loss))
+
+
+def test_notify_only_is_off_by_default(tmp_path):
+    """A bot that silently stopped trading would be the worst possible
+    default."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+    assert bot.notify_only is False
+    assert bot.signals is None
+
+
+def test_a_broken_signal_channel_never_stops_the_watching(tmp_path):
+    """A notifier that can take down the process is worse than none."""
+    class Exploding:
+        def confirmation(self, *_a, **_k):
+            raise RuntimeError("telegram is down")
+
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path, notify_only=True, signals=Exploding())
+    record = a_trade_record(pd.Timestamp("2026-09-01T17:00Z"))
+
+    with patch.object(LiveBot, "_candles_since", return_value=[]):
+        bot._consider_entry("EURUSD", record, bot._account_state())   # must not raise
+
+    assert fake.order_send_calls == []
