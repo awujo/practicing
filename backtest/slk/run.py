@@ -60,6 +60,7 @@ import argparse
 import csv
 import os
 import sys
+import time
 from collections import Counter
 
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
@@ -175,7 +176,14 @@ def run_one(instrument: str, n: int, spread: float, source: str,
             dump_dir: str = "") -> list:
     """Load the four series and replay them. Missing series are fatal --
     a cascade that silently ran without its Weekly would produce a number
-    nobody could interpret."""
+    nobody could interpret.
+
+    Says what it is doing BEFORE it does it. Reading 155k rows through
+    pandas takes about fifteen seconds per series, so an instrument used
+    to print nothing for a minute or two and then everything at once,
+    which in a log is indistinguishable from being stuck.
+    """
+    print(f"\n{instrument}  n={n}  spread={spread}p  -- loading")
     series = {}
     for code in ("W", "D", "H4", "H1"):
         try:
@@ -187,12 +195,13 @@ def run_one(instrument: str, n: int, spread: float, source: str,
         print(f"{instrument}: no H1 data", file=sys.stderr)
         return []
 
+    span = f"{series['H1'][0].time.date()} to {series['H1'][-1].time.date()}"
+    print(f"  {len(series['H1'])} H1 bars  {span}  -- replaying")
+    started = time.time()
     trades = replay(series["W"], series["D"], series["H4"], series["H1"], n)
 
     pip = default_pip_size(instrument)
-    span = f"{series['H1'][0].time.date()} to {series['H1'][-1].time.date()}"
-    print(f"\n{instrument}  n={n}  spread={spread}p  "
-          f"{len(series['H1'])} H1 bars  {span}")
+    print(f"  replayed in {time.time() - started:.0f}s")
 
     overall = _stats(trades, pip, spread)
     print(_line("ALL", overall))
