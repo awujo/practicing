@@ -48,6 +48,8 @@ import glob
 import os
 from collections import defaultdict
 
+from ..engine.runner import default_pip_size
+
 
 def _rows(directory: str):
     for path in sorted(glob.glob(os.path.join(directory, "*.csv"))):
@@ -157,6 +159,36 @@ def main():
         by_inst[row["_instrument"]].append(row)
     for instrument in sorted(by_inst):
         print(_line(instrument, _stats(by_inst[instrument])))
+
+    print("\nHOW BIG IS THE RISK, IN PIPS?")
+    print("  The stop is the confirming candle's far side, UNPADDED. If that")
+    print("  distance sits inside ordinary noise on the entry timeframe, the")
+    print("  trade dies in the bar it is born and the spread costs a fortune")
+    print("  in R -- 1 pip of spread on 6 pips of risk is 0.17R per trade.")
+    pips = []
+    for r in rows:
+        pip = default_pip_size(r["_instrument"])
+        pips.append((r["_risk"] / pip, r))
+    pips.sort(key=lambda row: row[0])
+    for label, low, high in (("under 5 pips", 0, 5), ("5-10 pips", 5, 10),
+                             ("10-20 pips", 10, 20), ("20-50 pips", 20, 50),
+                             ("50 pips+", 50, float("inf"))):
+        bucket = [r for size, r in pips if low <= size < high]
+        print(_line(label, _stats(bucket)))
+        amb = sum(1 for r in bucket if r.get("same_candle_stop") == "1")
+        if bucket:
+            print(f"  {'':<22} {100.0 * amb / len(bucket):>5.0f}% of these "
+                  f"died in the bar they filled")
+
+    print("\nDOES COVERING THE LEVEL GIVE THE TRADE ROOM TO BREATHE?")
+    for label, subset in (("covers the level", covered), ("does not", loose)):
+        if not subset:
+            continue
+        amb = sum(1 for r in subset if r.get("same_candle_stop") == "1")
+        median = sorted(r["_risk"] / default_pip_size(r["_instrument"])
+                        for r in subset)[len(subset) // 2]
+        print(f"  {label:<22} median risk {median:>5.1f} pips, "
+              f"{100.0 * amb / len(subset):>4.0f}% died in their own bar")
 
     ambiguous = [r for r in rows if r.get("same_candle_stop") == "1"]
     if ambiguous:
