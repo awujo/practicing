@@ -197,19 +197,29 @@ def test_each_instrument_gets_its_own_story_not_a_one_line_badge():
     story = watcher.standing_story()
     assert story, "no story at all"
     assert "EURUSD" in story
-    assert "leads:" in story, "which rung is carrying the bias"
+    assert "says" in story, "which rung said what"
     assert "Next:" in story, "and what to watch for now"
     assert story.count("\n") > 3, "a story, not a line"
 
 
-def test_the_story_names_the_rung_that_is_not_leading_too():
-    """"It's not even saying if the weekly was dropped, it's not even
-    saying why it was dropped"."""
+def test_the_story_always_accounts_for_the_weekly():
+    """"How is Daily leading in all of the pairs? It shows the Weekly
+    isn't factored in."
+
+    Whether the two agree is what separates a high-probability setup from
+    one that may be nothing but a retracement inside the Weekly, so the
+    Weekly is named either way -- with its own story when it has one, and
+    saying so plainly when it does not."""
     h1 = series()
     watcher = SLKWatcher("EURUSD", 2, Channel(), loader_for(h1))
     watcher.check()
     story = watcher.standing_story()
-    assert "Which one leads:" in story, "the reason one rung leads"
+
+    assert "Weekly" in story, "the Weekly is never silently omitted"
+    states = ("ALIGNED", "NOT ALIGNED", "no Weekly bias yet",
+              "Daily has not confirmed")
+    assert any(state in story for state in states), \
+        f"no alignment state in the headline: {story.splitlines()[0]}"
 
 
 def test_no_bias_means_no_story_rather_than_an_empty_shell():
