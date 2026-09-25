@@ -20,9 +20,11 @@ T0 = pd.Timestamp("2026-01-01")
 
 
 def trade(r, outcome, entry=1.1000, stop=1.0990, form="engulf",
-          direction=Direction.BULLISH, ambiguous=False):
+          direction=Direction.BULLISH, ambiguous=False, hour=0):
+    """`hour` sets the EXIT time, which is what the curve is ordered by."""
     return Trade(entry_time=T0, entry=entry, stop=stop, target=1.1020,
                  direction=direction, level_price=entry, form=form,
+                 exit_time=T0 + pd.Timedelta(hours=hour),
                  outcome=outcome, r=r, same_candle_stop=ambiguous)
 
 
@@ -161,3 +163,137 @@ def test_the_loader_cache_is_released_between_instruments(tmp_path,
     candles.clear_cache()
     run_one("EURUSD", n=2, spread=0.0, source="dukascopy")
     assert not candles._cache, "the parsed series are still held"
+
+
+# --- drawdown, the headline ---------------------------------------------
+
+def test_drawdown_is_peak_to_trough_not_the_total():
+    """R/trade alone cannot say whether a system is tradeable. A set of
+    trades summing to +2R can still have gone 3R underwater on the way,
+    and that hole is what decides position size."""
+    trades = [trade(5.0, "target", hour=1),
+              trade(-1.0, "stop", hour=2),
+              trade(-1.0, "stop", hour=3),
+              trade(-1.0, "stop", hour=4),
+              trade(-1.0, "stop", hour=5),
+              trade(1.0, "target", hour=6)]
+    s = _stats(trades, 0.0001, 0.0)
+
+    assert s["net"] == pytest.approx(2.0)
+    assert s["max_dd"] == pytest.approx(4.0), "peak +5, trough +1"
+    assert s["worst_streak"] == 4
+
+
+def test_the_curve_is_ordered_by_exit_not_entry():
+    """A trade that opens early and closes late belongs where its result
+    landed. Ordering by entry draws a smoother curve than anyone lived."""
+    early_exit_loss = trade(-1.0, "stop", hour=1)
+    late_exit_win = trade(5.0, "target", hour=9)
+    # passed win-first, but the loss settled first
+    s = _stats([late_exit_win, early_exit_loss], 0.0001, 0.0)
+    assert s["max_dd"] == pytest.approx(1.0), \
+        "the loss landed first, so the curve dipped before it rose"
+
+
+def test_a_system_that_only_wins_has_no_drawdown():
+    s = _stats([trade(1.0, "target", hour=1), trade(1.0, "target", hour=2)],
+               0.0001, 0.0)
+    assert s["max_dd"] == pytest.approx(0.0)
+    assert s["worst_streak"] == 0
+
+
+def test_pooled_drawdown_is_merged_not_summed():
+    """Two instruments whose bad stretches happen at different times do
+    NOT add up: while one is drawing down the other is recovering, and
+    summing the holes claims a loss the portfolio never took.
+
+    The holes have to INTERLEAVE for that to show. A first version of
+    this test put A's losses at hours 2-3 and B's at 4-5, which are
+    consecutive once merged, so they compounded into one 4R slide and the
+    sum and the merge agreed -- the test was asserting something its own
+    fixture could not demonstrate.
+    """
+    a = ("A", [trade(-2.0, "stop", hour=1), trade(3.0, "target", hour=4)],
+         0.0001)
+    b = ("B", [trade(3.0, "target", hour=2), trade(-2.0, "stop", hour=3)],
+         0.0001)
+
+    each = _stats(a[1], 0.0001, 0.0)["max_dd"] + _stats(b[1], 0.0001, 0.0)["max_dd"]
+    pooled = _combine([a, b], 0.0)
+
+    assert each == pytest.approx(4.0), "2R each on its own"
+    assert pooled["n"] == 4
+    assert pooled["max_dd"] == pytest.approx(2.0), \
+        "B's win covered A's loss, so the portfolio was never 4R down"
+    assert pooled["max_dd"] < each
+    assert pooled["worst_streak"] == 1, "the losses never ran together"
+
+
+def test_the_profit_factor_is_gross_win_over_gross_loss():
+    s = _stats([trade(3.0, "target", hour=1), trade(-1.0, "stop", hour=2)],
+               0.0001, 0.0)
+    assert s["profit_factor"] == pytest.approx(3.0)
+    assert s["avg_win"] == pytest.approx(3.0)
+    assert s["avg_loss"] == pytest.approx(1.0)
+
+
+def test_spread_is_charged_before_the_drawdown_is_walked():
+    """Costs belong inside the curve. Charged afterwards they would shrink
+    the total while leaving the hole looking shallower than it was."""
+    trades = [trade(1.0, "target", hour=1), trade(-1.0, "stop", hour=2)]
+    free = _stats(trades, 0.0001, 0.0)
+    costed = _stats(trades, 0.0001, 1.0)      # 10 pips risk -> 0.1R each
+    assert costed["max_dd"] > free["max_dd"], \
+        "the losing leg costs more than 1R once spread is in the curve"
+
+
+# --- the CSV, written as it goes ----------------------------------------
+
+def test_trades_are_dumped_per_instrument_as_each_one_finishes(tmp_path,
+                                                              monkeypatch):
+    """A run that dies partway -- a closed terminal, an OOM -- must keep
+    what it already computed. This project has lost whole runs to a
+    dropped SSH session twice."""
+    import csv as csv_mod
+
+    from ...data_pipeline import cache
+
+    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path / "data"))
+
+    random.seed(11)
+    px, rows = 1.1000, []
+    for i in range(2400):
+        o = px
+        px += random.gauss(0, 0.0009)
+        rows.append({"time": (T0 + pd.Timedelta(hours=i)).isoformat(),
+                     "open": o, "high": max(o, px) + 0.0004,
+                     "low": min(o, px) - 0.0004, "close": px, "volume": 0})
+
+    def agg(hours):
+        out = []
+        for i in range(0, len(rows) - hours + 1, hours):
+            chunk = rows[i:i + hours]
+            out.append({"time": chunk[0]["time"], "open": chunk[0]["open"],
+                        "high": max(c["high"] for c in chunk),
+                        "low": min(c["low"] for c in chunk),
+                        "close": chunk[-1]["close"], "volume": 0})
+        return out
+
+    for code, series in (("H1", rows), ("H4", agg(4)), ("D", agg(24)),
+                         ("W", agg(168))):
+        cache.append("dukascopy", "EURUSD", code, series)
+
+    out_dir = tmp_path / "results"
+    trades = run_one("EURUSD", n=2, spread=1.0, source="dukascopy",
+                     dump_dir=str(out_dir))
+    assert trades, "the fixture must trade or this proves nothing"
+
+    path = out_dir / "EURUSD_slk_n2.csv"
+    assert path.exists(), "nothing was written"
+    with open(path) as handle:
+        got = list(csv_mod.DictReader(handle))
+
+    assert len(got) == len(trades)
+    assert got[0]["form"] in {"engulf", "inducement", "breakout", "sweep_break"}
+    assert got[0]["liquidity"], "the entitling liquidity has to survive to here"
+    assert got[0]["outcome"] in {"target", "stop"}
