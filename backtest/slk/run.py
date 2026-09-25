@@ -1,11 +1,14 @@
 """
 Run the replay on cached data and print what it did.
 
-    docker exec -u abc -w /config/trading mt5 nice -n 19 python3 \
-        -m backtest.slk.run --instrument EURUSD --n 2 --spread 1.0
+    docker exec -d -u abc -w /config/trading mt5 sh -c \
+        'nice -n 19 python3 -u -m backtest.slk.run --all --n 2 --spread 1.0 \
+         > /config/slk_new.log 2>&1'
 
-It is python3 in that container, not python, and `nice` because the live
-bots share the box.
+python3 in that container, not python. `-d` so a closed terminal cannot
+kill it, `nice` because the live bots share the box, and `-u` as a belt
+alongside the line-buffering `main` sets up -- without one of the two a
+redirected log stays empty until the process exits.
 
 There is no default for `--n`. The course never defines a swing
 numerically, so the width is a number I chose and every caller has to say
@@ -217,6 +220,25 @@ def run_one(instrument: str, n: int, spread: float, source: str,
 
 
 def main():
+    # Line-buffer stdout before anything prints.
+    #
+    # Python buffers stdout in 8KB blocks when it is not a terminal, so a
+    # detached run redirected to a log shows NOTHING until the buffer
+    # fills or the process exits. The first real use of this tool looked
+    # dead for that reason -- an empty log next to a finished
+    # AUDCAD_slk_n2.csv, which is the worst possible signal: the run was
+    # fine and the only way to know was to go looking for its output
+    # files. Worse, a run that then crashed would take the whole buffered
+    # log with it, losing exactly the diagnostic anyone would want.
+    #
+    # run_slk.py passes flush=True on its own prints for this reason.
+    # Doing it once here covers every print in this module, and tracebacks
+    # too.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass                         # not a reconfigurable stream; harmless
+
     parser = argparse.ArgumentParser(
         description="Replay the SLK cascade on cached data.")
     parser.add_argument("--instrument", action="append", default=[],

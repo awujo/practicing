@@ -297,3 +297,63 @@ def test_trades_are_dumped_per_instrument_as_each_one_finishes(tmp_path,
     assert got[0]["form"] in {"engulf", "inducement", "breakout", "sweep_break"}
     assert got[0]["liquidity"], "the entitling liquidity has to survive to here"
     assert got[0]["outcome"] in {"target", "stop"}
+
+
+def test_output_reaches_a_redirected_log_before_the_process_exits(tmp_path):
+    """The failure this was written for cannot be seen from inside the
+    process.
+
+    Python buffers stdout in 8KB blocks when it is not a terminal, so the
+    first detached run of this tool produced an EMPTY log next to a
+    finished per-instrument CSV -- the run was fine and looked dead, and a
+    crash would have taken the whole buffered log with it.
+
+    PYTHONUNBUFFERED HAS TO BE CLEARED, and the unbuffered case has to be
+    asserted. The first version of this test did neither: the dev
+    container sets PYTHONUNBUFFERED=1, every subprocess inherited it, and
+    both the fixed and the broken variant passed. It could not have
+    failed. So the control comes first here -- prove the test can SEE the
+    bug, then prove the fix removes it.
+    """
+    import os
+    import subprocess
+    import sys
+    import time
+
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONUNBUFFERED"}
+
+    def log_after(head: str, name: str) -> str:
+        script = tmp_path / f"{name}.py"
+        script.write_text("import sys, time\n" + head
+                          + "print('first line')\ntime.sleep(8)\n")
+        path = tmp_path / f"{name}.log"
+        with open(path, "w") as handle:
+            proc = subprocess.Popen([sys.executable, str(script)],
+                                    stdout=handle,
+                                    stderr=subprocess.STDOUT, env=env)
+            try:
+                deadline = time.time() + 3
+                while time.time() < deadline and not path.read_text():
+                    time.sleep(0.2)
+                return path.read_text()
+            finally:
+                proc.kill()
+                proc.wait()
+
+    assert log_after("", "broken") == "", \
+        "the control failed: this environment cannot show the bug, so a " \
+        "pass below would prove nothing"
+    assert "first line" in log_after(
+        "sys.stdout.reconfigure(line_buffering=True)\n", "fixed"), \
+        "line buffering did not get the output into the file"
+
+
+def test_main_line_buffers_stdout():
+    """The line above only proves the technique. This proves main() uses
+    it -- the two are different failures and both have happened."""
+    import inspect
+
+    from ..run import main
+    source = inspect.getsource(main)
+    assert "line_buffering=True" in source, \
+        "main() no longer line-buffers, so detached runs go dark again"
