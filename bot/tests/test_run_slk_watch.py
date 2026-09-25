@@ -12,6 +12,7 @@ import pytest
 
 from backtest.engine.candles import Candle
 
+from .. import run_slk_watch
 from ..run_slk_watch import _loader, _trim, _windows, main
 
 T0 = pd.Timestamp("2020-01-01")
@@ -211,3 +212,59 @@ def test_a_failed_announcement_does_not_stop_the_watcher(monkeypatch):
                         ["run_slk_watch", "--instruments", "EURUSD", "--n", "2",
                          "--once"])
     run_slk_watch.main()          # must not raise
+
+
+def test_the_loader_reads_only_the_window_it_needs(monkeypatch):
+    """The bug this was written for: the window config was applied AFTER
+    a full read, so pandas parsed all 155k rows and then 90% were thrown
+    away. Measured on the VPS at seventy seconds per instrument -- half an
+    hour for one cycle over 27 pairs, essentially all of it wasted."""
+    from ..run_slk_watch import _Windows, _loader, _rows_needed
+
+    asked = {}
+
+    def fake_recent(source, instrument, granularity, rows):
+        asked[granularity] = rows
+        return []
+
+    def fake_full(*_a, **_k):
+        asked["FULL"] = True
+        return []
+
+    monkeypatch.setattr(run_slk_watch, "load_recent_candles", fake_recent)
+    monkeypatch.setattr(run_slk_watch, "load_candles", fake_full)
+
+    load = _loader("dukascopy", _Windows({}, {"EURUSD": {"H1": 1, "D": 2}}))
+    load("EURUSD", "H1")
+    load("EURUSD", "D")
+
+    assert "FULL" not in asked, "it read the whole file anyway"
+    assert 0 < asked["H1"] < 20000, "a year of H1 is thousands, not 155k"
+    assert asked["D"] < asked["H1"], "two years of daily is far fewer rows"
+
+
+def test_no_window_still_reads_everything(monkeypatch):
+    """An explicit null means "confirmed NOT safe to cap" (GBPNZD). It
+    must keep costing a full read rather than being quietly truncated."""
+    from ..run_slk_watch import _Windows, _loader
+
+    full = []
+    monkeypatch.setattr(run_slk_watch, "load_candles",
+                        lambda *_a, **_k: full.append(1) or [])
+    monkeypatch.setattr(run_slk_watch, "load_recent_candles",
+                        lambda *_a, **_k: pytest.fail("truncated an uncapped series"))
+
+    _loader("dukascopy", _Windows({}, {"GBPNZD": {}}))("GBPNZD", "H1")
+    assert full, "the full read never happened"
+
+
+def test_rows_needed_is_generous_rather_than_tight():
+    """An over-estimate costs milliseconds; an under-estimate silently
+    shortens the history the bias is built from."""
+    from ..run_slk_watch import _rows_needed
+
+    assert _rows_needed("H1", 1) > 6000, "a year of H1 candles"
+    assert _rows_needed("D", 2) > 500
+    assert _rows_needed("W", 8) > 400
+    assert _rows_needed("H1", None) == 0, "no window means read it all"
+    assert _rows_needed("M5", 1) == 0, "an unknown granularity reads it all"

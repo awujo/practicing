@@ -316,6 +316,66 @@ def replace_from(source: str, symbol: str, granularity: str, cutoff: str,
     return dropped, len(new_df)
 
 
+def load_tail(source: str, symbol: str, granularity: str,
+              rows: int) -> pd.DataFrame:
+    """The last `rows` candles, read WITHOUT parsing the whole file.
+
+    `load()` reads every row and the caller then throws most of them
+    away. That is right for a backtest, which wants all of it, and badly
+    wrong for the live side, which wants one or two years: EURUSD's H1 is
+    9.4MB and 155k rows, and pandas takes about sixteen seconds over it.
+    Four series per instrument, 27 instruments, once an hour -- measured
+    on the VPS at SEVENTY SECONDS PER INSTRUMENT, or half an hour a
+    cycle, essentially all of it spent parsing rows that were then
+    discarded.
+
+    So this seeks from the END and parses only what it needs. The file is
+    append-only and time-ordered, which is what makes that safe.
+
+    Falls back to a full `load()` when the file is smaller than the tail
+    it would read, or when the tail turns out to hold fewer rows than
+    asked for -- correctness first, speed second, and never a silently
+    short series.
+    """
+    path = cache_path(source, symbol, granularity)
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"No cached data for {source}/{symbol}/{granularity} -- run the fetcher first."
+        )
+    if rows <= 0:
+        return load(source, symbol, granularity)
+
+    with _file_lock(path, exclusive=False):
+        size = os.path.getsize(path)
+        with open(path, "rb") as handle:
+            header = handle.readline()
+            # Read backwards in doubling chunks until there are enough
+            # newlines, or the whole file has been read.
+            want = rows + 1                       # +1: the first line is partial
+            chunk = max(1 << 16, rows * 64)
+            data = b""
+            while True:
+                start = max(len(header), size - chunk)
+                handle.seek(start)
+                data = handle.read(size - start)
+                if data.count(b"\n") >= want or start <= len(header):
+                    break
+                chunk *= 2
+            complete_from_start = start <= len(header)
+
+    lines = data.split(b"\n")
+    if not complete_from_start:
+        lines = lines[1:]                          # drop the partial first line
+    lines = [ln for ln in lines if ln.strip()][-rows:]
+    if not lines:
+        return load(source, symbol, granularity)
+
+    import io
+    frame = pd.read_csv(io.BytesIO(header + b"\n".join(lines)),
+                         parse_dates=["time"])
+    return frame.sort_values("time").reset_index(drop=True)
+
+
 def load(source: str, symbol: str, granularity: str) -> pd.DataFrame:
     path = cache_path(source, symbol, granularity)
     if not os.path.exists(path):

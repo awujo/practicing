@@ -79,6 +79,41 @@ def load_candles(source: str, symbol: str, granularity: str) -> list[Candle]:
     return list(candles)
 
 
+def load_recent_candles(source: str, symbol: str, granularity: str,
+                         rows: int) -> list["Candle"]:
+    """The last `rows` cached candles, without parsing the whole file.
+
+    Same contract as `load_candles` -- a fresh list of frozen Candles,
+    time-ordered -- and the same fingerprint cache, keyed by row count as
+    well as path so a caller asking for a different window does not get
+    someone else's answer.
+
+    For the live side. `load_candles` reads everything, which is right
+    for a backtest and ruinous for a watcher that wants two years once an
+    hour across 27 instruments.
+    """
+    path = cache.cache_path(source, symbol, granularity)
+    try:
+        stat = os.stat(path)
+        fingerprint = (stat.st_size, stat.st_mtime, rows)
+    except OSError:
+        fingerprint = None
+
+    key = f"{path}#{rows}"
+    cached = _cache.get(key)
+    if fingerprint is not None and cached is not None and cached[0] == fingerprint:
+        return list(cached[1])
+
+    df = cache.load_tail(source, symbol, granularity, rows)
+    candles = [
+        Candle(row.time, row.open, row.high, row.low, row.close, row.volume)
+        for row in df.itertuples(index=False)
+    ]
+    if fingerprint is not None:
+        _cache[key] = (fingerprint, candles)
+    return list(candles)
+
+
 def clear_cache():
     """Drop every parsed series held in memory.
 

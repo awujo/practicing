@@ -53,7 +53,7 @@ import sys
 import time
 
 from backtest.data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
-from backtest.engine.candles import load_candles
+from backtest.engine.candles import load_candles, load_recent_candles
 
 from .signal_channel import SignalChannel
 from .slk_watch import SLKWatcher
@@ -72,6 +72,26 @@ def _trim(candles, years: float | None):
     return [c for c in candles if c.time >= cutoff]
 
 
+# Roughly how many candles a year holds, per granularity. Only used to
+# decide HOW MUCH of a file to read; the series is then trimmed exactly
+# by time, so an over-estimate costs a few milliseconds and an
+# under-estimate is impossible to hide -- it would show up as a short
+# series, which is why these are generous.
+BARS_PER_YEAR = {"W": 55, "D": 270, "H4": 1650, "H2": 3300, "H1": 6600,
+                 "M45": 8800, "M30": 13200, "M15": 26400}
+TAIL_SAFETY = 1.35
+
+
+def _rows_needed(granularity: str, years: float | None) -> int:
+    """How many rows to read from the end of the cache. 0 means all."""
+    if not years:
+        return 0
+    per_year = BARS_PER_YEAR.get(granularity)
+    if per_year is None:
+        return 0
+    return int(per_year * years * TAIL_SAFETY) + 64
+
+
 def _loader(source: str, windows: "_Windows"):
     """(instrument, granularity) -> candles, trimmed to the live window.
 
@@ -80,13 +100,25 @@ def _loader(source: str, windows: "_Windows"):
     watched.
     """
     def load(instrument: str, granularity: str):
+        years = windows.for_instrument(instrument).get(granularity)
+        rows = _rows_needed(granularity, years)
         try:
-            candles = load_candles(source, instrument, granularity)
+            if rows:
+                # Read only the end of the file. Trimming AFTER a full
+                # read saved replay time and nothing else: pandas still
+                # parsed all 155k rows first, which measured at seventy
+                # seconds per instrument on the VPS -- half an hour for a
+                # cycle, essentially all of it spent on rows that were
+                # then discarded.
+                candles = load_recent_candles(source, instrument,
+                                               granularity, rows)
+            else:
+                candles = load_candles(source, instrument, granularity)
         except Exception as exc:                        # noqa: BLE001
             logger.warning("%s %s: cannot load -- %s",
                             instrument, granularity, exc)
             return []
-        return _trim(candles, windows.for_instrument(instrument).get(granularity))
+        return _trim(candles, years)
     return load
 
 
