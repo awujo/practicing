@@ -2776,8 +2776,13 @@ def test_the_rally_that_proves_a_sweep_does_not_erase_it():
     held[5] = c(5, 1.0955, 1.1020, 1.0952, 1.1015)
     assert _reaction_structure(held, 6, Direction.BULLISH, since=0) == (True, True)
 
-    # And with no sweep at all it must stay a plain breakout.
+    # And with no sweep at all it must stay a plain breakout. BOTH
+    # candles after the minor high have to hold above the reaction low
+    # -- the first version of this fixture only lifted one of them and
+    # the other still dipped to 1.0952, so it was "no sweep" in name
+    # only.
     clean = list(seq)
-    clean[4] = c(4, 1.1025, 1.1027, 1.1005, 1.1010)   # never dips under 1.0960
+    clean[4] = c(4, 1.1025, 1.1027, 1.1005, 1.1010)
+    clean[5] = c(5, 1.1010, 1.1040, 1.1008, 1.1035)
     broke, swept = _reaction_structure(clean, 6, Direction.BULLISH, since=0)
     assert broke is True and swept is False
