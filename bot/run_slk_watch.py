@@ -52,6 +52,7 @@ import os
 import sys
 import time
 
+from backtest.data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from backtest.engine.candles import load_candles
 
 from .signal_channel import SignalChannel
@@ -71,7 +72,7 @@ def _trim(candles, years: float | None):
     return [c for c in candles if c.time >= cutoff]
 
 
-def _loader(source: str, windows: dict):
+def _loader(source: str, windows: "_Windows"):
     """(instrument, granularity) -> candles, trimmed to the live window.
 
     A load failure returns an empty series rather than raising: one
@@ -85,24 +86,48 @@ def _loader(source: str, windows: dict):
             logger.warning("%s %s: cannot load -- %s",
                             instrument, granularity, exc)
             return []
-        return _trim(candles, windows.get(instrument, {}).get(granularity))
+        return _trim(candles, windows.for_instrument(instrument).get(granularity))
     return load
 
 
-def _windows(path: str | None) -> dict:
-    """The same file the old bot reads. An explicit null means "confirmed
-    NOT safe to cap" (GBPNZD), and is honoured by keeping full history."""
+class _Windows:
+    """The trimmed history each instrument gets, from the file the old bot
+    reads.
+
+    Three cases, and the middle one is why this is a class rather than a
+    dict lookup:
+
+      listed with a window   use it
+      listed as NULL         full history. An explicit null means
+                             "confirmed NOT safe to cap" (GBPNZD), and
+                             falling back to the default there would cut
+                             the one instrument that must not be cut.
+      NOT LISTED AT ALL      the file's default. USOIL and ETHUSD are in
+                             instruments.py but were never in the live
+                             list, so they are not in this file either --
+                             and without the fallback each would quietly
+                             pull twenty years and make a cycle crawl.
+    """
+
+    def __init__(self, default: dict, per_instrument: dict):
+        self.default = default
+        self.per_instrument = per_instrument
+
+    def for_instrument(self, instrument: str) -> dict:
+        if instrument in self.per_instrument:
+            return self.per_instrument[instrument]
+        return self.default
+
+
+def _windows(path: str | None) -> _Windows:
     if not path:
-        return {}
+        return _Windows({}, {})
     with open(path) as handle:
         raw = json.load(handle)
-    default = raw.get("default", {})
-    out = {}
+    per_instrument = {}
     for instrument, window in (raw.get("instruments") or {}).items():
-        out[instrument] = default if window is None else window
-        if window is None:
-            out[instrument] = {}        # null: no cap, full history
-    return out
+        per_instrument[instrument] = {} if window is None else window
+    return _Windows(raw.get("default", {}), per_instrument)
 
 
 def main():
@@ -110,7 +135,10 @@ def main():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--instruments", required=True,
-                        help="comma separated, e.g. EURUSD,GBPJPY")
+                        help="comma separated, e.g. EURUSD,GBPJPY -- or ALL "
+                             "for every instrument in instruments.py, which "
+                             "is the 25 the old bots watch plus USOIL and "
+                             "ETHUSD.")
     parser.add_argument("--n", type=int, required=True,
                         help="swing width. REQUIRED -- the course gives no "
                              "number, so the caller has to choose one and say "
@@ -134,8 +162,11 @@ def main():
                  "SLK_SIGNAL_CHAT -- without them this process would watch "
                  "and tell nobody.")
 
-    instruments = [s.strip().upper() for s in args.instruments.split(",")
-                   if s.strip()]
+    if args.instruments.strip().upper() == "ALL":
+        instruments = sorted(DUKASCOPY_INSTRUMENTS)
+    else:
+        instruments = [s.strip().upper() for s in args.instruments.split(",")
+                       if s.strip()]
     windows = _windows(args.history_windows_config)
     load = _loader(args.source, windows)
 

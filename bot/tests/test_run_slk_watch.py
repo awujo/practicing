@@ -52,18 +52,22 @@ def test_an_explicit_null_window_means_full_history(tmp_path):
         "instruments": {"EURUSD": {"D": 8, "H1": 4}, "GBPNZD": None},
     }))
     got = _windows(str(path))
-    assert got["EURUSD"] == {"D": 8, "H1": 4}
-    assert got["GBPNZD"] == {}, "no cap at all, not the default"
+    assert got.for_instrument("EURUSD") == {"D": 8, "H1": 4}
+    assert got.for_instrument("GBPNZD") == {}, "no cap at all, not the default"
+    assert got.for_instrument("USOIL") == {"D": 2, "H1": 1}, \
+        "an instrument the file has never heard of gets the default, not " \
+        "twenty years"
 
 
 def test_no_config_means_no_trimming():
-    assert _windows(None) == {}
+    assert _windows(None).for_instrument("EURUSD") == {}
 
 
 def test_a_missing_cache_file_costs_one_instrument_not_the_cycle(caplog):
     """25 instruments share a process; one broken file must not stop the
     other 24 being watched."""
-    load = _loader("nosuchsource", {})
+    from ..run_slk_watch import _Windows
+    load = _loader("nosuchsource", _Windows({}, {}))
     assert load("EURUSD", "H1") == []
 
 
@@ -75,7 +79,8 @@ def test_the_loader_applies_that_instruments_own_window(monkeypatch):
     monkeypatch.setattr(run_slk_watch, "load_candles",
                         lambda *_a, **_k: daily)
 
-    load = _loader("dukascopy", {"EURUSD": {"D": 1}})
+    from ..run_slk_watch import _Windows
+    load = _loader("dukascopy", _Windows({}, {"EURUSD": {"D": 1}}))
     assert len(load("EURUSD", "D")) < len(daily), "EURUSD is capped"
     assert len(load("GBPJPY", "D")) == len(daily), "GBPJPY has no window"
 
@@ -124,3 +129,35 @@ def test_one_cycle_runs_end_to_end_and_sends_nothing_first_time(monkeypatch):
                          "--n", "2", "--once"])
     main()
     assert sent == [], "the first cycle must be silent"
+
+
+def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypatch):
+    """The old bots watch 25; instruments.py carries 27. USOIL and ETHUSD
+    were never in the live list and the operator asked for them."""
+    from .. import run_slk_watch
+
+    seen = {}
+
+    class Channel:
+        def note(self, _text):
+            return True
+
+    monkeypatch.setattr(run_slk_watch, "load_candles", lambda *_a, **_k: [])
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Channel()))
+
+    real = run_slk_watch.SLKWatcher
+
+    def spy(instrument, n, channel, load):
+        seen[instrument] = True
+        return real(instrument, n, channel, load)
+
+    monkeypatch.setattr(run_slk_watch, "SLKWatcher", spy)
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "ALL", "--n", "2",
+                         "--once"])
+    run_slk_watch.main()
+
+    assert len(seen) == 27
+    assert "USOIL" in seen and "ETHUSD" in seen
+    assert "EURUSD" in seen and "XAUUSD" in seen
