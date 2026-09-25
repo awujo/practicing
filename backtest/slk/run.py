@@ -1,8 +1,11 @@
 """
 Run the replay on cached data and print what it did.
 
-    python -m backtest.slk.run --instrument EURUSD --n 2
-    python -m backtest.slk.run --all --n 2 --spread 1.0
+    docker exec -u abc -w /config/trading mt5 nice -n 19 python3 \
+        -m backtest.slk.run --instrument EURUSD --n 2 --spread 1.0
+
+It is python3 in that container, not python, and `nice` because the live
+bots share the box.
 
 There is no default for `--n`. The course never defines a swing
 numerically, so the width is a number I chose and every caller has to say
@@ -55,6 +58,7 @@ import sys
 from collections import Counter
 
 from ..data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
+from ..engine import candles
 from ..engine.candles import load_candles
 from ..engine.runner import default_pip_size
 from ..engine.structure import Direction
@@ -129,6 +133,10 @@ def run_one(instrument: str, n: int, spread: float, source: str) -> list:
         print(_line(name, _stats([t for t in trades if t.direction == side],
                                  pip, spread)))
 
+    # Each instrument is read once, so nothing here is wanted again. The
+    # loader's cache never evicts, and 27 instruments of W/D/H4/H1 held at
+    # once is over a gigabyte on a box that is already swapping.
+    candles.clear_cache()
     return trades
 
 

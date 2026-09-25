@@ -77,3 +77,21 @@ def load_candles(source: str, symbol: str, granularity: str) -> list[Candle]:
     if fingerprint is not None:
         _cache[path] = (fingerprint, candles)
     return list(candles)
+
+
+def clear_cache():
+    """Drop every parsed series held in memory.
+
+    The cache above never evicts, which is right for the live bot -- it
+    reads the same handful of series every hour and re-parsing them is
+    pure waste. It is wrong for a batch job that walks many instruments
+    once each: EURUSD's H1 alone is 155k rows, so roughly 30MB of Candle
+    objects, and holding 27 instruments' worth of W/D/H4/H1 at once is
+    over a gigabyte that will never be read again.
+
+    The live VPS runs at 72% memory with swap at 94%, and the live bots
+    share the box, so a batch job that grows without bound there is not
+    merely slow -- it can push the thing that is actually trading into
+    swap. Batch callers clear between instruments.
+    """
+    _cache.clear()

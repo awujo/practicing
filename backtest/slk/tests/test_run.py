@@ -139,3 +139,25 @@ def test_a_missing_series_is_reported_rather_than_replayed(tmp_path, capsys,
     monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
     assert run_one("EURUSD", n=2, spread=0.0, source="dukascopy") == []
     assert "cannot load" in capsys.readouterr().err
+
+
+def test_the_loader_cache_is_released_between_instruments(tmp_path,
+                                                          monkeypatch):
+    """The loader's cache never evicts, which is right for the live bot
+    and wrong for a batch walk over 27 instruments: EURUSD's H1 alone is
+    ~155k Candle objects. The live VPS is already swapping and the live
+    bots share the box, so a batch job that grows without bound there can
+    push the thing that is actually trading into swap."""
+    from ...data_pipeline import cache
+    from ...engine import candles
+
+    monkeypatch.setattr(cache, "DATA_ROOT", str(tmp_path))
+    rows = [{"time": (T0 + pd.Timedelta(hours=i)).isoformat(),
+             "open": 1.1, "high": 1.1005, "low": 1.0995, "close": 1.1,
+             "volume": 0} for i in range(300)]
+    for code in ("H1", "H4", "D", "W"):
+        cache.append("dukascopy", "EURUSD", code, rows)
+
+    candles.clear_cache()
+    run_one("EURUSD", n=2, spread=0.0, source="dukascopy")
+    assert not candles._cache, "the parsed series are still held"
