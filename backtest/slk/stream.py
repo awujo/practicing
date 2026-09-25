@@ -38,9 +38,17 @@ class LevelStream:
     exactly n candles after that one closes -- never sooner, and this
     class cannot be made to answer sooner because the later candles do
     not exist in it yet.
+
+    NO DEFAULT, deliberately. The course never defines a swing
+    numerically -- video-12 t=683-693 points at a chart, "we have
+    broken above all of these structural highs" -- so `n` is a number I
+    chose, and a caller that has not thought about which one it wants
+    should not compile. How much the system depends on it is a
+    question to MEASURE once the replay runs, not to settle by picking
+    a value that looks reasonable.
     """
 
-    def __init__(self, n: int = 2):
+    def __init__(self, n: int):
         self.n = n
         self._buf: deque[Candle] = deque(maxlen=2 * n + 1)
         self.levels: list[KeyLevel] = []

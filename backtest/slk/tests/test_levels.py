@@ -115,4 +115,4 @@ def test_a_close_beyond_a_swing_that_predates_the_flip_is_not_invalidation():
 def test_nothing_can_have_broken_back_before_the_flip():
     bars = [c(i, 1.10, 1.12) for i in range(6)]
     assert broke_back(bars, flip_idx=4, now_idx=3,
-                      direction=Direction.BULLISH) is False
+                      direction=Direction.BULLISH, n=2) is False

@@ -32,6 +32,16 @@ implementation had wrong:
     that predates the flip is just price retracing into the level,
     which is the setup rather than its invalidation.
 
+`n` HAS NO SOURCE AND SO HAS NO DEFAULT
+
+Neither man ever defines a swing numerically. video-12 t=683-693 is
+typical: "we have broken above this high. We have broken above all of
+these structural highs" -- he is pointing at a chart. Any mechanisation
+needs SOME definition, so `n` exists, but it is a number I chose and
+every caller must therefore say which one it is using. A default is how
+`min_stop_pips` and `min_reward_r` got in, and both had to be torn out
+on the operator's instruction.
+
 NO FUTURE
 
 `levels_confirmed_by` is handed the candles up to now and returns only
@@ -58,7 +68,7 @@ class KeyLevel:
     flipped: bool = False      # has price closed through it
 
 
-def levels_confirmed_by(candles: list[Candle], n: int = 2) -> list[KeyLevel]:
+def levels_confirmed_by(candles: list[Candle], n: int) -> list[KeyLevel]:
     """Every V and A shape whose fractal has completed inside `candles`.
 
     A swing at i needs n bars either side, so the scan stops n short of
@@ -115,7 +125,7 @@ def returned_to(candle: Candle, level: KeyLevel) -> bool:
 
 
 def broke_back(candles: list[Candle], flip_idx: int, now_idx: int,
-               direction: Direction, n: int = 2) -> bool:
+               direction: Direction, n: int) -> bool:
     """Did price break structure AGAINST `direction` since the flip?
 
     "It must not create a breakout back to the opposite direction."

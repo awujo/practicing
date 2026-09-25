@@ -71,7 +71,7 @@ def test_no_lower_timeframe_break_means_no_bias():
     higher = [c(0, 1.0950, 1.1010, 1.0960, step="d")]     # rejection
     quiet = [c(i, 1.0950, 1.0970, 1.0960) for i in range(12)]
 
-    assert bias_established(higher, quiet, level) is None
+    assert bias_established(higher, quiet, level, n=2) is None
 
 
 def test_all_three_conditions_give_a_bias():
@@ -82,11 +82,11 @@ def test_all_three_conditions_give_a_bias():
              c(2, 1.0930, 1.0950, 1.0940),    # swing LOW 1.0930
              c(3, 1.0945, 1.0965, 1.0955), c(4, 1.0950, 1.0970, 1.0960),
              c(5, 1.0900, 1.0940, 1.0910)]    # closes below the swing low
-    assert bias_established(higher, lower, level) == Direction.BEARISH
+    assert bias_established(higher, lower, level, n=2) == Direction.BEARISH
 
 
 def test_a_rejection_that_never_happened_gives_no_bias():
     level = KeyLevel(T0, 1.1000, "A", Direction.BEARISH)
     higher = [c(0, 1.0900, 1.0950, 1.0920, step="d")]     # never reached it
     lower = [c(i, 1.0900, 1.0920, 1.0910) for i in range(8)]
-    assert bias_established(higher, lower, level) is None
+    assert bias_established(higher, lower, level, n=2) is None

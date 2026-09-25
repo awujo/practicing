@@ -63,7 +63,7 @@ def rejected_at(candle: Candle, level: KeyLevel) -> bool:
 
 
 def breakout_after(candles: list[Candle], since_idx: int,
-                   direction: Direction, n: int = 2) -> bool:
+                   direction: Direction, n: int) -> bool:
     """Condition 3: did the NEXT TIMEFRAME LOWER break structure in
     `direction` after the rejection?
 
@@ -93,7 +93,7 @@ def breakout_after(candles: list[Candle], since_idx: int,
 
 
 def bias_established(higher: list[Candle], lower: list[Candle],
-                     level: KeyLevel, n: int = 2) -> Direction | None:
+                     level: KeyLevel, n: int) -> Direction | None:
     """The direction this level has established, or None.
 
     `higher` is the timeframe the level lives on, `lower` the next one
