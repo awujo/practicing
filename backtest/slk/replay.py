@@ -68,6 +68,21 @@ from .cascade import Cascade
 from .sweep import Setup, SetupStream, level_identity
 
 
+def _tell(observer, event: str, **fields):
+    """Best-effort notification. Never lets a watcher break the engine."""
+    if observer is None:
+        return
+    handler = getattr(observer, "on_" + event, None)
+    if handler is None:
+        return
+    try:
+        handler(**fields)
+    except Exception:                                  # noqa: BLE001
+        import logging
+        logging.getLogger("backtest.slk.replay").exception(
+            "observer.on_%s raised; the replay carries on", event)
+
+
 @dataclass
 class Trade:
     entry_time: object
@@ -120,11 +135,22 @@ class _EngulfBook:
 
 
 def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
-           h1: list[Candle], n: int) -> list[Trade]:
+           h1: list[Candle], n: int, observer=None) -> list[Trade]:
     """Walk H1 forward and return the trades that would have been taken.
 
     `n` is the swing width, and it has no default anywhere in this
     package because the course never gives one -- see stream.py.
+
+    `observer`, if given, is told about bias changes, setups going live
+    and confirmations as they happen. It is how the LIVE side watches
+    without there being a second copy of this loop: the live runner calls
+    THIS function, on trimmed history, once per H1 close, and reports the
+    events past its own watermark. A separate live implementation would
+    be a second machine that could disagree with the backtest, and this
+    project has paid for that twice already.
+
+    Every observer call is wrapped: a notifier that can take down the
+    engine is worse than no notifier.
     """
     if not h1 or not h4 or not daily:
         return []
@@ -175,6 +201,9 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             # See cascade.py; it answers in constant time.
             was = bias
             bias = cascade.direction() or bias
+            if bias != was:
+                _tell(observer, "bias", at=h4[h4i].time, direction=bias,
+                      cascade=cascade, was=was)
             if bias != was and was is not None:
                 # "I had to go and cancel my limit order ... because [I]
                 # was analyzing this from the three hours, it was
@@ -197,6 +226,8 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 erl = target_for(s.level.price, bias, seen_daily, seen_weekly)
                 if erl is not None:
                     live_erl[key] = erl
+                _tell(observer, "setup", at=h4[h4i].time, setup=s,
+                      direction=bias, target=erl)
             for key, s in list(live.items()):
                 if disrespected_by(h4[h4i], s.level):
                     del live[key]
@@ -301,6 +332,9 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 # 4th man's 5.1 is a return to THAT rather than to the
                 # open. Recorded, not traded -- entries.py says why.
                 mitigation=level.second_close))
+            _tell(observer, "confirmation", at=bar.time, form="engulf",
+                  direction=bias, entry=level.price, stop=stop, target=target,
+                  setup=setup)
 
         # --- Bishop's two best forms, and 4th man's third -------------
         for got in (reaction.push(bar, bias, watched),
@@ -317,6 +351,9 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 entry=got.entry, stop=got.stop, target=target,
                 direction=bias, placed_at=bar.time, confirmation=got.form,
                 liquidity=watching.sweep.point.price))
+            _tell(observer, "confirmation", at=bar.time, form=got.form,
+                  direction=bias, entry=got.entry, stop=got.stop,
+                  target=target, setup=watching)
 
         if engulfed_here:
             # The candidate inducement is the candle AFTER the engulf, so
