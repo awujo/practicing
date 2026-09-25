@@ -1665,6 +1665,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   require_qmr: bool = False,
                   require_imbalance_overlap: bool = False,
                   require_sponsored_level: bool = False,
+                  fill_at_signal_known: bool = False,
                   bias_caveat: bool = False,
                   close_based_breakout: bool = True,
                   confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
@@ -1790,6 +1791,12 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     sales". Structural, not a pip count: the level sponsored a move
     when price arrived and then undid the leg that brought it there.
     False (default) keeps every detected level tradeable.
+    fill_at_signal_known: fill at the close of the candle that SETTLED
+    the entry classification, not the candle the signal is stamped for.
+    `classify_entry_pattern()` reads up to FOLLOWING_LOOKAHEAD candles
+    past the entry and its answer -- and therefore the stop and target
+    -- depends on them, so filling at the stamp uses information from
+    after the fill. False (default) reproduces every recorded number.
     stop_anchor: which structural point the stop-loss is anchored to.
     "trigger_wick" (default) is the long-standing per-trigger behavior --
     engulfing/4th-man candle wicks, imbalance far edge for plug-and-play,
@@ -2697,6 +2704,45 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             zone_fill_idx = fill_idx
 
         entry_idx = i if zone_fill_idx is None else zone_fill_idx
+
+        # FILL WHEN THE SIGNAL WAS KNOWABLE, NOT WHEN IT WAS STAMPED.
+        #
+        # `classify_entry_pattern()` reads up to FOLLOWING_LOOKAHEAD
+        # candles PAST the entry, and its answer changes with how many
+        # have arrived -- a different reference level, so a different
+        # stop and a different target. `signal_known_at` above records
+        # that honestly. But the fill still happened at candle `i`,
+        # three hours earlier, which means the engine chose the
+        # stop/target variant using information from after the fill.
+        #
+        # That is look-ahead, and it is the kind that flatters: the
+        # 2026-09-25 full-history run read PF 2.48 with every year from
+        # 2003 to 2026 positive, which is the shape a backtest takes
+        # when it knows a little of what comes next.
+        #
+        # This fills at the close of the candle that settled the
+        # classification instead. A trade whose stop was already taken
+        # in between never existed; one whose target was already
+        # reached was missed, not won. Off by default so the recorded
+        # numbers stay reproducible -- turn it on to see what the edge
+        # is worth without the peek.
+        if fill_at_signal_known and _settled_idx > entry_idx:
+            gap = h1[entry_idx + 1: _settled_idx + 1]
+            if effective == Direction.BULLISH:
+                if any(c.low <= stop_loss for c in gap):
+                    continue          # stopped before it could be taken
+                if any(c.high >= target for c in gap):
+                    continue          # the move happened without us
+            else:
+                if any(c.high >= stop_loss for c in gap):
+                    continue
+                if any(c.low <= target for c in gap):
+                    continue
+            entry_idx = _settled_idx
+            entry_price = h1[entry_idx].close
+            if not _stop_on_correct_side(entry_price, stop_loss, effective):
+                continue
+
         entry_candle = h1[entry_idx]
 
         traded_setups.add(candidate.setup_id)

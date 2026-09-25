@@ -170,6 +170,12 @@ def main():
                         choices=("aggressive", "conservative"))
     parser.add_argument("--variant", default="",
                         help=f"one of {','.join(SLK_VARIANTS)}, applied on top")
+    parser.add_argument("--honest-fill", action="store_true",
+                        help="fill when the signal was KNOWABLE, not when it was "
+                             "stamped. classify_entry_pattern() reads candles past "
+                             "the entry, so the stamped fill uses information from "
+                             "after it. Use this to see what the edge is worth "
+                             "without that peek.")
     parser.add_argument("--windows", default="full", choices=("full", "live"),
                         help="'full' runs ~20 years per instrument. 'live' runs "
                              "the trimmed windows the bot actually loads, which "
@@ -187,6 +193,8 @@ def main():
                          f"choose from {','.join(SLK_VARIANTS)}")
         extra = SLK_VARIANTS[args.variant]
 
+    if args.honest_fill:
+        extra['fill_at_signal_known'] = True
     kwargs = slk_kwargs(**extra)
     if args.instruments.strip().upper() == "ALL":
         instruments = sorted(DUKASCOPY_INSTRUMENTS)

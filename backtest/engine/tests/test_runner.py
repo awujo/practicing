@@ -2710,3 +2710,33 @@ def test_ranking_actually_shifts_the_mix_towards_the_rated_triggers():
     rated = lambda c: c["breakout"] + c["sweep_break"]
     assert rated(ranked) > rated(raced) * 2, (raced, ranked)
     assert ranked["disrespect"] < raced["disrespect"]
+
+
+def test_fill_at_signal_known_cannot_improve_on_the_stamped_fill(synthetic_cache):
+    """Filling when the signal was KNOWABLE can only cost, never help.
+
+    `classify_entry_pattern()` reads up to FOLLOWING_LOOKAHEAD candles
+    past the entry, so the stop and target it picks depend on candles
+    that arrive AFTER the fill at candle `i`. Filling three candles
+    later removes that peek, and the trades that vanish are the ones
+    whose stop was already taken or whose target had already been
+    reached in between -- both of which the stamped fill counted as
+    tradeable."""
+    stamped = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    honest = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                          fill_at_signal_known=True)
+
+    assert len(honest) <= len(stamped), "removing a peek cannot add trades"
+    # Every surviving trade fills at or after where it used to.
+    by_id = {t.trade_id: t for t in stamped}
+    for t in honest:
+        prior = by_id.get(t.trade_id)
+        if prior is not None:
+            assert t.entry_time >= prior.entry_time
+
+
+def test_fill_at_signal_known_is_off_by_default(synthetic_cache):
+    a = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001)
+    b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
+                     fill_at_signal_known=False)
+    assert [t.entry_time for t in a] == [t.entry_time for t in b]
