@@ -45,6 +45,29 @@ from ..engine.structure import Direction
 
 
 @dataclass(frozen=True)
+class Fill:
+    """An order that filled, and whether this candle was ambiguous.
+
+    `same_candle_stop` marks the one case where the result depends on
+    an assumption rather than on the data: price reached BOTH the entry
+    and the stop inside one candle, and four numbers per candle cannot
+    say which came first. We assume filled-then-stopped, because a
+    resting order that price traded through is filled in reality and
+    calling it "never filled" would delete exactly the fastest, ugliest
+    losses.
+
+    Flagged as its own event, per the operator on 2026-09-25, rather
+    than folded in as an ordinary loss. It has to be COUNTABLE: if
+    these are a large share of losses, the result rests on the
+    assumption and anyone reading it deserves to know that. If they are
+    rare, it does not matter and the count says so.
+    """
+    order: "PendingOrder"
+    at: object
+    same_candle_stop: bool
+
+
+@dataclass(frozen=True)
 class PendingOrder:
     """An order resting at a level, waiting for price to come back.
 
@@ -106,16 +129,28 @@ class OrderBook:
             out.append(self.cancel(key, reason))
         return [o for o in out if o is not None]
 
-    def fills(self, candle: Candle) -> list[PendingOrder]:
+    def fills(self, candle: Candle) -> list[Fill]:
         """Which resting orders this candle fills. Filled orders leave
         the book -- a level holds at most one order, and a filled order
-        is a position now, not an order."""
+        is a position now, not an order.
+
+        Each fill says whether the same candle also reached the stop,
+        so that ambiguous case can be counted rather than disappearing
+        into the loss column."""
         hit = []
         for key, order in list(self._orders.items()):
             if _reaches(candle, order):
-                hit.append(order)
+                hit.append(Fill(order=order, at=candle.time,
+                                same_candle_stop=_reaches_stop(candle, order)))
                 del self._orders[key]
         return hit
+
+
+def _reaches_stop(candle: Candle, order: PendingOrder) -> bool:
+    """Did this same candle also reach the stop? See `Fill`."""
+    if order.direction == Direction.BULLISH:
+        return candle.low <= order.stop
+    return candle.high >= order.stop
 
 
 def _reaches(candle: Candle, order: PendingOrder) -> bool:

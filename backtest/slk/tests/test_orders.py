@@ -8,7 +8,7 @@ import pandas as pd
 
 from ...engine.candles import Candle
 from ...engine.structure import Direction
-from ..orders import OrderBook, PendingOrder
+from ..orders import Fill, OrderBook, PendingOrder
 
 T0 = pd.Timestamp("2026-01-01")
 
@@ -77,6 +77,9 @@ def test_a_sell_fills_when_price_comes_back_up_to_the_level():
     back = c(2, 1.0960, 1.1005, 1.0955, 1.0990)
     filled = book.fills(back)
     assert len(filled) == 1
+    assert filled[0].order.entry == 1.1000
+    assert filled[0].at == back.time
+    assert filled[0].same_candle_stop is False, "clean fill, no ambiguity"
     assert len(book) == 0, "a filled order is a position, not an order"
 
 
@@ -96,7 +99,37 @@ def test_a_candle_that_takes_the_stop_filled_first_and_lost():
     book.place(order(entry=1.1000, stop=1.1050, direction=Direction.BEARISH))
 
     straight_through = c(1, 1.0960, 1.1080, 1.0955, 1.1070)
-    assert len(book.fills(straight_through)) == 1
+    filled = book.fills(straight_through)
+    assert len(filled) == 1
+
+
+def test_the_ambiguous_fill_is_flagged_as_its_own_event():
+    """Operator, 2026-09-25: "note it as its own event."
+
+    This is the one outcome that rests on an ASSUMPTION rather than on
+    the data -- four numbers per candle cannot say whether the entry or
+    the stop came first. It has to be countable, so that a result which
+    leans on it can be recognised as doing so."""
+    book = OrderBook()
+    book.place(order(entry=1.1000, stop=1.1050, direction=Direction.BEARISH))
+
+    both = c(1, 1.0960, 1.1080, 1.0955, 1.1070)   # reaches entry AND stop
+    fill = book.fills(both)[0]
+    assert fill.same_candle_stop is True
+
+    # And a fill that only reaches the entry is not flagged, so the
+    # count means something.
+    book.place(order(entry=1.1000, stop=1.1050, direction=Direction.BEARISH))
+    gentle = c(2, 1.0960, 1.1010, 1.0955, 1.0990)
+    assert book.fills(gentle)[0].same_candle_stop is False
+
+
+def test_a_buy_fill_is_flagged_on_the_same_rule_mirrored():
+    book = OrderBook()
+    book.place(order(entry=1.1000, stop=1.0950, target=1.1100,
+                     direction=Direction.BULLISH))
+    plunge = c(1, 1.1030, 1.1035, 1.0940, 1.0945)   # through entry and stop
+    assert book.fills(plunge)[0].same_candle_stop is True
 
 
 def test_the_analysis_changing_cancels_everything_resting():
