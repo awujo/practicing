@@ -1,0 +1,135 @@
+"""
+The confirmation entry, exactly as stated.
+
+Operator, 2026-09-25, in one sentence that needs no interpretation:
+
+    "once we see a confirmation -- this is an engulfing -- wait for
+     price to return back to the open close that the engulfing candle
+     closed [through], putting your SL at the low of the engulf."
+
+and SLK_SPEC 5.1, from video-14:
+
+    "Entry is the RETURN to it, not the engulfing candle."
+
+and 5.2:
+
+    "price is going to create for us two consecutive up candles that is
+     going to create for us an open close key level ... price will not
+     just engulf, price is going to break below the ... open close key
+     level that was created by these two consecutive up candles ...
+     Come back to this open close key level that was broken and price
+     will continue to drop."
+
+    Stop: "just going to be a little bit above this particular high."
+
+So the sequence has four parts and they happen in this order:
+
+    1. two consecutive same-direction candles form an OPEN-CLOSE level
+    2. a later candle CLOSES THROUGH it -- that is the engulf
+    3. price RETURNS to that level -- that is the entry
+    4. the stop sits beyond the engulfing candle's own extreme
+
+WHAT "ENGULF" MEANS HERE
+
+Not the candlestick pattern. bias-1 t=271-276: "the moment [the candle]
+closes above this guy ... that's when we now use it for a buy, OR YOU
+CAN CALL IT AN ENGULFING." And what-next t=389-395: "an engulfing,
+that's an ENGULFED OPEN CLOSE KEY LEVEL."
+
+A level that price closed through. The old engine tested
+`is_engulfing(prev, curr)` -- a two-candle price pattern -- for a year.
+
+NO FUTURE
+
+`find_setup` takes candles up to and including `now` and never indexes
+past it. `await_return` is given one bar at a time. A setup that has
+not been returned to yet simply has no entry, which is the same thing
+that is true on a live chart.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ..engine.candles import Candle
+from ..engine.structure import Direction
+
+
+@dataclass(frozen=True)
+class OpenCloseLevel:
+    """The level two consecutive same-direction candles leave behind.
+
+    `price` is the boundary between their bodies -- the open of the
+    first and the close of the second are the two edges, and the level
+    is the one price must close through to engulf it. For two up
+    candles (a level that will be SOLD from once broken downward) that
+    is the lower edge: the first candle's OPEN.
+    """
+    time: object
+    price: float
+    direction: Direction      # the direction price must break it to engulf
+    first_open: float
+    second_close: float
+
+
+def open_close_level(a: Candle, b: Candle) -> OpenCloseLevel | None:
+    """The level left by two consecutive same-direction candles, or None.
+
+    5.2: "two consecutive up candles that is going to create for us an
+    open close key level". Two up candles leave a level that gets
+    engulfed DOWNWARD (and is then sold from); two down candles leave
+    one engulfed upward.
+    """
+    a_up, b_up = a.close > a.open, b.close > b.open
+    a_down, b_down = a.close < a.open, b.close < b.open
+
+    if a_up and b_up:
+        # Broken downward. The body span's floor is the first open.
+        return OpenCloseLevel(a.time, a.open, Direction.BEARISH, a.open, b.close)
+    if a_down and b_down:
+        return OpenCloseLevel(a.time, a.open, Direction.BULLISH, a.open, b.close)
+    return None
+
+
+def engulfs(candle: Candle, level: OpenCloseLevel) -> bool:
+    """Did this candle CLOSE THROUGH the level?
+
+    A close, not a wick -- the whole vocabulary is "closes above this
+    guy" / "break below the open close key level". A wick through it is
+    a test, not an engulf.
+    """
+    if level.direction == Direction.BEARISH:
+        return candle.close < level.price
+    return candle.close > level.price
+
+
+def returned_to(candle: Candle, level: OpenCloseLevel) -> bool:
+    """Has price come back to the engulfed level?
+
+    "Come back to this open close key level that was broken." A touch,
+    not a close: price returning INTO the level is the entry, and it
+    need not close there. A bearish setup (two up candles broken
+    downward) is re-entered when price trades back UP to the level.
+
+    ONLY MEANINGFUL AFTER THE ENGULF, and the trap is worth stating
+    because the first test of it was written the wrong way round: a
+    candle that CLOSES through a level must TRADE through it, so this
+    is trivially true of the engulfing candle itself. Callers begin the
+    search at engulf + 1 -- "entry is the return to it, NOT the
+    engulfing candle" (5.1).
+    """
+    return candle.low <= level.price <= candle.high
+
+
+def stop_for(engulf: Candle, level: OpenCloseLevel) -> float:
+    """The stop, on the engulfing candle's own far side.
+
+    Operator: "putting your SL at the low of the engulf." 5.2 for the
+    mirrored case: "just going to be a little bit above this particular
+    high."
+
+    No padding. A pip figure would be a number nobody stated, and the
+    last two of those I invented were removed on the operator's
+    instruction. The candle's extreme is the invalidation as given.
+    """
+    return engulf.high if level.direction == Direction.BEARISH else engulf.low
