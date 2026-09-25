@@ -490,3 +490,28 @@ def test_ingest_only_reads_the_new_tail_and_never_copies():
 
 def test_an_empty_index_is_none_not_an_error():
     assert LevelIndex().nearest(_pt(1.05), Direction.BULLISH) is None
+
+
+def test_a_level_that_has_already_been_played_is_spent():
+    """"It's about using it when the first time it presented itself" --
+    operator, 2026-09-22, arguing against caging levels in time windows.
+
+    level_identity has said so in its docstring since it was written, but
+    the code only enforced it while a setup was still PENDING: once one
+    fired, the level was free to arm again on the next sweep into it. On a
+    96k-bar fixture 35% of all setups were a level firing again -- one of
+    them nine times -- and removing them took 985 trades to 737."""
+    s = SetupStream()
+    level = v(1.0500)
+
+    s.push(h4(0, 1.0600, 1.0620, 1.0550, 1.0580), Direction.BULLISH, [level])
+    got = s.push(h4(1, 1.0570, 1.0575, 1.0495, 1.0560), Direction.BULLISH,
+                 [level])
+    assert len(got) == 1, "the first presentation is taken"
+
+    # price leaves, then sweeps back into exactly the same level
+    s.push(h4(2, 1.0560, 1.0700, 1.0555, 1.0690), Direction.BULLISH, [level])
+    s.push(h4(3, 1.0690, 1.0695, 1.0600, 1.0610), Direction.BULLISH, [level])
+    again = s.push(h4(4, 1.0610, 1.0615, 1.0495, 1.0560), Direction.BULLISH,
+                   [level])
+    assert again == [], "the same level must not be played twice"

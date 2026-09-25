@@ -419,6 +419,7 @@ class SetupStream:
         self._liquidity = LiquidityStream()
         self._pending: dict[object, _Pending] = {}
         self._lost: set[object] = set()
+        self._spent: set[object] = set()
         self._index = LevelIndex()
 
     def __len__(self):
@@ -460,7 +461,8 @@ class SetupStream:
             if level is None:
                 continue
             key = level_identity(level)
-            if key in self._lost or key in self._pending:
+            if key in self._lost or key in self._spent \
+                    or key in self._pending:
                 continue
             self._pending[key] = _Pending(
                 level, Sweep(sweep.point, sweep.taken_at, "internal"),
@@ -478,6 +480,16 @@ class SetupStream:
                 live.append(Setup(p.level, p.sweep, candle.time,
                                   same_candle=p.born_at == candle.time))
                 del self._pending[key]
+                # Spent. A level is played the FIRST time it presents
+                # itself -- operator, 2026-09-22, against caging levels in
+                # time windows: "it's about using it when the first time
+                # it presented itself". `level_identity` has said so since
+                # it was written, but the code only enforced it while a
+                # setup was still PENDING: once one fired, the level was
+                # free to arm again on the next sweep into it. Measured on
+                # a 96k-bar fixture, 35% of all setups were a level firing
+                # again, one of them nine times.
+                self._spent.add(key)
         return live
 
 
