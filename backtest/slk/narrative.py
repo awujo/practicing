@@ -132,6 +132,10 @@ def account_story(account, instrument: str) -> list[str]:
     if note:
         lines += [note, ""]
 
+    structure = _structure_lines(account, side)
+    if structure:
+        lines += structure + [""]
+
     lines.append(f"{account.rung} says {side}:")
     lines += bias_story(account.evidence) or ["  (no detail recorded)"]
 
@@ -145,6 +149,33 @@ def account_story(account, instrument: str) -> list[str]:
     lines += ["", "Next: H4 single candle liquidity to be taken, then the",
               "nearest key level to it, then a rejection from it."]
     return lines
+
+
+def _structure_lines(account, side: str) -> list[str]:
+    """What each timeframe's OWN structure says.
+
+    A third thing the Weekly tells you, separate from a level it rejected
+    and from liquidity it swept: its own most recent break of structure.
+    "Weekly structurally we're still bearish" (daily-routine t=775-788)
+    is where Bishop's routine starts, and it was not in the model at all
+    until the operator asked whether it was.
+    """
+    out = []
+    for name, attr in (("Weekly", "weekly_structure"),
+                       ("Daily", "daily_structure")):
+        got = getattr(account, attr, None)
+        if not got:
+            out.append(f"  {name} structure: no break of structure yet.")
+            continue
+        direction, when, price = got
+        way = "upside" if direction == Direction.BULLISH else "downside"
+        note = ""
+        if _side(direction) != side:
+            note = "  ← against the bias"
+        out.append(f"  {name} structurally {_side(direction)} — most recent "
+                    f"breakout to the {way}, through {price:g} on "
+                    f"{_when(when)}.{note}")
+    return ["Structure:"] + out if out else []
 
 
 def _alignment(account, side: str):

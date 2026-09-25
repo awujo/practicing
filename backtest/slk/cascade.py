@@ -192,10 +192,21 @@ class Cascade:
         self.lower_levels = BiasRoute(n)           # Daily levels, H4 breaks
         self.upper_liquidity = LiquidityBias(n)    # Weekly sweeps, Daily breaks
         self.lower_liquidity = LiquidityBias(n)    # Daily sweeps, H4 breaks
+        # THE TIMEFRAME'S OWN STRUCTURE, which is where Bishop's routine
+        # actually starts: "weekly structurally we're still bearish",
+        # "we've been having breakouts to the upside, so I know my weekly
+        # is bullish" (repeating-system t=388-402, daily-routine
+        # t=765-788). Both routes above use a timeframe as the place a
+        # level or a sweep lives, and neither reads its own most recent
+        # break of structure. That is a third thing the weekly says and
+        # it was missing entirely.
+        self.weekly_structure = BreakTracker(n)
+        self.daily_structure = BreakTracker(n)
 
     def push_weekly(self, candle: Candle, closed_at):
         self.upper_levels.push_higher(candle)
         self.upper_liquidity.push(candle, closed_at)
+        self.weekly_structure.push(candle)
 
     def push_daily(self, candle: Candle, closed_at):
         # The Daily is the lower rung of the Weekly's routes and the
@@ -205,6 +216,7 @@ class Cascade:
         self.upper_liquidity.push_lower(candle)
         self.lower_levels.push_higher(candle)
         self.lower_liquidity.push(candle, closed_at)
+        self.daily_structure.push(candle)
 
     def push_h4(self, candle: Candle):
         self.lower_levels.push_lower(candle)
@@ -261,17 +273,31 @@ class Cascade:
             else:
                 alignment = "aligned"
                 reason = "the Weekly and the Daily agree"
-            return BiasAccount(lower, "Daily", _stamp(lower_ev, "Daily", "H4"),
-                                "Weekly", upper, _stamp(upper_ev, "Weekly", "Daily"),
-                                reason, alignment)
+            # Keywords, not positions. BiasAccount has ten fields and a
+            # positional call put `alignment` into `weekly_structure`
+            # the moment two more were added -- which surfaced as
+            # "too many values to unpack" three modules away.
+            return BiasAccount(
+                direction=lower, rung="Daily",
+                evidence=_stamp(lower_ev, "Daily", "H4"),
+                other_rung="Weekly", other_direction=upper,
+                other_evidence=_stamp(upper_ev, "Weekly", "Daily"),
+                dropped_reason=reason, alignment=alignment,
+                weekly_structure=structural_direction(self.weekly_structure),
+                daily_structure=structural_direction(self.daily_structure))
 
         if upper is not None:
-            return BiasAccount(upper, "Weekly",
-                                _stamp(upper_ev, "Weekly", "Daily"),
-                                "Daily", None, None,
-                                "the Daily has not established one of its own",
-                                "weekly only")
-        return BiasAccount(None)
+            return BiasAccount(
+                direction=upper, rung="Weekly",
+                evidence=_stamp(upper_ev, "Weekly", "Daily"),
+                other_rung="Daily",
+                dropped_reason="the Daily has not established one of its own",
+                alignment="weekly only",
+                weekly_structure=structural_direction(self.weekly_structure),
+                daily_structure=structural_direction(self.daily_structure))
+        return BiasAccount(None,
+                            weekly_structure=structural_direction(self.weekly_structure),
+                            daily_structure=structural_direction(self.daily_structure))
 
 
 def _as_pair(route: LiquidityBias):
@@ -310,6 +336,12 @@ class BiasAccount:
     other_direction: Direction | None = None
     other_evidence: object = None
     dropped_reason: str = ""       # why the other rung is not leading
+    # Each timeframe's OWN most recent break of structure, as
+    # (direction, when, price) or None. "Weekly structurally bearish" is
+    # a separate statement from "the weekly rejected a level" and from
+    # "the weekly swept a low", and all three are things the weekly says.
+    weekly_structure: object = None
+    daily_structure: object = None
     # The thing that actually decides quality, and the thing a report
     # that always says "Daily leads" hides completely:
     #   "aligned"      Weekly and Daily agree -- the high-probability case
@@ -319,6 +351,24 @@ class BiasAccount:
     #   "daily only"   the Weekly has established nothing yet
     #   "weekly only"  the Daily has not
     alignment: str = ""
+
+
+def structural_direction(tracker):
+    """A timeframe's own most recent break of structure.
+
+    Returns (direction, when, price) or None. "Most recent" is by the
+    time of the CLOSE THROUGH, not of the swing it broke -- "the most
+    recent breakout is to the downside" is a statement about when price
+    did something, not about when the level it did it to was formed.
+    """
+    best = None
+    for side, at in getattr(tracker, "broke_at", {}).items():
+        when, price = at
+        if when is None:
+            continue
+        if best is None or when > best[1]:
+            best = (side, when, price)
+    return best
 
 
 def _stamp(evidence, higher: str, lower: str):

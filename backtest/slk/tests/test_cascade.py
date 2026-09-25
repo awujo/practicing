@@ -5,6 +5,7 @@ Bias by every route, on every rung -- and in constant time.
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from ...engine.candles import Candle
 from ...engine.structure import Direction
@@ -211,3 +212,93 @@ def test_all_four_routes_actually_answer_on_real_shaped_data():
     assert answered == {"lower_levels", "lower_liquidity",
                         "upper_levels", "upper_liquidity"}, \
         f"never answered: {sorted({'lower_levels', 'lower_liquidity', 'upper_levels', 'upper_liquidity'} - answered)}"
+
+
+# --- the timeframe's own structure --------------------------------------
+
+def test_structural_direction_is_the_most_recent_break_of_structure():
+    """Operator, 2026-09-25: "does the weekly factor in both rejection,
+    breakout on the weekly, and sweep of the low?"
+
+    Rejection and sweep were built; the timeframe's OWN breakout was not,
+    and it is where Bishop's routine starts -- "weekly structurally we're
+    still bearish", "we've been having breakouts to the upside, so I know
+    my weekly is bullish"."""
+    from ..cascade import structural_direction
+
+    t = BreakTracker(2)
+    for bar in rising_break(0, 1.1000):
+        t.push(bar)
+
+    got = structural_direction(t)
+    assert got is not None
+    direction, when, price = got
+    assert direction == Direction.BULLISH
+    assert when == T0 + pd.Timedelta(hours=5), \
+        "the time of the CLOSE THROUGH, not of the swing it broke"
+    assert price == pytest.approx(1.1040)
+
+
+def test_no_break_of_structure_yet_is_none_not_a_guess():
+    from ..cascade import structural_direction
+
+    t = BreakTracker(2)
+    for i in range(10):
+        t.push(c(i, 1.10, 1.1005, 1.0995, 1.10))
+    assert structural_direction(t) is None
+
+
+def test_the_newest_break_wins_when_both_directions_have_one():
+    """"Most recent breakout" means most recent, so a later break the
+    other way replaces it."""
+    from ..cascade import structural_direction
+
+    t = BreakTracker(2)
+    for bar in rising_break(0, 1.1000):
+        t.push(bar)
+    assert structural_direction(t)[0] == Direction.BULLISH
+
+    # now a bearish break, later in time
+    for bar in [c(6, 1.1050, 1.1055, 1.1000, 1.1005),
+                c(7, 1.1005, 1.1010, 1.0960, 1.0965),
+                c(8, 1.0965, 1.0970, 1.0940, 1.0945),
+                c(9, 1.0945, 1.0990, 1.0940, 1.0980),
+                c(10, 1.0980, 1.0985, 1.0950, 1.0955),
+                c(11, 1.0955, 1.0960, 1.0900, 1.0905)]:
+        t.push(bar)
+    got = structural_direction(t)
+    assert got[0] == Direction.BEARISH, "the later break is the current one"
+
+
+def test_the_cascade_feeds_each_timeframe_its_own_structure():
+    """The weekly's own candles, not only the daily's confirmations."""
+    cascade = Cascade(2)
+    for bar in rising_break(0, 1.1000, unit="days"):
+        cascade.push_weekly(bar, bar.time)
+    account = cascade.explain()
+    assert account.weekly_structure is not None
+    assert account.weekly_structure[0] == Direction.BULLISH
+    assert account.daily_structure is None, "nothing pushed to the daily"
+
+
+def test_the_account_fields_are_not_silently_shuffled():
+    """BiasAccount has ten fields and was built positionally. Adding two
+    put `alignment` into `weekly_structure`, which surfaced as "too many
+    values to unpack" three modules away rather than anywhere near the
+    cause. This pins the meaning of each field rather than its order."""
+    cascade = Cascade(2)
+    cascade.lower_levels._rejections[Direction.BEARISH].append(T0)
+    cascade.lower_levels._breaks.newest_break[Direction.BEARISH] = \
+        T0 + pd.Timedelta(hours=1)
+
+    account = cascade.explain()
+    assert account.direction == Direction.BEARISH
+    assert account.rung == "Daily"
+    assert account.other_rung == "Weekly"
+    assert isinstance(account.alignment, str), "alignment must be a string"
+    assert account.alignment in {"aligned", "not aligned", "daily only",
+                                 "weekly only"}
+    for attr in ("weekly_structure", "daily_structure"):
+        got = getattr(account, attr)
+        assert got is None or len(got) == 3, \
+            f"{attr} must be None or (direction, when, price), got {got!r}"
