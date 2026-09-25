@@ -67,7 +67,7 @@ from ..engine.structure import Direction
 from .bias import rejected_at
 from .levels import KeyLevel
 from .stream import BreakTracker, LevelStream
-from .sweep import LiquidityBias
+from .sweep import Evidence, LiquidityBias
 
 
 class BiasRoute:
@@ -95,6 +95,11 @@ class BiasRoute:
         # newest one before a given moment is a bisect rather than a walk.
         self._rejections: dict[Direction, list] = {
             Direction.BULLISH: [], Direction.BEARISH: []}
+        # time -> the level price rejected there, so the route can say
+        # WHICH level it was and not merely that one was. Named apart
+        # from `_levels` (the LevelStream) on purpose: shadowing it was
+        # an instant AttributeError, which is the good kind of mistake.
+        self._level_at: dict[object, float] = {}
 
     def push_higher(self, candle: Candle):
         """One closed candle of the timeframe the levels live on."""
@@ -106,6 +111,7 @@ class BiasRoute:
             if rejected_at(candle, level):
                 self._seen.add(key)
                 self._rejections[level.bias].append(candle.time)
+                self._level_at[candle.time] = level.price
 
     def push_lower(self, candle: Candle):
         """One closed candle of the next timeframe down."""
@@ -132,6 +138,19 @@ class BiasRoute:
             if best is None or when > best[1]:
                 best = (side, when)
         return best
+
+    def evidence(self):
+        """The rejection currently carrying this rung, described.
+
+        Returns an Evidence or None. Built on demand rather than stored,
+        because `direction()` decides which rejection is the live one and
+        that answer can change as the lower timeframe breaks again."""
+        got = self.direction()
+        if got is None:
+            return None
+        side, when = got
+        return Evidence(kind="rejection", direction=side, at=when,
+                        level=self._level_at.get(when))
 
 
 class Cascade:

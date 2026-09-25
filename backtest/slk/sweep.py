@@ -141,6 +141,29 @@ class LiquidityPoint:
 
 
 @dataclass(frozen=True)
+class Evidence:
+    """What price DID, kept in enough detail to write a sentence about it.
+
+    Operator, 2026-09-25: "just add english ... is it daily rejecting a
+    key level, is it a sweep and a break, did the previous day or week
+    low get swept and the high is standing."
+
+    A direction alone cannot answer any of that. This carries the shape
+    of the event -- which kind, which way, which price went and which one
+    is still standing -- so `narrative.py` can say it in words without
+    recomputing anything and without guessing.
+    """
+    kind: str                       # "sweep" | "rejection"
+    direction: Direction
+    at: object                      # when the higher timeframe closed on it
+    taken: float = None             # the liquidity that went (a sweep)
+    taken_kind: str = None          # "high" | "low"
+    standing: float = None          # the other side of that same candle
+    period_time: object = None      # the candle the liquidity belonged to
+    level: float = None             # the key level rejected (a rejection)
+
+
+@dataclass(frozen=True)
 class Sweep:
     """A resting liquidity point that price has just taken."""
     point: LiquidityPoint
@@ -560,6 +583,14 @@ class LiquidityBias:
         self._taken: set[tuple[object, str]] = set()
         self.latest: tuple[Direction, object] | None = None
         self._breaks = BreakTracker(n)
+        self._extremes: dict[object, tuple[float, float]] = {}
+        # What the last sweep actually WAS, kept so it can be described
+        # in words rather than only counted. Operator, 2026-09-25: "just
+        # add english ... did the previous day or week low get swept and
+        # the high is standing". That sentence needs the price that went,
+        # the price still standing, and which period they belong to --
+        # none of which a bare direction carries.
+        self.evidence: "Evidence | None" = None
 
     def push(self, candle: Candle, closed_at: object) -> None:
         """One CLOSED higher-timeframe candle, and the time it closed.
@@ -572,17 +603,27 @@ class LiquidityBias:
         for s in sweeps:
             self._taken.add((s.point.time, s.point.kind))
 
-        implied = set()
+        implied = {}
         for s in sweeps:
             other = "high" if s.point.kind == "low" else "low"
             if (s.point.time, other) in self._taken:
                 continue                  # both sides gone: no story left
-            implied.add(bias_from_internal(s.point.kind))
+            implied[bias_from_internal(s.point.kind)] = s
 
         if len(implied) == 1:
-            self.latest = (implied.pop(), closed_at)
+            side, sweep = implied.popitem()
+            self.latest = (side, closed_at)
+            high, low = self._extremes.get(sweep.point.time, (None, None))
+            standing = high if sweep.point.kind == "low" else low
+            self.evidence = Evidence(
+                kind="sweep", direction=side, taken=sweep.point.price,
+                taken_kind=sweep.point.kind, standing=standing,
+                period_time=sweep.point.time, at=closed_at)
         elif implied:
             self.latest = None            # a high and a low: no story
+            self.evidence = None
+
+        self._extremes[candle.time] = (candle.high, candle.low)
 
     def push_lower(self, candle: Candle) -> None:
         """One CLOSED candle of the next timeframe down -- the one that has
