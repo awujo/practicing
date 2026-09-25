@@ -440,31 +440,54 @@ def _reaction_structure(candles: list[Candle], idx: int, direction: Direction,
     if since < 0 or idx - since < 2:
         return False, False
 
-    # ORDER MATTERS, and getting it backwards is not a subtle error.
-    # Taking the reaction low first (argmin over the whole window) put it
-    # wherever the series happened to bottom out -- often at idx-1 on a
-    # drifting market -- which left a one-candle "lift" whose high the
-    # next close clears trivially. Measured on a random walk that fired
-    # on 18% of candles, MORE noise than the unanchored version it was
-    # meant to replace.
+    # CHRONOLOGY, not extremes. The drawing is a SEQUENCE -- price
+    # reaches the level, makes a low, lifts leaving a high, and only
+    # then breaks it -- and each part must be found in that order.
     #
-    # The drawing reads touch -> low -> HIGH -> break, and the high is
-    # the top of the whole reaction. So the high is found first, over
-    # everything since the touch, and the low is the bottom BEFORE it.
-    # A close must then clear the reaction's highest point, not some
-    # interior wiggle.
-    span = range(since, idx)
-    high_i = max(span, key=lambda k: candles[k].high) if bullish \
-        else min(span, key=lambda k: candles[k].low)
-
-    before_high = range(since, high_i + 1)
-    low_i = min(before_high, key=lambda k: candles[k].low) if bullish \
-        else max(before_high, key=lambda k: candles[k].high)
-
-    # A real lift: the high has to come after the low, not be the low.
-    if high_i <= low_i:
+    # Two wrong versions preceded this, both measured:
+    #
+    #   argmin first    Taking the reaction low as the lowest low in the
+    #                   whole window put it wherever the series bottomed
+    #                   out, often at idx-1, leaving a one-candle "lift"
+    #                   the next close cleared trivially. 18% of candles
+    #                   on a random walk -- more noise than the
+    #                   unanchored version it replaced.
+    #
+    #   argmax first    Taking the minor high as the HIGHEST high before
+    #                   the break looks right and is self-erasing. After
+    #                   a real sweep price rallies, that rally makes a
+    #                   new high, and the new high pulls the sweep's low
+    #                   INSIDE the "before the high" window -- so the
+    #                   sweep becomes the reaction low and nothing is
+    #                   left to have been swept. The move that PROVES
+    #                   the sweep is what deleted it. Measured on real
+    #                   data: sweep_break fired ONCE in 2,063 trades,
+    #                   against 162 breakouts, for a confirmation
+    #                   Bishop rates joint-highest.
+    #
+    # Found chronologically instead: the first swing low after the
+    # touch, then the first swing high after that low. Both are 1-bar
+    # fractals, decidable one candle later, and neither can be moved by
+    # anything that happens after the break.
+    low1 = None
+    for k in range(since, idx):
+        if (is_swing_low(candles, k, n=1) if bullish
+                else is_swing_high(candles, k, n=1)):
+            low1 = k
+            break
+    if low1 is None:
         return False, False
 
+    high_i = None
+    for k in range(low1 + 1, idx):
+        if (is_swing_high(candles, k, n=1) if bullish
+                else is_swing_low(candles, k, n=1)):
+            high_i = k
+            break
+    if high_i is None:
+        return False, False
+
+    low_i = low1
     minor = candles[high_i].high if bullish else candles[high_i].low
     if not body_closes_beyond(candles[idx], minor, direction):
         return False, False

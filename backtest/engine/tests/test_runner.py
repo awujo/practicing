@@ -2740,3 +2740,44 @@ def test_fill_at_signal_known_is_off_by_default(synthetic_cache):
     b = run_backtest(SYMBOL, "conservative", source=SOURCE, pip_size=0.0001,
                      fill_at_signal_known=False)
     assert [t.entry_time for t in a] == [t.entry_time for t in b]
+
+
+def test_the_rally_that_proves_a_sweep_does_not_erase_it():
+    """SLK_SPEC 5.5 fired ONCE in 2,063 trades against 162 breakouts,
+    for a confirmation Bishop rates joint-highest. This is why.
+
+    Taking the minor high as the HIGHEST high before the break is
+    self-erasing: after a real sweep price rallies, that rally makes a
+    new high, and the new high pulls the sweep's low INSIDE the
+    "before the high" window -- so the sweep becomes the reaction low
+    and nothing is left to have been swept. The move that proves the
+    sweep deletes it.
+
+    Found chronologically instead, the sweep survives whatever the
+    rally does afterwards."""
+    from ..entries import _reaction_structure
+
+    def c(i, o, h, l, cl):
+        return Candle(time=H1_BASE + pd.Timedelta(hours=i), open=o, high=h,
+                      low=l, close=cl, volume=1000)
+
+    # touch -> low 1.0960 -> minor high 1.1030 -> sweep to 1.0950 -> break
+    seq = [c(0, 1.1000, 1.1005, 1.0995, 1.1000),
+           c(1, 1.1000, 1.1002, 1.0960, 1.0965),
+           c(2, 1.0965, 1.1010, 1.0963, 1.1005),
+           c(3, 1.1005, 1.1030, 1.1000, 1.1025),
+           c(4, 1.1025, 1.1027, 1.0950, 1.0955),
+           c(5, 1.0955, 1.1040, 1.0952, 1.1035),   # rally past the minor high
+           c(6, 1.1035, 1.1060, 1.1030, 1.1055)]
+    assert _reaction_structure(seq, 6, Direction.BULLISH, since=0) == (True, True)
+
+    # Same leg, rally held under the minor high: still a sweep+break.
+    held = list(seq)
+    held[5] = c(5, 1.0955, 1.1020, 1.0952, 1.1015)
+    assert _reaction_structure(held, 6, Direction.BULLISH, since=0) == (True, True)
+
+    # And with no sweep at all it must stay a plain breakout.
+    clean = list(seq)
+    clean[4] = c(4, 1.1025, 1.1027, 1.1005, 1.1010)   # never dips under 1.0960
+    broke, swept = _reaction_structure(clean, 6, Direction.BULLISH, since=0)
+    assert broke is True and swept is False
