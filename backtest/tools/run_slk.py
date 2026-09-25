@@ -190,6 +190,14 @@ def main():
                         choices=("aggressive", "conservative"))
     parser.add_argument("--variant", default="",
                         help=f"one of {','.join(SLK_VARIANTS)}, applied on top")
+    parser.add_argument("--entry-fill", default=None,
+                        choices=("instant", "limit"),
+                        help="'limit' rests the order at the level and fills on "
+                             "the RETURN, which is what SLK_SPEC 5.1/5.2 describe: "
+                             "'entry is the return to it, not the engulfing "
+                             "candle'. 'instant' fills at the confirmation "
+                             "candle, which is what every run before 2026-09-25 "
+                             "did.")
     parser.add_argument("--honest-fill", action="store_true",
                         help="fill when the signal was KNOWABLE, not when it was "
                              "stamped. classify_entry_pattern() reads candles past "
@@ -217,6 +225,8 @@ def main():
 
     if args.honest_fill:
         extra['fill_at_signal_known'] = True
+    if args.entry_fill:
+        extra['entry_fill'] = args.entry_fill
     kwargs = slk_kwargs(**extra)
     if args.instruments.strip().upper() == "ALL":
         instruments = sorted(DUKASCOPY_INSTRUMENTS)
