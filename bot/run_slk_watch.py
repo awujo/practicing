@@ -208,6 +208,22 @@ def main():
                  "(reporting only -- nothing is traded)",
                  len(watchers), args.n)
 
+    # Say hello BEFORE bootstrapping, not after.
+    #
+    # The snapshot needs every instrument replayed, which is minutes on a
+    # box this busy, and a watcher that is silent for minutes is
+    # indistinguishable from one that never started -- the operator
+    # watched the log for ninety seconds, saw nothing arrive, and
+    # reasonably concluded it was broken. Proof of life must not wait on
+    # the slowest thing the process does.
+    try:
+        channel.note(f"[SLK] watcher starting on {len(watchers)} instruments, "
+                      f"n={args.n}.\nReporting only — nothing is traded.\n\n"
+                      f"Reading history now; the first snapshot follows in a "
+                      f"few minutes.")
+    except Exception:                                   # noqa: BLE001
+        logger.exception("could not send the startup ping")
+
     first = True
     while True:
         started = time.time()

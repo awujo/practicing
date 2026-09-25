@@ -130,8 +130,9 @@ def test_the_first_cycle_reports_no_historical_events(monkeypatch):
                         ["run_slk_watch", "--instruments", "EURUSD,GBPJPY",
                          "--n", "2", "--once"])
     main()
-    assert len(sent) == 1, "only the announcement, no replayed history"
-    assert "watching" in sent[0], "and that one message is the announcement"
+    assert len(sent) == 2, "the startup ping, then the snapshot"
+    assert "starting" in sent[0], "hello arrives before any bootstrapping"
+    assert "watching" in sent[1], "and the snapshot follows it"
 
 
 def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypatch):
@@ -190,8 +191,8 @@ def test_startup_announces_what_it_can_see(monkeypatch):
                          "--n", "2", "--once"])
     run_slk_watch.main()
 
-    assert len(sent) == 1, "exactly one announcement, not one per instrument"
-    text = sent[0]
+    assert len(sent) == 2, "one ping and one snapshot, not one per instrument"
+    text = sent[1]
     assert "watching 2 instruments" in text
     assert "nothing is traded" in text.lower()
     assert "changes only" in text
@@ -268,3 +269,49 @@ def test_rows_needed_is_generous_rather_than_tight():
     assert _rows_needed("W", 8) > 400
     assert _rows_needed("H1", None) == 0, "no window means read it all"
     assert _rows_needed("M5", 1) == 0, "an unknown granularity reads it all"
+
+
+def test_the_startup_ping_arrives_before_any_instrument_is_read(monkeypatch):
+    """Proof of life must not wait on the slowest thing the process does.
+
+    Bootstrapping 27 instruments takes minutes on a loaded box, and the
+    snapshot cannot be built until it finishes. A watcher that says
+    nothing for minutes is indistinguishable from one that never
+    started."""
+    order = []
+
+    class Channel:
+        def note(self, text):
+            order.append("message")
+            return True
+
+    def loud_load(*_a, **_k):
+        order.append("load")
+        return []
+
+    monkeypatch.setattr(run_slk_watch, "load_candles", loud_load)
+    monkeypatch.setattr(run_slk_watch, "load_recent_candles", loud_load)
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Channel()))
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "EURUSD,GBPJPY",
+                         "--n", "2", "--once"])
+    run_slk_watch.main()
+
+    assert order[0] == "message", "a candle was read before saying hello"
+
+
+def test_a_failed_startup_ping_does_not_stop_the_watcher(monkeypatch):
+    class Exploding:
+        def note(self, _text):
+            raise RuntimeError("telegram is down")
+
+    monkeypatch.setattr(run_slk_watch, "load_candles", lambda *_a, **_k: [])
+    monkeypatch.setattr(run_slk_watch, "load_recent_candles",
+                        lambda *_a, **_k: [])
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Exploding()))
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "EURUSD", "--n", "2",
+                         "--once"])
+    run_slk_watch.main()          # must not raise
