@@ -1,0 +1,213 @@
+"""
+Bias by every route, on every rung -- and in constant time.
+"""
+
+from __future__ import annotations
+
+import pandas as pd
+
+from ...engine.candles import Candle
+from ...engine.structure import Direction
+from ..cascade import BiasRoute, Cascade, _agree
+from ..stream import BreakTracker
+
+T0 = pd.Timestamp("2026-01-01")
+
+
+def c(i, o, h, l, cl, unit="hours"):
+    return Candle(time=T0 + pd.Timedelta(**{unit: i}), open=o, high=h, low=l,
+                  close=cl, volume=0)
+
+
+def rising_break(start_i, base, unit="hours"):
+    """Five candles leaving an A-shape at base+0.0040, then a close above
+    it. With n=2 the swing confirms two candles after it forms."""
+    return [c(start_i + 0, base, base + 0.0010, base - 0.0010, base, unit),
+            c(start_i + 1, base, base + 0.0020, base - 0.0005, base + 0.0010, unit),
+            c(start_i + 2, base + 0.0010, base + 0.0040, base, base + 0.0030, unit),
+            c(start_i + 3, base + 0.0030, base + 0.0035, base + 0.0015, base + 0.0020, unit),
+            c(start_i + 4, base + 0.0020, base + 0.0025, base + 0.0010, base + 0.0015, unit),
+            c(start_i + 5, base + 0.0015, base + 0.0060, base + 0.0010, base + 0.0050, unit)]
+
+
+# --- the one number that replaces the rescan ---------------------------
+
+def test_the_break_tracker_keeps_the_newest_broken_swing_s_formation_time():
+    """"Is there a swing formed after T that has since been broken?" is
+    answered by one number per direction. If the newest broken swing
+    formed after T the answer is yes, and if it did not then no swing
+    after T has been broken either -- because it is the newest."""
+    t = BreakTracker(2)
+    for bar in rising_break(0, 1.1000):
+        t.push(bar)
+
+    when = t.newest_break[Direction.BULLISH]
+    assert when == T0 + pd.Timedelta(hours=2), "the swing FORMED at index 2"
+    assert t.broke_after(T0 + pd.Timedelta(hours=1), Direction.BULLISH)
+    assert not t.broke_after(T0 + pd.Timedelta(hours=3), Direction.BULLISH)
+
+
+def test_a_wick_through_a_swing_is_not_a_break():
+    t = BreakTracker(2)
+    bars = rising_break(0, 1.1000)
+    last = bars[-1]
+    bars[-1] = Candle(time=last.time, open=last.open, high=last.high,
+                      low=last.low, close=1.1020, volume=0)   # wick only
+    for bar in bars:
+        t.push(bar)
+    assert Direction.BULLISH not in t.newest_break
+
+
+def test_nothing_broken_is_not_a_break_after_anything():
+    t = BreakTracker(2)
+    for i in range(10):
+        t.push(c(i, 1.10, 1.1005, 1.0995, 1.10))
+    assert not t.broke_after(T0, Direction.BULLISH)
+    assert not t.broke_after(T0, Direction.BEARISH)
+
+
+# --- one rung ----------------------------------------------------------
+
+def test_a_rejection_alone_is_not_a_bias():
+    """Condition 3 is something price must DO. bias.py says the same
+    thing; this is the incremental machine agreeing with it."""
+    route = BiasRoute(2)
+    for bar in _daily_rejection_at(1.0900):
+        route.push_higher(bar)
+    assert route.direction() is None, "the lower timeframe has not spoken"
+
+
+def test_the_rung_answers_once_the_lower_timeframe_breaks():
+    route = BiasRoute(2)
+    for bar in _daily_rejection_at(1.0900):
+        route.push_higher(bar)
+    # hour 120 is day 5, where the rejection landed: the break has to come
+    # AFTER it, or it says nothing about what the rejection started.
+    for bar in rising_break(126, 1.1000):
+        route.push_lower(bar)
+
+    got = route.direction()
+    assert got is not None
+    assert got[0] == Direction.BULLISH
+
+
+def test_a_break_that_predates_the_rejection_does_not_count():
+    """A swing broken before the rejection says nothing about what the
+    rejection started."""
+    route = BiasRoute(2)
+    for bar in rising_break(0, 1.1000):          # the break happens first
+        route.push_lower(bar)
+    for bar in _daily_rejection_at(1.0900, start=20):
+        route.push_higher(bar)
+    assert route.direction() is None
+
+
+def _daily_rejection_at(price, start=0):
+    """A V-shape at `price` confirmed with n=2, then a candle that
+    reaches down to it and closes back above."""
+    bars = [c(start + 0, price + 0.0030, price + 0.0040, price + 0.0020, price + 0.0030, "days"),
+            c(start + 1, price + 0.0030, price + 0.0035, price + 0.0010, price + 0.0015, "days"),
+            c(start + 2, price + 0.0015, price + 0.0020, price, price + 0.0010, "days"),
+            c(start + 3, price + 0.0010, price + 0.0025, price + 0.0005, price + 0.0020, "days"),
+            c(start + 4, price + 0.0020, price + 0.0040, price + 0.0015, price + 0.0035, "days")]
+    # now the rejection: down to the level, closing back above it
+    bars.append(c(start + 5, price + 0.0035, price + 0.0040, price - 0.0002,
+                  price + 0.0025, "days"))
+    return bars
+
+
+# --- the rungs together ------------------------------------------------
+
+def test_a_rung_says_nothing_when_its_two_routes_disagree():
+    """The source gives no precedence between a key level and liquidity
+    at the same rung, so neither is invented. An ambiguous story is not a
+    bias -- the same answer LiquidityBias gives when one candle sweeps a
+    high and a low at once."""
+    later = T0 + pd.Timedelta(days=1)
+    assert _agree((Direction.BULLISH, T0), (Direction.BEARISH, later)) is None
+    assert _agree((Direction.BULLISH, T0), None) == Direction.BULLISH
+    assert _agree(None, None) is None
+
+
+def test_agreeing_routes_give_the_newest_one():
+    later = T0 + pd.Timedelta(days=1)
+    assert _agree((Direction.BULLISH, T0),
+                  (Direction.BULLISH, later)) == Direction.BULLISH
+
+
+def test_all_four_routes_exist_on_the_cascade():
+    """Two of these were missing: the liquidity route ran only on the
+    Weekly and the key-level route only on the Daily, which was an
+    accident of the order they were built in. Bishop's checklist is
+    "previous daily weekly low sweep" -- daily OR weekly -- and
+    repeating-system t=60-66 says bias can be built "from any
+    timeframe"."""
+    cascade = Cascade(2)
+    assert cascade.upper_levels is not cascade.lower_levels
+    assert cascade.upper_liquidity is not cascade.lower_liquidity
+    assert cascade.direction() is None, "nothing pushed, nothing established"
+
+
+def test_the_daily_rung_wins_a_disagreement_with_the_weekly():
+    """"those two time frames are not in alignment, so that goes to the
+    four hours ... I CAN LEAVE THE WEEKLY, I use my daily at my four
+    hours" -- daily-routine t=399-417."""
+    cascade = Cascade(2)
+
+    # Force the two rungs to hold opposite answers by driving the routes
+    # directly: this is about the precedence rule, not about detection.
+    cascade.lower_levels._rejections[Direction.BEARISH].append(T0)
+    cascade.lower_levels._breaks.newest_break[Direction.BEARISH] = \
+        T0 + pd.Timedelta(hours=1)
+    cascade.upper_levels._rejections[Direction.BULLISH].append(T0)
+    cascade.upper_levels._breaks.newest_break[Direction.BULLISH] = \
+        T0 + pd.Timedelta(hours=1)
+
+    assert cascade.upper_levels.direction()[0] == Direction.BULLISH
+    assert cascade.direction() == Direction.BEARISH, "the daily rung wins"
+
+
+def test_the_weekly_rung_is_used_when_the_daily_has_no_answer():
+    """It is a fallback, not a filter. Making the weekly a requirement
+    would delete trades he explicitly still takes."""
+    cascade = Cascade(2)
+    cascade.upper_levels._rejections[Direction.BULLISH].append(T0)
+    cascade.upper_levels._breaks.newest_break[Direction.BULLISH] = \
+        T0 + pd.Timedelta(hours=1)
+
+    assert cascade.lower_levels.direction() is None
+    assert cascade.direction() == Direction.BULLISH
+
+
+def test_all_four_routes_actually_answer_on_real_shaped_data():
+    """Two of these were missing entirely, and a route that is wired but
+    never answers is dead code that looks alive. Counted over three
+    fixtures: this is reachability, not a frequency claim."""
+    from ..replay import replay
+    from .test_replay import _agg, _random_series
+    from .. import cascade as cascade_module
+
+    answered = set()
+    original = Cascade.direction
+
+    def spy(self):
+        for name in ("lower_levels", "lower_liquidity",
+                     "upper_levels", "upper_liquidity"):
+            route = getattr(self, name)
+            got = (route.direction() if name.endswith("levels")
+                   else cascade_module._as_pair(route))
+            if got is not None:
+                answered.add(name)
+        return original(self)
+
+    Cascade.direction = spy
+    try:
+        for seed in (3, 5, 11):
+            h1 = _random_series(seed, 24000)
+            replay(_agg(h1, 168), _agg(h1, 24), _agg(h1, 4), h1, n=2)
+    finally:
+        Cascade.direction = original
+
+    assert answered == {"lower_levels", "lower_liquidity",
+                        "upper_levels", "upper_liquidity"}, \
+        f"never answered: {sorted({'lower_levels', 'lower_liquidity', 'upper_levels', 'upper_liquidity'} - answered)}"

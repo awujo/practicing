@@ -23,6 +23,7 @@ Those are the same complaint, and this answers both.
 
 from __future__ import annotations
 
+import bisect
 from collections import deque
 
 from ..engine.candles import Candle
@@ -89,3 +90,48 @@ class LevelStream:
         if direction is None:
             return list(self.levels)
         return [l for l in self.levels if l.bias == direction]
+
+
+class BreakTracker:
+    """Which swings have been closed through, and when they formed.
+
+    Keeps only what the question needs: for each direction, the FORMATION
+    time of the newest swing that a later close has gone beyond. That one
+    number answers "was structure broken after T" for every T at once.
+
+    Swings are held sorted by price and consumed by bisect, so each candle
+    costs the levels it actually broke and nothing else.
+    """
+
+    def __init__(self, n: int):
+        self._levels = LevelStream(n)
+        self._highs: list[tuple[float, object]] = []   # A-shapes, broken by a close ABOVE
+        self._lows: list[tuple[float, object]] = []    # V-shapes, broken by a close BELOW
+        self.newest_break: dict[Direction, object] = {}
+
+    def push(self, candle: Candle):
+        """One closed candle of the lower timeframe."""
+        for lvl in self._levels.push(candle):
+            target = self._highs if lvl.shape == "A" else self._lows
+            bisect.insort(target, (lvl.price, lvl.time), key=lambda p: p[0])
+
+        # A close above an A-shape is a bullish break of structure.
+        cut = bisect.bisect_left(self._highs, candle.close, key=lambda p: p[0])
+        for _, when in self._highs[:cut]:
+            self._bump(Direction.BULLISH, when)
+        del self._highs[:cut]
+
+        cut = bisect.bisect_right(self._lows, candle.close, key=lambda p: p[0])
+        for _, when in self._lows[cut:]:
+            self._bump(Direction.BEARISH, when)
+        del self._lows[cut:]
+
+    def _bump(self, direction: Direction, when):
+        current = self.newest_break.get(direction)
+        if current is None or when > current:
+            self.newest_break[direction] = when
+
+    def broke_after(self, when, direction: Direction) -> bool:
+        """Has a swing that FORMED after `when` since been closed through?"""
+        newest = self.newest_break.get(direction)
+        return newest is not None and newest > when

@@ -127,8 +127,9 @@ from dataclasses import dataclass
 
 from ..engine.candles import Candle
 from ..engine.structure import Direction
-from .bias import breakout_after, rejected_at
+from .bias import rejected_at
 from .levels import KeyLevel, disrespected_by
+from .stream import BreakTracker
 
 
 @dataclass(frozen=True)
@@ -427,10 +428,11 @@ class LiquidityBias:
     err towards fewer trades, not towards flattering ones.
     """
 
-    def __init__(self):
+    def __init__(self, n: int):
         self._stream = LiquidityStream()
         self._taken: set[tuple[object, str]] = set()
         self.latest: tuple[Direction, object] | None = None
+        self._breaks = BreakTracker(n)
 
     def push(self, candle: Candle, closed_at: object) -> None:
         """One CLOSED higher-timeframe candle, and the time it closed.
@@ -455,18 +457,24 @@ class LiquidityBias:
         elif implied:
             self.latest = None            # a high and a low: no story
 
-    def direction(self, lower: list[Candle], n: int) -> Direction | None:
-        """The bias this sweep has established, once `lower` confirms it.
+    def push_lower(self, candle: Candle) -> None:
+        """One CLOSED candle of the next timeframe down -- the one that has
+        to break structure for the checklist's second item."""
+        self._breaks.push(candle)
 
-        `lower` is the next timeframe down, ending at now. None until it
-        breaks structure the same way -- the second checklist item is
-        something price must DO, the same as condition 3 of the other
-        route.
+    def direction(self) -> Direction | None:
+        """The bias this sweep has established, once the lower timeframe
+        has confirmed it.
+
+        None until it breaks structure the same way: the second checklist
+        item is something price must DO, the same as condition 3 of the
+        key-level route.
+
+        Answered from BreakTracker's one number per direction rather than
+        by rescanning the lower series. The rescan was quadratic and it is
+        what made a 24k-bar replay take 33 seconds -- see cascade.py.
         """
         if self.latest is None:
             return None
         direction, when = self.latest
-        idx = next((j for j, c in enumerate(lower) if c.time >= when), None)
-        if idx is None:
-            return None
-        return direction if breakout_after(lower, idx, direction, n) else None
+        return direction if self._breaks.broke_after(when, direction) else None

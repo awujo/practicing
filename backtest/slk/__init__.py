@@ -30,6 +30,7 @@ The modules, in the order the cascade uses them:
     levels      the four key-level shapes, and the polarity flip
     stream      those levels as they confirm, one candle at a time
     bias        rejection, closure, breakout on the next timeframe down
+    cascade     both bias routes on both rungs, answered in O(1)
     sweep       the L: liquidity taken, the nearest key level to it, and
                 the Weekly's contribution to bias
     confirmation the H1 open-close level, engulfed, then returned to

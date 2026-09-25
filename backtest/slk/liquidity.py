@@ -55,21 +55,34 @@ def untaken_extremes(periods: list[Candle], kind: str) -> list[float]:
     "Taken" is a trade through, not a close through -- liquidity is
     taken the moment price reaches it, which is the same reading the
     sweep half of the strategy uses everywhere else.
+
+    ONE BACKWARD PASS, NOT A SCAN PER PERIOD
+
+    A high is untaken exactly when it is above every high that came
+    after it, so walking backwards with a running maximum answers the
+    whole series in one go. The obvious version -- for each period, scan
+    everything later -- is quadratic, and profiling a 48k-bar replay put
+    27 of its 37 seconds right here, because the whole series is
+    recomputed on every call that asks for a target.
     """
     if len(periods) < 2:
         return []
     closed = periods[:-1]
 
     out = []
-    for i, period in enumerate(closed):
-        level = period.high if kind == "high" else period.low
-        later = closed[i + 1:]
-        if kind == "high":
-            if not any(c.high >= level for c in later):
-                out.append(level)
-        else:
-            if not any(c.low <= level for c in later):
-                out.append(level)
+    if kind == "high":
+        running = float("-inf")
+        for period in reversed(closed):
+            if period.high > running:      # no later high reached it
+                out.append(period.high)
+            running = max(running, period.high)
+    else:
+        running = float("inf")
+        for period in reversed(closed):
+            if period.low < running:
+                out.append(period.low)
+            running = min(running, period.low)
+    out.reverse()                          # chronological, as before
     return out
 
 

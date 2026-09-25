@@ -64,7 +64,8 @@ from .liquidity import target_for
 from .orders import OrderBook, PendingOrder
 from .entries import InducementWatch, ReactionWatch
 from .stream import LevelStream
-from .sweep import LiquidityBias, Setup, SetupStream, level_identity
+from .cascade import Cascade
+from .sweep import Setup, SetupStream, level_identity
 
 
 @dataclass
@@ -133,10 +134,9 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
     h4_close = [closes_at(c.time, h4_len) for c in h4]
     w_close = [closes_at(c.time, bar_length(weekly)) for c in weekly] if weekly else []
 
-    daily_levels = LevelStream(n)
     h4_levels = LevelStream(n)
+    cascade = Cascade(n)
     setups = SetupStream()
-    weekly_sweep = LiquidityBias()
     live: dict[object, Setup] = {}
     live_erl: dict[object, float] = {}
     reaction = ReactionWatch(n)
@@ -157,33 +157,24 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
         now = closes_at(bar.time, h1_len)
 
         # --- higher timeframes, but only what has CLOSED -------------
-        while di < len(daily) and d_close[di] <= now:
-            daily_levels.push(daily[di])
-            seen_daily.append(daily[di])
-            di += 1
         while wi < len(weekly) and w_close[wi] <= now:
-            weekly_sweep.push(weekly[wi], w_close[wi])
+            cascade.push_weekly(weekly[wi], w_close[wi])
             seen_weekly.append(weekly[wi])
             wi += 1
+        while di < len(daily) and d_close[di] <= now:
+            cascade.push_daily(daily[di], d_close[di])
+            seen_daily.append(daily[di])
+            di += 1
         while h4i < len(h4) and h4_close[h4i] <= now:
             h4_levels.push(h4[h4i])
-            # Bias, by either of the two routes the course gives, and
-            # recomputed only when a new H4 candle closes, which is when
-            # it can change.
-            #
-            #   key levels   a Daily level rejected, H4 breaking the same
-            #                way                       (bias-1 t=380-413)
-            #   liquidity    a previous Weekly extreme swept with the
-            #                other side standing, Daily breaking the same
-            #                way                 (daily-routine t=534-540)
-            #
-            # The Daily route wins when they disagree, because that is
-            # what he does: "I can leave the weekly, I use my daily at my
-            # four hours" (daily-routine t=413-417).
+            cascade.push_h4(h4[h4i])
+            # Bias, by every route the course gives on every rung it gives
+            # them -- key levels or liquidity, Weekly->Daily or
+            # Daily->H4, with the lower rung winning a disagreement
+            # ("I can leave the weekly, I use my daily at my four hours").
+            # See cascade.py; it answers in constant time.
             was = bias
-            bias = (_bias_now(daily_levels, seen_daily, h4[:h4i + 1], n)
-                    or weekly_sweep.direction(seen_daily, n)
-                    or bias)
+            bias = cascade.direction() or bias
             if bias != was and was is not None:
                 # "I had to go and cancel my limit order ... because [I]
                 # was analyzing this from the three hours, it was
@@ -335,18 +326,6 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
         prev_h1 = bar
 
     return done
-
-
-def _bias_now(daily_levels: LevelStream, seen_daily: list[Candle],
-              seen_h4: list[Candle], n: int) -> Direction | None:
-    """The newest daily level that has established a bias, or None."""
-    from .bias import bias_established
-
-    for level in reversed(daily_levels.standing()):
-        got = bias_established(seen_daily, seen_h4, level, n)
-        if got is not None:
-            return got
-    return None
 
 
 def _live_setup(bar: Candle, live: dict[object, Setup],

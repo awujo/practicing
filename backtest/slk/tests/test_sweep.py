@@ -327,7 +327,7 @@ def test_a_sweep_direction_is_the_formation_it_is_internal_to():
 def test_a_previous_weekly_low_swept_with_the_high_standing_is_bullish():
     """daily-routine t=534-540: "I have my checklist: previous daily
     weekly low sweep, what's daily breakout to the upside"."""
-    b = LiquidityBias()
+    b = LiquidityBias(2)
     b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
     assert b.latest is None, "a candle cannot sweep its own low"
 
@@ -339,7 +339,7 @@ def test_a_previous_weekly_low_swept_with_the_high_standing_is_bullish():
 def test_a_previous_weekly_high_swept_with_a_low_standing_is_bearish():
     """t=1012-1024, his words exactly: "previous weekly high sweep with a
     low standing"."""
-    b = LiquidityBias()
+    b = LiquidityBias(2)
     b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
     b.push(wk(1, 1.15, 1.22, 1.14, 1.16), wk_close(1))
     assert b.latest[0] == Direction.BEARISH
@@ -348,7 +348,7 @@ def test_a_previous_weekly_high_swept_with_a_low_standing_is_bearish():
 def test_taking_both_sides_of_one_period_leaves_no_story():
     """The single candle formation is a high AND a low. Once both are
     gone there is no expansion left to expect from it."""
-    b = LiquidityBias()
+    b = LiquidityBias(2)
     b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
     b.push(wk(1, 1.15, 1.25, 1.02, 1.10), wk_close(1))
     assert b.latest is None, "engulfed both extremes -- neither side stands"
@@ -357,44 +357,48 @@ def test_taking_both_sides_of_one_period_leaves_no_story():
 def test_the_checklist_needs_the_lower_timeframe_to_break_too():
     """Item two is something price must DO, exactly like condition 3 of
     the key-level route. A sweep on its own is not a bias."""
-    b = LiquidityBias()
+    b = LiquidityBias(2)
     b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
     b.push(wk(1, 1.15, 1.18, 1.04, 1.12), wk_close(1))
 
-    quiet = [dly(14 + i, 1.12, 1.125, 1.115, 1.12) for i in range(12)]
-    assert b.direction(quiet, n=2) is None, "no daily breakout, no bias"
+    for day in [dly(14 + i, 1.12, 1.125, 1.115, 1.12) for i in range(12)]:
+        b.push_lower(day)
+    assert b.direction() is None, "no daily breakout, no bias"
 
 
 def test_a_daily_break_before_the_sweep_does_not_count():
     """A weekly candle says a low went that week, not on which day. A
     daily break inside the same week could precede the sweep it is meant
     to confirm, so only days after the week's CLOSE are eligible."""
-    b = LiquidityBias()
-    b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
-    b.push(wk(1, 1.15, 1.18, 1.04, 1.12), wk_close(1))
-
-    # The SAME days that do establish the bias in the test below, moved
-    # back inside week 1. Using the identical shape is the point: it is a
-    # control, and without it this test would pass on a fixture that
-    # simply has no breakout in it -- which is how the first version of
-    # it passed while proving nothing.
+    # The SAME days on both sides of the week's close. Using the identical
+    # shape is the point: it is a control, and without it this test would
+    # pass on a fixture that simply has no breakout in it -- which is how
+    # the first version of it passed while proving nothing.
     inside = [dly(7, 1.12, 1.13, 1.11, 1.12),
               dly(8, 1.12, 1.14, 1.115, 1.13),
-              dly(9, 1.13, 1.16, 1.125, 1.15),
+              dly(9, 1.13, 1.16, 1.125, 1.15),      # the swing high
               dly(10, 1.15, 1.155, 1.14, 1.145),
               dly(11, 1.145, 1.15, 1.135, 1.14),
-              dly(12, 1.14, 1.18, 1.138, 1.17)]
+              dly(12, 1.14, 1.18, 1.138, 1.17)]     # closes above it
     after = [dly(14 + i, c.open, c.high, c.low, c.close)
              for i, c in enumerate(inside)]
 
-    assert b.direction(after, n=2) == Direction.BULLISH, \
+    def run(days):
+        b = LiquidityBias(2)
+        for day in days:
+            b.push_lower(day)
+        b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
+        b.push(wk(1, 1.15, 1.18, 1.04, 1.12), wk_close(1))
+        return b.direction()
+
+    assert run(after) == Direction.BULLISH, \
         "the control: after the close, this shape is a bias"
-    assert b.direction(inside, n=2) is None, \
+    assert run(inside) is None, \
         "the same shape before the close is not"
 
 
 def test_the_full_checklist_establishes_the_bias():
-    b = LiquidityBias()
+    b = LiquidityBias(2)
     b.push(wk(0, 1.10, 1.20, 1.05, 1.15), wk_close(0))
     b.push(wk(1, 1.15, 1.18, 1.04, 1.12), wk_close(1))
 
@@ -406,4 +410,6 @@ def test_the_full_checklist_establishes_the_bias():
             dly(17, 1.15, 1.155, 1.14, 1.145),
             dly(18, 1.145, 1.15, 1.135, 1.14),
             dly(19, 1.14, 1.18, 1.138, 1.17)]     # closes above 1.16
-    assert b.direction(days, n=2) == Direction.BULLISH
+    for day in days:
+        b.push_lower(day)
+    assert b.direction() == Direction.BULLISH
