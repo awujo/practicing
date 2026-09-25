@@ -130,9 +130,9 @@ def test_the_first_cycle_reports_no_historical_events(monkeypatch):
                         ["run_slk_watch", "--instruments", "EURUSD,GBPJPY",
                          "--n", "2", "--once"])
     main()
-    assert len(sent) == 2, "the startup ping, then the snapshot"
+    assert len(sent) >= 2, "the startup ping, then at least the closing line"
     assert "starting" in sent[0], "hello arrives before any bootstrapping"
-    assert "watching" in sent[1], "and the snapshot follows it"
+    assert "instruments with a bias" in sent[-1], "and the snapshot closes it"
 
 
 def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypatch):
@@ -191,11 +191,9 @@ def test_startup_announces_what_it_can_see(monkeypatch):
                          "--n", "2", "--once"])
     run_slk_watch.main()
 
-    assert len(sent) == 2, "one ping and one snapshot, not one per instrument"
-    text = sent[1]
-    assert "watching 2 instruments" in text
-    assert "nothing is traded" in text.lower()
-    assert "changes only" in text
+    assert "starting on 2 instruments" in sent[0]
+    assert "nothing is traded" in sent[0].lower()
+    assert "changes only" in sent[-1]
 
 
 def test_a_failed_announcement_does_not_stop_the_watcher(monkeypatch):

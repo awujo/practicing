@@ -179,3 +179,39 @@ def test_a_broken_channel_never_stops_the_watching():
         watcher.check()
     except RuntimeError:
         raise AssertionError("a dead channel took down the watcher")
+
+
+def test_each_instrument_gets_its_own_story_not_a_one_line_badge():
+    """Operator, 2026-09-25: "it shouldn't even be coming as a badge ...
+    it should be coming individual ... it's not even saying what the
+    daily did, it's not saying what the weekly did."
+
+    A one-liner cannot say any of that, and because it has to pick ONE
+    thing to name, the version this replaced named the Daily route every
+    time -- reporting "key level rejected" for all 27 instruments
+    regardless of what had actually carried the bias."""
+    h1 = series()
+    watcher = SLKWatcher("EURUSD", 2, Channel(), loader_for(h1))
+    watcher.check()
+
+    story = watcher.standing_story()
+    assert story, "no story at all"
+    assert "EURUSD" in story
+    assert "leads:" in story, "which rung is carrying the bias"
+    assert "Next:" in story, "and what to watch for now"
+    assert story.count("\n") > 3, "a story, not a line"
+
+
+def test_the_story_names_the_rung_that_is_not_leading_too():
+    """"It's not even saying if the weekly was dropped, it's not even
+    saying why it was dropped"."""
+    h1 = series()
+    watcher = SLKWatcher("EURUSD", 2, Channel(), loader_for(h1))
+    watcher.check()
+    story = watcher.standing_story()
+    assert "Which one leads:" in story, "the reason one rung leads"
+
+
+def test_no_bias_means_no_story_rather_than_an_empty_shell():
+    watcher = SLKWatcher("EURUSD", 2, Channel(), lambda *_: [])
+    assert watcher.standing_story() == ""

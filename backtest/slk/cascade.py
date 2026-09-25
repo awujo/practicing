@@ -61,6 +61,7 @@ finished making.
 from __future__ import annotations
 
 import bisect
+from dataclasses import dataclass, replace
 
 from ..engine.candles import Candle
 from ..engine.structure import Direction
@@ -149,8 +150,10 @@ class BiasRoute:
         if got is None:
             return None
         side, when = got
+        confirmed = self._breaks.broke_at.get(side) or (None, None)
         return Evidence(kind="rejection", direction=side, at=when,
-                        level=self._level_at.get(when))
+                        level=self._level_at.get(when),
+                        confirmed_at=confirmed[0], confirmed_price=confirmed[1])
 
 
 class Cascade:
@@ -209,12 +212,51 @@ class Cascade:
 
     def direction(self):
         """The bias standing now, or None."""
-        lower = _agree(self.lower_levels.direction(),
-                       _as_pair(self.lower_liquidity))
+        account = self.explain()
+        return account.direction
+
+    def explain(self) -> BiasAccount:
+        """The bias AND the reason for it, both rungs accounted for."""
+        lower_levels = self.lower_levels.direction()
+        lower_liquidity = _as_pair(self.lower_liquidity)
+        upper_levels = self.upper_levels.direction()
+        upper_liquidity = _as_pair(self.upper_liquidity)
+
+        lower = _agree(lower_levels, lower_liquidity)
+        upper = _agree(upper_levels, upper_liquidity)
+
+        lower_ev = (self.lower_levels.evidence()
+                    if lower_levels is not None and
+                    (lower_liquidity is None or lower_levels[1] >= lower_liquidity[1])
+                    else _liquidity_evidence(self.lower_liquidity))
+        upper_ev = (self.upper_levels.evidence()
+                    if upper_levels is not None and
+                    (upper_liquidity is None or upper_levels[1] >= upper_liquidity[1])
+                    else _liquidity_evidence(self.upper_liquidity))
+
         if lower is not None:
-            return lower
-        return _agree(self.upper_levels.direction(),
-                      _as_pair(self.upper_liquidity))
+            reason = ""
+            if upper is None:
+                reason = "the Weekly has not established one"
+            elif upper != lower:
+                # Exactly the case Bishop names: "those two time frames
+                # are not in alignment, so that goes to the four hours
+                # ... I can leave the weekly" (daily-routine t=399-417).
+                reason = (f"the Weekly says {upper.value} and the Daily says "
+                          f"{lower.value} — they disagree, so the Weekly is "
+                          f"left and the Daily leads")
+            else:
+                reason = "the Weekly agrees"
+            return BiasAccount(lower, "Daily", _stamp(lower_ev, "Daily", "H4"),
+                                "Weekly", upper, _stamp(upper_ev, "Weekly", "Daily"),
+                                reason)
+
+        if upper is not None:
+            return BiasAccount(upper, "Weekly",
+                                _stamp(upper_ev, "Weekly", "Daily"),
+                                "Daily", None, None,
+                                "the Daily has not established one of its own")
+        return BiasAccount(None)
 
 
 def _as_pair(route: LiquidityBias):
@@ -224,6 +266,43 @@ def _as_pair(route: LiquidityBias):
     if got is None or route.latest is None:
         return None
     return (got, route.latest[1])
+
+
+def _liquidity_evidence(route: LiquidityBias):
+    """That route's evidence, with the confirming break filled in."""
+    got = route.direction()
+    if got is None or route.evidence is None:
+        return None
+    confirmed = route.confirmation(got) or (None, None)
+    return replace(route.evidence, confirmed_at=confirmed[0],
+                    confirmed_price=confirmed[1])
+
+
+@dataclass(frozen=True)
+class BiasAccount:
+    """WHY the bias is what it is, in enough detail to tell the story.
+
+    The summary that prompted this said "key level rejected" for all 27
+    instruments, because it read the Daily route every time instead of
+    the one that actually carried the answer. A report that names the
+    wrong cause is worse than a terse one, so this records which rung
+    won, by which route, and what happened to the other rung.
+    """
+    direction: Direction | None
+    rung: str = ""                 # "Daily" (Daily->H4) or "Weekly" (Weekly->Daily)
+    evidence: object = None        # the Evidence that carried it
+    other_rung: str = ""           # the rung that did not lead
+    other_direction: Direction | None = None
+    other_evidence: object = None
+    dropped_reason: str = ""       # why the other rung is not leading
+
+
+def _stamp(evidence, higher: str, lower: str):
+    """Tell a piece of evidence which timeframes it belongs to, so a
+    sentence about it does not have to be told separately."""
+    if evidence is None:
+        return None
+    return replace(evidence, higher=higher, lower=lower)
 
 
 def _agree(*answers):

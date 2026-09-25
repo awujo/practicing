@@ -82,18 +82,65 @@ def confirmed_sentence(lower: str, direction) -> str:
     return f"{lower} then broke structure {way}, confirming it."
 
 
-def bias_story(evidence, higher: str, lower: str) -> list[str]:
-    """The whole reason one rung holds a bias, as lines of English."""
+def bias_story(evidence, higher: str = None, lower: str = None) -> list[str]:
+    """The whole reason one rung holds a bias, as lines of English.
+
+    Every line carries its own DATE, because "the Weekly rejected a key
+    level" with no date cannot be checked against a chart, and checking
+    it against a chart is the only thing these messages are for.
+    """
     if evidence is None:
         return []
+    higher = getattr(evidence, "higher", None) or higher or "The higher timeframe"
+    lower = getattr(evidence, "lower", None) or lower or "the next one down"
+
     if evidence.kind == "sweep":
         first = sweep_sentence(evidence, higher)
     else:
         first = rejection_sentence(evidence, higher)
-    lines = [f"  {first}"]
-    lines.append(f"  {confirmed_sentence(lower, evidence.direction)}")
     if evidence.at is not None:
-        lines.append(f"  (as of {_when(evidence.at)})")
+        first = first.rstrip(".") + f", on {_when(evidence.at)}."
+
+    second = confirmed_sentence(lower, evidence.direction)
+    if getattr(evidence, "confirmed_price", None) is not None:
+        second = second.rstrip(".") + (
+            f" — closing through {evidence.confirmed_price:g}")
+        if evidence.confirmed_at is not None:
+            second += f" on {_when(evidence.confirmed_at)}"
+        second += "."
+    elif getattr(evidence, "confirmed_at", None) is not None:
+        second = second.rstrip(".") + f", on {_when(evidence.confirmed_at)}."
+
+    return [f"  {first}", f"  {second}"]
+
+
+def account_story(account, instrument: str) -> list[str]:
+    """The whole bias, both rungs, and why one of them leads.
+
+    This replaces a one-line summary that said "key level rejected" for
+    all 27 instruments -- it read the Daily route every time rather than
+    the one that actually carried the answer. Naming the wrong cause is
+    worse than saying little, so the rung that leads, the rung that does
+    not, and the reason are all said out loud.
+    """
+    if account is None or account.direction is None:
+        return [f"{instrument}: no bias standing."]
+
+    side = _side(account.direction)
+    lines = [f"{instrument} — {side.upper()}", ""]
+
+    lines.append(f"{account.rung} leads:")
+    lines += bias_story(account.evidence) or ["  (no detail recorded)"]
+
+    if account.other_evidence is not None:
+        other = _side(account.other_direction) if account.other_direction else ""
+        lines += ["", f"{account.other_rung} says {other}:"]
+        lines += bias_story(account.other_evidence)
+    if account.dropped_reason:
+        lines += ["", f"Which one leads: {account.dropped_reason}."]
+
+    lines += ["", "Next: H4 single candle liquidity to be taken, then the",
+              "nearest key level to it, then a rejection from it."]
     return lines
 
 

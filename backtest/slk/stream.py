@@ -120,6 +120,11 @@ class BreakTracker:
         self._highs: list[tuple[float, object]] = []   # A-shapes, broken by a close ABOVE
         self._lows: list[tuple[float, object]] = []    # V-shapes, broken by a close BELOW
         self.newest_break: dict[Direction, object] = {}
+        # WHEN the close through happened, as opposed to when the swing
+        # it broke was formed. Both are needed to tell the story: "broke
+        # structure on the 21st" is the event; the swing's own date is
+        # not what a person means by that.
+        self.broke_at: dict[Direction, object] = {}
 
     def push(self, candle: Candle):
         """One closed candle of the lower timeframe."""
@@ -129,19 +134,20 @@ class BreakTracker:
 
         # A close above an A-shape is a bullish break of structure.
         cut = bisect.bisect_left(self._highs, candle.close, key=lambda p: p[0])
-        for _, when in self._highs[:cut]:
-            self._bump(Direction.BULLISH, when)
+        for price, when in self._highs[:cut]:
+            self._bump(Direction.BULLISH, when, candle.time, price)
         del self._highs[:cut]
 
         cut = bisect.bisect_right(self._lows, candle.close, key=lambda p: p[0])
-        for _, when in self._lows[cut:]:
-            self._bump(Direction.BEARISH, when)
+        for price, when in self._lows[cut:]:
+            self._bump(Direction.BEARISH, when, candle.time, price)
         del self._lows[cut:]
 
-    def _bump(self, direction: Direction, when):
+    def _bump(self, direction: Direction, when, broke_at, price):
         current = self.newest_break.get(direction)
         if current is None or when > current:
             self.newest_break[direction] = when
+            self.broke_at[direction] = (broke_at, price)
 
     def broke_after(self, when, direction: Direction) -> bool:
         """Has a swing that FORMED after `when` since been closed through?"""

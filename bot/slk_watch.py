@@ -80,14 +80,16 @@ class _Collector:
         return self.since is None or (at is not None and at > self.since)
 
     def on_bias(self, at=None, direction=None, cascade=None, was=None):
+        # The ACCOUNT, not a direction: which rung leads, by which route,
+        # what the other rung says and why it is not leading. The summary
+        # this replaced read the Daily route every time and so reported
+        # "key level rejected" for all 27 instruments regardless of what
+        # had actually carried the bias.
+        account = _account(cascade)
         if direction is not None:
-            self.standing = {"at": at, "direction": direction,
-                              "upper": _evidence(cascade, "upper"),
-                              "lower": _evidence(cascade, "lower")}
+            self.standing = {"at": at, "account": account}
         if self._fresh(at) and direction is not None:
-            self.bias.append({"at": at, "direction": direction, "was": was,
-                               "upper": _evidence(cascade, "upper"),
-                               "lower": _evidence(cascade, "lower")})
+            self.bias.append({"at": at, "was": was, "account": account})
 
     def on_setup(self, at=None, setup=None, direction=None, target=None):
         if self._fresh(at):
@@ -103,20 +105,18 @@ class _Collector:
                                         "setup": setup})
 
 
-def _evidence(cascade, rung: str):
-    """The evidence for one rung, or None. Never raises: a missing
-    description must not cost the message."""
+def _account(cascade):
+    """The cascade's own account of the bias, or None.
+
+    Never raises: a missing description must cost the detail, never the
+    message.
+    """
     if cascade is None:
         return None
     try:
-        levels = getattr(cascade, rung + "_levels", None)
-        liquidity = getattr(cascade, rung + "_liquidity", None)
-        from_levels = levels.evidence() if levels is not None else None
-        if from_levels is not None:
-            return from_levels
-        return getattr(liquidity, "evidence", None)
+        return cascade.explain()
     except Exception:                                   # noqa: BLE001
-        logger.exception("could not read %s evidence", rung)
+        logger.exception("could not read the bias account")
         return None
 
 
@@ -189,39 +189,33 @@ class SLKWatcher:
                                       self.instrument, send.__name__)
         return sent
 
-    def summary_line(self) -> str:
-        """One line for the startup announcement, or "" if there is no
-        bias standing. Short on purpose: 27 of these go in one message."""
-        if not self.standing:
-            return f"  {self.instrument:<8} no bias"
-        side = getattr(self.standing["direction"], "value", "")
-        evidence = self.standing.get("lower") or self.standing.get("upper")
-        kind = getattr(evidence, "kind", None)
-        how = {"sweep": "liquidity swept",
-               "rejection": "key level rejected"}.get(kind, "")
-        return f"  {self.instrument:<8} {side:<8} {how}"
+    def standing_story(self) -> str:
+        """The whole current bias for this instrument, as its own message.
+
+        One message PER INSTRUMENT, not a batch. Operator, 2026-09-25:
+        "it shouldn't even be coming as a badge ... it should be coming
+        individual ... it's not even saying what the daily did, it's not
+        saying what the weekly did." A list of 27 one-liners cannot say
+        any of that, and a summary that has to fit on one line will
+        always end up naming the wrong cause.
+        """
+        if not self.standing or not self.standing.get("account"):
+            return ""
+        return "🟢 [SLK] " + "\n".join(
+            narrative.account_story(self.standing["account"], self.instrument))
 
     def _send_bias(self, change) -> bool:
-        side = getattr(change["direction"], "value", change["direction"])
-        lines = [f"🟢 {self.instrument} — SLK BIAS {side}", "", "The story:"]
-
-        told = False
-        for rung, (higher, lower) in (("upper", UPPER), ("lower", LOWER)):
-            story = narrative.bias_story(change[rung], higher, lower)
-            if story:
-                lines += story + [""]
-                told = True
-        if not told:
-            # The bias changed but neither rung could describe itself. A
-            # message with no story is exactly what was asked against, so
-            # it is not sent at all.
-            logger.info("%s: bias %s with no evidence to describe -- not sent",
-                         self.instrument, side)
+        account = change.get("account")
+        if account is None or account.direction is None:
+            logger.info("%s: bias changed with no account to describe -- "
+                         "not sent", self.instrument)
             return False
-
-        lines.append("Now watching H4 for single candle liquidity to be taken,")
-        lines.append("then the nearest key level to it.")
-        return bool(self.channel.note("\n".join(lines).rstrip()))
+        lines = ["🟢 [SLK] BIAS CHANGE"]
+        if change.get("was") is not None:
+            lines.append(f"(was {getattr(change['was'], 'value', '')})")
+        lines.append("")
+        lines += narrative.account_story(account, self.instrument)
+        return bool(self.channel.note("\n".join(lines)))
 
     def _send_setup(self, item) -> bool:
         setup = item["setup"]

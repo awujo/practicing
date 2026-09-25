@@ -8,7 +8,8 @@ does not make sense to a person, it will not make sense on a phone.
 from __future__ import annotations
 
 from ...engine.structure import Direction
-from ..narrative import (bias_story, confirmation_story, confirmed_sentence,
+from ..narrative import (account_story, bias_story, confirmation_story,
+                         confirmed_sentence,
                          liquidity_taken_sentence, rejection_sentence,
                          setup_story, sweep_sentence)
 from ..sweep import Evidence
@@ -65,16 +66,66 @@ def test_the_lower_timeframe_confirmation_is_said_out_loud():
     assert "to the downside" in confirmed_sentence("Daily", Direction.BEARISH)
 
 
-def test_a_whole_bias_story_is_two_sentences_and_a_date():
+def test_every_line_of_a_bias_story_carries_its_own_date():
+    """"The Weekly rejected a key level" with no date cannot be checked
+    against a chart, and checking it against a chart is the only thing
+    these messages are for."""
     lines = bias_story(
         Evidence(kind="sweep", direction=Direction.BULLISH, at="2026-09-20 00:00",
-                 taken=1.0820, taken_kind="low", standing=1.1050),
+                 taken=1.0820, taken_kind="low", standing=1.1050,
+                 confirmed_at="2026-09-21 00:00", confirmed_price=1.0990),
         higher="Weekly", lower="Daily")
 
-    assert len(lines) == 3
-    assert "swept" in lines[0]
+    assert len(lines) == 2
+    assert "swept" in lines[0] and "2026-09-20" in lines[0]
     assert "Daily then broke structure to the upside" in lines[1]
-    assert "2026-09-20" in lines[2]
+    assert "closing through 1.099" in lines[1], "what the confirmation DID"
+    assert "2026-09-21" in lines[1], "and when"
+
+
+def test_the_timeframes_come_from_the_evidence_when_it_knows_them():
+    lines = bias_story(Evidence(kind="rejection", direction=Direction.BEARISH,
+                                 at="2026-09-22", level=1.1650,
+                                 higher="Daily", lower="H4"))
+    assert "Daily rejected" in lines[0]
+    assert "H4 then broke structure" in lines[1]
+
+
+def test_an_account_names_which_rung_leads_and_why():
+    """The summary this replaces said "key level rejected" for all 27
+    instruments, because it read the Daily route every time rather than
+    the one that actually carried the answer."""
+    from ..cascade import BiasAccount
+
+    account = BiasAccount(
+        direction=Direction.BEARISH, rung="Daily",
+        evidence=Evidence(kind="rejection", direction=Direction.BEARISH,
+                          at="2026-09-22", level=1.1650, higher="Daily",
+                          lower="H4", confirmed_at="2026-09-25",
+                          confirmed_price=1.1600),
+        other_rung="Weekly", other_direction=Direction.BULLISH,
+        other_evidence=Evidence(kind="sweep", direction=Direction.BULLISH,
+                                 at="2026-09-14", taken=1.0820,
+                                 taken_kind="low", standing=1.1050,
+                                 higher="Weekly", lower="Daily"),
+        dropped_reason="the Weekly says bullish and the Daily says bearish — "
+                        "they disagree, so the Weekly is left and the Daily leads")
+    text = "\n".join(account_story(account, "EURUSD"))
+
+    assert "EURUSD — BEARISH" in text
+    assert "Daily leads:" in text
+    assert "Daily rejected from its key level at 1.165" in text
+    assert "2026-09-22" in text
+    assert "Weekly says bullish" in text, "the rung that did NOT lead"
+    assert "swept a previous weekly low at 1.082" in text
+    assert "they disagree" in text, "and why it was left"
+    assert "single candle liquidity" in text, "what to watch next"
+
+
+def test_an_account_with_no_bias_says_so_plainly():
+    from ..cascade import BiasAccount
+    assert account_story(BiasAccount(None), "EURUSD") == \
+        ["EURUSD: no bias standing."]
 
 
 def test_no_evidence_is_no_story_rather_than_a_guess():

@@ -161,6 +161,10 @@ class Evidence:
     standing: float = None          # the other side of that same candle
     period_time: object = None      # the candle the liquidity belonged to
     level: float = None             # the key level rejected (a rejection)
+    confirmed_at: object = None     # when the lower timeframe broke structure
+    confirmed_price: float = None   # the swing price it closed through
+    higher: str = None              # which timeframe did the first half
+    lower: str = None               # which one confirmed it
 
 
 @dataclass(frozen=True)
@@ -646,3 +650,7 @@ class LiquidityBias:
             return None
         direction, when = self.latest
         return direction if self._breaks.broke_after(when, direction) else None
+
+    def confirmation(self, direction: Direction):
+        """(when, price) of the break that confirmed this sweep, or None."""
+        return self._breaks.broke_at.get(direction)

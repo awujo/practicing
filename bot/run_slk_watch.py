@@ -253,25 +253,42 @@ def main():
 
 
 def _announce(channel, watchers, n: int) -> None:
-    """One message at startup: what is being watched and where it stands."""
-    with_bias = [w for w in watchers if w.standing]
-    lines = [f"[SLK] watching {len(watchers)} instruments, n={n}",
-             "Reporting only — nothing is traded.", ""]
-    if with_bias:
-        lines.append(f"Bias standing right now ({len(with_bias)}):")
-        lines += [w.summary_line() for w in with_bias]
-    else:
-        lines.append("No bias standing on any pair right now.")
-    quiet = len(watchers) - len(with_bias)
+    """The opening snapshot: ONE MESSAGE PER INSTRUMENT with its story.
+
+    It used to be a single batched list of one-liners, and that was
+    wrong twice over. It could not say what the Weekly did, what the
+    Daily did, when either happened, or which rung was leading -- and
+    because a one-liner has to pick one thing to name, it named the
+    Daily route every time and reported "key level rejected" for all 27.
+
+    A short pause between sends: Telegram rate-limits a single chat at
+    roughly one message a second, and a burst of 27 would be throttled
+    or dropped, which would look exactly like the bug this is fixing.
+    """
+    told = 0
+    for watcher in watchers:
+        story = watcher.standing_story()
+        if not story:
+            continue
+        try:
+            channel.note(story)
+            told += 1
+            time.sleep(1.1)
+        except Exception:                               # noqa: BLE001
+            logger.exception("%s: could not send its opening story",
+                              watcher.instrument)
+
+    quiet = len(watchers) - told
+    tail = [f"[SLK] that is {told} of {len(watchers)} instruments with a bias "
+            f"standing."]
     if quiet:
-        lines.append(f"")
-        lines.append(f"The other {quiet} have no bias yet.")
-    lines += ["", "From here you will hear about changes only:",
-              "a bias forming, liquidity being taken, a confirmation."]
+        tail.append(f"The other {quiet} have none yet.")
+    tail += ["", "From here you will hear about changes only:",
+             "a bias forming, liquidity being taken, a confirmation."]
     try:
-        channel.note("\n".join(lines))
+        channel.note("\n".join(tail))
     except Exception:                                   # noqa: BLE001
-        logger.exception("could not send the startup announcement")
+        logger.exception("could not send the closing line")
 
 
 if __name__ == "__main__":
