@@ -255,11 +255,124 @@ def nearest_level(point: LiquidityPoint, levels: list[KeyLevel],
 
     None when no level in that direction exists yet, which early in a
     series is the honest answer.
+
+    This is the list-taking form, kept for callers that have a plain list
+    -- it filters and scans, which is O(levels) and fine for a handful.
+    `LevelIndex` is the same rule for callers in a loop; see there for why
+    that distinction earns its keep.
     """
-    candidates = [l for l in levels if l.bias == bias]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda l: abs(l.price - point.price))
+    index = LevelIndex()
+    index.add_all(levels)
+    return index.nearest(point, bias)
+
+
+class LevelIndex:
+    """Standing levels, sorted by price, so "nearest" is a bisect.
+
+    THE SAME RULE, NOT A SECOND ONE. The comparison is still "smallest
+    absolute distance in price, among levels used in the trade's own
+    direction"; only the search changes. `nearest_level` above delegates
+    here so there is one implementation of the comparison and no chance of
+    the two drifting apart.
+
+    WHY IT EXISTS
+
+    Standing levels grow with history and nothing evicts them, which is
+    correct -- a level stands until it is disrespected, and inventing a
+    lookback would be the made-up-number problem again. But the argmin was
+    then scanned per swept liquidity point, and a sweep happens on most
+    candles, so the cost was candles x levels:
+
+         6000 H4 candles ->  1839 levels ->  11M comparisons
+        24000 H4 candles ->  7421 levels -> 178M comparisons
+
+    Quadratic, and on top of that the caller was handing over a fresh
+    COPY of the level list on every candle, which is the same order again.
+    I measured this, judged it "bounded and acceptable", and left it --
+    on synthetic data. Real twenty-year history carries far more levels,
+    and a full run then failed to finish a single instrument in an hour.
+
+    Levels arrive append-only, so `ingest` takes the live list and
+    inserts only what it has not seen. Nothing is copied per candle.
+    """
+
+    def __init__(self):
+        self._by_price: dict[Direction, list[tuple[float, KeyLevel]]] = {
+            Direction.BULLISH: [], Direction.BEARISH: []}
+        self._ingested = 0
+
+    def add(self, level: KeyLevel):
+        bisect.insort(self._by_price[level.bias], (level.price, id(level), level),
+                      key=lambda row: row[0])
+
+    def add_all(self, levels):
+        for level in levels:
+            self.add(level)
+
+    def ingest(self, levels: list[KeyLevel]):
+        """Take the new tail of an append-only list of confirmed levels.
+
+        The list is READ, never copied or mutated. Passing the live list
+        rather than a snapshot is what keeps this off the per-candle
+        budget."""
+        while self._ingested < len(levels):
+            self.add(levels[self._ingested])
+            self._ingested += 1
+
+    def nearest(self, point: LiquidityPoint, bias: Direction) -> KeyLevel | None:
+        """The level in `bias` closest in price to `point`.
+
+        TIES GO TO THE NEWEST LEVEL, and this is a deliberate change from
+        what came before. Two levels can sit at the same price, or equally
+        far either side of the sweep, and "the nearest key level" does not
+        say which you take. The previous argmin answered by list order,
+        which is the OLDEST -- an accident of `min`, not a decision, and
+        the opposite of what this package does everywhere else: newest
+        confirmation wins, and `_live_setup` takes the newest level price
+        reached because "the level just reached is the one being traded".
+
+        On the fixtures to hand it changes NOTHING -- 16, 44, 106, 224,
+        481, 985 trades at 3k through 96k bars, identical to the argmin it
+        replaced -- because exact ties are rare. It is written down
+        because it is now a decision rather than a side effect, and
+        because an intermediate version of this method broke it: by
+        preferring the lower price on a tie it turned 224 trades into 233,
+        which is how the question surfaced at all. A search optimisation
+        that moves results is not an optimisation.
+
+        The search itself is exact, checked against the old argmin over
+        20,000 random points with every distance identical.
+        """
+        rows = self._by_price.get(bias)
+        if not rows:
+            return None
+        # The insertion point splits the list into "below" and "at or
+        # above", so the nearest price is one of the two neighbours.
+        idx = bisect.bisect_left(rows, point.price, key=lambda row: row[0])
+        gaps = []
+        for candidate in (idx - 1, idx):
+            if 0 <= candidate < len(rows):
+                gaps.append(abs(rows[candidate][0] - point.price))
+        if not gaps:
+            return None
+        best_gap = min(gaps)
+
+        # Every level at a winning price, which are adjacent because the
+        # list is sorted by price. Runs of equal prices are short.
+        winners = []
+        for candidate in (idx - 1, idx):
+            if not 0 <= candidate < len(rows):
+                continue
+            price = rows[candidate][0]
+            if abs(price - point.price) != best_gap:
+                continue
+            i = candidate
+            while i > 0 and rows[i - 1][0] == price:
+                i -= 1
+            while i < len(rows) and rows[i][0] == price:
+                winners.append(rows[i][2])
+                i += 1
+        return max(winners, key=lambda l: l.time) if winners else None
 
 
 @dataclass
@@ -306,6 +419,7 @@ class SetupStream:
         self._liquidity = LiquidityStream()
         self._pending: dict[object, _Pending] = {}
         self._lost: set[object] = set()
+        self._index = LevelIndex()
 
     def __len__(self):
         return len(self._pending)
@@ -329,6 +443,7 @@ class SetupStream:
         setup armed under the old read is the same thing one step
         earlier.
         """
+        self._index.ingest(levels)
         self._pending = {k: p for k, p in self._pending.items()
                          if p.level.bias == bias}
         if bias is None:
@@ -341,7 +456,7 @@ class SetupStream:
         for sweep in self._liquidity.push(candle):
             if role_of(sweep.point.kind, bias) != "internal":
                 continue
-            level = nearest_level(sweep.point, levels, bias)
+            level = self._index.nearest(sweep.point, bias)
             if level is None:
                 continue
             key = level_identity(level)

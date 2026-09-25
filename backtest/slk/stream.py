@@ -79,6 +79,18 @@ class LevelStream:
         self.levels.extend(found)
         return found
 
+    def confirmed(self) -> list[KeyLevel]:
+        """The live, append-only list of confirmed levels.
+
+        READ ONLY -- callers must not mutate it. `standing()` returns a
+        copy, which is right for a caller that wants a snapshot and wrong
+        for one asked on every candle: the copy alone is O(levels) per
+        candle, which is the same quadratic cost as the scan it was
+        feeding. Callers in a loop take this and track how far they have
+        read (see sweep.LevelIndex.ingest).
+        """
+        return self.levels
+
     def standing(self, direction: Direction | None = None) -> list[KeyLevel]:
         """Levels confirmed so far, newest last.
 

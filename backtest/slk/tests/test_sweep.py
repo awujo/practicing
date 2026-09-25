@@ -413,3 +413,80 @@ def test_the_full_checklist_establishes_the_bias():
     for day in days:
         b.push_lower(day)
     assert b.direction() == Direction.BULLISH
+
+
+# --- the level index: same rule, bisected -------------------------------
+
+from ..sweep import LevelIndex        # noqa: E402
+
+
+def _pt(price):
+    return LiquidityPoint(T0, price, "low")
+
+
+def test_the_index_finds_the_same_level_as_a_plain_argmin():
+    """A search optimisation must not change the answer. Checked against
+    the scan it replaced, because it silently did change one: see the
+    tie-break test below."""
+    import random
+
+    random.seed(1)
+    levels = []
+    for i in range(300):
+        price = round(random.uniform(1.0, 1.2), 5)
+        side = random.choice([Direction.BULLISH, Direction.BEARISH])
+        levels.append(KeyLevel(T0 + pd.Timedelta(hours=i), price,
+                               "V" if side == Direction.BULLISH else "A", side))
+
+    index = LevelIndex()
+    index.ingest(levels)
+    for _ in range(2000):
+        point = _pt(round(random.uniform(1.0, 1.2), 5))
+        for side in (Direction.BULLISH, Direction.BEARISH):
+            candidates = [l for l in levels if l.bias == side]
+            expected = min(abs(l.price - point.price) for l in candidates)
+            got = index.nearest(point, side)
+            assert abs(got.price - point.price) == expected
+
+
+def test_equidistant_levels_go_to_the_newest():
+    """"The nearest key level" does not say which of two equally near
+    ones you take. The old argmin answered by list order, so the OLDEST
+    won -- an accident of `min` rather than a decision, and the opposite
+    of what this package does everywhere else. Newest here is a decision
+    rather than a side effect; on the fixtures to hand it changes no trade
+    counts at all, because exact ties are rare."""
+    old = KeyLevel(T0, 1.0500, "V", Direction.BULLISH)
+    new = KeyLevel(T0 + pd.Timedelta(hours=5), 1.0500, "V", Direction.BULLISH)
+    index = LevelIndex()
+    index.ingest([old, new])
+
+    assert index.nearest(_pt(1.0480), Direction.BULLISH) is new
+    assert index.nearest(_pt(1.0520), Direction.BULLISH) is new
+
+
+def test_a_tie_across_two_different_prices_also_goes_to_the_newest():
+    older_below = KeyLevel(T0, 1.0490, "V", Direction.BULLISH)
+    newer_above = KeyLevel(T0 + pd.Timedelta(hours=5), 1.0510, "V",
+                           Direction.BULLISH)
+    index = LevelIndex()
+    index.ingest([older_below, newer_above])
+    assert index.nearest(_pt(1.0500), Direction.BULLISH) is newer_above
+
+
+def test_ingest_only_reads_the_new_tail_and_never_copies():
+    """Levels arrive append-only. Re-reading the whole list per candle was
+    the same quadratic cost as the scan it fed."""
+    live = [v(1.0500)]
+    index = LevelIndex()
+    index.ingest(live)
+    assert index.nearest(_pt(1.05), Direction.BULLISH).price == 1.0500
+
+    live.append(v(1.0600))                 # the caller appends in place
+    index.ingest(live)
+    assert index.nearest(_pt(1.0599), Direction.BULLISH).price == 1.0600
+    assert len(live) == 2, "ingest must not mutate the caller's list"
+
+
+def test_an_empty_index_is_none_not_an_error():
+    assert LevelIndex().nearest(_pt(1.05), Direction.BULLISH) is None

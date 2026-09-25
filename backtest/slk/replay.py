@@ -187,7 +187,7 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             # The setup, in the three steps the course gives: internal
             # range liquidity taken, the NEAREST key level to it, and a
             # rejection from that level (sweep.py).
-            for s in setups.push(h4[h4i], bias, h4_levels.standing()):
+            for s in setups.push(h4[h4i], bias, h4_levels.confirmed()):
                 key = level_identity(s.level)
                 live[key] = s
                 # The setup's own premise: from this level, price expands
