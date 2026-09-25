@@ -108,18 +108,76 @@ def test_an_account_names_which_rung_leads_and_why():
                                  at="2026-09-14", taken=1.0820,
                                  taken_kind="low", standing=1.1050,
                                  higher="Weekly", lower="Daily"),
-        dropped_reason="the Weekly says bullish and the Daily says bearish — "
-                        "they disagree, so the Weekly is left and the Daily leads")
+        dropped_reason="they disagree", alignment="not aligned")
     text = "\n".join(account_story(account, "EURUSD"))
 
     assert "EURUSD — BEARISH" in text
-    assert "Daily leads:" in text
+    assert "Daily says bearish:" in text
     assert "Daily rejected from its key level at 1.165" in text
     assert "2026-09-22" in text
     assert "Weekly says bullish" in text, "the rung that did NOT lead"
     assert "swept a previous weekly low at 1.082" in text
-    assert "they disagree" in text, "and why it was left"
     assert "single candle liquidity" in text, "what to watch next"
+
+
+def test_disagreement_is_the_headline_and_says_what_it_means():
+    """Operator, 2026-09-25: "you know if daily isn't in alignment with
+    weekly it's low probability, and it may just be a retracement in the
+    weekly."
+
+    The report used to say "Daily leads" on every instrument, which reads
+    as though the Weekly were not in the model at all."""
+    from ..cascade import BiasAccount
+
+    text = "\n".join(account_story(BiasAccount(
+        direction=Direction.BEARISH, rung="Daily",
+        evidence=Evidence(kind="rejection", direction=Direction.BEARISH,
+                          at="2026-09-22", level=1.1650, higher="Daily",
+                          lower="H4"),
+        other_rung="Weekly", other_direction=Direction.BULLISH,
+        other_evidence=Evidence(kind="sweep", direction=Direction.BULLISH,
+                                 at="2026-09-14", taken=1.0820,
+                                 taken_kind="low", standing=1.1050,
+                                 higher="Weekly", lower="Daily"),
+        alignment="not aligned"), "EURUSD"))
+
+    assert "NOT ALIGNED" in text and "lower probability" in text
+    assert "retracement inside the Weekly" in text
+    assert "targets a nearer liquidity" in text
+
+
+def test_agreement_is_called_out_as_the_high_probability_case():
+    from ..cascade import BiasAccount
+
+    text = "\n".join(account_story(BiasAccount(
+        direction=Direction.BULLISH, rung="Daily",
+        evidence=Evidence(kind="rejection", direction=Direction.BULLISH,
+                          at="2026-09-22", level=1.1650, higher="Daily",
+                          lower="H4"),
+        other_rung="Weekly", other_direction=Direction.BULLISH,
+        other_evidence=Evidence(kind="rejection", direction=Direction.BULLISH,
+                                 at="2026-09-14", level=1.1000,
+                                 higher="Weekly", lower="Daily"),
+        alignment="aligned"), "EURUSD"))
+
+    assert "ALIGNED" in text
+    assert "high-probability" in text
+
+
+def test_a_daily_only_bias_says_the_weekly_has_nothing_yet():
+    """Silence about the Weekly is what made it look unmodelled."""
+    from ..cascade import BiasAccount
+
+    text = "\n".join(account_story(BiasAccount(
+        direction=Direction.BULLISH, rung="Daily",
+        evidence=Evidence(kind="rejection", direction=Direction.BULLISH,
+                          at="2026-09-22", level=1.1650, higher="Daily",
+                          lower="H4"),
+        other_rung="Weekly", alignment="daily only"), "EURUSD"))
+
+    assert "no Weekly bias yet" in text
+    assert "Weekly: nothing established yet." in text
+    assert "Weaker than an aligned setup" in text
 
 
 def test_an_account_with_no_bias_says_so_plainly():

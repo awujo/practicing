@@ -235,27 +235,42 @@ class Cascade:
                     else _liquidity_evidence(self.upper_liquidity))
 
         if lower is not None:
-            reason = ""
+            # WHICH RUNG "LEADS" IS THE LESS INTERESTING QUESTION.
+            #
+            # This used to answer "Daily" whenever the Daily rung had an
+            # answer, which is nearly always -- so every instrument read
+            # "Daily leads" and the Weekly looked like it was not in the
+            # model at all. It is, and its agreement is the single thing
+            # that separates a high-probability setup from one that may
+            # be nothing but a retracement inside the Weekly. So the
+            # alignment is what the account leads with now.
             if upper is None:
-                reason = "the Weekly has not established one"
+                alignment = "daily only"
+                reason = ("the Weekly has not established a bias of its own "
+                          "yet, so there is nothing to align with")
             elif upper != lower:
-                # Exactly the case Bishop names: "those two time frames
-                # are not in alignment, so that goes to the four hours
-                # ... I can leave the weekly" (daily-routine t=399-417).
+                # Bishop's own case: "those two time frames are not in
+                # alignment, so that goes to the four hours ... I can
+                # leave the weekly. I probably just target a good
+                # liquidity" (daily-routine t=399-417) -- he still trades
+                # it, and he takes less out of it.
+                alignment = "not aligned"
                 reason = (f"the Weekly says {upper.value} and the Daily says "
                           f"{lower.value} — they disagree, so the Weekly is "
                           f"left and the Daily leads")
             else:
-                reason = "the Weekly agrees"
+                alignment = "aligned"
+                reason = "the Weekly and the Daily agree"
             return BiasAccount(lower, "Daily", _stamp(lower_ev, "Daily", "H4"),
                                 "Weekly", upper, _stamp(upper_ev, "Weekly", "Daily"),
-                                reason)
+                                reason, alignment)
 
         if upper is not None:
             return BiasAccount(upper, "Weekly",
                                 _stamp(upper_ev, "Weekly", "Daily"),
                                 "Daily", None, None,
-                                "the Daily has not established one of its own")
+                                "the Daily has not established one of its own",
+                                "weekly only")
         return BiasAccount(None)
 
 
@@ -295,6 +310,15 @@ class BiasAccount:
     other_direction: Direction | None = None
     other_evidence: object = None
     dropped_reason: str = ""       # why the other rung is not leading
+    # The thing that actually decides quality, and the thing a report
+    # that always says "Daily leads" hides completely:
+    #   "aligned"      Weekly and Daily agree -- the high-probability case
+    #   "not aligned"  they disagree. Tradeable, but it may be nothing more
+    #                  than a retracement inside the Weekly, and Bishop
+    #                  takes a nearer target when he takes it at all
+    #   "daily only"   the Weekly has established nothing yet
+    #   "weekly only"  the Daily has not
+    alignment: str = ""
 
 
 def _stamp(evidence, higher: str, lower: str):

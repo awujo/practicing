@@ -127,21 +127,55 @@ def account_story(account, instrument: str) -> list[str]:
         return [f"{instrument}: no bias standing."]
 
     side = _side(account.direction)
-    lines = [f"{instrument} — {side.upper()}", ""]
+    head, note = _alignment(account, side)
+    lines = [f"{instrument} — {side.upper()}  ({head})", ""]
+    if note:
+        lines += [note, ""]
 
-    lines.append(f"{account.rung} leads:")
+    lines.append(f"{account.rung} says {side}:")
     lines += bias_story(account.evidence) or ["  (no detail recorded)"]
 
     if account.other_evidence is not None:
         other = _side(account.other_direction) if account.other_direction else ""
         lines += ["", f"{account.other_rung} says {other}:"]
         lines += bias_story(account.other_evidence)
-    if account.dropped_reason:
-        lines += ["", f"Which one leads: {account.dropped_reason}."]
+    elif account.other_rung:
+        lines += ["", f"{account.other_rung}: nothing established yet."]
 
     lines += ["", "Next: H4 single candle liquidity to be taken, then the",
               "nearest key level to it, then a rejection from it."]
     return lines
+
+
+def _alignment(account, side: str):
+    """The headline and the health warning.
+
+    Operator, 2026-09-25: "you know if daily isn't in alignment with
+    weekly it's low probability, and it may just be a retracement in the
+    weekly." That is the single most important thing about a bias and the
+    old report did not carry it at all -- it said "Daily leads" on every
+    instrument, which reads as though the Weekly were not in the model.
+    """
+    state = getattr(account, "alignment", "")
+    if state == "aligned":
+        return ("Weekly and Daily ALIGNED",
+                f"Both timeframes agree {side}. This is the high-probability "
+                f"case.")
+    if state == "not aligned":
+        other = _side(account.other_direction) if account.other_direction else ""
+        return ("NOT ALIGNED — lower probability",
+                f"The Weekly is {other} and the Daily is {side}. They "
+                f"disagree, so this may be no more than a retracement inside "
+                f"the Weekly. Tradeable, but take less out of it — Bishop "
+                f"leaves the Weekly here and targets a nearer liquidity.")
+    if state == "daily only":
+        return ("Daily only — no Weekly bias yet",
+                "The Weekly has not established a bias of its own, so there "
+                "is nothing to align with. Weaker than an aligned setup.")
+    if state == "weekly only":
+        return ("Weekly only — Daily has not confirmed",
+                "The Daily has not established a bias of its own yet.")
+    return ("", "")
 
 
 def liquidity_taken_sentence(instrument: str, direction, price: float,
