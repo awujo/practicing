@@ -177,12 +177,12 @@ def test_every_trade_can_name_the_liquidity_it_was_taken_on():
         for t in trades:
             assert t.liquidity is not None, "entitled by nothing"
             assert t.setup_price is not None, "no key level being played"
+            assert t.form in {"engulf", "inducement", "breakout",
+                              "sweep_break"}, f"unknown form {t.form!r}"
             if t.direction == Direction.BULLISH:
-                assert t.liquidity >= t.stop, \
-                    "a buy is entitled by a LOW being taken, below the entry"
+                assert t.stop < t.entry, "a buy stops below its entry"
             else:
-                assert t.liquidity <= t.stop, \
-                    "a sell is entitled by a HIGH being taken, above the entry"
+                assert t.stop > t.entry, "a sell stops above its entry"
 
 
 def test_the_ambiguous_fill_is_carried_onto_the_trade():
@@ -201,3 +201,51 @@ def test_the_ambiguous_fill_is_carried_onto_the_trade():
     assert flagged, "this fixture does produce them -- 2 of 6"
     assert all(t.outcome == "stop" for t in flagged), \
         "filled then stopped, by assumption, on the same bar"
+
+
+def test_every_confirmation_form_is_reachable_through_the_driver():
+    """A form that is wired but never fires is dead code that looks
+    alive, and three of these four were added in one go.
+
+    Seeds chosen because they produce the rare ones: the engulf has by
+    far the most opportunities (any two same-direction candles leave a
+    level that can be engulfed), so the others need looking for. This is
+    a reachability test, not a frequency claim -- the split on a random
+    walk says nothing about the split on a market."""
+    seen = set()
+    for seed in (5, 16, 18):
+        h1_bars = _random_series(seed=seed, bars=6000)
+        for t in replay(_agg(h1_bars, 168), _agg(h1_bars, 24),
+                        _agg(h1_bars, 4), h1_bars, n=2):
+            seen.add(t.form)
+
+    wanted = {"engulf", "breakout", "sweep_break", "inducement"}
+    assert seen == wanted, f"unreachable: {sorted(wanted - seen)}"
+
+
+def test_a_setup_ends_when_its_own_liquidity_is_taken_without_us():
+    """What gives a setup a lifetime without inventing a candle count
+    for one. The premise was an expansion to the next external
+    liquidity; if price gets there and we never entered, the move
+    happened -- "after external liquidity is taken, expect a reversal"
+    (bd2 t=615-645)."""
+    from ..orders import OrderBook
+
+    reasons = []
+    original = OrderBook.cancel
+
+    def spy(self, key, reason):
+        reasons.append(reason)
+        return original(self, key, reason)
+
+    OrderBook.cancel = spy
+    try:
+        h1_bars = _random_series(seed=5, bars=4000)
+        replay(_agg(h1_bars, 168), _agg(h1_bars, 24), _agg(h1_bars, 4),
+               h1_bars, n=2)
+    finally:
+        OrderBook.cancel = original
+
+    assert "external liquidity taken without us" in reasons, \
+        "the expiry never fired, so setups have no lifetime at all"
+    assert "level disrespected" in reasons, "the taught invalidation too"

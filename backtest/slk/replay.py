@@ -28,11 +28,19 @@ THE CASCADE, IN THE ORDER THE COURSE GIVES IT
                 Daily route wins a disagreement.
     setup       on H4: internal range liquidity taken, the NEAREST key
                 level to it, and a rejection from that level (sweep.py)
-    entry       on H1: two same-direction candles leave an open-close
-                level, a later candle CLOSES THROUGH it, and price
-                RETURNS to it (confirmation.py)
-    stop        the engulfing candle's own far side
+    entry       on H1, any of four forms: the open-close engulf
+                (confirmation.py), or inducement, breakout and
+                sweep-and-break (entries.py). One order at a time per
+                setup, newest confirmation winning.
+    stop        the far side of the candle that confirmed -- "in the wick
+                of the confirming candle", SLK_SPEC 6
     target      the nearest untaken external liquidity (liquidity.py)
+
+A setup stays watched from the bar price reaches it until it fills, its
+key level is closed through, or price reaches the external liquidity
+that was its whole premise. That last one is what gives a setup a
+lifetime without a candle count, and the course supplies it: after
+external liquidity is taken, expect a reversal.
 
 WHAT IS NOT MODELLED, AND IS NOT PRETENDED AWAY
 
@@ -54,6 +62,7 @@ from .confirmation import OpenCloseLevel, open_close_level, stop_for
 from .levels import disrespected_by, returned_to
 from .liquidity import target_for
 from .orders import OrderBook, PendingOrder
+from .entries import InducementWatch, ReactionWatch
 from .stream import LevelStream
 from .sweep import LiquidityBias, Setup, SetupStream, level_identity
 
@@ -68,6 +77,8 @@ class Trade:
     level_price: float
     setup_price: float = None      # the H4 key level being played
     liquidity: float = None        # the liquidity taken that entitled it
+    form: str = None               # which confirmation let it in
+    mitigation: float = None       # the shallow depth, for measurement
     exit_time: object = None
     exit: float = None
     outcome: str = "open"          # "target" | "stop" | "open"
@@ -127,6 +138,10 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
     setups = SetupStream()
     weekly_sweep = LiquidityBias()
     live: dict[object, Setup] = {}
+    live_erl: dict[object, float] = {}
+    reaction = ReactionWatch(n)
+    inducement = InducementWatch()
+    watching: Setup | None = None
     engulfs_pending = _EngulfBook()
     book = OrderBook()
 
@@ -175,16 +190,26 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 # selling" -- video-03 t=1892-1914. The analysis went, so
                 # everything it justified goes with it.
                 live.clear()
+                live_erl.clear()
                 book.cancel_all("bias flipped")
 
             # The setup, in the three steps the course gives: internal
             # range liquidity taken, the NEAREST key level to it, and a
             # rejection from that level (sweep.py).
             for s in setups.push(h4[h4i], bias, h4_levels.standing()):
-                live[level_identity(s.level)] = s
+                key = level_identity(s.level)
+                live[key] = s
+                # The setup's own premise: from this level, price expands
+                # to the next external liquidity. Recorded now so that
+                # reaching it later can END the setup -- "after external
+                # liquidity is taken, expect a reversal" (bd2 t=615-645).
+                erl = target_for(s.level.price, bias, seen_daily, seen_weekly)
+                if erl is not None:
+                    live_erl[key] = erl
             for key, s in list(live.items()):
                 if disrespected_by(h4[h4i], s.level):
                     del live[key]
+                    live_erl.pop(key, None)
                     book.cancel(key, "level disrespected")
             h4i += 1
 
@@ -203,12 +228,15 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             # The setup is spent. "It's about using it when the first
             # time it presented itself" -- operator, 2026-09-22.
             live.pop(fill.order.level_key, None)
+            live_erl.pop(fill.order.level_key, None)
             t = Trade(entry_time=bar.time, entry=fill.order.entry,
                       stop=fill.order.stop, target=fill.order.target,
                       direction=fill.order.direction,
                       level_price=fill.order.entry,
                       setup_price=fill.order.level_key[1],
                       liquidity=fill.order.liquidity,
+                      form=fill.order.confirmation,
+                      mitigation=fill.order.mitigation,
                       same_candle_stop=fill.same_candle_stop)
             if fill.same_candle_stop:
                 _close(t, bar, t.stop, "stop")
@@ -216,18 +244,51 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             else:
                 open_trades.append(t)
 
+        # --- setups that ran without us ------------------------------
+        # The premise was an expansion to the next external liquidity. If
+        # price gets there and we never entered, the move happened and
+        # there is nothing left to trade -- and this is what gives a
+        # setup a lifetime without inventing a candle count for one.
+        for key, s in list(live.items()):
+            erl = live_erl.get(key)
+            if erl is None:
+                continue
+            got_there = (bar.high >= erl if s.level.bias == Direction.BULLISH
+                         else bar.low <= erl)
+            if got_there:
+                del live[key]
+                del live_erl[key]
+                book.cancel(key, "external liquidity taken without us")
+
+        # --- which setup is being watched ----------------------------
+        # The reaction that produces a confirmation happens NEAR the key
+        # level, not on it -- "you're NOT setting your limit directly at
+        # the four-hour key level. You're expecting price to trade into
+        # your key level of interest, and then start giving you a
+        # reaction from that key level" (part5 t=303-315). So the setup
+        # stays watched from the bar price reaches it until it is filled,
+        # disrespected, or overtaken by the expansion above.
+        touched = _live_setup(bar, live, bias) if bias is not None else None
+        if touched is not None:
+            watching = touched
+        if watching is not None and level_identity(watching.level) not in live:
+            watching = None
+        watched = watching.level if watching is not None else None
+
         # --- new confirmations ---------------------------------------
         if prev_h1 is not None:
             formed = open_close_level(prev_h1, bar)
             if formed is not None:
                 engulfs_pending.add(formed)
 
+        engulfed_here = False
         for level in engulfs_pending.consume(bar.close):
             if bias is None or level.direction != bias:
                 continue
-            setup = _live_setup(bar, live, bias)
+            setup = watching
             if setup is None:
                 continue
+            engulfed_here = True
             target = target_for(level.price, bias, seen_daily, seen_weekly)
             if target is None:
                 continue
@@ -243,7 +304,33 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 level_key=level_identity(setup.level),
                 entry=level.price, stop=stop, target=target,
                 direction=bias, placed_at=bar.time, confirmation="engulf",
-                liquidity=setup.sweep.point.price))
+                liquidity=setup.sweep.point.price,
+                # The shallow mitigation depth: the line-chart peak the
+                # engulf leaves is the second candle's own close, and
+                # 4th man's 5.1 is a return to THAT rather than to the
+                # open. Recorded, not traded -- entries.py says why.
+                mitigation=level.second_close))
+
+        # --- Bishop's two best forms, and 4th man's third -------------
+        for got in (reaction.push(bar, bias, watched),
+                    inducement.push(bar, bias, watched)):
+            if got is None:
+                continue
+            target = target_for(got.entry, bias, seen_daily, seen_weekly)
+            if target is None:
+                continue
+            if not _stop_beyond(got.entry, got.stop, bias):
+                continue
+            book.place(PendingOrder(
+                level_key=level_identity(watching.level),
+                entry=got.entry, stop=got.stop, target=target,
+                direction=bias, placed_at=bar.time, confirmation=got.form,
+                liquidity=watching.sweep.point.price))
+
+        if engulfed_here:
+            # The candidate inducement is the candle AFTER the engulf, so
+            # this is told last and decides nothing now.
+            inducement.engulfed(bar)
 
         prev_h1 = bar
 

@@ -33,17 +33,28 @@ The modules, in the order the cascade uses them:
     sweep       the L: liquidity taken, the nearest key level to it, and
                 the Weekly's contribution to bias
     confirmation the H1 open-close level, engulfed, then returned to
+    entries     the other forms: inducement, breakout, sweep-and-break
     liquidity   external range liquidity, as the target
     orders      one resting order per level, newest confirmation wins
     replay      the driver that walks H1 forward and does all of it
 
 WHAT IS STILL NOT BUILT, listed so it cannot be mistaken for finished:
 
-    four of the five confirmation forms -- direct mitigation (video-14
-    5.1), inducement (5.3), Bishop's breakout (5.4) and sweep-and-break
-    (5.5). Only the open-close engulf (5.2) is in. These ADD entries, so
-    every number this package produces is a floor, not an estimate
+    4th man's direct mitigation (5.1) is not a separate order. On a line
+    chart it is the SAME event as the open-close engulf at a shallower
+    depth, and the operator specified the deeper one in their own words.
+    The shallow depth is recorded on every engulf order so it can be
+    measured; entries.py sets out the reasoning in full
 
-    the polarity flip is detected and honoured as an ending, but a
-    flipped level is never traded the other way
+    the entry timeframe is H1 only. The source's own ladder reaches M5
+    (part5 frames, "H3/H2/H1/M45/M30/M5"), and the operator scoped it on
+    2026-09-19: "for now we can use only 1H". A known lever, not a gap
+
+    a flipped key level is only traded the other way inside a reaction
+    (entries.ReactionWatch); the level stream itself still drops a
+    disrespected level rather than flipping it
+
+    spread and slippage. The reporting layer charges spread per trade
+    against that trade's own risk, which is honest arithmetic applied
+    afterwards rather than a fill simulation
 """

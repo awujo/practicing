@@ -89,6 +89,7 @@ class PendingOrder:
     placed_at: object
     confirmation: str          # which form let this one in
     liquidity: float = None    # the liquidity whose taking entitled it
+    mitigation: float = None   # the shallow mitigation depth, if any
 
 
 class OrderBook:
