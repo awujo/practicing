@@ -74,6 +74,12 @@ class PendingOrder:
     `level_key` is what "one at a time per level" is counted on. Two
     orders sharing it are the same level being re-confirmed, and the
     newer one replaces the older.
+
+    `liquidity` is the price of the internal range liquidity whose
+    taking entitled the setup (sweep.py). It is carried purely so it
+    reaches the report: an order that cannot name the liquidity it was
+    taken on is an order that is not SLK, and the only way to see that
+    is to print it next to the chart.
     """
     level_key: object
     entry: float
@@ -82,6 +88,7 @@ class PendingOrder:
     direction: Direction
     placed_at: object
     confirmation: str          # which form let this one in
+    liquidity: float = None    # the liquidity whose taking entitled it
 
 
 class OrderBook:

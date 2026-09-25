@@ -23,7 +23,8 @@ THE CASCADE, IN THE ORDER THE COURSE GIVES IT
 
     bias        a Daily key level rejected and closed through, then H4
                 breaking structure the same way (bias.py)
-    setup       an H4 key level in that direction, reached by price
+    setup       on H4: internal range liquidity taken, the NEAREST key
+                level to it, and a rejection from that level (sweep.py)
     entry       on H1: two same-direction candles leave an open-close
                 level, a later candle CLOSES THROUGH it, and price
                 RETURNS to it (confirmation.py)
@@ -46,11 +47,12 @@ from dataclasses import dataclass
 from ..engine.candles import Candle
 from ..engine.structure import Direction
 from ..engine.timeframes import bar_length, closes_at
-from .confirmation import OpenCloseLevel, engulfs, open_close_level, stop_for
-from .levels import KeyLevel, returned_to
+from .confirmation import OpenCloseLevel, open_close_level, stop_for
+from .levels import disrespected_by, returned_to
 from .liquidity import target_for
-from .orders import Fill, OrderBook, PendingOrder
+from .orders import OrderBook, PendingOrder
 from .stream import LevelStream
+from .sweep import Setup, SetupStream, level_identity
 
 
 @dataclass
@@ -61,6 +63,8 @@ class Trade:
     target: float
     direction: Direction
     level_price: float
+    setup_price: float = None      # the H4 key level being played
+    liquidity: float = None        # the liquidity taken that entitled it
     exit_time: object = None
     exit: float = None
     outcome: str = "open"          # "target" | "stop" | "open"
@@ -117,6 +121,8 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
 
     daily_levels = LevelStream(n)
     h4_levels = LevelStream(n)
+    setups = SetupStream()
+    live: dict[object, Setup] = {}
     engulfs_pending = _EngulfBook()
     book = OrderBook()
 
@@ -140,12 +146,29 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
             seen_weekly.append(weekly[wi])
             wi += 1
         while h4i < len(h4) and h4_close[h4i] <= now:
-            for lvl in h4_levels.push(h4[h4i]):
-                pass
+            h4_levels.push(h4[h4i])
             # Bias: the most recent daily level price has rejected, with
             # H4 then breaking the same way. Recomputed only when a new
             # H4 candle closes, which is when it can change.
-            bias = _bias_now(daily_levels, seen_daily, h4[:h4i + 1], n) or bias
+            was, bias = bias, _bias_now(daily_levels, seen_daily,
+                                        h4[:h4i + 1], n) or bias
+            if bias != was and was is not None:
+                # "I had to go and cancel my limit order ... because [I]
+                # was analyzing this from the three hours, it was
+                # selling" -- video-03 t=1892-1914. The analysis went, so
+                # everything it justified goes with it.
+                live.clear()
+                book.cancel_all("bias flipped")
+
+            # The setup, in the three steps the course gives: internal
+            # range liquidity taken, the NEAREST key level to it, and a
+            # rejection from that level (sweep.py).
+            for s in setups.push(h4[h4i], bias, h4_levels.standing()):
+                live[level_identity(s.level)] = s
+            for key, s in list(live.items()):
+                if disrespected_by(h4[h4i], s.level):
+                    del live[key]
+                    book.cancel(key, "level disrespected")
             h4i += 1
 
         # --- exits first: a bar can close a position and open none ---
@@ -160,10 +183,15 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
 
         # --- fills: orders resting at their level --------------------
         for fill in book.fills(bar):
+            # The setup is spent. "It's about using it when the first
+            # time it presented itself" -- operator, 2026-09-22.
+            live.pop(fill.order.level_key, None)
             t = Trade(entry_time=bar.time, entry=fill.order.entry,
                       stop=fill.order.stop, target=fill.order.target,
                       direction=fill.order.direction,
                       level_price=fill.order.entry,
+                      setup_price=fill.order.level_key[1],
+                      liquidity=fill.order.liquidity,
                       same_candle_stop=fill.same_candle_stop)
             if fill.same_candle_stop:
                 _close(t, bar, t.stop, "stop")
@@ -180,7 +208,7 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
         for level in engulfs_pending.consume(bar.close):
             if bias is None or level.direction != bias:
                 continue
-            setup = _at_h4_level(bar, h4_levels, bias)
+            setup = _live_setup(bar, live, bias)
             if setup is None:
                 continue
             target = target_for(level.price, bias, seen_daily, seen_weekly)
@@ -195,9 +223,10 @@ def replay(weekly: list[Candle], daily: list[Candle], h4: list[Candle],
                 # reaction replaces it -- operator, 2026-09-25,
                 # "newest confirmation wins, one order at a time per
                 # level".
-                level_key=(setup.time, setup.price, bias),
+                level_key=level_identity(setup.level),
                 entry=level.price, stop=stop, target=target,
-                direction=bias, placed_at=bar.time, confirmation="engulf"))
+                direction=bias, placed_at=bar.time, confirmation="engulf",
+                liquidity=setup.sweep.point.price))
 
         prev_h1 = bar
 
@@ -209,30 +238,43 @@ def _bias_now(daily_levels: LevelStream, seen_daily: list[Candle],
     """The newest daily level that has established a bias, or None."""
     from .bias import bias_established
 
-    for level in reversed(daily_levels.standing()[-8:]):
+    for level in reversed(daily_levels.standing()):
         got = bias_established(seen_daily, seen_h4, level, n)
         if got is not None:
             return got
     return None
 
 
-def _at_h4_level(bar: Candle, h4_levels: LevelStream,
-                 direction: Direction) -> KeyLevel | None:
-    """WHICH H4 key level price has reached, or None.
+def _live_setup(bar: Candle, live: dict[object, Setup],
+                direction: Direction) -> Setup | None:
+    """WHICH live setup this H1 bar is entitled to trade, or None.
 
-    Returns the level rather than a yes/no because the level IS the
-    setup -- "price has played the QMR key level" -- and the H1 engulf
-    is only permission to enter it. Keying orders on the H1 open-close
-    level instead produced three trades on one bar at entries three
-    pips apart, which is the old engine's overtrading arriving in the
-    new one by a different door.
+    Two conditions, and the first is the one the old engine never had:
+    the level must be a LIVE SETUP -- liquidity taken, and this the
+    nearest key level to it, already rejected on H4 (sweep.py). Price
+    merely reaching a level is not a setup, and t=465-481 is Bishop
+    saying so in as many words.
 
-    Newest first: the level price just reached is the one being
-    traded.
+    The second is that this bar has reached the level. The course puts
+    the entry at the key level -- "eventually you want to see price come
+    into your K level and boom, you buy" (repeating-system t=354-360) --
+    and requiring the engulfing bar to be AT the level is how that is
+    said without a distance threshold. It also gives the setup a
+    structural lifetime: while price is away from the level there is
+    nothing to enter, so no number is needed to expire it.
+
+    Returns the setup rather than a yes/no because the level IS the
+    setup, and the H1 engulf is only permission to enter it. Keying
+    orders on the H1 open-close level instead produced three trades on
+    one bar at entries three pips apart.
+
+    Newest first: the level just reached is the one being traded.
     """
-    for level in reversed(h4_levels.standing(direction)[-12:]):
-        if returned_to(bar, level):
-            return level
+    for setup in reversed(list(live.values())):
+        if setup.level.bias != direction:
+            continue
+        if returned_to(bar, setup.level):
+            return setup
     return None
 
 

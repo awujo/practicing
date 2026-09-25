@@ -143,7 +143,10 @@ def test_one_h4_level_produces_one_trade_not_one_per_engulf():
     adding one.
 
     Keying the orders correctly took the same data from 143 trades to
-    75, with no bar holding more than one entry."""
+    75, with no bar holding more than one entry. Adding the liquidity
+    gate (sweep.py) then took the same fixture from 75 to 2: a random
+    walk almost never tells the story the setup requires, which is the
+    result one would hope for."""
     h1_bars = _random_series()
     trades = replay(_agg(h1_bars, 168), _agg(h1_bars, 24),
                     _agg(h1_bars, 4), h1_bars, n=2)
@@ -157,14 +160,44 @@ def test_one_h4_level_produces_one_trade_not_one_per_engulf():
         f"{sum(v - 1 for v in per_bar.values() if v > 1)} duplicate entries"
 
 
+def test_every_trade_can_name_the_liquidity_it_was_taken_on():
+    """The L in SLK, enforced at the driver rather than only in the unit
+    tests.
+
+    An entry that cannot name the internal range liquidity whose taking
+    entitled it is not an SLK entry -- it is "price touched a level",
+    which is what the old engine did and why it took everything. The
+    liquidity price is carried all the way onto the Trade so this is
+    checkable here and printable next to a chart."""
+    for seed in (2, 3, 4, 6):
+        h1_bars = _random_series(seed=seed)
+        trades = replay(_agg(h1_bars, 168), _agg(h1_bars, 24),
+                        _agg(h1_bars, 4), h1_bars, n=2)
+        assert trades, f"seed {seed} must trade or this proves nothing"
+        for t in trades:
+            assert t.liquidity is not None, "entitled by nothing"
+            assert t.setup_price is not None, "no key level being played"
+            if t.direction == Direction.BULLISH:
+                assert t.liquidity >= t.stop, \
+                    "a buy is entitled by a LOW being taken, below the entry"
+            else:
+                assert t.liquidity <= t.stop, \
+                    "a sell is entitled by a HIGH being taken, above the entry"
+
+
 def test_the_ambiguous_fill_is_carried_onto_the_trade():
     """It has to survive as far as the report, or it cannot be counted
-    -- which was the whole point of making it an event."""
-    h1_bars = _random_series()
+    -- which was the whole point of making it an event.
+
+    Seed 4 rather than the 5 used elsewhere: with the liquidity gate in
+    place the default fixture takes only 2 trades and neither is
+    ambiguous, so it cannot demonstrate this. Picking a seed that does
+    is honest; asserting that a random walk must produce one is not."""
+    h1_bars = _random_series(seed=4)
     trades = replay(_agg(h1_bars, 168), _agg(h1_bars, 24),
                     _agg(h1_bars, 4), h1_bars, n=2)
 
     flagged = [t for t in trades if t.same_candle_stop]
-    assert flagged, "this fixture does produce them -- 11 of 75"
+    assert flagged, "this fixture does produce them -- 2 of 6"
     assert all(t.outcome == "stop" for t in flagged), \
         "filled then stopped, by assumption, on the same bar"
