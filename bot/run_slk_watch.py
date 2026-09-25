@@ -228,12 +228,26 @@ def main():
     while True:
         started = time.time()
         total = 0
+        told = 0
         for watcher in watchers:
             try:
                 total += watcher.check()
             except Exception:                           # noqa: BLE001
                 # One instrument's failure must never stop the rest.
                 logger.exception("%s: cycle failed", watcher.instrument)
+                continue
+            if first:
+                # Send THIS instrument's story now, not after all 27.
+                #
+                # Bootstrapping takes about thirteen seconds an instrument
+                # on this box, so waiting for the set meant six minutes of
+                # silence -- and six minutes of silence is
+                # indistinguishable from a broken process, which is
+                # exactly what it looked like. The first story now arrives
+                # in about fifteen seconds and the rest follow as they are
+                # ready.
+                if _send_story(channel, watcher):
+                    told += 1
 
         if first:
             # The first cycle is silent by design -- everything in the
@@ -242,7 +256,7 @@ def main():
             # from one that is broken, so it announces what it can
             # already see, once. It doubles as the state of the book:
             # where every pair currently stands before anything moves.
-            _announce(channel, watchers, args.n)
+            _closing_line(channel, watchers, told)
             first = False
 
         logger.info("cycle done in %.0fs, %d message(s) sent",
@@ -252,32 +266,27 @@ def main():
         time.sleep(max(5, args.poll_seconds))
 
 
-def _announce(channel, watchers, n: int) -> None:
-    """The opening snapshot: ONE MESSAGE PER INSTRUMENT with its story.
+def _send_story(channel, watcher) -> bool:
+    """One instrument's opening story, the moment it is ready.
 
-    It used to be a single batched list of one-liners, and that was
-    wrong twice over. It could not say what the Weekly did, what the
-    Daily did, when either happened, or which rung was leading -- and
-    because a one-liner has to pick one thing to name, it named the
-    Daily route every time and reported "key level rejected" for all 27.
-
-    A short pause between sends: Telegram rate-limits a single chat at
-    roughly one message a second, and a burst of 27 would be throttled
-    or dropped, which would look exactly like the bug this is fixing.
+    A second's pause after it: Telegram rate-limits a single chat at
+    roughly one message a second, and a burst would be throttled or
+    dropped -- which would look exactly like the silence this is fixing.
     """
-    told = 0
-    for watcher in watchers:
-        story = watcher.standing_story()
-        if not story:
-            continue
-        try:
-            channel.note(story)
-            told += 1
-            time.sleep(1.1)
-        except Exception:                               # noqa: BLE001
-            logger.exception("%s: could not send its opening story",
-                              watcher.instrument)
+    story = watcher.standing_story()
+    if not story:
+        return False
+    try:
+        channel.note(story)
+        time.sleep(1.1)
+        return True
+    except Exception:                                   # noqa: BLE001
+        logger.exception("%s: could not send its opening story",
+                          watcher.instrument)
+        return False
 
+
+def _closing_line(channel, watchers, told: int) -> None:
     quiet = len(watchers) - told
     tail = [f"[SLK] that is {told} of {len(watchers)} instruments with a bias "
             f"standing."]

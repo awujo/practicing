@@ -313,3 +313,51 @@ def test_a_failed_startup_ping_does_not_stop_the_watcher(monkeypatch):
                         ["run_slk_watch", "--instruments", "EURUSD", "--n", "2",
                          "--once"])
     run_slk_watch.main()          # must not raise
+
+
+def test_each_story_goes_out_as_soon_as_that_instrument_is_ready(monkeypatch):
+    """Waiting for all 27 meant six minutes of silence, and six minutes
+    of silence is indistinguishable from a broken process -- which is
+    exactly what it looked like to the operator, twice.
+
+    Asserted on ORDER: a story must be interleaved with the loading, not
+    all of them bunched at the end."""
+    order = []
+
+    class Channel:
+        def note(self, text):
+            order.append("send")
+            return True
+
+    def loud_load(*_a, **_k):
+        order.append("load")
+        return []
+
+    class Standing:
+        """A watcher that always has something to say."""
+        def __init__(self, instrument, n, channel, load):
+            self.instrument = instrument
+            self.load = load
+
+        def check(self):
+            self.load(self.instrument, "H1")
+            return 0
+
+        def standing_story(self):
+            return f"story for {self.instrument}"
+
+    monkeypatch.setattr(run_slk_watch, "SLKWatcher", Standing)
+    monkeypatch.setattr(run_slk_watch, "load_candles", loud_load)
+    monkeypatch.setattr(run_slk_watch, "load_recent_candles", loud_load)
+    monkeypatch.setattr(run_slk_watch.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(run_slk_watch.SignalChannel, "from_env",
+                        staticmethod(lambda label="": Channel()))
+    monkeypatch.setattr("sys.argv",
+                        ["run_slk_watch", "--instruments", "A,B,C", "--n", "2",
+                         "--once"])
+    run_slk_watch.main()
+
+    # ping, then load/send per instrument, then the closing line.
+    assert order[0] == "send", "the hello still comes first"
+    assert order[1:4] == ["load", "send", "load"], \
+        f"stories were bunched at the end: {order}"
