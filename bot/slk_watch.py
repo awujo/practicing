@@ -45,6 +45,9 @@ from __future__ import annotations
 
 import logging
 
+import pandas as pd
+
+from backtest.engine.timeframes import bar_length, closes_at
 from backtest.slk import narrative
 from backtest.slk.replay import replay
 
@@ -105,6 +108,50 @@ class _Collector:
                                         "setup": setup})
 
 
+def closed_only(candles, now):
+    """Drop any trailing candle whose period has not finished yet.
+
+    The cache is supposed to contain only closed bars -- live_cache_sync
+    drops the trailing incomplete derived bar, and mt5_data fetches with
+    start=1 to skip the forming one. This is a second line of defence at
+    the point of use, because the failure it prevents is silent and the
+    check costs nothing.
+
+    It matters because USDCHF was seen changing its mind twice in ten
+    seconds on the old bot, with the H4 confirmation time moving
+    BACKWARDS -- exactly what an unfinished bar does. live_cache_sync's
+    own comment describes the mechanism: "its high/low/close change every
+    hour as the rest arrive, so the same bar means something different on
+    each sync, and bias computed from it flips underneath the strategy."
+
+    A guard one layer up cannot be verified from here, and "the other
+    module promises" is not the same as "this module checked".
+    """
+    if not candles or now is None:
+        return candles
+    length = bar_length(candles)
+    if length is None:
+        return candles                 # one candle: nothing to infer from
+
+    out = list(candles)
+    while out:
+        finishes = closes_at(out[-1].time, length)
+        try:
+            unfinished = finishes > now
+        except TypeError:
+            # Naive vs aware timestamps. Comparing them raises rather
+            # than lying, which is the right behaviour -- retry against a
+            # clock of the same kind instead of guessing an offset.
+            try:
+                unfinished = finishes > now.tz_localize(None)
+            except (TypeError, AttributeError):
+                return out
+        if not unfinished:
+            break
+        out.pop()
+    return out
+
+
 def _account(cascade):
     """The cascade's own account of the bias, or None.
 
@@ -134,12 +181,17 @@ class SLKWatcher:
         # A cheap "has anything closed since I last looked". Optional so
         # tests and one-off runs need not provide one.
         self.newest_time = newest_time
+        # The last direction reported, so a reversal can be named as one.
+        self._last_reported = None
 
     def _series(self):
         out = {}
         for code in ("W", "D", "H4", "H1"):
-            out[code] = self.load(self.instrument, code)
+            out[code] = closed_only(self.load(self.instrument, code), self.now())
         return out
+
+    def now(self):
+        return pd.Timestamp.now(tz="UTC")
 
     def check(self) -> int:
         """Replay, report what is new, advance the watermark.
@@ -174,6 +226,9 @@ class SLKWatcher:
 
         sent = 0
         self.standing = collector.standing
+        if self.watermark is None and collector.standing:
+            account = collector.standing.get("account")
+            self._last_reported = getattr(account, "direction", None)
         if self.watermark is None:
             # First pass: the whole history is "new". Reporting it would
             # be years of messages, so the first cycle only learns where
@@ -233,9 +288,23 @@ class SLKWatcher:
         lines = ["🟢 [SLK] BIAS CHANGE"]
         if change.get("was") is not None:
             lines.append(f"(was {getattr(change['was'], 'value', '')})")
+        if (self._last_reported is not None
+                and self._last_reported != account.direction):
+            # Say it is a reversal rather than sending two confident and
+            # opposite messages minutes apart. USDCHF did exactly that on
+            # the old bot -- waiting, then hunting the other way, ten
+            # seconds later -- and a reader with no warning has no way to
+            # tell an unstable read from two real changes.
+            lines.append(f"⚠️ this REVERSES the last SLK bias sent for "
+                          f"{self.instrument}. If it flips back again, the "
+                          f"higher timeframe data is unsettled — treat it as "
+                          f"no bias rather than either one.")
         lines.append("")
         lines += narrative.account_story(account, self.instrument)
-        return bool(self.channel.note("\n".join(lines)))
+        sent = bool(self.channel.note("\n".join(lines)))
+        if sent:
+            self._last_reported = account.direction
+        return sent
 
     def _send_setup(self, item) -> bool:
         setup = item["setup"]

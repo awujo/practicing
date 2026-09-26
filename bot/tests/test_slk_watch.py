@@ -289,3 +289,72 @@ def test_no_freshness_check_at_all_still_works():
     watcher = SLKWatcher("EURUSD", 2, Channel(), loader_for(h1))
     assert watcher.check() == 0
     assert watcher.watermark is not None
+
+
+# --- unfinished candles, and unstable reads ------------------------------
+
+def test_a_candle_whose_period_has_not_finished_is_refused():
+    """USDCHF changed its mind twice in ten seconds on the old bot, with
+    the H4 confirmation time moving BACKWARDS -- which is what an
+    unfinished bar does. live_cache_sync drops them, but "the other
+    module promises" is not the same as "this module checked"."""
+    from ..slk_watch import closed_only
+
+    bars = [Candle(time=T0 + pd.Timedelta(hours=4 * i), open=1.1, high=1.2,
+                   low=1.0, close=1.1, volume=0) for i in range(5)]
+    # now sits inside the last bar's period: it has not finished.
+    now = bars[-1].time + pd.Timedelta(hours=1)
+    kept = closed_only(bars, now)
+    assert len(kept) == 4
+    assert kept[-1].time == bars[-2].time
+
+
+def test_a_finished_candle_is_kept():
+    from ..slk_watch import closed_only
+
+    bars = [Candle(time=T0 + pd.Timedelta(hours=4 * i), open=1.1, high=1.2,
+                   low=1.0, close=1.1, volume=0) for i in range(5)]
+    now = bars[-1].time + pd.Timedelta(hours=4)
+    assert len(closed_only(bars, now)) == 5
+
+
+def test_several_unfinished_candles_all_go():
+    from ..slk_watch import closed_only
+
+    bars = [Candle(time=T0 + pd.Timedelta(hours=4 * i), open=1.1, high=1.2,
+                   low=1.0, close=1.1, volume=0) for i in range(5)]
+    now = bars[2].time + pd.Timedelta(hours=4)
+    assert len(closed_only(bars, now)) == 3
+
+
+def test_the_guard_never_empties_a_series_it_cannot_judge():
+    from ..slk_watch import closed_only
+
+    one = [Candle(time=T0, open=1.1, high=1.2, low=1.0, close=1.1, volume=0)]
+    assert closed_only(one, T0) == one, "one candle: nothing to infer from"
+    assert closed_only([], T0) == []
+    assert closed_only(one, None) == one
+
+
+def test_a_reversal_is_flagged_rather_than_sent_as_two_confident_opposites():
+    """"If it flips back again the data is unsettled" is information. Two
+    confident opposite messages minutes apart is not."""
+    channel = Channel()
+    watcher = SLKWatcher("EURUSD", 2, channel, lambda *_: [])
+    watcher._last_reported = Direction.BULLISH
+
+    class Account:
+        direction = Direction.BEARISH
+        rung = "Daily"
+        evidence = None
+        other_rung = "Weekly"
+        other_direction = None
+        other_evidence = None
+        dropped_reason = ""
+        alignment = "daily only"
+        weekly_structure = None
+        daily_structure = None
+
+    watcher._send_bias({"account": Account(), "was": Direction.BULLISH})
+    assert "REVERSES" in channel.messages[0]
+    assert watcher._last_reported == Direction.BEARISH, "and it remembers"
