@@ -123,13 +123,17 @@ def _account(cascade):
 class SLKWatcher:
     """One instrument, watched. Call `check` when an H1 candle closes."""
 
-    def __init__(self, instrument: str, n: int, channel, load_candles):
+    def __init__(self, instrument: str, n: int, channel, load_candles,
+                 newest_time=None):
         self.instrument = instrument
         self.n = n
         self.channel = channel
         self.load = load_candles           # (instrument, granularity) -> list
         self.watermark = None              # nothing before this is news
         self.standing = None               # the bias as it stands, if any
+        # A cheap "has anything closed since I last looked". Optional so
+        # tests and one-off runs need not provide one.
+        self.newest_time = newest_time
 
     def _series(self):
         out = {}
@@ -144,6 +148,22 @@ class SLKWatcher:
         logging -- a cycle that sends nothing is the normal case and must
         stay silent.
         """
+        # Skip the replay entirely when no H1 candle has closed since
+        # the last look.
+        #
+        # Without this every cycle replayed all 27 instruments whether or
+        # not anything had happened -- about six minutes of work, running
+        # continuously, for an answer that changes once an hour. Worse,
+        # it meant a confirmation could sit behind twenty-six other
+        # instruments' pointless replays before anyone heard about it.
+        # Operator: "hope the SLK bias bot will respond fast even to
+        # confirmation entry once they present themselves, not hours
+        # later."
+        if self.watermark is not None and self.newest_time is not None:
+            latest = self.newest_time(self.instrument, "H1")
+            if latest is not None and str(latest) <= str(self.watermark):
+                return 0
+
         series = self._series()
         if not series["H1"]:
             return 0

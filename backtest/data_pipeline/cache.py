@@ -199,6 +199,27 @@ def last_cached_time(source: str, symbol: str, granularity: str):
     return df["time"].max()
 
 
+def newest_candle_time(source: str, symbol: str, granularity: str):
+    """The most recent cached candle's timestamp, read from the tail.
+
+    `last_cached_time()` above reads the whole time column, which is a
+    full pass over a 9MB file. This reads the last block only, which is
+    what a poll loop needs: the question "has anything closed since I
+    last looked" is asked every minute per instrument and must cost
+    almost nothing, or the asking becomes the work.
+
+    None when there is no cache or it cannot be read -- a caller should
+    then do its normal thing rather than treat that as "no new data".
+    """
+    try:
+        frame = load_tail(source, symbol, granularity, 1)
+    except Exception:                                   # noqa: BLE001
+        return None
+    if frame.empty:
+        return None
+    return frame["time"].iloc[-1]
+
+
 def append(source: str, symbol: str, granularity: str, rows: list[dict]):
     """Merge new candle rows into the cache, dedupe by time, keep sorted ascending.
 

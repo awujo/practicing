@@ -52,6 +52,7 @@ import os
 import sys
 import time
 
+from backtest.data_pipeline import cache
 from backtest.data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from backtest.engine.candles import load_candles, load_recent_candles
 
@@ -179,7 +180,11 @@ def main():
     parser.add_argument("--history-windows-config", default=None,
                         help="bot/history_windows.json -- the same trimmed "
                              "windows the live bot loads.")
-    parser.add_argument("--poll-seconds", type=int, default=POLL_SECONDS)
+    parser.add_argument("--poll-seconds", type=int, default=POLL_SECONDS,
+                        help="How often to look for a newly closed candle. "
+                             "The look itself is cheap -- instruments with "
+                             "nothing new are skipped without replaying -- so "
+                             "this can stay short.")
     parser.add_argument("--once", action="store_true",
                         help="one cycle and exit, for checking the wiring.")
     args = parser.parse_args()
@@ -202,7 +207,10 @@ def main():
     windows = _windows(args.history_windows_config)
     load = _loader(args.source, windows)
 
-    watchers = [SLKWatcher(instrument, args.n, channel, load)
+    def newest(instrument: str, granularity: str):
+        return cache.newest_candle_time(args.source, instrument, granularity)
+
+    watchers = [SLKWatcher(instrument, args.n, channel, load, newest)
                 for instrument in instruments]
     logger.info("SLK watcher starting on %d instruments, n=%d "
                  "(reporting only -- nothing is traded)",

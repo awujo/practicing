@@ -225,3 +225,67 @@ def test_the_story_always_accounts_for_the_weekly():
 def test_no_bias_means_no_story_rather_than_an_empty_shell():
     watcher = SLKWatcher("EURUSD", 2, Channel(), lambda *_: [])
     assert watcher.standing_story() == ""
+
+
+# --- latency: only work when something actually closed -------------------
+
+def test_an_instrument_with_no_new_candle_is_skipped_entirely():
+    """Operator: "hope the SLK bias bot will respond fast even to
+    confirmation entry once they present themselves, not hours later."
+
+    Every cycle used to replay all 27 instruments whether or not anything
+    had closed -- six minutes of work, continuously, for an answer that
+    changes once an hour. Worse, a real confirmation could sit behind
+    twenty-six pointless replays before anyone heard about it."""
+    h1 = series()
+    loads = []
+
+    def counting_loader(instrument, code):
+        loads.append(code)
+        return loader_for(h1)(instrument, code)
+
+    watcher = SLKWatcher("EURUSD", 2, Channel(), counting_loader,
+                          newest_time=lambda _i, _g: h1[-1].time)
+    watcher.check()                       # bootstrap: must read
+    assert loads, "the first cycle has to read something"
+
+    loads.clear()
+    assert watcher.check() == 0
+    assert loads == [], "it replayed an instrument with nothing new"
+
+
+def test_a_new_candle_wakes_it_again():
+    h1 = series()
+    state = {"series": h1[:4000]}
+    watcher = SLKWatcher("EURUSD", 2, Channel(),
+                          lambda i, c: loader_for(state["series"])(i, c),
+                          newest_time=lambda _i, _g: state["series"][-1].time)
+    watcher.check()
+
+    state["series"] = h1                  # more candles arrive
+    loads = []
+    watcher.load = lambda i, c: (loads.append(c) or loader_for(h1)(i, c))
+    watcher.check()
+    assert loads, "a newly closed candle must trigger a replay"
+
+
+def test_an_unreadable_timestamp_falls_back_to_replaying():
+    """None from the freshness check means "cannot tell", and a watcher
+    that treats "cannot tell" as "nothing new" goes quietly blind."""
+    h1 = series()
+    loads = []
+    watcher = SLKWatcher("EURUSD", 2, Channel(),
+                          lambda i, c: (loads.append(c) or loader_for(h1)(i, c)),
+                          newest_time=lambda _i, _g: None)
+    watcher.check()
+    loads.clear()
+    watcher.check()
+    assert loads, "it went blind when the timestamp was unreadable"
+
+
+def test_no_freshness_check_at_all_still_works():
+    """The argument is optional, so old callers and tests are unaffected."""
+    h1 = series()
+    watcher = SLKWatcher("EURUSD", 2, Channel(), loader_for(h1))
+    assert watcher.check() == 0
+    assert watcher.watermark is not None

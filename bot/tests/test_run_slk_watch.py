@@ -152,9 +152,9 @@ def test_all_means_every_instrument_including_the_two_the_old_bots_skip(monkeypa
 
     real = run_slk_watch.SLKWatcher
 
-    def spy(instrument, n, channel, load):
+    def spy(instrument, n, channel, load, newest=None):
         seen[instrument] = True
-        return real(instrument, n, channel, load)
+        return real(instrument, n, channel, load, newest)
 
     monkeypatch.setattr(run_slk_watch, "SLKWatcher", spy)
     monkeypatch.setattr("sys.argv",
@@ -335,7 +335,7 @@ def test_each_story_goes_out_as_soon_as_that_instrument_is_ready(monkeypatch):
 
     class Standing:
         """A watcher that always has something to say."""
-        def __init__(self, instrument, n, channel, load):
+        def __init__(self, instrument, n, channel, load, newest=None):
             self.instrument = instrument
             self.load = load
 
