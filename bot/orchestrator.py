@@ -822,7 +822,8 @@ class LiveBot:
             # notify-only mode it must never take down the watching either.
             logger.exception("%s: could not send the confirmation", instrument)
 
-    def _storyline_says_hunt(self, instrument: str, as_of_time) -> bool:
+    def _storyline_says_hunt(self, instrument: str, as_of_time,
+                             report: bool = True) -> bool:
         """Is this instrument in the hunting stage (Daily and H4 aligned,
         higher-timeframe bias agreeing) at `as_of_time`?
 
@@ -867,7 +868,23 @@ class LiveBot:
 
         storyline = storyline_at(ctx, as_of_time)
         previous = self._storyline_stage.get(instrument)
-        if storyline.stage != previous:
+        # `report=False` for evaluations at a PAST time.
+        #
+        # _storyline_hunted_anywhere_in_gap re-asks the gate at earlier
+        # candles to recover a skipped poll, and those answers were being
+        # logged and notified as though the bias had just changed. On
+        # 2026-09-26 that produced two USDCHF messages ten seconds apart,
+        # "waiting" then "hunting", with the H4 confirmation time moving
+        # BACKWARDS -- because the second was the gate answering about an
+        # earlier hour, not about now.
+        #
+        # It also corrupted the stage memory: _storyline_stage ended up
+        # holding the stage of a historical evaluation, so the next
+        # genuine transition could be missed for looking like a repeat.
+        #
+        # The RETURN VALUE is untouched, so what the bot trades and hunts
+        # is exactly as before. Only the reporting changes.
+        if storyline.stage != previous and report:
             # Only log the transition, not every hour it stays put --
             # this is the "red flag" list becoming visible in the log.
             # Direct 2026-08-30 request: "let me know if what's logged is
@@ -922,7 +939,7 @@ class LiveBot:
             return False
         gap_candles = [c for c in h1 if watermark < c.time < new_candle_time]
         for c in gap_candles[-STORYLINE_GAP_LOOKBACK_CANDLES:]:
-            if self._storyline_says_hunt(instrument, c.time):
+            if self._storyline_says_hunt(instrument, c.time, report=False):
                 return True
         return False
 

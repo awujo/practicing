@@ -1095,7 +1095,7 @@ def test_a_signal_whose_gate_closed_before_the_recovery_poll_is_still_caught(tmp
 
     with patch.object(bot.mt5_client, "new_candle_closed") as mock_new_candle, \
          patch("bot.orchestrator.sync_recent_from_mt5"), \
-         patch.object(LiveBot, "_storyline_says_hunt", side_effect=lambda instrument, t: gate_by_time[t]), \
+         patch.object(LiveBot, "_storyline_says_hunt", side_effect=lambda instrument, t, report=True: gate_by_time[t]), \
          patch("bot.orchestrator.load_candles", return_value=h1_candles), \
          patch("bot.orchestrator.run_backtest", return_value=[missed_during_the_gap]):
         mock_new_candle.return_value = type("C", (), {"time": t3})()
@@ -2353,3 +2353,102 @@ def test_a_broken_signal_channel_never_stops_the_watching(tmp_path):
         bot._consider_entry("EURUSD", record, bot._account_state())   # must not raise
 
     assert fake.order_send_calls == []
+
+
+# --- the storyline must only report about NOW ---------------------------
+
+def test_a_gap_scan_does_not_report_historical_stages(tmp_path):
+    """The USDCHF flap, 2026-09-26: two messages ten seconds apart,
+    "waiting" then "hunting", with the H4 confirmation time moving
+    BACKWARDS. No rebuild happened between them.
+
+    The cause was not unstable data. _storyline_hunted_anywhere_in_gap
+    re-asks the gate at EARLIER candles to recover a skipped poll, and
+    those answers were logged and notified as though the bias had just
+    changed."""
+    fake = FakeMT5()
+    channel = _RecordingChannel()
+    bot, _, _ = make_bot(fake, tmp_path, signals=channel)
+
+    stages = iter(["waiting_htf", "hunting", "hunting"])
+
+    class FakeStoryline:
+        def __init__(self, stage):
+            self.stage = stage
+            self.reason = "because"
+            self.direction = None
+            self.effective_tf = None
+            self.daily_confirmed_at = None
+            self.h4_confirmed_at = None
+            self.weekly_confirmed_at = None
+
+    with patch("bot.orchestrator.storyline_at",
+                side_effect=lambda *_a, **_k: FakeStoryline(next(stages))), \
+         patch("bot.orchestrator.build_htf_context", return_value=object()):
+        bot._htf_contexts["EURUSD"] = object()
+        # current time: reports
+        bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T07:00Z"))
+        first = len(channel.storylines)
+        # a historical evaluation: must NOT report
+        bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T03:00Z"),
+                                  report=False)
+
+    assert first == 1, "the current evaluation should have reported once"
+    assert len(channel.storylines) == first, \
+        "a historical evaluation was reported as a live bias change"
+
+
+def test_a_gap_scan_does_not_corrupt_the_remembered_stage(tmp_path):
+    """It also poisoned the stage memory: _storyline_stage ended up
+    holding the stage of a historical evaluation, so the next genuine
+    transition could be missed for looking like a repeat."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+
+    class FakeStoryline:
+        def __init__(self, stage):
+            self.stage = stage
+            self.reason = ""
+            self.direction = None
+            self.effective_tf = None
+            self.daily_confirmed_at = None
+            self.h4_confirmed_at = None
+            self.weekly_confirmed_at = None
+
+    with patch("bot.orchestrator.build_htf_context", return_value=object()):
+        bot._htf_contexts["EURUSD"] = object()
+        with patch("bot.orchestrator.storyline_at",
+                    return_value=FakeStoryline("waiting_htf")):
+            bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T07:00Z"))
+        assert bot._storyline_stage["EURUSD"] == "waiting_htf"
+
+        with patch("bot.orchestrator.storyline_at",
+                    return_value=FakeStoryline("hunting")):
+            bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T03:00Z"),
+                                      report=False)
+
+    assert bot._storyline_stage["EURUSD"] == "waiting_htf", \
+        "a past evaluation overwrote what the bot believes is true now"
+
+
+def test_the_gate_still_answers_the_same_for_the_gap_scan(tmp_path):
+    """Only the reporting changes -- what the bot hunts is untouched."""
+    fake = FakeMT5()
+    bot, _, _ = make_bot(fake, tmp_path)
+
+    class FakeStoryline:
+        stage = "hunting"
+        reason = ""
+        direction = None
+        effective_tf = None
+        daily_confirmed_at = None
+        h4_confirmed_at = None
+        weekly_confirmed_at = None
+
+    with patch("bot.orchestrator.build_htf_context", return_value=object()), \
+         patch("bot.orchestrator.storyline_at", return_value=FakeStoryline()):
+        bot._htf_contexts["EURUSD"] = object()
+        loud = bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T07:00Z"))
+        quiet = bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T03:00Z"),
+                                          report=False)
+    assert loud is True and quiet is True
