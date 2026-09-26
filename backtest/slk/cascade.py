@@ -71,6 +71,62 @@ from .stream import BreakTracker, LevelStream
 from .sweep import Evidence, LiquidityBias
 
 
+def _as_pair(route: LiquidityBias):
+    """LiquidityBias answers with a direction; give it the same shape as
+    BiasRoute so a rung can compare its two routes."""
+    got = route.direction()
+    if got is None or route.latest is None:
+        return None
+    return (got, route.latest[1])
+
+
+def _liquidity_evidence(route: LiquidityBias):
+    """That route's evidence, with the confirming break filled in."""
+    got = route.direction()
+    if got is None or route.evidence is None:
+        return None
+    confirmed = route.confirmation(got) or (None, None)
+    return replace(route.evidence, confirmed_at=confirmed[0],
+                    confirmed_price=confirmed[1])
+
+
+def structural_direction(tracker):
+    """A timeframe's own most recent break of structure.
+
+    Returns (direction, when, price) or None. "Most recent" is by the
+    time of the CLOSE THROUGH, not of the swing it broke -- "the most
+    recent breakout is to the downside" is a statement about when price
+    did something, not about when the level it did it to was formed.
+    """
+    best = None
+    for side, at in getattr(tracker, "broke_at", {}).items():
+        when, price = at
+        if when is None:
+            continue
+        if best is None or when > best[1]:
+            best = (side, when, price)
+    return best
+
+
+@dataclass(frozen=True)
+class BiasAccount:
+    """WHY the bias is what it is, in enough detail to tell the story."""
+    direction: Direction | None
+    rung: str = ""                 # which timeframe carries the bias
+    evidence: object = None        # the SETUP inside it, if one has shown
+    other_rung: str = ""
+    other_direction: Direction | None = None
+    other_evidence: object = None
+    dropped_reason: str = ""
+    # aligned | not aligned | daily only | weekly only
+    alignment: str = ""
+    # Each timeframe's own most recent break of structure, as
+    # (direction, when, price) or None. THIS IS THE BIAS -- see
+    # Cascade.explain.
+    weekly_structure: object = None
+    daily_structure: object = None
+
+
 class BiasRoute:
     """One rung: something happens on the higher timeframe, the next one
     down breaks structure the same way.
@@ -228,187 +284,105 @@ class Cascade:
         return account.direction
 
     def explain(self) -> BiasAccount:
-        """The bias AND the reason for it, both rungs accounted for."""
-        lower_levels = self.lower_levels.direction()
-        lower_liquidity = _as_pair(self.lower_liquidity)
-        upper_levels = self.upper_levels.direction()
-        upper_liquidity = _as_pair(self.upper_liquidity)
+        """The bias AND the reason for it.
 
-        # STRUCTURE IS THE FRAME, NOT A THIRD OPINION.
-        #
-        # repeating-system t=421-424: "we have daily reject, daily IN
-        # ALIGNMENT WITH THE STRUCTURE". A rejection is checked AGAINST
-        # the timeframe's own structure; it does not compete with it.
-        #
-        # Treating rejection, sweep and structure as three independent
-        # direction-producers is what put "Weekly says bearish" and
-        # "Weekly structurally bullish" in the same message on EURCHF,
-        # over a chart that was plainly an uptrend with a two-week
-        # pullback. Three voters cannot help but contradict each other.
-        #
-        # So a route now only carries a rung's bias when it agrees with
-        # that timeframe's own most recent break of structure. No
-        # structure yet means nothing to align with, and therefore no
-        # bias -- Bishop starts from structure every time.
-        #
-        # This does not lose reversals. A rejection against structure
-        # that is real becomes tradeable the moment the structure itself
-        # turns, which is exactly when he would take it.
+        STRUCTURE IS THE BIAS. Not a filter on one, not a third opinion
+        alongside the rejection and the sweep -- the bias itself.
+        repeating-system t=396-409, on US30:
+
+            "on the weekly timeframe you can see that we are bullish...
+             we've been having breakouts to the upside. So I know that my
+             weekly is bullish. My daily... the recent breakout was still
+             to the upside. At no point was there a bearish breakout. SO
+             WE ARE STILL BULLISH NO MATTER WHAT."
+
+        and only THEN, t=415-424:
+
+            "price eventually came and rejected off this key level. So
+             now we have daily reject, DAILY IN ALIGNMENT WITH THE
+             STRUCTURE."
+
+        So the order is: structure says which way, and a key level
+        rejected or liquidity swept in agreement with it is the SETUP
+        inside that direction. This had it inverted -- it required a
+        rejection or a sweep and used structure only to veto them, which
+        is why most instruments reported "nothing established yet" on a
+        weekly that plainly had a direction.
+
+        The Daily carries the operative bias when it has structure,
+        because the H4 setup hangs off it; the Weekly's agreement is the
+        probability statement, exactly as Bishop reads it.
+        """
         weekly_struct = structural_direction(self.weekly_structure)
         daily_struct = structural_direction(self.daily_structure)
 
-        lower_levels = _in_structure(lower_levels, daily_struct)
-        lower_liquidity = _in_structure(lower_liquidity, daily_struct)
-        upper_levels = _in_structure(upper_levels, weekly_struct)
-        upper_liquidity = _in_structure(upper_liquidity, weekly_struct)
+        if daily_struct is None and weekly_struct is None:
+            return BiasAccount(None)
 
-        lower = _agree(lower_levels, lower_liquidity)
-        upper = _agree(upper_levels, upper_liquidity)
-
-        lower_ev = None if lower is None else (self.lower_levels.evidence()
-                    if lower_levels is not None and
-                    (lower_liquidity is None or lower_levels[1] >= lower_liquidity[1])
-                    else _liquidity_evidence(self.lower_liquidity))
-        upper_ev = None if upper is None else (self.upper_levels.evidence()
-                    if upper_levels is not None and
-                    (upper_liquidity is None or upper_levels[1] >= upper_liquidity[1])
-                    else _liquidity_evidence(self.upper_liquidity))
-
-        if lower is not None:
-            # WHICH RUNG "LEADS" IS THE LESS INTERESTING QUESTION.
-            #
-            # This used to answer "Daily" whenever the Daily rung had an
-            # answer, which is nearly always -- so every instrument read
-            # "Daily leads" and the Weekly looked like it was not in the
-            # model at all. It is, and its agreement is the single thing
-            # that separates a high-probability setup from one that may
-            # be nothing but a retracement inside the Weekly. So the
-            # alignment is what the account leads with now.
-            if upper is None:
+        if daily_struct is not None:
+            direction = daily_struct[0]
+            rung, other_rung = "Daily", "Weekly"
+            other_direction = weekly_struct[0] if weekly_struct else None
+            if weekly_struct is None:
                 alignment = "daily only"
-                reason = ("the Weekly has not established a bias of its own "
+                reason = ("the Weekly has not broken structure either way "
                           "yet, so there is nothing to align with")
-            elif upper != lower:
-                # Bishop's own case: "those two time frames are not in
-                # alignment, so that goes to the four hours ... I can
+            elif other_direction != direction:
+                # daily-routine t=399-417: "those two time frames are not
+                # in alignment, so that goes to the four hours ... I can
                 # leave the weekly. I probably just target a good
-                # liquidity" (daily-routine t=399-417) -- he still trades
-                # it, and he takes less out of it.
+                # liquidity."
                 alignment = "not aligned"
-                reason = (f"the Weekly says {upper.value} and the Daily says "
-                          f"{lower.value} — they disagree, so the Weekly is "
-                          f"left and the Daily leads")
+                reason = (f"the Weekly is {other_direction.value} and the "
+                          f"Daily is {direction.value} — they disagree, so "
+                          f"the Weekly is left and the Daily leads")
             else:
                 alignment = "aligned"
                 reason = "the Weekly and the Daily agree"
-            # Keywords, not positions. BiasAccount has ten fields and a
-            # positional call put `alignment` into `weekly_structure`
-            # the moment two more were added -- which surfaced as
-            # "too many values to unpack" three modules away.
-            return BiasAccount(
-                direction=lower, rung="Daily",
-                evidence=_stamp(lower_ev, "Daily", "H4"),
-                other_rung="Weekly", other_direction=upper,
-                other_evidence=_stamp(upper_ev, "Weekly", "Daily"),
-                dropped_reason=reason, alignment=alignment,
-                weekly_structure=weekly_struct,
-                daily_structure=daily_struct)
+        else:
+            direction = weekly_struct[0]
+            rung, other_rung = "Weekly", "Daily"
+            other_direction = None
+            alignment = "weekly only"
+            reason = "the Daily has not broken structure either way yet"
 
-        if upper is not None:
-            return BiasAccount(
-                direction=upper, rung="Weekly",
-                evidence=_stamp(upper_ev, "Weekly", "Daily"),
-                other_rung="Daily",
-                dropped_reason="the Daily has not established one of its own",
-                alignment="weekly only",
-                weekly_structure=weekly_struct,
-                daily_structure=daily_struct)
-        return BiasAccount(None, weekly_structure=weekly_struct,
-                            daily_structure=daily_struct)
+        # The SETUP inside that direction: a key level rejected or
+        # liquidity swept, in alignment with the structure. Reported as
+        # supporting detail, never as a competing direction.
+        setup = _setup_evidence(self, rung, direction)
+        other_setup = _setup_evidence(self, other_rung, other_direction)
+
+        return BiasAccount(
+            direction=direction, rung=rung, evidence=setup,
+            other_rung=other_rung, other_direction=other_direction,
+            other_evidence=other_setup, dropped_reason=reason,
+            alignment=alignment, weekly_structure=weekly_struct,
+            daily_structure=daily_struct)
 
 
-def _as_pair(route: LiquidityBias):
-    """LiquidityBias answers with a direction; give it the same shape as
-    BiasRoute so one rung can compare its two routes."""
-    got = route.direction()
-    if got is None or route.latest is None:
-        return None
-    return (got, route.latest[1])
+def _setup_evidence(cascade, rung: str, direction):
+    """A rejection or a sweep on `rung`, but only in `direction`.
 
-
-def _liquidity_evidence(route: LiquidityBias):
-    """That route's evidence, with the confirming break filled in."""
-    got = route.direction()
-    if got is None or route.evidence is None:
-        return None
-    confirmed = route.confirmation(got) or (None, None)
-    return replace(route.evidence, confirmed_at=confirmed[0],
-                    confirmed_price=confirmed[1])
-
-
-@dataclass(frozen=True)
-class BiasAccount:
-    """WHY the bias is what it is, in enough detail to tell the story.
-
-    The summary that prompted this said "key level rejected" for all 27
-    instruments, because it read the Daily route every time instead of
-    the one that actually carried the answer. A report that names the
-    wrong cause is worse than a terse one, so this records which rung
-    won, by which route, and what happened to the other rung.
+    None when that rung has nothing pointing the same way as the
+    structure -- which is a real answer: the bias stands on the
+    structure, and the setup simply has not presented itself yet.
     """
-    direction: Direction | None
-    rung: str = ""                 # "Daily" (Daily->H4) or "Weekly" (Weekly->Daily)
-    evidence: object = None        # the Evidence that carried it
-    other_rung: str = ""           # the rung that did not lead
-    other_direction: Direction | None = None
-    other_evidence: object = None
-    dropped_reason: str = ""       # why the other rung is not leading
-    # Each timeframe's OWN most recent break of structure, as
-    # (direction, when, price) or None. "Weekly structurally bearish" is
-    # a separate statement from "the weekly rejected a level" and from
-    # "the weekly swept a low", and all three are things the weekly says.
-    weekly_structure: object = None
-    daily_structure: object = None
-    # The thing that actually decides quality, and the thing a report
-    # that always says "Daily leads" hides completely:
-    #   "aligned"      Weekly and Daily agree -- the high-probability case
-    #   "not aligned"  they disagree. Tradeable, but it may be nothing more
-    #                  than a retracement inside the Weekly, and Bishop
-    #                  takes a nearer target when he takes it at all
-    #   "daily only"   the Weekly has established nothing yet
-    #   "weekly only"  the Daily has not
-    alignment: str = ""
-
-
-def structural_direction(tracker):
-    """A timeframe's own most recent break of structure.
-
-    Returns (direction, when, price) or None. "Most recent" is by the
-    time of the CLOSE THROUGH, not of the swing it broke -- "the most
-    recent breakout is to the downside" is a statement about when price
-    did something, not about when the level it did it to was formed.
-    """
-    best = None
-    for side, at in getattr(tracker, "broke_at", {}).items():
-        when, price = at
-        if when is None:
-            continue
-        if best is None or when > best[1]:
-            best = (side, when, price)
-    return best
-
-
-def _in_structure(pair, structure):
-    """A route's answer, but only if it agrees with the structure.
-
-    "daily reject, daily IN ALIGNMENT WITH THE STRUCTURE"
-    (repeating-system t=421-424). None when it disagrees, and None when
-    there is no structure yet -- a rejection with nothing to align to is
-    not a bias, it is a rejection.
-    """
-    if pair is None or structure is None:
+    if direction is None or rung not in ("Daily", "Weekly"):
         return None
-    return pair if pair[0] == structure[0] else None
+    prefix = "lower" if rung == "Daily" else "upper"
+    lower_name = "H4" if rung == "Daily" else "Daily"
+
+    levels = getattr(cascade, prefix + "_levels")
+    liquidity = getattr(cascade, prefix + "_liquidity")
+
+    from_levels = levels.direction()
+    if from_levels is not None and from_levels[0] == direction:
+        return _stamp(levels.evidence(), rung, lower_name)
+
+    got = _as_pair(liquidity)
+    if got is not None and got[0] == direction:
+        return _stamp(_liquidity_evidence(liquidity), rung, lower_name)
+    return None
 
 
 def _stamp(evidence, higher: str, lower: str):

@@ -359,3 +359,78 @@ def test_the_message_can_no_longer_contradict_itself():
         assert account.daily_structure is not None
         assert account.daily_structure[0] == side, \
             "the rung says one thing and its structure says another"
+
+
+# --- structure IS the bias ----------------------------------------------
+
+def test_structure_alone_establishes_a_bias():
+    """repeating-system t=396-409: "on the weekly you can see that we are
+    bullish... we've been having breakouts to the upside. So I know that
+    my weekly is bullish... SO WE ARE STILL BULLISH NO MATTER WHAT."
+
+    No key level and no sweep is named there. Requiring one is why most
+    instruments reported "nothing established yet" on a weekly that
+    plainly had a direction."""
+    cascade = Cascade(2)
+    for bar in rising_break(0, 1.1000, unit="days"):
+        cascade.push_daily(bar, bar.time)
+
+    account = cascade.explain()
+    assert account.direction == Direction.BULLISH
+    assert account.evidence is None, "no setup yet, and that is fine"
+    assert account.daily_structure[0] == Direction.BULLISH
+
+
+def test_the_weekly_carries_it_when_the_daily_has_no_structure():
+    cascade = Cascade(2)
+    for bar in rising_break(0, 1.1000, unit="days"):
+        cascade.push_weekly(bar, bar.time)
+
+    account = cascade.explain()
+    assert account.direction == Direction.BULLISH
+    assert account.rung == "Weekly"
+    assert account.alignment == "weekly only"
+
+
+def test_no_structure_anywhere_is_the_only_no_bias_case():
+    cascade = Cascade(2)
+    for i in range(10):
+        cascade.push_daily(c(i, 1.10, 1.1005, 1.0995, 1.10, "days"), None)
+    assert cascade.explain().direction is None
+
+
+def test_a_setup_is_reported_only_when_it_agrees_with_the_structure():
+    """"daily reject, daily IN ALIGNMENT WITH THE STRUCTURE". A rejection
+    pointing the other way is not a bias and is not a setup either."""
+    cascade = Cascade(2)
+    _install(cascade, "lower", Direction.BULLISH)
+    account = cascade.explain()
+    assert account.direction == Direction.BULLISH
+    assert account.evidence is not None, "the aligned rejection is the setup"
+
+    against = Cascade(2)
+    _install(against, "lower", Direction.BEARISH)
+    against.daily_structure.broke_at[Direction.BULLISH] = \
+        (T0 + pd.Timedelta(hours=9), 1.1100)
+    account = against.explain()
+    assert account.direction == Direction.BULLISH, "structure decides"
+    assert account.evidence is None, "the bearish rejection is not a setup"
+
+
+def test_the_most_recent_breakout_is_the_most_recent_one():
+    """NAS100 reported "Daily structurally bearish, through 29427 on
+    2026-08-20" over a chart that had since rallied a thousand points.
+    `broke_at` only updated when a NEWER SWING was broken, so a fresh
+    break of an older swing never registered -- a month-stale reading of
+    the present."""
+    t = BreakTracker(2)
+    t._bump(Direction.BEARISH, T0 + pd.Timedelta(days=20),
+            T0 + pd.Timedelta(days=21), 1.0900)
+    # a later break, of a swing that formed EARLIER
+    t._bump(Direction.BULLISH, T0 + pd.Timedelta(days=5),
+            T0 + pd.Timedelta(days=40), 1.1200)
+
+    from ..cascade import structural_direction
+    got = structural_direction(t)
+    assert got[0] == Direction.BULLISH, "the stale break won"
+    assert got[1] == T0 + pd.Timedelta(days=40)

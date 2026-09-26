@@ -144,9 +144,24 @@ class BreakTracker:
         del self._lows[cut:]
 
     def _bump(self, direction: Direction, when, broke_at, price):
+        """Two different questions, two separate records.
+
+        `newest_break` is the newest SWING FORMATION time that has been
+        broken, which is what "was structure broken after T" needs.
+
+        `broke_at` is the most recent BREAK EVENT, which is what "the
+        most recent breakout is to the downside" means. They were sharing
+        one update rule, so a fresh break of an OLDER swing did not
+        register at all -- NAS100 reported "Daily structurally bearish,
+        through 29427 on 2026-08-20" over a chart that had since rallied
+        a thousand points. A month-stale reading of the present.
+        """
         current = self.newest_break.get(direction)
         if current is None or when > current:
             self.newest_break[direction] = when
+
+        latest = self.broke_at.get(direction)
+        if latest is None or broke_at > latest[0]:
             self.broke_at[direction] = (broke_at, price)
 
     def broke_after(self, when, direction: Direction) -> bool:
