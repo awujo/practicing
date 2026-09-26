@@ -234,14 +234,42 @@ class Cascade:
         upper_levels = self.upper_levels.direction()
         upper_liquidity = _as_pair(self.upper_liquidity)
 
+        # STRUCTURE IS THE FRAME, NOT A THIRD OPINION.
+        #
+        # repeating-system t=421-424: "we have daily reject, daily IN
+        # ALIGNMENT WITH THE STRUCTURE". A rejection is checked AGAINST
+        # the timeframe's own structure; it does not compete with it.
+        #
+        # Treating rejection, sweep and structure as three independent
+        # direction-producers is what put "Weekly says bearish" and
+        # "Weekly structurally bullish" in the same message on EURCHF,
+        # over a chart that was plainly an uptrend with a two-week
+        # pullback. Three voters cannot help but contradict each other.
+        #
+        # So a route now only carries a rung's bias when it agrees with
+        # that timeframe's own most recent break of structure. No
+        # structure yet means nothing to align with, and therefore no
+        # bias -- Bishop starts from structure every time.
+        #
+        # This does not lose reversals. A rejection against structure
+        # that is real becomes tradeable the moment the structure itself
+        # turns, which is exactly when he would take it.
+        weekly_struct = structural_direction(self.weekly_structure)
+        daily_struct = structural_direction(self.daily_structure)
+
+        lower_levels = _in_structure(lower_levels, daily_struct)
+        lower_liquidity = _in_structure(lower_liquidity, daily_struct)
+        upper_levels = _in_structure(upper_levels, weekly_struct)
+        upper_liquidity = _in_structure(upper_liquidity, weekly_struct)
+
         lower = _agree(lower_levels, lower_liquidity)
         upper = _agree(upper_levels, upper_liquidity)
 
-        lower_ev = (self.lower_levels.evidence()
+        lower_ev = None if lower is None else (self.lower_levels.evidence()
                     if lower_levels is not None and
                     (lower_liquidity is None or lower_levels[1] >= lower_liquidity[1])
                     else _liquidity_evidence(self.lower_liquidity))
-        upper_ev = (self.upper_levels.evidence()
+        upper_ev = None if upper is None else (self.upper_levels.evidence()
                     if upper_levels is not None and
                     (upper_liquidity is None or upper_levels[1] >= upper_liquidity[1])
                     else _liquidity_evidence(self.upper_liquidity))
@@ -283,8 +311,8 @@ class Cascade:
                 other_rung="Weekly", other_direction=upper,
                 other_evidence=_stamp(upper_ev, "Weekly", "Daily"),
                 dropped_reason=reason, alignment=alignment,
-                weekly_structure=structural_direction(self.weekly_structure),
-                daily_structure=structural_direction(self.daily_structure))
+                weekly_structure=weekly_struct,
+                daily_structure=daily_struct)
 
         if upper is not None:
             return BiasAccount(
@@ -293,11 +321,10 @@ class Cascade:
                 other_rung="Daily",
                 dropped_reason="the Daily has not established one of its own",
                 alignment="weekly only",
-                weekly_structure=structural_direction(self.weekly_structure),
-                daily_structure=structural_direction(self.daily_structure))
-        return BiasAccount(None,
-                            weekly_structure=structural_direction(self.weekly_structure),
-                            daily_structure=structural_direction(self.daily_structure))
+                weekly_structure=weekly_struct,
+                daily_structure=daily_struct)
+        return BiasAccount(None, weekly_structure=weekly_struct,
+                            daily_structure=daily_struct)
 
 
 def _as_pair(route: LiquidityBias):
@@ -369,6 +396,19 @@ def structural_direction(tracker):
         if best is None or when > best[1]:
             best = (side, when, price)
     return best
+
+
+def _in_structure(pair, structure):
+    """A route's answer, but only if it agrees with the structure.
+
+    "daily reject, daily IN ALIGNMENT WITH THE STRUCTURE"
+    (repeating-system t=421-424). None when it disagrees, and None when
+    there is no structure yet -- a rejection with nothing to align to is
+    not a bias, it is a rejection.
+    """
+    if pair is None or structure is None:
+        return None
+    return pair if pair[0] == structure[0] else None
 
 
 def _stamp(evidence, higher: str, lower: str):

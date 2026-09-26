@@ -67,6 +67,20 @@ def test_nothing_broken_is_not_a_break_after_anything():
     assert not t.broke_after(T0, Direction.BEARISH)
 
 
+def _install(cascade, rung: str, direction: Direction, at=None):
+    """Give a rung a rejection, a confirming break, AND the matching
+    structure -- which is now required for any of it to count."""
+    at = at or T0
+    route = getattr(cascade, rung + "_levels")
+    route._rejections[direction].append(at)
+    route._level_at[at] = 1.1000
+    route._breaks.newest_break[direction] = at + pd.Timedelta(hours=1)
+    route._breaks.broke_at[direction] = (at + pd.Timedelta(hours=2), 1.1050)
+    tracker = (cascade.daily_structure if rung == "lower"
+               else cascade.weekly_structure)
+    tracker.broke_at[direction] = (at + pd.Timedelta(hours=2), 1.1050)
+
+
 # --- one rung ----------------------------------------------------------
 
 def test_a_rejection_alone_is_not_a_bias():
@@ -157,12 +171,12 @@ def test_the_daily_rung_wins_a_disagreement_with_the_weekly():
 
     # Force the two rungs to hold opposite answers by driving the routes
     # directly: this is about the precedence rule, not about detection.
-    cascade.lower_levels._rejections[Direction.BEARISH].append(T0)
-    cascade.lower_levels._breaks.newest_break[Direction.BEARISH] = \
-        T0 + pd.Timedelta(hours=1)
-    cascade.upper_levels._rejections[Direction.BULLISH].append(T0)
-    cascade.upper_levels._breaks.newest_break[Direction.BULLISH] = \
-        T0 + pd.Timedelta(hours=1)
+    # Each rung's STRUCTURE has to agree with its route, because a
+    # rejection that opposes its own timeframe's structure is no longer
+    # a bias at all -- "daily reject, daily in alignment with the
+    # structure".
+    _install(cascade, "lower", Direction.BEARISH)
+    _install(cascade, "upper", Direction.BULLISH)
 
     assert cascade.upper_levels.direction()[0] == Direction.BULLISH
     assert cascade.direction() == Direction.BEARISH, "the daily rung wins"
@@ -172,9 +186,7 @@ def test_the_weekly_rung_is_used_when_the_daily_has_no_answer():
     """It is a fallback, not a filter. Making the weekly a requirement
     would delete trades he explicitly still takes."""
     cascade = Cascade(2)
-    cascade.upper_levels._rejections[Direction.BULLISH].append(T0)
-    cascade.upper_levels._breaks.newest_break[Direction.BULLISH] = \
-        T0 + pd.Timedelta(hours=1)
+    _install(cascade, "upper", Direction.BULLISH)
 
     assert cascade.lower_levels.direction() is None
     assert cascade.direction() == Direction.BULLISH
@@ -287,9 +299,7 @@ def test_the_account_fields_are_not_silently_shuffled():
     values to unpack" three modules away rather than anywhere near the
     cause. This pins the meaning of each field rather than its order."""
     cascade = Cascade(2)
-    cascade.lower_levels._rejections[Direction.BEARISH].append(T0)
-    cascade.lower_levels._breaks.newest_break[Direction.BEARISH] = \
-        T0 + pd.Timedelta(hours=1)
+    _install(cascade, "lower", Direction.BEARISH)
 
     account = cascade.explain()
     assert account.direction == Direction.BEARISH
@@ -302,3 +312,50 @@ def test_the_account_fields_are_not_silently_shuffled():
         got = getattr(account, attr)
         assert got is None or len(got) == 3, \
             f"{attr} must be None or (direction, when, price), got {got!r}"
+
+
+# --- structure is the frame, not a third opinion ------------------------
+
+def test_a_rejection_against_its_own_structure_is_not_a_bias():
+    """repeating-system t=421-424: "we have daily reject, daily IN
+    ALIGNMENT WITH THE STRUCTURE".
+
+    Treating rejection, sweep and structure as three independent
+    direction-producers put "Weekly says bearish" and "Weekly
+    structurally bullish" in the same message on EURCHF, over a chart
+    that was plainly an uptrend with a two-week pullback. Three voters
+    cannot help but contradict each other."""
+    cascade = Cascade(2)
+    _install(cascade, "lower", Direction.BEARISH)
+    # ...but the Daily's own structure points the other way.
+    cascade.daily_structure.broke_at[Direction.BULLISH] = \
+        (T0 + pd.Timedelta(hours=3), 1.1100)
+
+    account = cascade.explain()
+    assert account.direction != Direction.BEARISH, \
+        "a rejection that opposes its own structure was taken as a bias"
+
+
+def test_a_rejection_with_no_structure_yet_is_not_a_bias():
+    """A rejection with nothing to align to is not a bias, it is a
+    rejection. Bishop starts from structure every time."""
+    cascade = Cascade(2)
+    route = cascade.lower_levels
+    route._rejections[Direction.BEARISH].append(T0)
+    route._breaks.newest_break[Direction.BEARISH] = T0 + pd.Timedelta(hours=1)
+
+    assert cascade.explain().direction is None
+
+
+def test_the_message_can_no_longer_contradict_itself():
+    """The property the whole change exists for: a rung's stated
+    direction and that timeframe's structural direction must agree,
+    because one is now gated on the other."""
+    for side in (Direction.BULLISH, Direction.BEARISH):
+        cascade = Cascade(2)
+        _install(cascade, "lower", side)
+        account = cascade.explain()
+        assert account.direction == side
+        assert account.daily_structure is not None
+        assert account.daily_structure[0] == side, \
+            "the rung says one thing and its structure says another"
