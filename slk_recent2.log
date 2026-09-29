@@ -1,0 +1,16 @@
+nohup: ignoring input
+OpenBLAS WARNING - could not determine the L2 cache size on this system, assuming 256k
+
+=== ARM: E taught triggers + single_candle liquidity ===
+  EURUSD         201 trades   25.9% win    0.11 R/trade   -0.39 net      22.7R gross     -78.6R net  PF  1.15  maxDD    83.7R  streak  15
+  GBPJPY         196 trades   21.9% win    0.03 R/trade   -0.21 net       5.3R gross     -41.3R net  PF  1.03  maxDD    80.9R  streak  23
+  GBPNZD         228 trades   20.2% win   -0.06 R/trade   -0.30 net     -14.8R gross     -68.7R net  PF  0.92  maxDD    78.4R  streak  18
+  POOLED     n= 625  win= 22.6%  R/trade=+0.021  PF=1.03  maxDD=  77.4R  worst-streak=27
+  [511s]
+
+=== ARM: F E + trigger_priority (Bishop's best-first) ===
+  EURUSD         140 trades   20.7% win   -0.09 R/trade   -0.47 net     -13.3R gross     -66.2R net  PF  0.88  maxDD    68.3R  streak  23
+  GBPJPY         121 trades   12.4% win   -0.58 R/trade   -0.77 net     -69.9R gross     -93.5R net  PF  0.34  maxDD    96.2R  streak  27
+  GBPNZD         143 trades   14.0% win   -0.50 R/trade   -0.83 net     -71.5R gross    -118.3R net  PF  0.42  maxDD   118.3R  streak  20
+  POOLED     n= 404  win= 15.8%  R/trade=-0.383  PF=0.55  maxDD= 160.4R  worst-streak=38
+  [731s]

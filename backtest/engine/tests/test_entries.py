@@ -41,7 +41,10 @@ def test_fourth_man_confirmation_bullish_sweep_and_reclaim():
     assert level is not None
     assert level.shape == "V"
     assert level.default_bias == Direction.BULLISH
-    assert level.price == pytest.approx(curr.close)
+    # 2026-09-30: the taught V-shape level is the SWEPT leg (wick low),
+    # not the reclaim close -- entries-part5 t=600-645 and the video-14
+    # frame measurement (bishop_pdf_sl_measurements.md).
+    assert level.price == pytest.approx(curr.low)
 
 
 def test_fourth_man_confirmation_bearish_sweep_and_reclaim():
@@ -51,7 +54,7 @@ def test_fourth_man_confirmation_bearish_sweep_and_reclaim():
     assert level is not None
     assert level.shape == "A"
     assert level.default_bias == Direction.BEARISH
-    assert level.price == pytest.approx(curr.close)
+    assert level.price == pytest.approx(curr.high)  # swept leg, see above
 
 
 def test_fourth_man_confirmation_none_when_the_other_side_also_breaks():

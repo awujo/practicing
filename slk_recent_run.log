@@ -1,0 +1,30 @@
+nohup: ignoring input
+OpenBLAS WARNING - could not determine the L2 cache size on this system, assuming 256k
+
+=== ARM: A baseline (taught triggers) ===
+  EURUSD          29 trades   51.7% win    1.55 R/trade    1.14 net      44.8R gross      33.2R net  PF  4.20  maxDD     9.5R  streak   4
+  GBPJPY          24 trades   29.2% win   -0.04 R/trade   -0.37 net      -0.9R gross      -8.8R net  PF  0.95  maxDD    12.7R  streak   6
+  GBPNZD          37 trades   43.2% win    1.07 R/trade    0.86 net      39.8R gross      31.9R net  PF  2.89  maxDD     9.9R  streak   7
+  POOLED     n=  90  win= 42.2%  R/trade=+0.930  PF=2.61  maxDD=  10.0R  worst-streak=10
+  [57s]
+
+=== ARM: B + trigger_priority ===
+  EURUSD          19 trades   47.4% win    1.08 R/trade    0.81 net      20.5R gross      15.4R net  PF  3.05  maxDD     5.5R  streak   4
+  GBPJPY          13 trades    7.7% win   -0.82 R/trade   -0.98 net     -10.6R gross     -12.7R net  PF  0.12  maxDD    12.7R  streak  10
+  GBPNZD          12 trades   25.0% win    0.61 R/trade    0.38 net       7.3R gross       4.5R net  PF  1.81  maxDD     5.9R  streak   4
+  POOLED     n=  44  win= 29.5%  R/trade=+0.392  PF=1.56  maxDD=   8.3R  worst-streak=8
+  [68s]
+
+=== ARM: C + limit fill (SLK_SPEC 5.1/5.2 return-to-level) ===
+  EURUSD          29 trades   48.3% win    1.26 R/trade    0.86 net      36.7R gross      25.0R net  PF  3.44  maxDD     9.5R  streak   4
+  GBPJPY          24 trades   33.3% win    0.18 R/trade   -0.15 net       4.4R gross      -3.5R net  PF  1.28  maxDD     7.4R  streak   5
+  GBPNZD          37 trades   45.9% win    1.35 R/trade    1.14 net      50.1R gross      42.2R net  PF  3.50  maxDD     9.9R  streak   7
+  POOLED     n=  90  win= 43.3%  R/trade=+1.013  PF=2.79  maxDD=  10.2R  worst-streak=10
+  [54s]
+
+=== ARM: D both B+C ===
+  EURUSD          19 trades   42.1% win    0.65 R/trade    0.38 net      12.4R gross       7.2R net  PF  2.13  maxDD     5.9R  streak   5
+  GBPJPY          13 trades    7.7% win   -0.82 R/trade   -0.98 net     -10.6R gross     -12.7R net  PF  0.12  maxDD    12.7R  streak  10
+  GBPNZD          12 trades   16.7% win   -0.54 R/trade   -0.77 net      -6.5R gross      -9.3R net  PF  0.35  maxDD     9.3R  streak   4
+  POOLED     n=  44  win= 25.0%  R/trade=-0.107  PF=0.86  maxDD=  13.6R  worst-streak=10
+  [67s]
