@@ -185,7 +185,7 @@ silently assumed:
 
 import bisect
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pandas as pd
 
@@ -603,6 +603,26 @@ DEFAULT_PIP_SIZES = {
 
 def default_pip_size(instrument: str) -> float:
     return DEFAULT_PIP_SIZES.get(instrument, 0.0001)
+
+
+def _pad_zone(zone, direction: Direction, sl_pad_pips: float, pip_size: float):
+    """Widen an imbalance zone by `sl_pad_pips` on its FAR (risk) side
+    only -- the exact edge `imbalance_stop_loss()` anchors to. The near
+    edge (where entry rests per Bishop's deck) is left untouched, so a
+    padded zone produces a stop that matches what the live broker order
+    would carry: far_edge ± pad, identical arithmetic to
+    `entries.imbalance_stop_loss(..., padding_pips=sl_pad_pips)` applied
+    to the UNPADDED zone.
+
+    A no-op when sl_pad_pips == 0.0 (the shipped default), so every
+    recorded backtest number reproduces bit-for-bit.
+    """
+    if not sl_pad_pips:
+        return zone
+    pad = sl_pad_pips * pip_size
+    if direction == Direction.BULLISH:      # risk side of a long is BELOW
+        return replace(zone, low=zone.low - pad)
+    return replace(zone, high=zone.high + pad)
 
 
 def _direction_lookup(confirmations):
@@ -1687,6 +1707,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   daily_only_when_split: bool = False,
                   require_flip_confirmation: bool = False,
                   require_flip_touch: bool = False,
+                  sl_pad_pips: float = 0.0,
+                  tp_pad_pips: float = 0.0,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
