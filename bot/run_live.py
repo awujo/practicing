@@ -359,6 +359,8 @@ def main():
                    stop_anchor=args.stop_anchor,
                    origin_kind=args.origin_kind,
                    close_based_sweep_break=args.close_based_sweep_break,
+                   require_flip_confirmation=args.require_flip_confirmation,
+                   require_flip_touch=args.require_flip_touch,
                    history_window_years=history_window_years,
                    shadow_books=tuple(shadow_books))
 

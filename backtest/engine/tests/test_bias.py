@@ -203,3 +203,88 @@ def test_an_empty_confirmation_window_is_not_a_confirmation():
     ok.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
     assert ok.check_flip(level, rejection, [new_way], require_confirmation=True) is True
     assert ok.direction == Direction.BEARISH
+
+
+def test_require_touch_blocks_a_candle_that_never_traded_into_the_level():
+    """Condition (a), enforced INSIDE check_flip() when require_touch=True.
+
+    Video 16 states the flip test as TWO events: "price trades into the
+    next key level ... AND rejects from it". The historical default leaves
+    condition (a) to the caller -- replay_bias() filters with
+    `c.low <= level.price <= c.high` -- but a hand-built call could pass a
+    candle that merely closes through the level without ever wicking into
+    it, silently skipping the first event. With the guard on, such a
+    candle returns False before the lower timeframe is consulted at all.
+    """
+    level = KeyLevel(time=pd.Timestamp("2024-01-10"), price=1.1000, shape="A",
+                     default_bias=Direction.BULLISH, confirmed_at=pd.Timestamp("2024-01-10"))
+    # Closes BELOW the level (condition (b) satisfied) but its whole range
+    # sits under the level's price -- it never traded INTO it.
+    no_touch = Candle(pd.Timestamp("2024-01-11"), 1.0990, 1.0995, 1.0980, 1.0985, 1000)
+    new_way = Confirmation(time=pd.Timestamp("2024-01-11 06:00"),
+                           direction=Direction.BEARISH,
+                           kind=ConfirmationKind.BREAKOUT, price=1.0980)
+
+    # Guard OFF (default): caller skipped condition (a), flip proceeds --
+    # every recorded backtest ran under this contract.
+    loose = BiasCascade("Daily")
+    loose.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert loose.check_flip(level, no_touch, [new_way]) is True
+    assert loose.direction == Direction.BEARISH
+
+    # Guard ON: no touch, no flip -- and no bias change.
+    strict = BiasCascade("Daily")
+    strict.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert strict.check_flip(level, no_touch, [new_way], require_touch=True) is False
+    assert strict.direction == Direction.BULLISH
+
+
+def test_require_touch_still_allows_a_genuine_touch_and_reject():
+    """The guard must not block a REAL flip: a candle whose range spans the
+    level and closes through it still flips with require_touch=True."""
+    level = KeyLevel(time=pd.Timestamp("2024-01-10"), price=1.1000, shape="A",
+                     default_bias=Direction.BULLISH, confirmed_at=pd.Timestamp("2024-01-10"))
+    # High 1.1012 > level > low 1.0980: traded into the level, closed below.
+    rejection = Candle(pd.Timestamp("2024-01-11"), 1.1010, 1.1012, 1.0980, 1.0985, 1000)
+    new_way = Confirmation(time=pd.Timestamp("2024-01-11 06:00"),
+                           direction=Direction.BEARISH,
+                           kind=ConfirmationKind.BREAKOUT, price=1.0980)
+    cascade = BiasCascade("Daily")
+    cascade.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert cascade.check_flip(level, rejection, [new_way], require_touch=True) is True
+    assert cascade.direction == Direction.BEARISH
+
+
+def test_require_touch_and_require_confirmation_compose_independently():
+    """The two guards cover different conditions ((a) and (c)) and must be
+    individually satisfiable when both are on: failing either one blocks
+    the flip; passing both allows it."""
+    level = KeyLevel(time=pd.Timestamp("2024-01-10"), price=1.1000, shape="A",
+                     default_bias=Direction.BULLISH, confirmed_at=pd.Timestamp("2024-01-10"))
+    rejection = Candle(pd.Timestamp("2024-01-11"), 1.1010, 1.1012, 1.0980, 1.0985, 1000)
+    new_way = Confirmation(time=pd.Timestamp("2024-01-11 06:00"),
+                           direction=Direction.BEARISH,
+                           kind=ConfirmationKind.BREAKOUT, price=1.0980)
+    no_touch = Candle(pd.Timestamp("2024-01-11"), 1.0990, 1.0995, 1.0980, 1.0985, 1000)
+
+    # Both on, touch fails even though confirmation passes -> no flip.
+    c1 = BiasCascade("Daily")
+    c1.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert c1.check_flip(level, no_touch, [new_way],
+                         require_confirmation=True, require_touch=True) is False
+    assert c1.direction == Direction.BULLISH
+
+    # Both on, confirmation empty even though touch passes -> no flip.
+    c2 = BiasCascade("Daily")
+    c2.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert c2.check_flip(level, rejection, [],
+                         require_confirmation=True, require_touch=True) is False
+    assert c2.direction == Direction.BULLISH
+
+    # Both on, both conditions genuinely met -> flip proceeds.
+    c3 = BiasCascade("Daily")
+    c3.set_initial_bias(Direction.BULLISH, pd.Timestamp("2024-01-01"))
+    assert c3.check_flip(level, rejection, [new_way],
+                         require_confirmation=True, require_touch=True) is True
+    assert c3.direction == Direction.BEARISH
+
