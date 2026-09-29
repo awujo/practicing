@@ -123,6 +123,19 @@ SLK_OPERATIONAL = {
 SLK_VARIANTS = {
     "qmr": {"require_qmr": True},
     "imbalance": {"require_imbalance_overlap": True},
+
+    # entry_fill="limit" -- MEASURED, EARNED ITS PLACE (2026-09-30).
+    # SLK_SPEC 5.1/5.2: "entry is the return to it, not the engulfing
+    # candle". The default fills AT the confirmation candle, which is
+    # worse than the fill Bishop actually gets. Recent-year window
+    # (2025-10-01 -> 2026-09-30), three pairs, same trade set:
+    #     instant  n=90   42.2% win   +0.93 R/trade   PF 2.61
+    #     limit    n=90   43.3% win   +1.01 R/trade   PF 2.79
+    # Same trades, better fills -- strictly dominant, no trade count
+    # lost. Kept as a variant rather than folded into SLK_SYSTEM so the
+    # baseline stays reproducible; run_slk --variant limit is the
+    # recommended arm until the operator promotes it.
+    "limit": {"entry_fill": "limit"},
 }
 
 

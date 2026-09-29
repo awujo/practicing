@@ -1,0 +1,60 @@
+OpenBLAS WARNING - could not determine the L2 cache size on this system, assuming 256k
+SLK SYSTEM
+  avoid_rollover_entries = True
+  bias_caveat = True
+  close_based_sweep_break = True
+  confirmation_triggers = ('sweep_break', 'breakout', 'disrespect', 'fourth_man')
+  erl_mode = target
+  min_reward_r = 1.0
+  origin_kind = any
+  stop_anchor = trigger_wick
+  spread assumption = 1.5 PIPS/round trip, charged per trade as spread/risk_pips
+  history = full  (~20 years per instrument)
+
+PER INSTRUMENT
+  EURUSD [19s]           388 trades   44.1% win    0.92 R/trade    0.60 net     357.1R gross     233.2R net  PF  2.65  maxDD    32.7R  streak  11
+  GBPJPY [20s]           419 trades   37.2% win    0.76 R/trade    0.57 net     319.0R gross     236.8R net  PF  2.21  maxDD    21.0R  streak  12
+  GBPNZD [18s]           362 trades   35.4% win    0.59 R/trade    0.40 net     212.5R gross     144.5R net  PF  1.91  maxDD    24.5R  streak  16
+                       1 unresolved and excluded (0.3% of 363)
+
+BY YEAR (pooled)
+  2015           113 trades   45.1% win    1.14 R/trade    0.95 net     128.9R gross     107.4R net  PF  3.08  maxDD    10.0R  streak   7
+  2016           106 trades   37.7% win    0.75 R/trade    0.39 net      79.8R gross      41.7R net  PF  2.21  maxDD    18.5R  streak  10
+  2017           110 trades   40.9% win    0.80 R/trade    0.60 net      87.5R gross      65.5R net  PF  2.35  maxDD     8.6R  streak   6
+  2018            85 trades   45.9% win    0.82 R/trade    0.60 net      69.5R gross      51.4R net  PF  2.51  maxDD     9.3R  streak   5
+  2019            86 trades   31.4% win    0.10 R/trade   -0.14 net       8.6R gross     -12.4R net  PF  1.15  maxDD    32.3R  streak   7
+  2020           102 trades   39.2% win    0.56 R/trade    0.36 net      56.9R gross      36.4R net  PF  1.92  maxDD    13.6R  streak  11
+  2021            90 trades   35.6% win    0.63 R/trade    0.34 net      56.3R gross      30.6R net  PF  1.97  maxDD    13.3R  streak   8
+  2022            94 trades   43.6% win    1.07 R/trade    0.91 net     100.3R gross      85.1R net  PF  2.89  maxDD     8.2R  streak   6
+  2023           102 trades   32.4% win    0.41 R/trade    0.17 net      42.3R gross      17.4R net  PF  1.61  maxDD    13.4R  streak   8
+  2024           122 trades   38.5% win    0.91 R/trade    0.71 net     111.5R gross      86.1R net  PF  2.49  maxDD    20.9R  streak  10
+  2025            92 trades   34.8% win    0.84 R/trade    0.61 net      77.3R gross      56.3R net  PF  2.29  maxDD    13.9R  streak  10
+  2026            67 trades   41.8% win    1.04 R/trade    0.73 net      69.8R gross      49.0R net  PF  2.79  maxDD    12.9R  streak  10
+
+==============================================================================
+POOLED
+  all           1169 trades   38.9% win    0.76 R/trade    0.53 net     888.6R gross     614.5R net  PF  2.24  maxDD    32.3R  streak  11
+  common span   1160 trades   38.9% win    0.74 R/trade    0.51 net     862.1R gross     590.7R net  PF  2.22  maxDD    32.3R  streak  11
+    common span starts 2015-01-27, set by GBPNZD -- 9 of 1169 trades fall before it.
+    Read THIS row as the portfolio result. The 'all' row above
+    includes a stretch when only some instruments had data.
+
+  trigger breakdown:
+    disrespect          942  (80.6%)
+    fourth_man          204  (17.5%)
+    breakout             22  ( 1.9%)
+    sweep_break           1  ( 0.1%)
+  avg win 3.52R   avg loss 1.00R
+
+  WHAT THE DRAWDOWN MEANS FOR SIZING
+    at 0.25% risk/trade: worst stretch is 8.1% of the account
+    at 0.5% risk/trade: worst stretch is 16.2% of the account
+    at 1.0% risk/trade: worst stretch is 32.3% of the account
+
+  Pooled drawdown assumes every instrument traded together at equal
+  risk. It is NOT the sum of the per-instrument figures, which happen
+  at different times and partly offset.
+
+  NOT modelled: spread is a flat assumption, and correlation is absent
+  entirely -- 27 instruments is not 27 independent bets, so the real
+  portfolio risk is worse than these numbers read.

@@ -127,21 +127,33 @@ def is_engulfing(prev: Candle, curr: Candle, direction: Direction) -> bool:
 
 
 def fourth_man_confirmation_level(prev: Candle, curr: Candle) -> KeyLevel | None:
-    """"4th man confirmation" -- see module docstring point 2. `curr`
+    """\"4th man confirmation\" -- see module docstring point 2. `curr`
     sweeps one side of `prev`'s range, closes back INTO it, while `prev`'s
     OTHER side stays untouched:
       - BULLISH: curr.low < prev.low (swept), curr.close > prev.low
         (reclaimed), curr.high < prev.high (prev's high still standing).
       - BEARISH: mirror -- curr.high > prev.high, curr.close < prev.high,
         curr.low > prev.low (prev's low still standing).
-    Returns a V-shape (bullish) / A-shape (bearish) KeyLevel at `curr`'s
-    close (key_levels.py's closing-price convention), or None if neither
-    side's conditions hold."""
+
+    Returns a V-shape (bullish) / A-shape (bearish) KeyLevel at the SWEPT
+    extreme (`curr`'s low for bullish, `curr`'s high for bearish).
+
+    Corrected 2026-09-30: the level used to sit at `curr.close`. The
+    taught level is the swept leg itself, not the reclaim close --
+    entries-part5 t=600-645 draws the V-shape key level AT the swept low
+    ("price come and sweep out the leg of this other candle ... the high
+    should be standing ... it is going to give you the V-shape key
+    level"), and the video-14 frame measurement agrees: the marked
+    V-shape sits at the wick low of the sweeping candle (GBPUSD H1
+    ~1.21780) and the entry is the RETURN to that level, above it
+    (knowledge-base/supplementary/bishop_pdf_sl_measurements.md)."""
     if curr.low < prev.low and curr.close > prev.low and curr.high < prev.high:
-        return KeyLevel(curr.time, curr.close, "V", Direction.BULLISH)
+        return KeyLevel(curr.time, curr.low, "V", Direction.BULLISH)
     if curr.high > prev.high and curr.close < prev.high and curr.low > prev.low:
-        return KeyLevel(curr.time, curr.close, "A", Direction.BEARISH)
+        return KeyLevel(curr.time, curr.high, "A", Direction.BEARISH)
     return None
+
+
 
 
 class EntryPattern(Enum):

@@ -1,0 +1,29 @@
+OpenBLAS WARNING - could not determine the L2 cache size on this system, assuming 256k
+INFO:DUKASCRIPT:current timestamp :2019-10-23T16:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-14T10:00:00
+EURUSD H1: 73207 fetched, 73207 cached (22.6s)
+INFO:DUKASCRIPT:current timestamp :2019-10-23T12:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-14T00:00:00
+EURUSD H4: 18917 fetched, 18917 cached (4.9s)
+INFO:DUKASCRIPT:current timestamp :2026-09-28T00:00:00
+EURUSD D: 3672 fetched, 3672 cached (1.6s)
+EURUSD W (resampled): 613 built, 613 cached
+INFO:DUKASCRIPT:current timestamp :2019-10-24T17:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-15T13:00:00
+GBPJPY H1: 73179 fetched, 73179 cached (18.8s)
+INFO:DUKASCRIPT:current timestamp :2019-10-24T12:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-15T04:00:00
+GBPJPY H4: 18916 fetched, 18916 cached (9.9s)
+INFO:DUKASCRIPT:current timestamp :2026-09-28T00:00:00
+GBPJPY D: 3671 fetched, 3671 cached (2.3s)
+GBPJPY W (resampled): 613 built, 613 cached
+INFO:DUKASCRIPT:current timestamp :2019-10-27T21:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-21T19:00:00
+GBPNZD H1: 73040 fetched, 73040 cached (10.0s)
+INFO:DUKASCRIPT:current timestamp :2019-10-25T20:00:00
+INFO:DUKASCRIPT:current timestamp :2024-08-21T12:00:00
+GBPNZD H4: 18906 fetched, 18906 cached (5.8s)
+INFO:DUKASCRIPT:current timestamp :2026-09-28T00:00:00
+GBPNZD D: 3668 fetched, 3668 cached (1.7s)
+GBPNZD W (resampled): 613 built, 613 cached
+DONE
