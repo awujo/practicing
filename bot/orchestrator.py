@@ -277,6 +277,16 @@ class LiveBot:
     # reasoning and the A/B data behind changing either one.
     origin_kind: str = "sweep_break"
     close_based_sweep_break: bool = False
+    # The two bias-flip state-machine guards, passed straight through to
+    # BOTH run_backtest() and build_htf_context() -- wiring one without
+    # the other is exactly the gate-vs-engine drift this project has been
+    # bitten by twice (2026-09-18 review finding 2). See
+    # run_backtest()'s docstrings for require_flip_confirmation (live-tail
+    # empty-window guard, AUDIT_2026-09-22_PART2.md) and require_flip_touch
+    # (condition (a) enforced inside check_flip). Both False by default:
+    # every recorded number reproduces.
+    require_flip_confirmation: bool = False
+    require_flip_touch: bool = False
     # Per-instrument {"D": years, "W": years, "H4": years, "H1": years}
     # trailing-history caps, passed straight through to run_backtest()'s
     # max_history_years -- see that parameter's own docstring for why
@@ -694,6 +704,8 @@ class LiveBot:
                                 stop_anchor=self.stop_anchor,
                                 origin_kind=self.origin_kind,
                                 close_based_sweep_break=self.close_based_sweep_break,
+                                require_flip_confirmation=self.require_flip_confirmation,
+                                require_flip_touch=self.require_flip_touch,
                                 max_history_years=self.history_window_years.get(instrument))
         # Selected on when each signal became COMPUTABLE, not on the
         # candle it is stamped for (2026-09-18 review). A signal whose
@@ -894,6 +906,8 @@ class LiveBot:
                 instrument, source=self.source,
                 origin_kind=self.origin_kind,
                 close_based_sweep_break=self.close_based_sweep_break,
+                require_flip_confirmation=self.require_flip_confirmation,
+                require_flip_touch=self.require_flip_touch,
                 max_history_years=self.history_window_years.get(instrument))
             if ctx is None:
                 logger.debug("%s: no higher-timeframe structure to bootstrap a bias from", instrument)

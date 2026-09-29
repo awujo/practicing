@@ -118,7 +118,9 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
                        confirmation_window: int = BIAS_CONFIRMATION_WINDOW,
                        origin_kind: str = "sweep_break",
                        close_based_sweep_break: bool = False,
-                       max_history_years: dict | None = None) -> HTFContext | None:
+                       max_history_years: dict | None = None,
+                       require_flip_confirmation: bool = False,
+                       require_flip_touch: bool = False) -> HTFContext | None:
     """Derive the Weekly/Daily/H4 bias context. Returns None when there
     isn't enough structure to bootstrap a bias from -- the same condition
     that makes `run_backtest()` return no trades at all, so a None here
@@ -126,6 +128,21 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
 
     Costs roughly the Daily + H4 portion of a full run_backtest and, by
     design, touches no H1 data at all.
+
+    `require_flip_confirmation` exists for the same drift reason: the
+    audit's "sticky bias" finding (AUDIT_2026-09-22_PART2.md, condition
+    (c)) is that an EMPTY lower-timeframe confirmation window satisfies
+    condition (c) literally -- "no further continuation confirmation in
+    the original direction" -- so the live tail of the data can flip a
+    bias on no evidence at all. It only ever bites at the tail, which is
+    exactly where live runs and never mid-history, so a backtest run
+    cannot see it. The engine has had the opt-in flag
+    (`run_backtest(require_flip_confirmation=...)`) since that audit;
+    until 2026-09-30 the gate did not accept it at all, so a bot wired
+    with the flag ON still gated trades against a bias that could flip
+    on nothing -- the gate disagreeing with the engine it gates, the
+    same failure mode as below. False (default) keeps every recorded
+    number reproducing.
 
     `origin_kind`, `close_based_sweep_break` and `max_history_years` exist
     because the gate MUST compute bias the same way the engine it gates
@@ -189,7 +206,9 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
 
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
-                                     confirmation_window=confirmation_window)
+                                     confirmation_window=confirmation_window,
+                                     require_confirmation=require_flip_confirmation,
+                                     require_touch=require_flip_touch)
 
     weekly_breakpoints = []
     if weekly:
@@ -199,7 +218,9 @@ def build_htf_context(instrument: str, source: str = "dukascopy", n: int = 2,
             weekly_levels = detect_key_levels(weekly, n)
             weekly_breakpoints = replay_bias(weekly, weekly_levels, daily_confirmations,
                                               weekly_first_origin.direction, "Weekly",
-                                              confirmation_window=confirmation_window)
+                                              confirmation_window=confirmation_window,
+                                              require_confirmation=require_flip_confirmation,
+                                              require_touch=require_flip_touch)
 
     return HTFContext(
         instrument=instrument,

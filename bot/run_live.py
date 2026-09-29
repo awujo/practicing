@@ -187,6 +187,23 @@ def main():
                               "close_based_break docstring. Off by default (wick, unchanged). "
                               "Required for the --history-windows-config values below, which were "
                               "measured with this on.")
+    parser.add_argument("--require-flip-confirmation", action="store_true",
+                         help="bias-flip state machine, condition (c) hardened: do NOT flip "
+                              "the bias when the lower timeframe's confirmation window is "
+                              "EMPTY. An empty window satisfies 'no further continuation in "
+                              "the old direction' literally, so without this a live bias can "
+                              "flip on no evidence at all -- the tail of the data is exactly "
+                              "where live runs (see AUDIT_2026-09-22_PART2.md). Off by "
+                              "default; every recorded number reproduces. Wired to BOTH "
+                              "run_backtest() and the storyline gate.")
+    parser.add_argument("--require-flip-touch", action="store_true",
+                         help="bias-flip state machine, condition (a) enforced inside "
+                              "check_flip(): require the rejection candle to have actually "
+                              "TRADED INTO the key level before testing the flip, not just "
+                              "closed through it. replay_bias()'s own scan already filters "
+                              "this way, so this cannot change any result -- it protects "
+                              "hand-built and future call sites from silently skipping "
+                              "condition (a). Off by default (unchanged behavior).")
     parser.add_argument("--history-windows-config", default=None,
                          help="path to a JSON file mapping instrument -> {\"D\":years,\"W\":years,"
                               "\"H4\":years,\"H1\":years} trailing-history caps, passed through to "

@@ -1686,6 +1686,7 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
                   trigger_priority: bool = False,
                   daily_only_when_split: bool = False,
                   require_flip_confirmation: bool = False,
+                  require_flip_touch: bool = False,
                   max_history_years: dict | None = None) -> list[TradeRecord]:
     """
     entry_style: "aggressive" | "conservative" (Section 5 -- run both
@@ -1785,6 +1786,14 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     runs -- so this cannot move a historical backtest and can stop a
     live bias flipping on no evidence. False (default) reproduces every
     recorded number.
+    require_flip_touch: enforce condition (a) of the Video 16 flip test
+    ("price TRADES INTO the next key level AND rejects from it" -- two
+    events) inside check_flip() itself, rather than trusting every
+    caller to have pre-filtered. replay_bias()'s own candidate scan
+    already requires the candle's range to span the level, so this
+    cannot change any replay result; what it changes is that a hand-
+    built or future call site that skipped the touch gets a refusal
+    instead of a silent flip. False (default) keeps the old contract.
     require_sponsored_level: only react from a key level that has
     already produced a move in its own direction -- plug-and-play
     t=869, "that A-shaped key level must have sponsored some level of
@@ -2062,7 +2071,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
     daily_breakpoints = replay_bias(daily, daily_levels, h4_confirmations,
                                      first_origin.direction, "Daily",
                                      confirmation_window=confirmation_window,
-                                     require_confirmation=require_flip_confirmation)
+                                     require_confirmation=require_flip_confirmation,
+                                     require_touch=require_flip_touch)
 
     weekly_breakpoints = []
     if weekly:
@@ -2073,7 +2083,8 @@ def run_backtest(instrument: str, entry_style: str, source: str = "dukascopy",
             weekly_breakpoints = replay_bias(weekly, weekly_levels_all, daily_confirmations,
                                               weekly_first_origin.direction, "Weekly",
                                               confirmation_window=confirmation_window,
-                                              require_confirmation=require_flip_confirmation)
+                                              require_confirmation=require_flip_confirmation,
+                                              require_touch=require_flip_touch)
 
     h4_lookup = _direction_lookup(h4_confirmations)
     # Built once here, not per entry candidate -- see _aligned_timeframes().
