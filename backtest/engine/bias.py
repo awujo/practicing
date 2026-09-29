@@ -170,7 +170,8 @@ class BiasCascade:
 
     def check_flip(self, origin_tf_next_key_level: KeyLevel, rejection_candle: Candle,
                     lower_tf_confirmations_after_rejection: list[Confirmation],
-                    require_confirmation: bool = False) -> bool:
+                    require_confirmation: bool = False,
+                    require_touch: bool = False) -> bool:
         """
         Evaluates conditions (b) and (c) of the flip test -- the caller is
         responsible for condition (a) (confirming price has actually
@@ -179,6 +180,18 @@ class BiasCascade:
         bias direction, so a "disrespect" of it correctly means "closed
         in the new direction". Returns True (and updates self.direction)
         if the bias flips; False otherwise.
+
+        `require_touch` (added 2026-09-30) moves condition (a) INSIDE
+        this method instead of leaving it to the caller: STRATEGY.md's
+        Video 16 wording is "price trades into the next key level ...
+        AND rejects from it", two events. `replay_bias()` selects its
+        candidate with `c.low <= level.price <= c.high`, but a hand-built
+        call -- or any future caller -- could pass a candle that merely
+        closes through the level without ever wicking into it, and under
+        the old contract nothing here would notice. When True, a
+        rejection candle whose range never spans the level returns False
+        without consulting the lower timeframe at all. False (default)
+        keeps every existing caller's behavior byte-for-byte.
         """
         if self.direction is None:
             return False
@@ -186,6 +199,13 @@ class BiasCascade:
             raise ValueError(
                 "origin_tf_next_key_level.default_bias must match the current bias direction"
             )
+
+        # Condition (a), opt-in: price must have actually TRADED INTO the
+        # level (its range spans the level's price), not just closed past
+        # it. See the docstring.
+        if require_touch and not (rejection_candle.low <= origin_tf_next_key_level.price
+                                   <= rejection_candle.high):
+            return False
 
         # Condition (b): reject-and-close in the new (opposite) direction.
         if not is_disrespected(rejection_candle, origin_tf_next_key_level):
@@ -252,7 +272,8 @@ def resolve_effective_bias(biases: dict[str, Direction | None]) -> tuple[Directi
 def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: list[Confirmation],
                  initial_direction: Direction, timeframe_label: str,
                  confirmation_window: int = 1,
-                 require_confirmation: bool = False) -> list[tuple[object, Direction]]:
+                 require_confirmation: bool = False,
+                 require_touch: bool = False) -> list[tuple[object, Direction]]:
     """
     Backtest driver for BiasCascade: walks `candles` forward, applying
     check_flip() whenever price trades into the next same-direction key
@@ -372,7 +393,8 @@ def replay_bias(candles: list[Candle], levels: list[KeyLevel], confirmations: li
         start = bisect.bisect_right(confirmation_times, c.time)
         window = confirmations_sorted[start:start + confirmation_window]
         if cascade.check_flip(eligible, c, window,
-                              require_confirmation=require_confirmation):
+                              require_confirmation=require_confirmation,
+                              require_touch=require_touch):
             breakpoints.append((c.time, cascade.direction, closes_at(c.time, length)))
 
     return breakpoints
