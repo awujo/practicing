@@ -39,6 +39,7 @@ from .live_cache_sync import sync_recent_from_mt5
 from .live_strategy import HUNTING, HTFContext, build_htf_context, storyline_at
 from .mt5_data import MT5Client, MT5ConnectionError
 from .mt5_execution import MT5Execution, ValidationError
+from .roll_call import roll_call
 from .risk_manager import Decision, OpenPosition, RiskManager
 from .setup_validity import check_setup
 
@@ -356,6 +357,8 @@ class LiveBot:
     _next_reconnect_at: object = field(init=False, default=None)
 
     def __post_init__(self):
+        self._storyline_last = {}
+        self._period_clock = _PeriodClock()
         self.risk_manager = RiskManager(self.profile.active_rules, self.profile.terminates_on_dd)
         self.phase_start_balance = self.profile.starting_balance
         self.day_start_balance = self.profile.starting_balance
@@ -407,6 +410,11 @@ class LiveBot:
         if not self.mt5_client.is_healthy():
             self._try_reconnect()
             return  # fail closed -- do nothing else this iteration
+
+        # Before anything else: has the market rolled into a new day or
+        # week? The roll call is the morning watchlist and must not wait
+        # on a candle close to be sent.
+        self._roll_call_if_due()
 
         try:
             state = self._account_state()
@@ -797,6 +805,33 @@ class LiveBot:
             self._consider_entry(instrument, record, state)
         self._last_entry_time[instrument] = new_candle.time
 
+    def _roll_call_if_due(self):
+        """A new day or week: report the whole book, not just changes.
+
+        Operator, 2026-09-26: "at the beginning of a new day, when the
+        market has reset, I can just look at the new report, know the
+        pairs to put in my watch list, know the ones to remove."
+
+        The old engine's Storyline is a different shape from the SLK
+        cascade's account, so it is adapted rather than reimplemented --
+        one roll call format, two engines, and they stay comparable
+        precisely because they are formatted by the same code.
+        """
+        if self.signals is None:
+            return
+        due = self._period_clock.rolled_over()
+        if not due:
+            return
+        accounts = [(instrument, _as_account(self._storyline_last.get(instrument)))
+                    for instrument in self.instruments]
+        heading = ("WEEKLY ROLL CALL — new week" if due == "week"
+                   else "DAILY ROLL CALL — new day")
+        try:
+            self.signals.note(roll_call(f"[{self.entry_style}]", heading,
+                                         accounts))
+        except Exception:                               # noqa: BLE001
+            logger.exception("could not send the %s roll call", due)
+
     def _notify_confirmation(self, instrument: str, record):
         """Send a confirmation with everything needed to judge it.
 
@@ -908,6 +943,10 @@ class LiveBot:
                 # few seconds for days.
                 self.signals.storyline(instrument, storyline, previous)
             self._storyline_stage[instrument] = storyline.stage
+        if report:
+            # Kept regardless of whether the stage CHANGED, because a
+            # roll call reports what is true now, not what just moved.
+            self._storyline_last[instrument] = storyline
         return storyline.stage == HUNTING
 
     def _storyline_hunted_anywhere_in_gap(self, instrument: str, watermark, new_candle_time) -> bool:
@@ -1585,6 +1624,57 @@ class LiveBot:
             **kwargs,
         )
         return self.audit_log.append(record)
+
+
+class _PeriodClock:
+    """Notices when the market has rolled into a new day or week.
+
+    Against UTC, which is the boundary the daily and weekly candles
+    themselves use -- a roll call keyed to local midnight would report a
+    day the charts have not started.
+    """
+
+    def __init__(self, clock=None):
+        self.clock = clock or (lambda: pd.Timestamp.now(tz="UTC"))
+        now = self.clock()
+        self.day = now.date()
+        self.week = now.isocalendar()[:2]
+
+    def rolled_over(self) -> str:
+        now = self.clock()
+        day, week = now.date(), now.isocalendar()[:2]
+        turned = ""
+        if week != self.week:
+            turned = "week"          # a Monday is both; two roll calls in
+        elif day != self.day:        # one minute is how a channel gets muted
+            turned = "day"
+        self.day, self.week = day, week
+        return turned
+
+
+class _AccountShim:
+    """A Storyline wearing the shape roll_call expects.
+
+    The old engine and the SLK cascade disagree about what a bias object
+    looks like, and they should -- they are different models. Adapting
+    one to the other keeps a SINGLE roll call format, which is what makes
+    the two engines comparable side by side in the morning.
+    """
+    __slots__ = ("direction", "alignment", "other_direction")
+
+    def __init__(self, direction, alignment, other_direction=None):
+        self.direction = direction
+        self.alignment = alignment
+        self.other_direction = other_direction
+
+
+def _as_account(storyline):
+    """Map a Storyline onto the roll call's four groups, or None."""
+    if storyline is None or getattr(storyline, "direction", None) is None:
+        return None
+    aligned = getattr(storyline, "aligned", ()) or ()
+    state = "aligned" if "Weekly" in aligned else "daily only"
+    return _AccountShim(storyline.direction, state)
 
 
 def _describe_event(event_type, decision, reason, instrument, risk, kwargs) -> str:

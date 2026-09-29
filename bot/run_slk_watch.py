@@ -56,6 +56,9 @@ from backtest.data_pipeline import cache
 from backtest.data_pipeline.instruments import DUKASCOPY_INSTRUMENTS
 from backtest.engine.candles import load_candles, load_recent_candles
 
+import pandas as pd
+
+from .roll_call import roll_call
 from .signal_channel import SignalChannel
 from .slk_watch import SLKWatcher
 
@@ -233,6 +236,7 @@ def main():
         logger.exception("could not send the startup ping")
 
     first = True
+    period = _PeriodClock()
     while True:
         started = time.time()
         total = 0
@@ -272,6 +276,47 @@ def main():
         if args.once:
             return
         time.sleep(max(5, args.poll_seconds))
+
+
+class _PeriodClock:
+    """Notices when the market has rolled into a new day or week.
+
+    Tracked against UTC, which is the boundary the daily and weekly
+    candles themselves use -- a roll call keyed to local midnight would
+    report a day the charts have not started yet.
+    """
+
+    def __init__(self, clock=None):
+        self.clock = clock or (lambda: pd.Timestamp.now(tz="UTC"))
+        now = self.clock()
+        self.day = now.date()
+        self.week = now.isocalendar()[:2]
+
+    def rolled_over(self) -> str:
+        """"week", "day", or "" -- the week wins when both turn, because
+        a Monday is a new week AND a new day and two roll calls in one
+        minute is how a channel gets muted."""
+        now = self.clock()
+        day, week = now.date(), now.isocalendar()[:2]
+        turned = ""
+        if week != self.week:
+            turned = "week"
+        elif day != self.day:
+            turned = "day"
+        self.day, self.week = day, week
+        return turned
+
+
+def _roll_call(channel, watchers, period: str) -> None:
+    """Every instrument, grouped by what it is worth today."""
+    accounts = [(w.instrument, (w.standing or {}).get("account"))
+                for w in watchers]
+    heading = ("WEEKLY ROLL CALL — new week" if period == "week"
+               else "DAILY ROLL CALL — new day")
+    try:
+        channel.note(roll_call("[SLK]", heading, accounts))
+    except Exception:                                   # noqa: BLE001
+        logger.exception("could not send the %s roll call", period)
 
 
 def _send_story(channel, watcher) -> bool:

@@ -2452,3 +2452,67 @@ def test_the_gate_still_answers_the_same_for_the_gap_scan(tmp_path):
         quiet = bot._storyline_says_hunt("EURUSD", pd.Timestamp("2026-09-26T03:00Z"),
                                           report=False)
     assert loud is True and quiet is True
+
+
+# --- the daily / weekly roll call ---------------------------------------
+
+def test_the_period_clock_fires_once_per_day(tmp_path):
+    from bot.orchestrator import _PeriodClock
+
+    times = iter([pd.Timestamp("2026-09-28T23:00Z"),
+                  pd.Timestamp("2026-09-28T23:30Z"),
+                  pd.Timestamp("2026-09-29T00:05Z"),
+                  pd.Timestamp("2026-09-29T01:00Z")])
+    clock = _PeriodClock(clock=lambda: next(times))
+    assert clock.rolled_over() == "", "same day"
+    assert clock.rolled_over() == "day", "the day turned"
+    assert clock.rolled_over() == "", "and not again"
+
+
+def test_a_monday_reports_the_week_not_two_roll_calls(tmp_path):
+    """A Monday is a new week AND a new day. Two roll calls in one minute
+    is how a channel gets muted."""
+    from bot.orchestrator import _PeriodClock
+
+    times = iter([pd.Timestamp("2026-09-27T12:00Z"),   # Sunday
+                  pd.Timestamp("2026-09-28T00:05Z")])  # Monday
+    clock = _PeriodClock(clock=lambda: next(times))
+    assert clock.rolled_over() == "week"
+
+
+def test_a_storyline_maps_onto_the_roll_calls_groups():
+    from bot.orchestrator import _as_account
+
+    class S:
+        direction = Direction.BULLISH
+        aligned = ("Weekly", "Daily", "H4")
+
+    assert _as_account(S()).alignment == "aligned"
+
+    class NoWeekly:
+        direction = Direction.BULLISH
+        aligned = ("Daily", "H4")
+
+    assert _as_account(NoWeekly()).alignment == "daily only"
+    assert _as_account(None) is None
+
+
+def test_the_roll_call_reaches_the_channel_when_the_day_turns(tmp_path):
+    fake = FakeMT5()
+    channel = _RecordingChannel()
+    notes = []
+    channel.note = lambda text: notes.append(text) or True
+    bot, _, _ = make_bot(fake, tmp_path, signals=channel)
+
+    # The first timestamp is consumed at construction, which is what
+    # makes a freshly started bot not fire a roll call on its first poll.
+    times = iter([pd.Timestamp("2026-09-28T22:00Z"),   # construction
+                  pd.Timestamp("2026-09-28T23:00Z"),   # same day
+                  pd.Timestamp("2026-09-29T00:05Z")])  # the day turns
+    from bot.orchestrator import _PeriodClock
+    bot._period_clock = _PeriodClock(clock=lambda: next(times))
+
+    bot._roll_call_if_due()
+    assert notes == [], "same day, nothing sent"
+    bot._roll_call_if_due()
+    assert len(notes) == 1 and "DAILY ROLL CALL" in notes[0]
