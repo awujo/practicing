@@ -97,15 +97,27 @@ def structural_direction(tracker):
     time of the CLOSE THROUGH, not of the swing it broke -- "the most
     recent breakout is to the downside" is a statement about when price
     did something, not about when the level it did it to was formed.
+
+    A tie -- both directions broken at the same instant, which happens
+    when one candle closes through swings on both sides -- answers None,
+    the same way `_agree` below and `LiquidityBias` already answer an
+    ambiguous story. The dict is iterated in insertion order, so without
+    this the winner would be whichever direction happened to be bumped
+    first, and two runs over the same candles could disagree.
     """
     best = None
-    for side, at in getattr(tracker, "broke_at", {}).items():
+    tied = False
+    for side, at in sorted(getattr(tracker, "broke_at", {}).items(),
+                           key=lambda kv: str(kv[0])):
         when, price = at
         if when is None:
             continue
         if best is None or when > best[1]:
             best = (side, when, price)
-    return best
+            tied = False
+        elif when == best[1]:
+            tied = True
+    return None if tied else best
 
 
 @dataclass(frozen=True)
@@ -319,6 +331,15 @@ class Cascade:
         if daily_struct is None and weekly_struct is None:
             return BiasAccount(None)
 
+        # The SETUP inside that direction: a key level rejected or
+        # liquidity swept, in alignment with the structure. Reported as
+        # supporting detail, never as a competing direction. Computed
+        # BEFORE the account is built -- it used to be passed positionally
+        # into BiasAccount after two more fields were added, so a setup
+        # landed in `weekly_structure` and Telegram died with "too many
+        # values to unpack" on every structure-only bias (which, now that
+        # structure alone carries the direction, is most of them).
+        # Everything below builds BiasAccount by KEYWORD for that reason.
         if daily_struct is not None:
             direction = daily_struct[0]
             rung, other_rung = "Daily", "Weekly"
@@ -346,9 +367,6 @@ class Cascade:
             alignment = "weekly only"
             reason = "the Daily has not broken structure either way yet"
 
-        # The SETUP inside that direction: a key level rejected or
-        # liquidity swept, in alignment with the structure. Reported as
-        # supporting detail, never as a competing direction.
         setup = _setup_evidence(self, rung, direction)
         other_setup = _setup_evidence(self, other_rung, other_direction)
 
