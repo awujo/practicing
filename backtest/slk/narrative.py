@@ -137,7 +137,27 @@ def account_story(account, instrument: str) -> list[str]:
         lines += structure + [""]
 
     lines.append(f"{account.rung} says {side}:")
-    lines += bias_story(account.evidence) or ["  (no detail recorded)"]
+    if account.evidence is not None:
+        lines += bias_story(account.evidence)
+    else:
+        # Structure-only bias — repeating-system t=396-409, "we've been
+        # having breakouts to the upside, so I know my weekly is
+        # bullish... SO WE ARE STILL BULLISH NO MATTER WHAT". There may be
+        # no rejection or sweep yet; "(no detail recorded)" made the case
+        # the source treats as THE bias look like a reporting error. The
+        # rung's own structure tuple is checked by VALUE, not attribute
+        # name — an earlier version built the attribute from the rung
+        # string and read the wrong timeframe when the Weekly carried it.
+        struct = (account.daily_structure if account.rung == "Daily"
+                  else account.weekly_structure if account.rung == "Weekly"
+                  else None)
+        if struct is not None and (account.direction is None
+                                   or struct[0] == account.direction):
+            lines.append("  No key level rejected and no liquidity swept "
+                         "in this direction yet — the bias stands on the "
+                         "structure above.")
+        else:
+            lines += ["  (no detail recorded)"]
 
     if account.other_evidence is not None:
         other = _side(account.other_direction) if account.other_direction else ""
