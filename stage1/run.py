@@ -59,9 +59,33 @@ def apply_schema(cur, path):
     return applied
 
 
+def resolve_chat_id(token, configured):
+    """If TG_CHAT_ID is unset/placeholder, discover it from getUpdates (first chat that
+    messaged the bot). Owner only needs to DM the bot /start once."""
+    if configured and configured.lower() not in ("", "auto", "0"):
+        return configured
+    try:
+        with urllib.request.urlopen(
+            f"https://api.telegram.org/bot{token}/getUpdates?timeout=5", timeout=15
+        ) as r:
+            data = json.loads(r.read())
+        for up in data.get("result", []):
+            msg = up.get("message") or up.get("edited_message") or up.get("my_chat_member") or {}
+            cid = (msg.get("chat") or {}).get("id")
+            if cid:
+                print(f"TG_CHAT_ID auto-discovered: {cid}")
+                return str(cid)
+    except Exception as e:
+        print(f"chat-id discovery failed: {type(e).__name__}", file=sys.stderr)
+    return configured
+
+
 def send_telegram(text):
     token = env("TG_BOT_TOKEN")
-    chat = env("TG_CHAT_ID")
+    chat = resolve_chat_id(token, env("TG_CHAT_ID", required=False))
+    if not chat:
+        print("no TG_CHAT_ID and none discovered (has owner sent /start to the bot?)", file=sys.stderr)
+        return False
     req = urllib.request.Request(
         f"https://api.telegram.org/bot{token}/sendMessage",
         data=json.dumps({"chat_id": chat, "text": text, "disable_web_page_preview": True}).encode(),
