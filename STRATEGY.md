@@ -78,13 +78,25 @@ from each transcript's `[start-end]` markers. Anything guessed is marked **UNCON
 - Entry requires the level AND the confirmation candle; missing either = no trade.
   (`kevin-qns-pt1` [1485.5-1495.1])
 
-## Owner decisions (2026-10-11, via relay) — ACCEPTED AS DEFAULTS, still UNCONFIRMED placeholders
-- Q1 risk: 0.5% per trade, max 2 open trades (demo). Review when alerts go live.
-- Q2 sessions: London + New York (LDN,NY).
-- Q4 min RR: 2.0.
-- Q3 pairs: owner named CADJPY, EURGBP, AUDCAD, NZDJPY, GBPUSD; transcripts also use
-  USDJPY, USDCHF, EURAUD. Starting list = union of both sets (8 pairs), stored in `pairs` table.
-- Q5 scoring weights: proposed by Qwen from transcripts (see below); owner does not invent them.
+## Owner decisions (2026-10-11, FINAL — supersedes earlier "defaults" round)
+- Q1 risk: 0.5% per trade, max 2 open trades (demo). Kept as an EDITABLE SETTING, not a rule —
+  backtest may test other values.
+- Q2 sessions: **NO restriction.** Trade any session at any time. Session (ASIA/LDN/NY/SYDNEY)
+  is recorded as a field on every signal and trade so results can be compared per-session later.
+  Nothing is filtered out in advance.
+- Q3 pairs: **NO restriction.** Long-term coverage = all IC Markets cTrader pairs. Start set =
+  majors + video pairs (CADJPY, EURGBP, AUDCAD, NZDJPY, GBPUSD, USDJPY, USDCHF, EURAUD); the
+  Stage 2 symbol sync expands `pairs` automatically once the cTrader API app is approved.
+- Q4 min RR: 2.0, kept as an EDITABLE SETTING for backtest sweeps.
+- Q5 scoring weights: proposed by Qwen from transcripts with citations (table below). The
+  session row (w_session) is NOT a filter — it only scores LDN/NY setups higher; the backtest
+  decides whether that component earns its weight.
+
+### Backtest protocol (owner requirement + anti-overfitting warning)
+- Run every pair × every session, report results grouped per pair AND per session. No pre-filtering.
+- **Walk-forward split:** build/tune rules on the older period, then validate untouched on the
+  newer period. A rule that only wins on the older data is treated as luck and discarded.
+  Concretely: tune on first ~70% of history, validate on last ~30%, report both numbers side by side.
 
 ### Proposed signal score (0-100), derived from Module 4/5 emphasis
 | Component | Weight | Transcript basis |
@@ -94,13 +106,10 @@ from each transcript's `[start-end]` markers. Anything guessed is marked **UNCON
 | Structure quality: sweep+BOS present (QMRO > normal breakout) | 20 | AMS formula, Module 2/5 |
 | Series strength: B-series > A-series | 15 | "B stronger than A" (Module 5) |
 | Entry model clean: Model A/B candle sequence complete | 15 | 5-candle sequence rule (Module 5) |
-| Session filter pass (LDN/NY) | 5 | premarket routine (Module 0) |
+| Session bonus: LDN/NY setups score higher (NOT a filter — no session is excluded) | 5 | premarket routine (Module 0) |
 Alert threshold: >= 70 = strong, 50-69 = weak (tagged), < 50 = no alert. All tunable in `settings`.
 
-## Open questions (ask owner)
-1. Risk % per trade and max open trades — never stated in any transcript. **UNCONFIRMED.**
-2. Session/time-of-day filters (London/NY killzones)? Kevin mentions premarket routine but
-   no explicit killzone rule found. **UNCONFIRMED.**
-3. Exact pair list to start with (examples use USDJPY, EURGBP, CADJPY, USDCHF, EURAUD).
-4. Minimum RR threshold before taking a signal — not quantified in transcripts. **UNCONFIRMED.**
-5. Whether "B-series stronger than A-series" ranking applies to bot signal scoring weights.
+## Open questions — ALL ANSWERED by owner 2026-10-11 (see "Owner decisions, FINAL" above)
+Nothing open. Historical note: Q1/Q2/Q4 had no transcript basis (owner chose editable defaults);
+Q3 = all IC Markets pairs over time; Q5 = Qwen-proposed weights, validated by backtest with
+walk-forward split.

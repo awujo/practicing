@@ -59,6 +59,32 @@ def apply_schema(cur, path):
     return applied
 
 
+# Idempotent column migrations for DBs created before the 2026-10-11 owner decisions.
+MIGRATIONS = [
+    ("signals", "session",
+     "ALTER TABLE signals ADD COLUMN session VARCHAR(8) NOT NULL DEFAULT 'UNKNOWN' AFTER reasons"),
+    ("trades", "session",
+     "ALTER TABLE trades ADD COLUMN session VARCHAR(8) NOT NULL DEFAULT 'UNKNOWN' AFTER status"),
+    ("trades", "pnl_rr",
+     "ALTER TABLE trades ADD COLUMN pnl_rr DOUBLE NULL AFTER pnl"),
+]
+
+
+def migrate(cur):
+    """ADD COLUMN only when missing (MySQL lacks IF NOT EXISTS for columns)."""
+    done = []
+    for table, col, ddl in MIGRATIONS:
+        cur.execute(
+            "SELECT COUNT(*) FROM information_schema.columns "
+            "WHERE table_schema=DATABASE() AND table_name=%s AND column_name=%s",
+            (table, col),
+        )
+        if cur.fetchone()[0] == 0:
+            cur.execute(ddl)
+            done.append(f"{table}.{col}")
+    return done
+
+
 def resolve_chat_id(token, configured):
     """If TG_CHAT_ID is unset/placeholder, discover it from getUpdates (first chat that
     messaged the bot). Owner only needs to DM the bot /start once."""
@@ -120,8 +146,13 @@ def main():
         applied = 0
     else:
         applied = apply_schema(cur, schema_path)
+    migrated = migrate(cur)  # adds session/pnl_rr columns on pre-2026-10-11 DBs (idempotent)
     cur.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()")
     tables = cur.fetchone()[0]
+    # Owner FINAL decisions: settings rows are created INSERT IGNORE-style; existing values
+    # are never overwritten here (owner edits them in the DB / app). Report current regime.
+    cur.execute("SELECT k, v FROM settings WHERE k IN ('sessions','session_filter','pair_filter','risk_pct','min_rr') ORDER BY k")
+    cfg = dict(cur.fetchall())
 
     ticks = 0
     end = started.timestamp() + args.minutes * 60
@@ -145,10 +176,13 @@ def main():
     delay_txt = f"{delay/60:.1f} min late" if delay is not None else "n/a (no --planned)"
     msg = (
         "SLK bot | Stage 1 OK\n"
-        f"DB: connected, schema applied ({applied} stmts, {tables} tables)\n"
+        f"DB: connected, schema applied ({applied} stmts, {tables} tables)"
+        + (f", migrated: {', '.join(migrated)}" if migrated else "") + "\n"
+        f"Config: sessions={cfg.get('sessions','?')} filter={cfg.get('session_filter','?')} "
+        f"pairs=all-synced filter={cfg.get('pair_filter','?')} risk={cfg.get('risk_pct','?')}% minRR={cfg.get('min_rr','?')}\n"
         f"Run: {env('GITHUB_RUN_ID', required=False) or 'local'} | start delay: {delay_txt}\n"
         f"Heartbeat: {ticks} tick(s), {minutes_used} min used\n"
-        "Next: owner confirms defaults -> Stage 2 candles."
+        "Next: Stage 2 candle pulling."
     )
     ok = send_telegram(msg)
     print(msg)  # msg contains no secrets; TG_BOT_TOKEN/TG_CHAT_ID never interpolated

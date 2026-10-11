@@ -27,3 +27,19 @@ Reminder: GitHub cron drifts 4-8h -> long-running job pattern is built into run.
 5. **Workflow hardened:** planned_at input left empty now auto-defaults to dispatch time
    instead of crashing argparse.
 
+## Owner FINAL answers to Q1-Q5 (2026-10-11, relayed) — supersedes item 4 above
+- Sessions: NO restriction, trade any session; session stored as a field on every signal/trade
+  for per-session backtest comparison. settings.sessions=ALL, session_filter=off.
+- Pairs: NO restriction; target = ALL IC Markets cTrader pairs (Stage 2 symbol sync once API
+  app approved). Start set = majors + video pairs (8 in `pairs` table). pair_filter=off.
+- Risk 0.5% / min RR 2.0 kept as EDITABLE SETTINGS (backtest may sweep them), not rules.
+- Scoring weights: Qwen-proposed with transcript citations (STRATEGY.md); w_session is a score
+  bonus only, never a filter.
+- Backtest protocol: every pair × every session, report per-pair AND per-session, no
+  pre-filtering, and WALK-FORWARD SPLIT (tune on older ~70%, validate untouched on newer ~30%)
+  to reject luck-based rules. Recorded in STRATEGY.md.
+- LIVE DB updated accordingly: columns signals.session, trades.session, trades.pnl_rr added +
+  idx_trades_session created; settings upserted (verified by SELECT dump). schema.sql/run.py
+  updated so fresh installs get the same state (run.py has idempotent migrate()).
+- qwen-stage1.bundle refreshed at this commit — owner: `git pull ./qwen-stage1.bundle qwen-kevin-king && git push origin qwen-kevin-king`.
+

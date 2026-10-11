@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS signals (
   rr          DOUBLE NOT NULL,
   score       DOUBLE NULL,
   reasons     TEXT NULL,                  -- storyline chain that produced this signal
+  session     VARCHAR(8) NOT NULL DEFAULT 'UNKNOWN', -- ASIA/LDN/NY/SYDNEY/UNKNOWN (recorded, never filtered - owner decision Q2)
   status      ENUM('alerted','confirmed','rejected','expired') NOT NULL DEFAULT 'alerted',
   bar_t       DATETIME NOT NULL,          -- candle the signal completed on (no look-ahead)
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -62,12 +63,19 @@ CREATE TABLE IF NOT EXISTS trades (
   ctrader_order_id  VARCHAR(64) NULL,
   ctrader_position_id VARCHAR(64) NULL,
   status       ENUM('pending_confirm','sent','filled','rejected','closed') NOT NULL DEFAULT 'pending_confirm',
+  session      VARCHAR(8) NOT NULL DEFAULT 'UNKNOWN', -- copied from signal; per-session backtest reporting (owner decision Q2)
   placed_at    TIMESTAMP NULL,
   closed_at    TIMESTAMP NULL,
   pnl          DOUBLE NULL,
+  pnl_rr       DOUBLE NULL,               -- realized R multiple of risk; per-pair/per-session stats key
   UNIQUE KEY uq_trade_signal (signal_id),
-  KEY idx_trades (symbol, placed_at)
+  KEY idx_trades (symbol, placed_at),
+  KEY idx_trades_session (session, status)
 ) ENGINE=InnoDB;
+
+-- Idempotent ALTERs for databases created by the pre-2026-10-11 schema.
+-- MySQL has no "ADD COLUMN IF NOT EXISTS"; run.py applies these via information_schema checks.
+-- @migrate: signals.session, trades.session, trades.pnl_rr
 
 CREATE TABLE IF NOT EXISTS settings (
   k         VARCHAR(64) PRIMARY KEY,
@@ -78,16 +86,18 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Defaults chosen so the pipeline runs end-to-end; owner can change any of these.
 INSERT IGNORE INTO settings (k, v, is_secret) VALUES
-  ('risk_pct',        '0.5', 0),   -- UNCONFIRMED (open Q1): placeholder until owner sets it
-  ('max_open_trades', '2',   0),   -- UNCONFIRMED (open Q1)
-  ('min_rr',          '2.0', 0),   -- UNCONFIRMED (open Q4)
-  ('sessions',        'LDN,NY', 0),-- UNCONFIRMED (open Q2)
+  ('risk_pct',        '0.5', 0),   -- owner FINAL decision: editable setting, not a rule (backtest may sweep it)
+  ('max_open_trades', '2',   0),   -- owner FINAL decision: editable setting
+  ('min_rr',          '2.0', 0),   -- owner FINAL decision: editable setting for backtest sweeps
+  ('sessions',        'ALL', 0),   -- owner FINAL decision Q2: NO session restriction; session recorded per signal/trade
+  ('session_filter',  'off', 0),   -- reserved switch; stays off until the backtest proves a filter earns its keep
   ('kill_switch',     'off', 0),
   ('auto_mode',       'off', 0),   -- off = Telegram confirm button required before any order
-  ('pairs',           'USDJPY,EURGBP,CADJPY,USDCHF,EURAUD,AUDCAD,NZDJPY,GBPUSD', 0),
+  ('pairs',           'USDJPY,EURGBP,CADJPY,USDCHF,EURAUD,AUDCAD,NZDJPY,GBPUSD', 0), -- start set; Stage 2 syncs ALL IC Markets cTrader pairs (owner FINAL decision Q3)
+  ('pair_filter',     'off', 0),   -- no pre-filtering: bot covers every synced pair; backtest reports per pair
   ('score_threshold_strong', '70', 0),
   ('score_threshold_weak',   '50', 0),
-  ('w_bias','25',0),('w_level','20',0),('w_structure','20',0),('w_series','15',0),('w_model','15',0),('w_session','5',0),  -- proposed Q5, UNCONFIRMED
+  ('w_bias','25',0),('w_level','20',0),('w_structure','20',0),('w_series','15',0),('w_model','15',0),('w_session','5',0),  -- Q5 proposed (citations in STRATEGY.md); w_session = score bonus only, NOT a filter; backtest validates all weights
   ('ctrader_access_token',  '', 1),
   ('ctrader_refresh_token', '', 1);
 
