@@ -27,7 +27,7 @@ import pymysql
 def env(name, required=True):
     v = os.environ.get(name, "").strip()
     if required and not v:
-        sys.exit(f"missing env var {name}")
+        print(f"ERROR: missing env var {name}"); sys.exit(1)
     return v
 
 
@@ -39,7 +39,7 @@ def get_conn():
     url = env("DB_URL")  # mysql://user:pass@host:port/defaultdb?ssl-mode=REQUIRED
     m = re.match(r"mysql://([^:]+):([^@]*)@([^:]+):(\d+)/([^?]+)", url)
     if not m:
-        sys.exit("DB_URL must look like mysql://user:pass@host:port/db?ssl-mode=REQUIRED")
+        print("ERROR: DB_URL must look like mysql://user:pass@host:port/db?ssl-mode=REQUIRED"); sys.exit(1)
     user, pw, host, port, db = m.groups()
     return pymysql.connect(
         host=host, port=int(port), user=user, password=pw, database=db,
