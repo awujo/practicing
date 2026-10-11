@@ -107,7 +107,11 @@ def resolve_chat_id(token, configured):
 
 
 def send_telegram(text):
-    token = env("TG_BOT_TOKEN")
+    token = env("TG_BOT_TOKEN", required=False)
+    if not token:
+        print("TG_BOT_TOKEN secret missing/empty in repo settings - skipping telegram notification",
+              file=sys.stderr)
+        return False
     chat = resolve_chat_id(token, env("TG_CHAT_ID", required=False))
     if not chat:
         print("no TG_CHAT_ID and none discovered (has owner sent /start to the bot?)", file=sys.stderr)
