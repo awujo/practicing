@@ -45,7 +45,7 @@ for v, topic in CORE:
     for s, sp in kept:
         sh, slot = sheet_for(s)
         img = f'frames/{v}/sheets/sheet_{sh:03d}.jpg' if sh <= nsheets else 'MISSING'
-        out_md.append('- `%02d:%02d` slot %d of `sheet_%03d` 2192 %s — 201c%s201d' % (s//60, s%60, slot+1, sh, img, sp[:80]))
+        out_md.append('- `%02d:%02d` slot %d of `sheet_%03d.jpg` -> %s -- "%s"' % (s//60, s%60, slot+1, sh, img, sp[:80].replace('"','')))
         rules.append({'video': v, 'topic': topic, 'sec': s, 'sheet': f'{v}/sheets/sheet_{sh:03d}.jpg', 'slot': slot+1, 'speech': sp})
 open(os.path.join(ROOT, 'frame-index.md'), 'w').write('\n'.join(out_md) + '\n')
 json.dump(rules, open(os.path.join(ROOT, 'frame-index.json'), 'w'), indent=1)
