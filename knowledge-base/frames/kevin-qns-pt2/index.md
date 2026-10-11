@@ -4,157 +4,120 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-Contact sheets hold 25 frames each, in reading order:
-sheet_001 covers frames 1-25, and so on.
+Contact sheets hold 4 frames each, in reading order:
+sheet_001 covers frames 1-4, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
 | 0 | 00:00 | So, let's let's proceed. |
-| 15 | 00:15 | And I can see the evidence and the results on the on the group is actually a very good thing. |
-| 30 | 00:30 | So let's proceed. Make we give answer to that person that has issues with is directional bias. |
-| 45 | 00:45 | Are you here? Yes, please. All right. So getting your directional bias is the easiest and simplest thing in this particular mode. |
+| 20 | 00:20 | And I can see the evidence and the results on the on the group is actually a very good thing. |
+| 40 | 00:40 | That person that has issues. Are you here? Yes, please. All right. So getting your directional bias is the easiest and simplest thing in this particular mode. |
 | 60 | 01:00 | Although there are different ways to look for your directional bias. But let me just show you the easiest. So remember, I said that we build our bias from our time frame. |
-| 75 | 01:15 | And most of the time, I said I basically build my bias from the monthly, weekly or daily time frame. |
-| 90 | 01:30 | Now, let's, I like using the daily, for example, but for the sake of today, let's look at the weekly time frame. |
-| 105 | 01:45 | Now, note that these are things to note when you are building your bias. Now, let's say you are building from the weekly time frame. |
+| 80 | 01:20 | And most of the time, I said I basically build my bias from the monthly, weekly or daily time frame. That is just the three time frame. I immediately look for when I build bias. |
+| 100 | 01:40 | Let's build bias from the weekly time frame. Now, note that these are things to note when you are building your bias. |
 | 120 | 02:00 | If you are building from a weekly time frame, then it means that weekly means that daily will confirm story life. |
-| 135 | 02:15 | If you are building from a weekly time frame, then it means that weekly means that daily will confirm story life. If you are building from daily means that H4 will do what? |
-| 150 | 02:30 | If you are building from daily means that H4 will do what? H4 will confirm daily, will confirm the storyline. |
-| 165 | 02:45 | H4 will confirm daily, will confirm the storyline. Now, if you are building from monthly, it means that weekly will confirm monthly story life. |
+| 140 | 02:20 | If you are building from a weekly time frame, then it means that weekly means that daily will confirm story life. If you are building from daily means that H4 will do what? |
+| 160 | 02:40 | H4 will confirm daily, will confirm the storyline. Now, if you are building from monthly, it means that weekly will confirm monthly story life. |
 | 180 | 03:00 | Now, if you are building from monthly, it means that weekly will confirm monthly story life. |
-| 195 | 03:15 | Daily will confirm weekly storyline. And four hours will confirm the daily storyline. Which means when we are building story life, we have to interact with multiple time frames, not just one time frame. |
-| 210 | 03:30 | Now, having this in mind, having this in mind, it means that whenever we want to be story life, we have to deal with more than one time frame in particular. Now, let's say, for example, this is the weekly time frame. |
-| 225 | 03:45 | And now, this is like a key-level year weekly. This is a key-level year weekly. So now, these are H-shaped key-level year weekly. |
+| 200 | 03:20 | Which means when we are building story life, we have to interact with multiple time frames, not just one time frame. Now, having this in mind, having this in mind, it means that whenever we want to be story life, we have to deal with more than one time frame in particular. |
+| 220 | 03:40 | Now, let's say, for example, this is the weekly time frame. This is the weekly time frame. And now, this is like a key-level year weekly. |
 | 240 | 04:00 | So when price is H-shaped key-level, what do we do? We look for bias, Abhi. |
-| 255 | 04:15 | You don't recall the words. So, when price hits this H-shaped on weekly time frame, then this is what we usually do. |
-| 270 | 04:30 | Now, of course, we build this storyline together. So let's say, for instance, this is a candle stick now. And at the moment, price is correctly like this. |
-| 285 | 04:45 | See, because the criteria has not been met. Now, for a week, for us to confirm a weekly storyline, |
+| 260 | 04:20 | So, when price hits this H-shaped on weekly time frame, then this is what we usually do. Now, of course, we build this storyline together. |
+| 280 | 04:40 | Are we interested? No. See, because the criteria has not been met. Now, for a week, for us to confirm a weekly storyline, |
 | 300 | 05:00 | So we want to see a tap and then a rejection. Now after that rejection, what is next? Close below this H-shaped key-level Abhi? |
-| 315 | 05:15 | So once we see something like this, it means that we can then go on to the next time frame, which will be the daily time frame, Abhi? Yes. |
-| 330 | 05:30 | Now, situation whereby the weekly has not closed yet. And then there is already a rejection. |
-| 345 | 05:45 | But there is a rejection already. We can trade it too. But it is not the best. Now, remember what I said at the beginning. We are going to learn how to fit our trades properly, Abhi? |
+| 320 | 05:20 | which will be the daily time frame, Abhi? Yes. Now, situation whereby the weekly has not closed yet. |
+| 340 | 05:40 | Weekly has not closed yet though. But there is a rejection already. We can trade it too. But it is not the best. |
 | 360 | 06:00 | Yes. Now, this is one way to fit your trade properly. Waiting for, if it's daily, you wait for that day to end. |
-| 375 | 06:15 | So it means that if price eats this key-level on Monday, and you know on Monday is usually when the market opens, Abhi? |
-| 390 | 06:30 | So if price eats on Monday, it means that we leave it alone. We come back and come and check what price eats after the market closes on Friday. |
-| 405 | 06:45 | It will give you clarity and no noise. Now, this means that within the week, you cannot still look for weekly reject and daily breakout and trade. You can do it. |
+| 380 | 06:20 | and you know on Monday is usually when the market opens, Abhi? Yes. So if price eats on Monday, it means that we leave it alone. |
+| 400 | 06:40 | Now, this is one way to fit our trade. It will give you clarity and no noise. Now, this means that within the week, |
 | 420 | 07:00 | We are just learning to be patient. If you know how to have patience, then you are going to win a lot of trades. So, these strategies allow you to trade multiple trades. |
-| 435 | 07:15 | So it's not like if you don't see trades, you don't see a particular setup within the week on this one. It's not mean that you cannot trade. You cannot go and check other trades that has already presented something clearer. |
-| 450 | 07:30 | you wait for that particular timeframe you are building your bias from to close first before you take the next action. The reason is because on Monday Tuesday |
-| 465 | 07:45 | where you don't already enter trade finish on Friday market will not close above the key level and then you will not be crying. But we don't want to be like that. |
+| 440 | 07:20 | It's not mean that you cannot trade. You cannot go and check other trades that has already presented something clearer. So one way to fit our trade is that |
+| 460 | 07:40 | The reason is because on Monday Tuesday and Wednesday can be like this Tuesday where you don't already enter trade finish on Friday market will not close above the key level |
 | 480 | 08:00 | So the first criteria for building bias is rejection and close below. So when those two criteria are met |
-| 495 | 08:15 | So when we are on the weekly timeframe where will be the next timeframe to go? From the weekly timeframe where will be the daily timeframe? |
-| 510 | 08:30 | it is daily timeframe that confirms the weekly storyline. So it is whatever we see on this daily timeframe now |
-| 525 | 08:45 | or weekly has not gone very short. Abhi? Yes. It makes sense Abhi, it is clear? |
+| 500 | 08:20 | where will be the next timeframe to go? From the weekly timeframe where will be the daily timeframe? Now remember that |
+| 520 | 08:40 | that will tell us that story weekly has gone very short or weekly has not gone very short. Abhi? |
 | 540 | 09:00 | So now once this weekend like this then we have every reason to switch to one timeframe below which is the daily timeframe. |
-| 555 | 09:15 | is stop, reject and close. Abhi? Yes. So we will not come into the daily timeframe |
-| 570 | 09:30 | or want to see one of two things. So you see that the criteria for this one is still not add but just that sometimes people don't pay attention |
-| 585 | 09:45 | you do take instructions properly and why we see there have been a lot of progress in the group. Some persons have made withdrawals that they have never made before |
+| 560 | 09:20 | Yes. So we will not come into the daily timeframe which is one timeframe lower or want to see one of two things. |
+| 580 | 09:40 | they don't listen to instructions but so far so good so many of you are you do take instructions properly and why we see there have been a lot of progress in the group. |
 | 600 | 10:00 | and so able to make profit in their normal funded account is because we listen to instructions but if you don't pay attention to instructions at the end of the day you'll be lost. |
-| 615 | 10:15 | is stop, reject and close. So even if it is monthly timeframe you still have to wait for that stop, reject and close. Abhi? |
-| 630 | 10:30 | The next thing we have to do is simply go to the one timeframe which is the daily timeframe and we only want to see one of two things |
-| 645 | 10:45 | now this is the first one is if you that we see a sweep and a break which is a quasi modal pattern |
+| 620 | 10:20 | for that stop, reject and close. Abhi? Yes. So this weekly now has given us the stop, reject and close. |
+| 640 | 10:40 | now when we see one of two things it has confirmed our story like now this is the first one is if you that we see a sweep |
 | 660 | 11:00 | for the ones we see today we talk about something close to something like this so we have a sweep of liquidity and tap into the key level |
-| 675 | 11:15 | a break up. |
-| 690 | 11:30 | has given us this and this next timeframe now gives either this one or this one you have confirmed |
-| 705 | 11:45 | to confirm the story like either after the first timeframe has rejected you just look for a quasi modal pattern or a breakout |
+| 680 | 11:20 | a break up. So it is when this first timeframe |
+| 700 | 11:40 | there is nothing more again this is just the only process to confirm the story like either after the first timeframe has rejected |
 | 720 | 12:00 | so it as simple as this this is how you perform your story like there is no two ways about this now situation whereby this guy rejected |
-| 735 | 12:15 | you go to delete timeframe you cannot find any of this it simply means that the storyline has not gone |
-| 750 | 12:30 | we have a bearish storyline it as simple as that there is nothing extra |
-| 765 | 12:45 | now it is only when you have got in this that you now move to four hours or one hour and start looking for entry whereby |
+| 740 | 12:20 | that the storyline has not gone it is only a rejection until this guy has presented itself before we can conclude that |
+| 760 | 12:40 | yes boss now it is only when you have got in this that you now move to four hours |
 | 780 | 13:00 | we are either one of these two are not present on the very next timeframe you just delete it alone now let's go back to |
-| 795 | 13:15 | let me explain what a breakout is it will be best if I explain it on the chart let me use let me use this guy |
-| 810 | 13:30 | let me remove all this guys |
-| 825 | 13:45 | let me remove all this guys let me remove all this |
+| 800 | 13:20 | let me use let me use this guy I think there is a clear breakout here |
+| 820 | 13:40 | let me remove all this guys |
 | 840 | 14:00 | a delete timeframe abby this is a delete timeframe so now let's focus on the prior action for today |
-| 855 | 14:15 | this particular rejection after taking out previous day eyes then see where see what price it price tapped into this key level |
-| 870 | 14:30 | if you notice this is the candle we are focused on now remember today has not ended yet so it's at the close of today |
-| 885 | 14:45 | the picture is very clear so that is why I want us to use this pay for example so this is what what is this now |
+| 860 | 14:20 | see what price it price tapped into this key level and then we currently have a rejection or price is currently rejecting |
+| 880 | 14:40 | that we are going to confirm what is happening here but the picture is very clear so that is why I want us to use this pay for example |
 | 900 | 15:00 | for example let's pretend that let's pretend that today has ended let's just pretend that today has ended |
-| 915 | 15:15 | daily reject daily abby so what is in this action to take we are going to |
-| 930 | 15:30 | so remember in four hours we want to see either this or this abby yes |
-| 945 | 15:45 | right yes so now for this case now to get a clearer understanding |
+| 920 | 15:20 | action to take we are going to so let's go into four hours so remember in four hours |
+| 940 | 15:40 | so when we get either this or this it means that the daily has gone bearish right yes so now for this case |
 | 960 | 16:00 | I can't switch on the break now |
-| 975 | 16:15 | now can we conclude now that we are now bearish on this pay on the daily timeframe yes |
-| 990 | 16:30 | four hours break out abby yes now this is how you build up by us there is nothing extra in a person like this |
-| 1005 | 16:45 | there is nothing extra now remember that now this is where a lot of people get it wrong now |
+| 980 | 16:20 | we are now bearish on this pay on the daily timeframe yes simply because we have daily reject daily and |
+| 1000 | 16:40 | now you have built bearish by us right now you don't finish there is nothing extra now remember that |
 | 1020 | 17:00 | this daily reject daily and four hours break out now what just happen now he just tells us a story that four hour |
-| 1035 | 17:15 | it has not given us entry or anything he just tells us that four hours time frame daily time frame now is not bearish so |
-| 1050 | 17:30 | any areas from this place and above to this level they are valid forces in fact if you are somebody that use |
-| 1065 | 17:45 | you can able to take something like this because this one abby the validation and do something like this |
+| 1040 | 17:20 | four hours time frame daily time frame now is not bearish so the thing is that all this |
+| 1060 | 17:40 | big stop loss very big stop loss you get money like one ratio two night you do you can able to take something like this because this one abby the validation |
 | 1080 | 18:00 | you are not wrong at all but because we don't want to be doing this that is why we are not looking for entries we are looking for how to get this guy small and all of that |
-| 1095 | 18:15 | he is only telling us that the story on daily time frame now is not bearish finish that is just the work that is just the work |
-| 1110 | 18:30 | I think it was card jpy now for you know this one we spotted here |
-| 1125 | 18:45 | abby now let's assume let's assume that this is not a quasi model let's assume that |
+| 1100 | 18:20 | daily time frame now is not bearish finish that is just the work that is just the work I think there was I explained something in one of my chat |
+| 1120 | 18:40 | abby now let's assume let's assume that |
 | 1140 | 19:00 | this if it really this guy I want to show you how to confirm it if it really this guy now this is the way we do it |
-| 1155 | 19:15 | so let me remove this first so we have this now this suggestion and this break up |
-| 1170 | 19:30 | if I switch to if I switch to live chat |
-| 1185 | 19:45 | abby this guy is also a v-shape this guy is also a v-shape abby these guys they are v-shape |
+| 1160 | 19:20 | this suggestion and this break up which is this suggestion here and this break up now to get your break up |
+| 1180 | 19:40 | you notice that this guy is a v-shape abby this guy is also a v-shape this guy is also a v-shape |
 | 1200 | 20:00 | your bearish breakout air is going to be the last v-shape that press created before press tap into this particular key level |
-| 1215 | 20:15 | this one was the one that tap into the key level abby so let's remove it so let's remove this candle that tap into it |
-| 1230 | 20:30 | so let's remove this candle that tap into it so if I should remove that candle that tap into it you notice that |
-| 1245 | 20:45 | this particular one was the last v-shape that was created before press tap into this key level abby exactly so you just mark that one out |
+| 1220 | 20:20 | so let's remove it so let's remove this candle that tap into it |
+| 1240 | 20:40 | you notice that this particular one was the last v-shape that was created |
 | 1260 | 21:00 | I always mark it out like b o so since this is the last one and before press tap into it so when you mark it out I always mark it out like b o so since this is the last one |
-| 1275 | 21:15 | below it is what I confirm as the breakout so it's usually the last v-shape candle that was created |
-| 1290 | 21:30 | this one was the last so if there was another one that was created before this with tap here so we will be using that one so that is how we confirm |
-| 1305 | 21:45 | a v-shape that was created before tap into this guy and if it's for sale it will be the last v-shape that was created |
+| 1280 | 21:20 | so it's usually the last v-shape candle that was created before press tap into this guy so this was not the last one |
+| 1300 | 21:40 | this guy the last a v-shape that was created before tap into this guy |
 | 1320 | 22:00 | let's say this guy let's show you this one see this rejection now |
-| 1335 | 22:15 | so if you want to confirm 4 hours to relay now we come to one hour so we come to one hour so |
-| 1350 | 22:30 | will be this one will be this one do you know why |
-| 1365 | 22:45 | no no no it's because it's because I usually remove the panel that touch |
+| 1340 | 22:20 | so we come to one hour so me what I like to use to confirm my breakout |
+| 1360 | 22:40 | do you know why no no no it's because it's because |
 | 1380 | 23:00 | now this is the panel that touch that key level so if I should remove it let me remove it so that you see |
-| 1395 | 23:15 | so if I should remove it you notice that this one was the last a-shape that was created before press tap into that key level |
-| 1410 | 23:30 | now this one I usually call it an external break an external break the one that was created before we tap into the key level |
-| 1425 | 23:45 | press will not do something like this like a breakout here again this one I call them internal breakouts they are internal and this one is the external |
+| 1400 | 23:20 | this one was the last a-shape that was created before press tap into that key level so I'll just wait for press to go and break above it |
+| 1420 | 23:40 | now the one that press will not create after press taps here now press will not do something like this like a breakout here again |
 | 1440 | 24:00 | if you are a risk taker you can actually trade from here to this place but it does not make any sense so we just wait for this one to happen first |
-| 1455 | 24:15 | because I usually remove the candle that tap it so if you remove the candle that tap it you're going to find out that this one was the last last a ship |
-| 1470 | 24:30 | are we are we clear are we yeah we clear now when press |
-| 1485 | 24:45 | we are now bullish in the 4 hours time frame now it does not mean that we are just going to enter from here press can use |
+| 1460 | 24:20 | you're going to find out that this one was the last last a ship that was created before press tap into the key level are we |
+| 1480 | 24:40 | gave these breakouts and when press gave these breakouts it's just a confirmation now that we are now bullish in the 4 hours time frame |
 | 1500 | 25:00 | see this place see press close this 4 hours below this one that is when the trade will be validated |
-| 1515 | 25:15 | bullish on the 4 hours time frame it's not like giving us an entry to enter so when we are dealing with entries before we are looking for other materials |
-| 1530 | 25:30 | that qualifies to get an entry so this is that we get our storyline just 2 time frame is what gives our storyline |
-| 1545 | 25:45 | or we see a breakout which I just explained how to identify the breakouts so is there any question one question actually |
+| 1520 | 25:20 | so when we are dealing with entries before we are looking for other materials that that make us to get the entries |
+| 1540 | 25:40 | tap rejection close and the other one we want to see either a quasi-model pattern which is a sweep and break or we see a breakout which I just explained how to identify |
 | 1560 | 26:00 | so I suppose continue so again we want to actually |
-| 1575 | 26:15 | the higher time frame tap reject normal but usually after we identify we also need to get an idea |
-| 1590 | 26:30 | before you reach that target we will see the take trades and also the entry but once they not reach the target not to re-analyse the whole stuff so now I know already one way |
-| 1605 | 26:45 | CRT they very very effective for me but I want to know if other ones they will use when I feel hard to join so at least maybe they help me |
+| 1580 | 26:20 | but usually after we identify we also need to get an idea of the target from that time frame so that anything they do |
+| 1600 | 26:40 | to identify the target which is CRT CRT they very very effective for me but I want to know if other ones they will use |
 | 1620 | 27:00 | I know what made the C-model trade if any of us now for trading with a non-separated carry out a shopper |
-| 1635 | 27:15 | question actually you know get question so yeah |
-| 1650 | 27:30 | we know what made the C-model trade I want me to see if you trade I don't want to be trading but let's continue first maybe if God touch my man |
-| 1665 | 27:45 | remember that you look at somebody talk that time yeah 2nd December this guy you too sharp so see what you have for that Eurocard |
+| 1640 | 27:20 | yeah trading is also supposed to be everything as long as we see the work for you just stick to run |
+| 1660 | 27:40 | I will come back to you but for now let's continue so remember that you look at somebody talk that time |
 | 1680 | 28:00 | daily and 4 hours break so yes so see what you have for a possible C-model trade |
-| 1695 | 28:15 | with the reject now before the call where we get that daily reject 4 hours break the best thing to do |
-| 1710 | 28:30 | this breakout level me price no portion that same day now if price touch even if it already close below if price come come back |
-| 1725 | 28:45 | price going value time is very very high the reason is because if price come touch about that same day come close |
+| 1700 | 28:20 | 4 hours break the best thing to do is that the best thing is that price should not come back to this place that same day |
+| 1720 | 28:40 | come portion that same day that same day the chance is that price going value time is very very high the reason is because |
 | 1740 | 29:00 | when we get a breakout like this as this course model pattern been we have like theory possible entry which is |
-| 1755 | 29:15 | the shoulder level and then the head level yes |
-| 1770 | 29:30 | liquidity or inducement now if let's say price now |
-| 1785 | 29:45 | if he creates inducement for you you know say now this particular guy |
+| 1760 | 29:20 | the head level yes we pick our entry based on the one with the closest liquidity |
+| 1780 | 29:40 | contact this guy like this if he creates inducement for you you know say |
 | 1800 | 30:00 | now see where the trick see where the trick this thing is going to save you a lot wait to just up here so now waiting up on that day |
-| 1815 | 30:15 | before the close of that day you see this breakout level so price come back price come back come close |
-| 1830 | 30:30 | 4 hours go see the show you say price don't breakout too and you go to show you say now here come be the entry on 4 hours time frame like something like this |
-| 1845 | 30:45 | just to 3 like this now wait 4 hours go tell you but if you go switch to daily you see say waiting daily do now just a very |
+| 1820 | 30:20 | price come back price come back come close slightly above now as price close slightly above |
+| 1840 | 30:40 | now we gonna show you so 3 like this 4 hours time frame just to 3 like this now wait 4 hours go tell you |
 | 1860 | 31:00 | I don't know if you do understand we can try to talk yes boss now why allowing the day to close is very important |
-| 1875 | 31:15 | before the close of that day price come close slightly above as an inducement where back will use this place |
-| 1890 | 31:30 | that price do now this breakout level one price breakout below 4 hours then the next 4 hours time frame |
-| 1905 | 31:45 | so when you select your tree it is best that if we get daily reject daily once this 4 hours breakout |
+| 1880 | 31:20 | slightly above as an inducement where back will use this place but if you go switch to daily time frame you will see a very strong rejection |
+| 1900 | 31:40 | if you look now you see the next 4 hours time frame don't close above this breakout zone so now why I say more so when you select your tree it is best that if we get |
 | 1920 | 32:00 | perfect then we can be looking for entries either here or here but if we can't go close the daily |
-| 1935 | 32:15 | the chances is that price wants to go higher first even if price will say but it will have to go higher first so we all go position for the next daily zone price will invalidate all this one |
-| 1950 | 32:30 | so whenever we have daily reject daily and 4 hours breakout we want to make sure that it is the next day we will get a trade not that particular day |
-| 1965 | 32:45 | now that same day should not trade back into the breakout zone it is just telling us that it has been rejected so now we are waiting here for that trade |
+| 1940 | 32:20 | so we all go position for the next daily zone price will invalidate all this one like this one a personal experience where I don't see with the chart |
+| 1960 | 32:40 | it is going to be the next day if all that trade we call the next day you know that this day that gave us this breakout now that same day should not trade back into the breakout zone |
 | 1980 | 33:00 | yes yes Ulysses ask your question okay |
-| 1995 | 33:15 | on the particular day we get the daily reject daily but we don't get 4 hours break that same day but daily don't reject and trade |
-| 2010 | 33:30 | so with it they can that same day or the same scenario where they explain to that you see our play you see our play the same route to it |
-| 2025 | 33:45 | that same day if you go back there is no longer air probability even if it will play out but remember that we are here to fit the best trade |
+| 2000 | 33:20 | but we don't get 4 hours break that same day but daily don't reject and trade then the next trading day 4 hours come trade |
+| 2020 | 33:40 | the day where that breakout occur non let price go back to that breakout level that same day if you go back |
 | 2040 | 34:00 | I understand now see something very very important see waiting and not like me with the do again in sport will you do one before |
-| 2055 | 34:15 | okay I for like make you answer this guy finish because my face when I based on that breakout I don't answer your question I don't answer your finish |
-| 2070 | 34:30 | tap and reject then maybe you go 4 hours then we are break out the day very fast sometimes price they come like tap that key level |
-| 2085 | 34:45 | tap and like up to 4 or 5 times before can't give the recent break that's how the internal break sometimes I don't know the one way at the select |
+| 2060 | 34:20 | because my face when I based on that breakout I don't answer your question I don't answer your finish sometimes this |
+| 2080 | 34:40 | multiple times in situation like that if price don't come up to the key level tap and like up to 4 or 5 times before can't give the recent break |
 | 2100 | 35:00 | so now we see our talk next again waiting with the do before way and not want me with the do again so I just hope say this |
-| 2115 | 35:15 | so the first criteria is that whatever time frame we are using we want to be patient for that time frame to close first before we move into the next |
-| 2130 | 35:30 | once that break occurs it should not retest it back that same day then the next one now is that |
-| 2145 | 35:45 | those one we should leave them alone we should leave them alone maybe we just leave them you see at this one |
+| 2120 | 35:20 | we want to be patient for that time frame to close first before we move into the next and once the next criteria is we want to see a clean break |
+| 2140 | 35:40 | you see all those one way we say you go get multiple multiple multiple rejection before we can't get break out those one we should leave them alone |
 | 2160 | 36:00 | then the day 4 hours give us break out you see as he clean and straight forward before we can reject so within that different frame |
-| 2175 | 36:15 | we should not have to form the opposite way so the best one when you are featuring your tree is that as he reject also |
-| 2190 | 36:30 | and just go look for another tree or do something else you see that tree don't reject multiple multiple times just leave it alone |
-| 2205 | 36:45 | and your chart will not be rough so now just that I want you to inform us thank you very much so stay away from how it gets |
+| 2180 | 36:20 | so the best one when you are featuring your tree is that as he reject also we just give you break out if you not see like that just leave |
+| 2200 | 36:40 | just find one that is clean and straight forward it will not stress you at all it will be very very clean and your chart will not be rough so now just that |
 | 2220 | 37:00 | other production don't build up only try a cash many trees we just try a cash one tree that is clean is enough so now when we don't give us confirm |
