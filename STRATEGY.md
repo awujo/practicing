@@ -114,7 +114,36 @@ Nothing open. Historical note: Q1/Q2/Q4 had no transcript basis (owner chose edi
 Q3 = all IC Markets pairs over time; Q5 = Qwen-proposed weights, validated by backtest with
 walk-forward split.
 
-## 10. Visual cross-reference layer (added 2026-10-12 after owner correction)
+## 10. The Ten Core Rules — provenance, transcript time, and frame citation
+
+Provenance tags: **[T]** = stated in a transcript; **[F?]** = depends on what is drawn on
+screen and is **UNVERIFIED VISUALLY** (this environment cannot read image pixels; the cited
+sheet exists on this branch at the exact path and timestamp — open it to confirm). Every
+sheet path below was checked to exist on `qwen-kevin-king` at commit time. Frames are 1 per
+20 s, 4 per sheet, reading order; burned-in timestamps match `index.md`.
+
+| # | Rule (plain language) | Provenance | Video @ mm:ss | Frame file |
+|---|---|---|---|---|
+| 1 | Storyline first: build bias top-down from structure events; no completed storyline = no trade. | [T] | kevin-story-line 00:00–00:40 | knowledge-base/frames/kevin-story-line/sheets/sheet_001.jpg |
+| 2 | A break only counts when a candle BODY closes past the swing point; a wick poking through is a liquidity sweep, not a break. | [T] + placement of marks [F?] | kevin-basic-ms-pt2 ~01:00; kevin-advance-market-sturcture 34:00 | knowledge-base/frames/kevin-basic-ms-pt2/sheets/sheet_001.jpg ; knowledge-base/frames/kevin-advance-market-sturcture/sheets/sheet_026.jpg |
+| 3 | HH/HL = up, LH/LL = down; mark the highest/lowest reversal points only — internal bumps don't change external structure. | [T] | kevin-basic-ms 01:20–02:40 | knowledge-base/frames/kevin-basic-ms/sheets/sheet_002.jpg |
+| 4 | AMS formula = Sweep + BOS + Inducement; all three must be present before calling a leg "advanced structure complete". | [T] | kevin-advance-market-sturcture-pt2 00:30+ | knowledge-base/frames/kevin-advance-market-sturcture-pt2/sheets/sheet_001.jpg |
+| 5 | Inducement is the MINOR high/low between the swept point and the BOS origin (the small bump Kevin circles before the break). | [T] for concept; WHICH bump he circles is [F?] UNVERIFIED VISUALLY | kevin-advance-market-sturcture 21:20 | knowledge-base/frames/kevin-advance-market-sturcture/sheets/sheet_017.jpg |
+| 6 | Liquidity sits wherever resting orders are (equal highs/lows, obvious swings, trendlines); targets go to the OPPOSITE external liquidity. | [T] | kevin-liquidity 00:25+ | knowledge-base/frames/kevin-liquidity/sheets/sheet_001.jpg |
+| 7 | Key levels come in three shapes (A-shape, V-shape, Open-Close) and are ZONES drawn from the rejecting candle, not single prices. | [T] for shapes; zone edges drawn on screen [F?] UNVERIFIED VISUALLY | kevin-key-levels-pt1 26:40 | knowledge-base/frames/kevin-key-levels-pt1/sheets/sheet_021.jpg |
+| 8 | Fresh level > unfresh level; first touch is the tradeable one, and levels flip roles after body-close breaks. | [T] | kevin-key-levels-pt1 21:20 | knowledge-base/frames/kevin-key-levels-pt1/sheets/sheet_017.jpg |
+| 9 | Entry models: A = breakout+retest rejection (~5-candle sequence); B = QMRO (sweep+BOS then retrace into origin zone). Prefer continuation with bias; no confirmation candle = no entry. | [T] | kevin-introduction-to-entry 02:00; kevin-entry3 01:10; kevin-entry-4 01:00 | knowledge-base/frames/kevin-introduction-to-entry/sheets/sheet_002.jpg ; knowledge-base/frames/kevin-entry3/sheets/sheet_001.jpg ; knowledge-base/frames/kevin-entry-4/sheets/sheet_001.jpg |
+| 10 | Stop goes behind the setup's invalidation/rejection point (not fixed pips); if two nearby stop points qualify, cover both. Typical example stops 10–15 pips. | [T] | kevin-qns-pt1 21:53; kevin-cadjpy-bd 04:20 | knowledge-base/frames/kevin-qns-pt1/sheets/sheet_017.jpg ; knowledge-base/frames/kevin-cadjpy-bd/sheets/sheet_004.jpg |
+
+Honest summary: all ten rules have transcript basis. None came ONLY from frames — but rules
+2, 5, 7 (and the worked-example framing of rule 4) make claims about WHERE marks sit on
+chart that only the images can settle; those parts are marked UNVERIFIED VISUALLY until a
+human or vision model opens the cited sheets. Worked live examples backing rules 1–10:
+kevin-eurgbp-bd 01:50 (knowledge-base/frames/kevin-eurgbp-bd/sheets/sheet_002.jpg),
+kevin-all-in-1 01:30 (knowledge-base/frames/kevin-all-in-1/sheets/sheet_002.jpg),
+kevin-entry-2 00:20 (knowledge-base/frames/kevin-entry-2/sheets/sheet_001.jpg).
+
+## 11. Visual cross-reference layer (added 2026-10-12 after owner correction)
 The rules above were originally built from transcripts only. The repo also holds
 `knowledge-base/frames/` — 748 contact sheets (38 videos, one frame every 15 s,
 timestamp burned into each still) with per-frame speech indexes (`index.md`).
@@ -136,15 +165,15 @@ Consequences for the machine implementation (rules restated as what the frames s
 Honest limitation: I cannot see images in this environment and there is no vision API key configured here. This pass built the complete text↔frame cross-reference so the visual claims are now checkable (each rule cites the exact sheet), but a true pixel-level study needs either you eyeballing the cited sheets or a vision-capable model run over them (possible Stage-0.5 task: dispatch extract-frames.yml `mode=frames` at the 141 timestamps, then feed stills to a vision LLM).
 
 
-## 11. Bishop layer — how practitioners actually run SLK (added 2026-10-11; 9 Bishop videos now cross-referenced: transcripts + frame indexes + pixel/VQA pass)
+## 12. Bishop layer — how practitioners actually run SLK (added 2026-10-11; 9 Bishop videos now cross-referenced: transcripts + frame indexes + pixel/VQA pass)
 
 The previous sections cite Kevin only. The repo also holds 9 Bishop mentorship videos (~270 KB of transcripts, 55 frames). They are the *applied* version of the same method and change several implementation decisions:
 
-### 11.1 Bias building is multi-timeframe AND can be weekly/monthly-first [bishop-bias-entries 00:45–01:15, bishop-building-bias-1/2]
+### 12.1 Bias building is multi-timeframe AND can be weekly/monthly-first [bishop-bias-entries 00:45–01:15, bishop-building-bias-1/2]
 - GBP/AUD example: monthly bearish break last month + weekly recent breaks bearish → "everything was screaming sales". Bias is built top-down (monthly→weekly→daily), not just DRD.
 - Implication for bot: bias table must store per-TF direction (M/W/D/H4) + a composite, not a single daily flag.
 
-### 11.2 Bishop's repeatable entry recipe ("repeating system") [bishop-repeating-system 01:05–03:40]
+### 12.2 Bishop's repeatable entry recipe ("repeating system") [bishop-repeating-system 01:05–03:40]
 Fixed sequence he says he uses "all the time":
 1. Bias confirmed on HTF (e.g. weekly bullish, daily breaker aligned).
 2. On entry TF (H4): wait for sweep of liquidity + breakout/BOS in bias direction.
@@ -153,16 +182,16 @@ Fixed sequence he says he uses "all the time":
 5. Confirmation entry one TF lower; acceptable confirmations he lists: SIP+break, plain breakout, breakout-with-or-without-liquidity, engulfed open-close (price closes above an OC level then retests it), or wick-of-a-candle swept while the high still stands (V-shape entry).
 - This matches our three-event formula exactly and gives the scoring model its confirmation taxonomy.
 
-### 11.3 Targets = external liquidity, reversal expected after ERL is taken [bishop-bias-entries 05:15–06:15]
+### 12.3 Targets = external liquidity, reversal expected after ERL is taken [bishop-bias-entries 05:15–06:15]
 "Once the external liquidity is taken, expect a reversal. So the target should always be external liquidity." He places TP at next-week/next-day extreme (erl = weekly high visible on chart). Confirms §8; adds rule: if price has already swept the nearest ERL before entry, target moves to the next structural ERL, not back toward origin.
 
-### 11.4 Failed-entry handling [bishop-bias-entries 02:45–03:15, 06:45–07:00]
+### 12.4 Failed-entry handling [bishop-bias-entries 02:45–03:15, 06:45–07:00]
 Two real examples: entry placed at extreme key level, stop hit on a spike, then price eventually ran the original idea. His discipline: keep bias while structure intact, take the NEXT setup (he got the follow-through trade ~3h later). Bot implication: a stopped-out signal on the same leg does not void the bias; re-arm after new confirmation, mark trade `retry_of` id.
 
-### 11.5 Pair universe & risk exposure [bishop-daily-routine 00:27–02:30]
+### 12.5 Pair universe & risk exposure [bishop-daily-routine 00:27–02:30]
 He trades many pairs but warns: more pairs = more risk exposure + missed setups + analysis drain. His solution: a **checklist** that gates each pair — "if I see this I monitor it, if not I move to the next pair". Validates owner's no-pair-restriction decision provided the checklist gate exists (our score threshold ≥70 is that gate). Backtest must report per-pair so we can rank attention pairs.
 
-### 11.6 Visual/pixel evidence caveat (honest limits of this pass)
+### 12.6 Visual/pixel evidence caveat (honest limits of this pass)
 Ran a reproducible vision pass (`knowledge-base/frame-analysis/vision_pass.py`, BLIP-VQA + numpy color metrics over the 761 extracted stills; results in `pixel/annotations.jsonl`):
 - 28/32 sampled sheets: VQA confirms candlestick chart with drawn lines; annotation colors found: black (20), white (7), green (5); horizontal key-level lines detected in 7 frames.
 - Pixel marker scan across ALL 761 images: Kevin's class videos are heavily annotated (85–100% of sheets carry colored markers), Bishop's are mostly raw charts + spoken pointing (0–39% marker pixels) — i.e., Bishop teaches by cursor/circle gestures that don't leave colored pixels, so frame content for Bishop must be read together with his timestamped speech index, which is what §11 cites.
