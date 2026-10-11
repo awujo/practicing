@@ -1,0 +1,48 @@
+name: Stage 1 skeleton runner
+
+# Long-running pattern: external timer (or a previous run) fires workflow_dispatch.
+# `planned_at` = the time the timer intended this run to start; the runner logs how
+# late it actually started -> that is our real cron-drift measurement.
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Heartbeat minutes for this run (keep < 360)"
+        required: false
+        default: "2"
+      planned_at:
+        description: "ISO UTC time the dispatcher fired (for delay measurement)"
+        required: false
+        default: ""
+      run_once:
+        description: "true = single pass, no heartbeat loop (use when dispatching manually)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet pymysql
+      - name: Run stage 1 skeleton
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          PA="${{ github.event.inputs.planned_at }}"
+          if [ -z "$PA" ]; then PA="$(date -u +%Y-%m-%dT%H:%M:%SZ)"; fi
+          echo "planned_at defaulted to $PA (dispatch time; real drift measured once an external timer is wired)"
+          MIN="${{ github.event.inputs.run_once == 'true' && '0' || (github.event.inputs.minutes || '2') }}"
+          python stage1/run.py \
+            --minutes "$MIN" \
+            --planned "$PA"
