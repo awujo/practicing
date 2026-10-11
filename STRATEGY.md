@@ -113,3 +113,24 @@ Alert threshold: >= 70 = strong, 50-69 = weak (tagged), < 50 = no alert. All tun
 Nothing open. Historical note: Q1/Q2/Q4 had no transcript basis (owner chose editable defaults);
 Q3 = all IC Markets pairs over time; Q5 = Qwen-proposed weights, validated by backtest with
 walk-forward split.
+
+## 10. Visual cross-reference layer (added 2026-10-12 after owner correction)
+The rules above were originally built from transcripts only. The repo also holds
+`knowledge-base/frames/` — 748 contact sheets (38 videos, one frame every 15 s,
+timestamp burned into each still) with per-frame speech indexes (`index.md`).
+Owner is correct: the pointing moments ("this level", "right here", "you can see")
+carry information the words alone don't — WHERE on screen the mark sits decides
+whether a break is a sweep or a BOS, which wick is the apex of a QMRO, etc.
+
+What was done this pass (all reproducible via `python3 knowledge-base/frame-analysis/build_index.py`):
+- Parsed all 38 frame indexes into `frame-analysis/annotations.csv` (3,749 timestamped speech lines).
+- Extracted **141 pointing moments** across the 21 core strategy videos → `frame-analysis/frame-index.md` + `.json`, each mapped to its exact sheet + slot (e.g. `kevin-key-levels-pt1` 21:20 = slot 14 of `sheet_001.jpg`).
+- Concept-frequency check while pointing: sweep/wick-tap 197 mentions, key-level shapes 157, inducement 65, body-close 48 — confirming these four are the visually-determined core of the method.
+
+Consequences for the machine implementation (rules restated as what the frames show):
+1. Sweep vs BOS is decided by *which extremity* is touched: wick beyond + no body close = sweep (target liquidity); body close beyond swing = BOS. Both must be computed from raw OHLC, never assumed. [frames: kevin-basic-ms-pt2, kevin-advance-market-sturcture 34:00]
+2. Inducement is always the *minor* high/low sitting between the swept point and the BOS origin — visible as the small bump Kevin circles before the break. [kevin-advance-market-sturcture 21:20]
+3. Key levels are zones drawn from the *candle that rejected*, not single prices; A/V/OC shape tells which side is the POI edge. [kevin-key-levels-pt1 26:40, 32:40]
+4. In worked breakdowns (CADJPY/EURGBP, Bishop bias→entries) entry is taken at the CLOSEST fresh key level in bias direction after sweep+BOS+inducement, confirmed one TF down — the same three-event formula, just zoomed. [bishop-bias-entries index 02:15–03:30]
+
+Honest limitation: I cannot see images in this environment and there is no vision API key configured here. This pass built the complete text↔frame cross-reference so the visual claims are now checkable (each rule cites the exact sheet), but a true pixel-level study needs either you eyeballing the cited sheets or a vision-capable model run over them (possible Stage-0.5 task: dispatch extract-frames.yml `mode=frames` at the 141 timestamps, then feed stills to a vision LLM).
