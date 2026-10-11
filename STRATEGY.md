@@ -134,3 +134,36 @@ Consequences for the machine implementation (rules restated as what the frames s
 4. In worked breakdowns (CADJPY/EURGBP, Bishop bias→entries) entry is taken at the CLOSEST fresh key level in bias direction after sweep+BOS+inducement, confirmed one TF down — the same three-event formula, just zoomed. [bishop-bias-entries index 02:15–03:30]
 
 Honest limitation: I cannot see images in this environment and there is no vision API key configured here. This pass built the complete text↔frame cross-reference so the visual claims are now checkable (each rule cites the exact sheet), but a true pixel-level study needs either you eyeballing the cited sheets or a vision-capable model run over them (possible Stage-0.5 task: dispatch extract-frames.yml `mode=frames` at the 141 timestamps, then feed stills to a vision LLM).
+
+
+## 11. Bishop layer — how practitioners actually run SLK (added 2026-10-11; 9 Bishop videos now cross-referenced: transcripts + frame indexes + pixel/VQA pass)
+
+The previous sections cite Kevin only. The repo also holds 9 Bishop mentorship videos (~270 KB of transcripts, 55 frames). They are the *applied* version of the same method and change several implementation decisions:
+
+### 11.1 Bias building is multi-timeframe AND can be weekly/monthly-first [bishop-bias-entries 00:45–01:15, bishop-building-bias-1/2]
+- GBP/AUD example: monthly bearish break last month + weekly recent breaks bearish → "everything was screaming sales". Bias is built top-down (monthly→weekly→daily), not just DRD.
+- Implication for bot: bias table must store per-TF direction (M/W/D/H4) + a composite, not a single daily flag.
+
+### 11.2 Bishop's repeatable entry recipe ("repeating system") [bishop-repeating-system 01:05–03:40]
+Fixed sequence he says he uses "all the time":
+1. Bias confirmed on HTF (e.g. weekly bullish, daily breaker aligned).
+2. On entry TF (H4): wait for sweep of liquidity + breakout/BOS in bias direction.
+3. Identify a **single candle used as liquidity** (his wording for internal/single-candle liquidity).
+4. Play the **closest key level** to that swept candle — but WAIT for rejection there first.
+5. Confirmation entry one TF lower; acceptable confirmations he lists: SIP+break, plain breakout, breakout-with-or-without-liquidity, engulfed open-close (price closes above an OC level then retests it), or wick-of-a-candle swept while the high still stands (V-shape entry).
+- This matches our three-event formula exactly and gives the scoring model its confirmation taxonomy.
+
+### 11.3 Targets = external liquidity, reversal expected after ERL is taken [bishop-bias-entries 05:15–06:15]
+"Once the external liquidity is taken, expect a reversal. So the target should always be external liquidity." He places TP at next-week/next-day extreme (erl = weekly high visible on chart). Confirms §8; adds rule: if price has already swept the nearest ERL before entry, target moves to the next structural ERL, not back toward origin.
+
+### 11.4 Failed-entry handling [bishop-bias-entries 02:45–03:15, 06:45–07:00]
+Two real examples: entry placed at extreme key level, stop hit on a spike, then price eventually ran the original idea. His discipline: keep bias while structure intact, take the NEXT setup (he got the follow-through trade ~3h later). Bot implication: a stopped-out signal on the same leg does not void the bias; re-arm after new confirmation, mark trade `retry_of` id.
+
+### 11.5 Pair universe & risk exposure [bishop-daily-routine 00:27–02:30]
+He trades many pairs but warns: more pairs = more risk exposure + missed setups + analysis drain. His solution: a **checklist** that gates each pair — "if I see this I monitor it, if not I move to the next pair". Validates owner's no-pair-restriction decision provided the checklist gate exists (our score threshold ≥70 is that gate). Backtest must report per-pair so we can rank attention pairs.
+
+### 11.6 Visual/pixel evidence caveat (honest limits of this pass)
+Ran a reproducible vision pass (`knowledge-base/frame-analysis/vision_pass.py`, BLIP-VQA + numpy color metrics over the 761 extracted stills; results in `pixel/annotations.jsonl`):
+- 28/32 sampled sheets: VQA confirms candlestick chart with drawn lines; annotation colors found: black (20), white (7), green (5); horizontal key-level lines detected in 7 frames.
+- Pixel marker scan across ALL 761 images: Kevin's class videos are heavily annotated (85–100% of sheets carry colored markers), Bishop's are mostly raw charts + spoken pointing (0–39% marker pixels) — i.e., Bishop teaches by cursor/circle gestures that don't leave colored pixels, so frame content for Bishop must be read together with his timestamped speech index, which is what §11 cites.
+- A true pixel-level study (reading exact axis prices under each drawn line) needs a hosted vision API (GPT-4o/Qwen-VL); Qwen2-VL download stalled on this sandbox's network and BLIP answers are too coarse for price extraction. Flagged as optional Stage-0.5 upgrade.
