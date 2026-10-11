@@ -84,6 +84,10 @@ INSERT IGNORE INTO settings (k, v, is_secret) VALUES
   ('sessions',        'LDN,NY', 0),-- UNCONFIRMED (open Q2)
   ('kill_switch',     'off', 0),
   ('auto_mode',       'off', 0),   -- off = Telegram confirm button required before any order
+  ('pairs',           'USDJPY,EURGBP,CADJPY,USDCHF,EURAUD,AUDCAD,NZDJPY,GBPUSD', 0),
+  ('score_threshold_strong', '70', 0),
+  ('score_threshold_weak',   '50', 0),
+  ('w_bias','25',0),('w_level','20',0),('w_structure','20',0),('w_series','15',0),('w_model','15',0),('w_session','5',0),  -- proposed Q5, UNCONFIRMED
   ('ctrader_access_token',  '', 1),
   ('ctrader_refresh_token', '', 1);
 

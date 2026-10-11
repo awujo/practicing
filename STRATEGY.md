@@ -78,6 +78,25 @@ from each transcript's `[start-end]` markers. Anything guessed is marked **UNCON
 - Entry requires the level AND the confirmation candle; missing either = no trade.
   (`kevin-qns-pt1` [1485.5-1495.1])
 
+## Owner decisions (2026-10-11, via relay) — ACCEPTED AS DEFAULTS, still UNCONFIRMED placeholders
+- Q1 risk: 0.5% per trade, max 2 open trades (demo). Review when alerts go live.
+- Q2 sessions: London + New York (LDN,NY).
+- Q4 min RR: 2.0.
+- Q3 pairs: owner named CADJPY, EURGBP, AUDCAD, NZDJPY, GBPUSD; transcripts also use
+  USDJPY, USDCHF, EURAUD. Starting list = union of both sets (8 pairs), stored in `pairs` table.
+- Q5 scoring weights: proposed by Qwen from transcripts (see below); owner does not invent them.
+
+### Proposed signal score (0-100), derived from Module 4/5 emphasis
+| Component | Weight | Transcript basis |
+|---|---|---|
+| HTF bias aligned (DRD->H4 stacking) | 25 | "trade with the higher TF direction" (basic-mkt-str) |
+| Level quality: fresh level + confluence (OC/POI overlap) | 20 | fresh-level & confluence priority (Module 4) |
+| Structure quality: sweep+BOS present (QMRO > normal breakout) | 20 | AMS formula, Module 2/5 |
+| Series strength: B-series > A-series | 15 | "B stronger than A" (Module 5) |
+| Entry model clean: Model A/B candle sequence complete | 15 | 5-candle sequence rule (Module 5) |
+| Session filter pass (LDN/NY) | 5 | premarket routine (Module 0) |
+Alert threshold: >= 70 = strong, 50-69 = weak (tagged), < 50 = no alert. All tunable in `settings`.
+
 ## Open questions (ask owner)
 1. Risk % per trade and max open trades — never stated in any transcript. **UNCONFIRMED.**
 2. Session/time-of-day filters (London/NY killzones)? Kevin mentions premarket routine but

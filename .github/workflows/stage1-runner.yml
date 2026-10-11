@@ -35,6 +35,9 @@ jobs:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
+          PA="${{ github.event.inputs.planned_at }}"
+          if [ -z "$PA" ]; then PA="$(date -u +%Y-%m-%dT%H:%M:%SZ)"; fi
+          echo "planned_at defaulted to $PA (dispatch time; real drift measured once an external timer is wired)"
           python stage1/run.py \
             --minutes "${{ github.event.inputs.minutes || '2' }}" \
-            --planned "${{ github.event.inputs.planned_at }}"
+            --planned "$PA"
