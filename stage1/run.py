@@ -154,6 +154,30 @@ def main():
     cur.execute("SELECT k, v FROM settings WHERE k IN ('sessions','session_filter','pair_filter','risk_pct','min_rr') ORDER BY k")
     cfg = dict(cur.fetchall())
 
+    # Sync the pairs table so Stage 2 has a complete universe to pull candles for.
+    # IC Markets (cTrader) symbol list; majors first, then the video pairs, then minors/crosses.
+    ALL_PAIRS = [
+        # majors
+        "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD", "NZDUSD",
+        # metals on IC cTrader
+        "XAUUSD", "XAGUSD",
+        # Kevin King video pairs + common crosses
+        "EURGBP", "EURJPY", "GBPJPY", "CADJPY", "AUDJPY", "NZDJPY", "CHFJPY",
+        "AUDCAD", "AUDNZD", "EURAUD", "EURNZD", "GBPAUD", "GBPCAD", "GBPNZD",
+        "EURCAD", "EURCHF", "CADCHF", "AUDCHF", "NZDCHF", "EURTRY",
+    ]
+    seen, ordered = set(), []
+    for p in ALL_PAIRS:
+        if p not in seen:
+            seen.add(p); ordered.append(p)
+    n_synced = 0
+    for sym in ordered:
+        n_synced += cur.execute(
+            "INSERT IGNORE INTO pairs (symbol, enabled) VALUES (%s, 1)", (sym,)
+        )
+    conn.commit()
+    cur.execute("SELECT COUNT(*) FROM pairs"); npairs = cur.fetchone()[0]
+
     ticks = 0
     end = started.timestamp() + args.minutes * 60
     while True:
@@ -179,7 +203,7 @@ def main():
         f"DB: connected, schema applied ({applied} stmts, {tables} tables)"
         + (f", migrated: {', '.join(migrated)}" if migrated else "") + "\n"
         f"Config: sessions={cfg.get('sessions','?')} filter={cfg.get('session_filter','?')} "
-        f"pairs=all-synced filter={cfg.get('pair_filter','?')} risk={cfg.get('risk_pct','?')}% minRR={cfg.get('min_rr','?')}\n"
+        f"pairs={npairs} synced(+{n_synced}) filter={cfg.get('pair_filter','?')} risk={cfg.get('risk_pct','?')}% minRR={cfg.get('min_rr','?')}\n"
         f"Run: {env('GITHUB_RUN_ID', required=False) or 'local'} | start delay: {delay_txt}\n"
         f"Heartbeat: {ticks} tick(s), {minutes_used} min used\n"
         "Next: Stage 2 candle pulling."
