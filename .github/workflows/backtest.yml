@@ -9,6 +9,7 @@ on:
       start: {default: "2018"}
       end: {default: "2025"}
       cfg: {description: "JSON overrides of slk/story.py DEFAULT", default: "{}"}
+      entry_cfg: {description: "JSON overrides of slk/entry.py DEFAULT", default: "{}"}
 permissions:
   contents: write
 concurrency: {group: slk-backtest, cancel-in-progress: true}
@@ -35,6 +36,15 @@ jobs:
           python -m slk.backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' > reports/run.log 2>&1
           echo "exit=$?" >> reports/run.log
           tail -c 60000 reports/run.log >> "$GITHUB_STEP_SUMMARY"
+      - name: Entry backtest
+        run: |
+          ARGS="--start ${{ inputs.start || '2018' }} --end ${{ inputs.end || '2025' }} --out reports"
+          [ -n "${{ inputs.pairs }}" ] && ARGS="$ARGS --pairs ${{ inputs.pairs }}"
+          mkdir -p reports
+          set +e
+          python -m slk.entry_backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' --entry-cfg '${{ inputs.entry_cfg || '{}' }}' > reports/entry_run.log 2>&1
+          echo "exit=$?" >> reports/entry_run.log
+          tail -c 60000 reports/entry_run.log >> "$GITHUB_STEP_SUMMARY"
       - name: Commit report
         if: always()
         run: |

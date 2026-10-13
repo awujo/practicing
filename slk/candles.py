@@ -3,10 +3,12 @@ import pandas as pd
 
 
 def _key(idx, tf):
-    # shift so 17:00 New York becomes midnight; then H4/D/W/M are plain calendar bins
+    # shift so 17:00 New York becomes midnight; then H2/H4/D/W/M are plain calendar bins
     s = (idx.tz_convert("America/New_York").tz_localize(None) + pd.Timedelta(hours=7))
     if tf == "H4":
         return s.floor("4h")
+    if tf == "H2":
+        return s.floor("2h")
     if tf == "D":
         return s.floor("D")
     if tf == "W":
