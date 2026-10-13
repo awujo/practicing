@@ -48,7 +48,8 @@
     $("#bias-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
         <div class="top"><span class="title">${esc(r.pair)} · ${esc(r.story)} <span class="${esc(r.side)}">${esc(r.side)}</span></span>
-          <span class="tag">${esc(r.status)}</span></div>
+          <span>${Number(r.no_trade) ? `<span class="tag notrade" title="${esc(r.no_trade_reason || "")}">NO_TRADE</span> ` : ""}<span class="tag">${esc(r.status)}</span></span></div>
+        ${Number(r.no_trade) ? `<div class="muted">No trade: ${esc(r.no_trade_reason || "filter")}</div>` : ""}
         <div class="grid">
           ${field("Level", `${num(r.level)} ${r.level_kind || ""}`)}${field("Point B", num(r.point_b))}
           ${field("Target", num(r.target))}${field("Invalid", num(r.invalidation))}

@@ -139,8 +139,7 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
         where.append("status = %s")
         args.append(status.upper())
     sql = (
-        "SELECT id, pair, story, side, status, level_kind, level, point_b, target, invalidation, "
-        "tap_time, confirm_time, updated_at FROM bias"
+        "SELECT * FROM bias"  # * so it works before and after the no_trade columns are added
         + (" WHERE " + " AND ".join(where) if where else "")
         + " ORDER BY COALESCE(confirm_time, tap_time) DESC LIMIT %s"
     )

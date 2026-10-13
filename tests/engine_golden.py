@@ -1,0 +1,71 @@
+"""Golden engine outputs for the speed-up regression test (tests/test_speed.py).
+
+`python tests/engine_golden.py` rewrites tests/golden/engine_golden.json from the CURRENT engine; it was generated
+from the engine before the speed-ups (commit 49d4fb7). Only regenerate after an intended change of trading logic.
+"""
+import json
+import os
+import sys
+
+import numpy as np
+import pandas as pd
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from slk.entry import find_entries  # noqa: E402
+from slk.story import current_tap, find_stories  # noqa: E402
+from test_engine import walk  # noqa: E402
+
+PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "golden", "engine_golden.json")
+CASES = [  # (pair, seed, hours, cfg)
+    ("EURUSD", 1, 24 * 900, {}),
+    ("EURUSD", 3, 24 * 365 * 2, {}),
+    ("GBPJPY", 5, 24 * 700, {}),
+    ("EURUSD", 7, 24 * 700, {"trend_filter": False, "htf_filter": False}),
+    ("EURUSD", 9, 24 * 700, {"use_oc": False, "max_retaps": 0, "max_wait": 8}),
+    ("EURUSD", 11, 24 * 700, {"same_bar_close": False, "tap_tol_pips": 3.0}),
+]
+
+
+def data(pair, seed, hours):
+    h1 = walk(hours, seed)
+    if pair.endswith("JPY"):
+        h1 = h1 * 100
+    return h1
+
+
+def _clean(x):
+    if isinstance(x, dict):
+        return {k: _clean(v) for k, v in sorted(x.items())}
+    if isinstance(x, (list, tuple)):
+        return [_clean(v) for v in x]
+    if isinstance(x, (np.floating, float)):
+        return float(x)
+    if isinstance(x, (np.integer,)):
+        return int(x)
+    if isinstance(x, (np.bool_,)):
+        return bool(x)
+    if isinstance(x, (pd.Timestamp, np.datetime64)):
+        return str(x)
+    return x
+
+
+def compute():
+    out = []
+    for pair, seed, hours, cfg in CASES:
+        h1 = data(pair, seed, hours)
+        case = {"pair": pair, "seed": seed, "hours": hours, "cfg": cfg, "stories": {}, "taps": {}, "entries": {}}
+        for st in ("D", "W", "M"):
+            s = find_stories(pair, h1, st, cfg)
+            case["stories"][st] = _clean(s)
+            case["entries"][st] = _clean(find_entries(pair, h1, s, None, cfg, sim=True))
+            cuts = range(len(h1) // 2, len(h1), max(1, len(h1) // 25))
+            case["taps"][st] = [_clean(current_tap(pair, h1.iloc[:n], st, cfg)) for n in cuts]
+        out.append(case)
+    return out
+
+
+if __name__ == "__main__":
+    json.dump(compute(), open(PATH, "w"), separators=(",", ":"), sort_keys=True)
+    print("wrote", PATH, os.path.getsize(PATH))

@@ -58,6 +58,11 @@ SCHEMA = [
     _s("alert_ended", "bool", "on", "Alerts", "Telegram when a story hits target or is invalidated."),
     _s("alert_entry", "bool", "on", "Alerts", "Telegram on new / triggered entries."),
     _s("daily_summary", "bool", "on", "Alerts", "Daily bias summary after the 17:00 New York close."),
+    _s("status_updates", "choice", "every_4h", "Alerts",
+       "'Bot alive' message: time, pairs checked, active biases, pending entries, start delay, run time, errors. "
+       "each_run = every hourly run, every_4h = at most every 4 hours (errors are always reported), off = never. "
+       "A failed run is always reported by the workflow.",
+       choices=["each_run", "every_4h", "off"]),
 ]
 BY_NAME = {s["name"]: s for s in SCHEMA}
 DEFAULTS = {s["name"]: s["default"] for s in SCHEMA}

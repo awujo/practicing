@@ -16,7 +16,8 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
 | Entry model + backtest | `slk/entry.py`, `slk/entry_backtest.py` → `reports/ENTRY_REPORT.md` | same workflow |
-| Live bias runner | `slk/live.py`, `slk/db.py`, `db/schema.sql` | Actions `live.yml`, hourly at :07 |
+| Live bias runner | `slk/live.py`, `slk/db.py`, `db/schema.sql` | Actions `live.yml`, hourly at :07 (not on the FX weekend) |
+| Candle store (H1, incremental) | `slk/store.py` → `data/store/*.npz` in the Actions cache | filled by `backfill.yml` (manual, once), kept by live + backtest |
 | cTrader client | `ctrader/` (README has OAuth steps) | Actions `ctrader-smoke.yml` |
 | Telegram Mini App | `webapp/` (FastAPI), `render.yaml` | Render, branch claude-kevin-king, root `webapp` |
 | Shared names (env vars, DB tables) | `CONTRACT.md` | — |
@@ -36,7 +37,17 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] **Default branch must be `claude-kevin-king`** (now `qwen-kevin-king`) or the hourly live job never runs (GitHub runs cron only on the default branch). User: Settings → General → Default branch.
 - [ ] Render deploy of Mini App (user: set branch + root dir + 2 env vars).
 - [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
-- [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts); `story.apply_mw_filter` + DEFAULT `mw_conflict_filter` for backtest (TODO: call it in slk/backtest.py scoring).
+- [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts) and stored in
+      `bias.no_trade` / `no_trade_reason` (Mini App shows a NO_TRADE tag). Backtest applies `story.apply_mw_filter`:
+      NO_TRADE D stories are not scored; REPORT.md section "M/W conflict filter" shows all vs kept vs removed.
+- [x] **Efficiency** (Actions minutes): candle store in the Actions cache, each hourly run downloads only the new
+      bars (~1 file per pair instead of ~26-35); engine output cached per story until a new origin bar closes;
+      pairs computed in a process pool; engine hot spots removed (identical output, golden test). No scheduled
+      runs on the FX weekend except the final one after Friday 17:00 NY. Hourly target 1-3 min.
+- [ ] **User, once:** Actions → "SLK candle backfill" → Run workflow (start 2018). Fills the candle cache for live +
+      backtest (~5-15 min). Without it the first live run builds the 3-year store itself (slower, still works).
+- [x] Telegram "bot alive" status (setting `status_updates` = each_run / every_4h (default) / off) + workflow
+      failure alert (`if: failure()` step, curl, secrets never printed).
 - [x] Entry alerts wired into live runner: CONFIRMED tradable stories -> `slk.entry` (sim=False) -> table `entries` (PENDING/TRIGGERED/MISSED) + Telegram on new PENDING and on TRIGGERED ("confirm in Mini App" note when auto_trade=confirm).
 - [x] Strategy settable from the Mini App Settings tab (5 groups, help text per field) -> table `settings`, read by
       `slk/live.py` every run (fallback = code defaults). Schema: `slk/settings.py` (CONTRACT.md lists the keys).
@@ -47,6 +58,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
 
 ## Next steps (in order)
+0. Run "SLK candle backfill" once (see Status).
 1. Fix `DATABASE_URL` → rerun "SLK live bias" (Actions → Run workflow, or Claude dispatches it via API).
 2. Read backtest reports; tune `slk/story.py` DEFAULT / entry DEFAULT by results (out-of-sample years).
 3. Deploy Mini App on Render, set BotFather menu button to the Render URL.
@@ -65,3 +77,20 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   and waived the same-day close) -> removed; sweep-and-break = label `break_kind`, break always external beyond B.
   Live computes M/W for the D-story check even if only D is watched; `stories` can't be empty; approve uses
   validated settings. REVIEW.md "Validation 3".
+- 2026-10-13: Efficiency pass (live job took 20+ min: every run re-downloaded the current month's day files and up to
+  23 hourly tick files per pair, 3 at a time). Candle store choice = **Actions cache, not MySQL**: restoring a
+  ~10-40 MB archive takes seconds, while the hourly job would otherwise read ~700k candle rows from Aiven each run
+  and the free DB would hold them; the store is a cache (rebuilt from Dukascopy if evicted), the DB keeps state.
+  `slk/store.py`: per pair .npz with source quality (month file > day file > tick file, better replaces worse, so
+  the window equals `data.recent`, tested hour by hour on a simulated feed). Live: download phase (8 threads) ->
+  engine phase (process pool; `pair_state` memo in `data/store/memo`, key = sha1 of engine code + cfg + closed
+  bars, so D recomputes once a day, W weekly, M monthly) -> DB/alerts phase. `backfill.yml` (manual) fills the
+  store; `backtest.yml` restores the same store (prefix `candles-full-` then `candles-live-`), timeout 60 min.
+  Weekend: cron skips Saturday UTC, a shell gate skips Fri 20:00 -> Sun 17:00 NY, the runner skips once
+  `weekend_done` is set. Engine speed (find_stories/current_tap): SwingBook (no swings() rebuilds), vectorised
+  run_levels / pivots, precomputed per-level first event and per-origin-bar confirm index; 28 pairs x 3 years
+  synthetic: 20.8 s -> 12.1 s single process, 4.1 s on 4 processes, 0.5 s on a memo hit. Regression test
+  `tests/test_speed.py` compares with golden output of the old engine (`tests/golden/engine_golden.json`).
+  Simulated feed (0.1 s/file): download 29 s -> 1.1 s for 28 pairs. Also: `bias.no_trade(_reason)` (+ migration in
+  `db.migrate`), backtest M/W filter + report section, `status_updates` setting, failure alert. Tests
+  `tests/test_store.py`, `tests/test_efficiency.py`, `tests/test_speed.py`.

@@ -11,7 +11,10 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "db", "schema.sql")
 BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b", "target", "invalidation",
-             "tap_time", "confirm_time")
+             "tap_time", "confirm_time", "no_trade", "no_trade_reason")
+# columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
+MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
+              ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"))
 
 
 def parse_url(url):
@@ -90,6 +93,16 @@ def apply_schema(path=SCHEMA):
     for stmt in (s.strip() for s in text.split(";")):
         if stmt:
             execute(stmt)
+    migrate()
+
+
+def migrate():
+    """Add MIGRATIONS columns that are missing (MySQL 8 has no ADD COLUMN IF NOT EXISTS)."""
+    for table, col, ddl in MIGRATIONS:
+        n = query("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+                  "AND TABLE_NAME = %s AND COLUMN_NAME = %s", (table, col))
+        if not n[0]["n"]:
+            execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
 
 
 def get_setting(k, default=None):
@@ -108,6 +121,8 @@ def set_setting(k, v):
 
 def upsert_bias(row):
     """Insert or update one story by (pair, story, tap_time). Returns the bias id."""
+    row = {**row, "no_trade": int(bool(row.get("no_trade"))),
+           "no_trade_reason": row.get("no_trade_reason") if row.get("no_trade") else None}
     vals = [row.get(c) for c in BIAS_COLS]
     upd = ", ".join(f"{c}=VALUES({c})" for c in BIAS_COLS if c not in ("pair", "story", "tap_time"))
     return execute(f"INSERT INTO bias ({', '.join(BIAS_COLS)}) VALUES ({', '.join(['%s'] * len(BIAS_COLS))}) "
@@ -118,6 +133,10 @@ def get_bias(pair, story=None):
     if story:
         return query("SELECT * FROM bias WHERE pair=%s AND story=%s", (pair, story))
     return query("SELECT * FROM bias WHERE pair=%s", (pair,))
+
+
+def count_entries(status):
+    return int(query("SELECT COUNT(*) AS n FROM entries WHERE status=%s", (status,))[0]["n"])
 
 
 def start_run(job, planned_at, started_at):

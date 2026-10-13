@@ -9,20 +9,25 @@ python -m slk.live              # needs DATABASE_URL (+ TELEGRAM_BOT_TOKEN, TELE
 python -m slk.live --dry-run --pairs EURUSD   # no DB, no Telegram: print what it would store/send
 """
 import argparse
+import copy
+import hashlib
 import json
 import os
+import pickle
 import sys
+import time
 import traceback
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+import numpy as np
 import pandas as pd
 
 from . import settings as S
+from . import store as candles_store
 from .backtest import PAIRS
 from .candles import _key, resample
-from .data import recent
 from .entry import DEFAULT as ENTRY_DEFAULT
 from .story import DEFAULT, STORIES, current_tap, find_stories, mw_conflict, pip
 
@@ -36,6 +41,16 @@ BAR_LEN = {"H1": pd.Timedelta(hours=1), "H4": pd.Timedelta(hours=4), "D": pd.Tim
 
 
 # ------------------------------------------------------------------ candles
+def recent(pair, days):
+    """Engine candles of one pair from the candle store (slk/store.py); tests replace this."""
+    return candles_store.recent(pair, days)
+
+
+def prepare_candles(pairs, now):
+    """Download only the new bars of every pair into the store (threads). Returns {pair: error}."""
+    return candles_store.update_all(pairs, now, days=HISTORY_DAYS)
+
+
 def _ts(x):
     t = pd.Timestamp(x)
     return t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
@@ -101,8 +116,38 @@ def resolve(row, h1, now, cfg):
     return "CANCELLED" if since > limit else row["status"]
 
 
-def pair_state(pair, h1, now, stories, cfg):
-    """All bias rows the engine sees now for one pair (closed bars only)."""
+_SRC = os.path.dirname(os.path.abspath(__file__))
+ENGINE_VERSION = hashlib.sha1(b"".join(open(os.path.join(_SRC, f), "rb").read() for f in
+                                       ("story.py", "levels.py", "structure.py", "candles.py"))).hexdigest()
+
+
+def _digest(h, story, cfg):
+    """Fingerprint of everything find_stories/current_tap see: engine code, story, cfg and the closed bars."""
+    m = hashlib.sha1(f"{ENGINE_VERSION}|{story}|{json.dumps(cfg, sort_keys=True, default=str)}".encode())
+    m.update(h.index.asi8.tobytes())
+    m.update(str(h.index.dtype).encode())
+    m.update(np.ascontiguousarray(h[["open", "high", "low", "close"]].to_numpy(float)).tobytes())
+    return m.hexdigest()
+
+
+def engine_rows(pair, h, st, cfg, memo=None):
+    """(find_stories, current_tap) on bars cut at the last closed origin bar. With a memo dict the result is
+    reused while no new origin bar has closed (same bars -> same digest -> same output), so W/M (and D within
+    the day) are not recomputed every hour."""
+    key = _digest(h, st, cfg) if memo is not None else None
+    hit = memo.get(st) if memo is not None else None
+    if hit and hit["key"] == key:
+        return copy.deepcopy(hit["stories"]), copy.deepcopy(hit["tap"])
+    stories, tap = find_stories(pair, h, st, cfg), current_tap(pair, h, st, cfg)
+    if memo is not None:
+        memo[st] = {"key": key, "stories": copy.deepcopy(stories), "tap": copy.deepcopy(tap),
+                    "last_bar": str(h.index[-1]) if len(h) else None}
+    return stories, tap
+
+
+def pair_state(pair, h1, now, stories, cfg, memo=None):
+    """All bias rows the engine sees now for one pair (closed bars only). `memo` (dict, optional) caches the
+    engine output per story between runs (see engine_rows)."""
     now = _ts(now)
     h1 = drop_forming(h1, "H1", now)
     out = []
@@ -110,7 +155,8 @@ def pair_state(pair, h1, now, stories, cfg):
         otf = STORIES[st][0]
         h = drop_forming(h1, otf, now)
         rows = []
-        for s in find_stories(pair, h, st, cfg):
+        found, t = engine_rows(pair, h, st, cfg, memo)
+        for s in found:
             status = {"target": "TARGET_HIT", "invalidated": "INVALIDATED"}.get(s["kevin_outcome"], "CONFIRMED")
             r = to_row(s, status)
             r["_story"] = s  # raw engine story (breakout_time etc.) for the entry model; not stored
@@ -122,7 +168,6 @@ def pair_state(pair, h1, now, stories, cfg):
                 elif since > cfg["max_hold"]:
                     r["status"] = "CANCELLED"   # held max_hold bars without an outcome
             rows.append(r)
-        t = current_tap(pair, h, st, cfg)
         if t and not any(r["tap_time"] == _dt(t["tap_time"]) for r in rows) \
                 and not any(r["status"] == "CONFIRMED" for r in rows):
             rows.append(to_row(t, "TAPPED"))
@@ -140,6 +185,7 @@ def mark_mw_conflict(rows, cfg=None):
         for r in rows:
             if r["story"] == "D":
                 r["no_trade"] = True
+                r["no_trade_reason"] = "M/W conflict"
     return rows
 
 
@@ -157,6 +203,8 @@ def filter_alerts(alerts):
 
 
 def _same(a, b):
+    if bool(a.get("no_trade")) != bool(b.get("no_trade")):
+        return False
     for k in ("status", "side", "level_kind", "confirm_time"):
         if a.get(k) != b.get(k):
             return False
@@ -211,9 +259,10 @@ def _bar(r):
 ENTRY_LIVE = ("PENDING", "TRIGGERED", "MISSED")
 
 
-def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None):
+def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None, keep_key=False):
     """Entry rows (table `entries` shape) for CONFIRMED, tradable stories. bias_ids maps (story, tap_time)
-    to bias.id. cfg = story cfg, ecfg = entry cfg. `finder` defaults to slk.entry.find_entries (injectable)."""
+    to bias.id. cfg = story cfg, ecfg = entry cfg. `finder` defaults to slk.entry.find_entries (injectable).
+    keep_key=True adds "_key" = (story, tap_time) so bias ids can be filled in later (parallel workers)."""
     if finder is None:
         from .entry import find_entries as finder
     src = [r for r in rows if r["status"] == "CONFIRMED" and not r.get("no_trade") and r.get("_story")]
@@ -227,6 +276,8 @@ def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None):
                     "tf": e["tf"], "side": r["side"], "entry": float(e["entry"]), "stop": float(e["stop"]),
                     "tp1": float(e["tp1"]), "tp2": float(e["tp2"]), "status": e["status"],
                     "stop_pips": e.get("stop_pips")})
+        if keep_key:
+            out[-1]["_key"] = (r["story"], r["tap_time"])
     return out
 
 
@@ -377,6 +428,99 @@ def _load_settings(db):
         return {}
 
 
+# ------------------------------------------------------------------ parallel engine work (no DB)
+def _memo_path(pair):
+    return os.path.join(candles_store.DIR, "memo", f"{pair}.pkl")
+
+
+def _load_memo(pair):
+    try:
+        with open(_memo_path(pair), "rb") as f:  # written only by this runner into the Actions cache
+            return pickle.load(f)
+    except Exception:
+        return {}
+
+
+def _save_memo(pair, memo):
+    try:
+        os.makedirs(os.path.dirname(_memo_path(pair)), exist_ok=True)
+        with open(_memo_path(pair) + ".tmp", "wb") as f:
+            pickle.dump(memo, f)
+        os.replace(_memo_path(pair) + ".tmp", _memo_path(pair))
+    except OSError as e:
+        print(f"memo {pair}: not saved ({e})", flush=True)
+
+
+def compute_pair(job):
+    """Engine work of one pair (runs in a worker process): bias rows + entry rows. No DB access."""
+    pair, now, engine_stories, stories, cfg, ecfg, entries_on = job
+    try:
+        h1 = recent(pair, HISTORY_DAYS)
+        memo = _load_memo(pair)
+        rows = [r for r in pair_state(pair, h1, now, engine_stories, cfg, memo) if r["story"] in stories]
+        _save_memo(pair, memo)
+        ents = entry_rows(pair, drop_forming(h1, "H1", now), rows, {}, cfg, ecfg=ecfg, keep_key=True) \
+            if entries_on else []
+        return {"pair": pair, "rows": rows, "entries": ents}
+    except Exception as e:
+        return {"pair": pair, "error": f"{type(e).__name__}: {e}", "trace": traceback.format_exc()}
+
+
+def compute_all(jobs, workers=None):
+    """compute_pair for every job, in a process pool (one pair per task; results in job order)."""
+    workers = workers or int(os.environ.get("SLK_WORKERS", "0") or 0) or (os.cpu_count() or 1)
+    if workers > 1 and len(jobs) > 1:
+        try:
+            import multiprocessing
+            from concurrent.futures import ProcessPoolExecutor
+            ctx = multiprocessing.get_context("fork")
+            with ProcessPoolExecutor(min(workers, len(jobs)), mp_context=ctx) as ex:
+                return list(ex.map(compute_pair, jobs))
+        except Exception as e:  # no fork / broken pool: do it here
+            print(f"process pool unavailable ({type(e).__name__}); computing sequentially", flush=True)
+    return [compute_pair(j) for j in jobs]
+
+
+# ------------------------------------------------------------------ run status ("bot alive")
+STATUS_EVERY = timedelta(hours=4) - timedelta(minutes=10)  # cron jitter must not skip a 4-hour slot
+
+
+def status_due(mode, last_sent, now, errors=()):
+    """`status_updates` setting: each_run | every_4h | off. Errors always report unless off."""
+    if mode == "off":
+        return False
+    if mode == "each_run" or errors or not last_sent:
+        return True
+    try:
+        return _ts(now) - _ts(last_sent) >= STATUS_EVERY
+    except (TypeError, ValueError):
+        return True
+
+
+def format_status(now, planned, started, seconds, pairs_ok, pairs_total, active, no_trade, pending, errors,
+                  note=""):
+    ny = _ts(now).tz_convert("America/New_York")
+    late = int((_ts(started) - _ts(planned)).total_seconds() // 60)
+    lines = [f"SLK bot alive - {_ts(now):%Y-%m-%d %H:%M} UTC ({ny:%a %H:%M} NY)",
+             f"Pairs checked: {pairs_ok}/{pairs_total}",
+             f"Active biases: {active}" + (f" ({no_trade} NO_TRADE)" if no_trade else ""),
+             f"Pending entries: {'-' if pending is None else pending}",
+             f"Start delay: {late} min (planned {_ts(planned):%H:%M} UTC)",
+             f"Run time: {seconds:.0f} s"]
+    if note:
+        lines.append(note)
+    lines.append("Errors: none" if not errors else f"Errors ({len(errors)}): " + " | ".join(errors)[:1500])
+    return "\n".join(lines)
+
+
+def weekend_close_day(now):
+    """NY date (YYYY-MM-DD) of the Friday close of the current FX weekend, or None while the market is open."""
+    if not candles_store.fx_closed(now):
+        return None
+    ny = _ts(now).tz_convert("America/New_York")
+    return (ny - pd.Timedelta(days=(ny.dayofweek - 4) % 7)).strftime("%Y-%m-%d")
+
+
 # ------------------------------------------------------------------ main
 def planned_time(now, event):
     """The cron slot (minute 7 of the hour) this run belongs to; for manual runs = start time."""
@@ -396,20 +540,26 @@ def main(argv=None):
     overrides = json.loads(a.cfg)
     cfg, ecfg, vals = build_cfg({}, overrides)
     started = datetime.now(timezone.utc).replace(microsecond=0)
+    t0 = time.monotonic()
     naive = lambda t: t.replace(tzinfo=None)  # noqa: E731
 
     if a.dry_run:
         pairs = a.pairs.split(",") if a.pairs else list(PAIRS)
         stories = (a.stories or "D,W,M").split(",")
-        for p in pairs:
-            h1 = recent(p, HISTORY_DAYS)
-            rows = [r for r in pair_state(p, h1, started, state_stories(stories, cfg), cfg) if r["story"] in stories]
-            for r in rows:
-                if r["status"] in ACTIVE and not (r.get("no_trade") and r["story"] == "D"):
-                    print(format_alert(r["status"], r) + "\n")
-            for e in entry_rows(p, drop_forming(h1, "H1", started), rows, {}, cfg, ecfg=ecfg):
+        for p, err in prepare_candles(pairs, started).items():
+            print(f"{p}: download failed: {err}")
+        res = compute_all([(p, started, state_stories(stories, cfg), stories, cfg, ecfg, True) for p in pairs])
+        for r in res:
+            if "error" in r:
+                print(f"{r['pair']}: {r['error']}")
+                continue
+            for row in r["rows"]:
+                if row["status"] in ACTIVE and not (row.get("no_trade") and row["story"] == "D"):
+                    print(format_alert(row["status"], row) + "\n")
+            for e in r["entries"]:
                 print(format_entry_alert("ENTRY_" + e["status"], e) + "\n")
-            print(summary_line(p, rows))
+            print(summary_line(r["pair"], r["rows"]))
+        print(f"dry run: {len(pairs)} pairs in {time.monotonic() - t0:.1f} s")
         return 0
 
     if not os.environ.get("DATABASE_URL"):
@@ -421,12 +571,13 @@ def main(argv=None):
 
     from . import db
     db.apply_schema()
-    planned = planned_time(started, os.environ.get("GITHUB_EVENT_NAME", "manual"))
+    event = os.environ.get("GITHUB_EVENT_NAME", "manual")
+    planned = planned_time(started, event)
     run_id = db.start_run(JOB, naive(planned), naive(started))
     print(f"run {run_id}: planned {planned:%H:%M} started {started:%H:%M:%S} UTC "
           f"(late {int((started - planned).total_seconds() // 60)} min)", flush=True)
 
-    errors, sent, by_pair = [], 0, {}
+    errors, sent, by_pair, pairs, note = [], 0, {}, [], ""
     try:
         cfg, ecfg, vals = build_cfg(_load_settings(db), overrides)  # re-read every run
         pairs = [p.strip().upper() for p in a.pairs.split(",") if p.strip()] if a.pairs else (vals["pairs"] or list(PAIRS))
@@ -434,11 +585,32 @@ def main(argv=None):
             else [s for s in vals["stories"] if s in STORIES]
         kill = "on" if vals["kill_switch"] == "on" else "off"
         auto = vals["auto_trade"]
-        for p in pairs:
+        weekend = weekend_close_day(started)
+        if weekend and event == "schedule" and db.get_setting("weekend_done") == weekend:
+            # FX closed and the final run after the Friday close (bars + daily summary) is done: nothing can change
+            note = f"weekend: market closed since {weekend} 17:00 NY, skipped"
+            print(note)
+            db.finish_run(run_id, True, note)
+            return 0
+
+        t_dl = time.monotonic()
+        dl_err = prepare_candles(pairs, started)
+        errors += [f"{p}: download: {e}" for p, e in dl_err.items()]
+        now = datetime.now(timezone.utc)
+        t_cpu = time.monotonic()
+        todo = [p for p in pairs if p not in dl_err]
+        results = compute_all([(p, now, state_stories(stories, cfg), stories, cfg, ecfg,
+                                vals["continuation_entries"]) for p in todo])
+        t_db = time.monotonic()
+        for res in results:
+            p = res["pair"]
+            if "error" in res:
+                errors.append(f"{p}: {res['error']}")
+                print(res.get("trace", ""), flush=True)
+                continue
             try:
                 h1 = recent(p, HISTORY_DAYS)
-                now = datetime.now(timezone.utc)
-                new = [r for r in pair_state(p, h1, now, state_stories(stories, cfg), cfg) if r["story"] in stories]
+                new = res["rows"]
                 old = [r for r in db.get_bias(p) if r["story"] in stories]
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
@@ -447,10 +619,10 @@ def main(argv=None):
                     sent += send_telegram(format_alert(ev, r))
                 by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
                 ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}
-                ew, ea = [], []
-                if vals["continuation_entries"]:
-                    ew, ea = reconcile_entries(entry_rows(p, drop_forming(h1, "H1", now), new, ids, cfg,
-                                                          ecfg=ecfg), db.get_entries(p))
+                ents = res["entries"]
+                for e in ents:
+                    e["bias_id"] = ids.get(e.pop("_key", None))
+                ew, ea = reconcile_entries(ents, db.get_entries(p)) if vals["continuation_entries"] else ([], [])
                 for e in ew:
                     db.upsert_entry(e)
                 for ev, e in ea if vals["alert_entry"] else []:
@@ -460,15 +632,35 @@ def main(argv=None):
             except Exception as e:  # one bad pair must not stop the others
                 errors.append(f"{p}: {type(e).__name__}: {e}")
                 traceback.print_exc()
+        print(f"timing: download {t_cpu - t_dl:.1f}s, engine {t_db - t_cpu:.1f}s, db+alerts "
+              f"{time.monotonic() - t_db:.1f}s", flush=True)
         if by_pair and vals["daily_summary"] and summary_due(started, db.get_setting("last_summary")):
             if send_telegram(format_summary(started, by_pair, kill)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
                 db.set_setting("last_summary", _ts(started).tz_convert("America/New_York").strftime("%Y-%m-%d"))
+        if weekend and by_pair and not errors:
+            db.set_setting("weekend_done", weekend)
+            note = "Market closed: this was the last run until Sunday 17:00 NY."
     except Exception as e:
         errors.append(f"fatal: {type(e).__name__}: {e}")
         traceback.print_exc()
-    note = f"pairs ok {len(by_pair)}, alerts {sent}" + ("; " + " | ".join(errors) if errors else "")
-    db.finish_run(run_id, not errors, note)
-    print(note)
+    secs = time.monotonic() - t0
+    try:
+        mode = vals.get("status_updates", "every_4h")
+        if status_due(mode, db.get_setting("last_status"), started, errors):
+            rows = [r for rs in by_pair.values() for r in rs if r["status"] in ACTIVE]
+            try:
+                pending = db.count_entries("PENDING")
+            except Exception:
+                pending = None
+            text = format_status(datetime.now(timezone.utc), planned, started, secs, len(by_pair), len(pairs),
+                                 len(rows), sum(1 for r in rows if r.get("no_trade")), pending, errors, note)
+            if send_telegram(text) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
+                db.set_setting("last_status", _ts(started).isoformat())
+    except Exception as e:
+        print(f"status message failed: {type(e).__name__}", flush=True)
+    run_note = f"pairs ok {len(by_pair)}, alerts {sent}, {secs:.0f}s" + ("; " + " | ".join(errors) if errors else "")
+    db.finish_run(run_id, not errors, run_note)
+    print(run_note)
     return 1 if errors and not by_pair else 0  # red only when nothing worked
 
 

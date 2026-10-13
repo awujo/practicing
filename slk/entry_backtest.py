@@ -8,8 +8,8 @@ import os
 
 import pandas as pd
 
-from .backtest import PAIRS
-from .data import hourly
+from . import store
+from .backtest import PAIRS, run_pairs
 from .entry import DEFAULT, ENTRY_TFS, find_entries
 from .story import DEFAULT as STORY_DEFAULT, find_stories
 
@@ -65,6 +65,23 @@ def report(df, cfg, path):
     open(path, "w").write("\n".join(lines))
 
 
+def pair_entries(pair, start, end, stories, scfg, ecfg):
+    h1 = store.hourly(pair, start, end)
+    h1 = h1[(h1.index.year >= start) & (h1.index.year <= end)]
+    rows = []
+    for st in stories:
+        found = find_stories(pair, h1, st, scfg)
+        e = find_entries(pair, h1, found, ecfg, scfg)
+        n = sum(r["status"] == "TRIGGERED" for r in e)
+        print(f"{pair} {st}: {len(found)} stories, {n} entries filled", flush=True)
+        rows += e
+    return rows
+
+
+def _pair_job(args):
+    return pair_entries(*args)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs", default=",".join(PAIRS))
@@ -78,16 +95,10 @@ def main():
     scfg = {**STORY_DEFAULT, **json.loads(a.cfg)}
     ecfg = {**DEFAULT, "entry_tfs": ENTRY_TFS, **json.loads(a.entry_cfg)}
     os.makedirs(a.out, exist_ok=True)
-    rows = []
-    for pair in a.pairs.split(","):
-        h1 = hourly(pair, a.start, a.end)
-        h1 = h1[(h1.index.year >= a.start) & (h1.index.year <= a.end)]
-        for st in a.stories.split(","):
-            stories = find_stories(pair, h1, st, scfg)
-            e = find_entries(pair, h1, stories, ecfg, scfg)
-            n = sum(r["status"] == "TRIGGERED" for r in e)
-            print(f"{pair} {st}: {len(stories)} stories, {n} entries filled", flush=True)
-            rows += e
+    pairs = a.pairs.split(",")
+    store.months_all(pairs, a.start, a.end)
+    jobs = [(p, a.start, a.end, a.stories.split(","), scfg, ecfg) for p in pairs]
+    rows = [r for chunk in run_pairs(_pair_job, jobs) for r in chunk]
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(a.out, "entries.csv"), index=False)
     report(df, ecfg, os.path.join(a.out, "ENTRY_REPORT.md"))

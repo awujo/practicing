@@ -60,3 +60,5 @@ fieldset legend { font-weight: 700; padding: 0; margin-bottom: 4px; float: left;
 .form .row input[type=text] { width: 140px; background: var(--bg); }
 .form .col input[type=text] { background: var(--bg); }
 .chips label { white-space: nowrap; font-size: 14px; }
+.tag.notrade { background: #b42318; color: #fff; }
+.muted { font-size: 12px; opacity: .75; margin: 4px 0; }

@@ -42,23 +42,26 @@ def find_levels(bars, cfg):
 
 def run_levels(bars, levels, tol):
     """Walk each level forward. First wick touch = the tap (level used); a body close through = break,
-    which creates a fresh flipped level on the other side (STRATEGY §1). Returns all levels incl. flips."""
+    which creates a fresh flipped level on the other side (STRATEGY §1). Returns all levels incl. flips.
+    (Vectorised per level; same events and order as the bar-by-bar walk: the tap is the first touch before the
+    first break bar, the break bar itself never counts as a tap.)"""
     h, l, c = bars["high"].to_numpy(), bars["low"].to_numpy(), bars["close"].to_numpy()
     out, queue = [], list(levels)
     while queue:
         lv = queue.pop()
         out.append(lv)
-        used = False
-        for b in range(lv.born, len(c)):
-            if lv.side == "sell":
-                broke, touched = c[b] > lv.price, h[b] >= lv.price - tol
-            else:
-                broke, touched = c[b] < lv.price, l[b] <= lv.price + tol
-            if broke:  # a used level also becomes fresh again (flipped) after a body close through
-                lv.events.append((b, "break", False))
-                queue.append(Level(lv.price, "buy" if lv.side == "sell" else "sell", "flip", b + 1))
-                break
-            if touched and not used:
-                lv.events.append((b, "tap", True))  # close stayed on the original side = rejection
-                used = True  # Kevin uses a level once
+        b0 = lv.born
+        if b0 >= len(c):
+            continue
+        if lv.side == "sell":
+            broke, touched = c[b0:] > lv.price, h[b0:] >= lv.price - tol
+        else:
+            broke, touched = c[b0:] < lv.price, l[b0:] <= lv.price + tol
+        nb = int(broke.argmax()) if broke.any() else len(broke)
+        t = touched[:nb]
+        if t.any():
+            lv.events.append((b0 + int(t.argmax()), "tap", True))  # close stayed on the original side = rejection
+        if nb < len(broke):  # a used level also becomes fresh again (flipped) after a body close through
+            lv.events.append((b0 + nb, "break", False))
+            queue.append(Level(lv.price, "buy" if lv.side == "sell" else "sell", "flip", b0 + nb + 1))
     return out

@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS bias (
   invalidation  DOUBLE       NULL,
   tap_time      DATETIME     NOT NULL,              -- UTC, start of the origin-TF tap candle
   confirm_time  DATETIME     NULL,                  -- UTC
+  no_trade      TINYINT(1)   NOT NULL DEFAULT 0,   -- 1 = do not trade (e.g. D story while M and W disagree)
+  no_trade_reason VARCHAR(64) NULL,                 -- why (e.g. "M/W conflict")
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)

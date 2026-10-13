@@ -2,7 +2,7 @@ name: SLK backtest
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", ".github/workflows/backtest.yml"]
+    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", "slk/store.py", ".github/workflows/backtest.yml"]
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = all 28", default: ""}
@@ -16,23 +16,28 @@ concurrency: {group: slk-backtest, cancel-in-progress: false}
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60   # cached candles + one process per CPU; a cold cache downloads ~3,000 month files first
     env:  # workflow inputs reach the scripts only through env (no shell injection)
       IN_START: ${{ inputs.start || '2018' }}
       IN_END: ${{ inputs.end || '2025' }}
       IN_PAIRS: ${{ inputs.pairs }}
       IN_CFG: ${{ inputs.cfg || '{}' }}
       IN_ENTRY_CFG: ${{ inputs.entry_cfg || '{}' }}
+      SLK_STORE: data/store
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q tests
-      - uses: actions/cache@v4
+      - name: Restore candle store (same store as the live job / backfill)
+        uses: actions/cache/restore@v4
         with:
-          path: data
-          key: dukascopy-h1-${{ inputs.start || '2018' }}-${{ inputs.end || '2025' }}-v1
+          path: data/store
+          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            candles-full-
+            candles-live-
       # a failing run turns the step red (the report is still committed below)
       - name: Backtest
         id: bt
@@ -58,6 +63,12 @@ jobs:
           echo "exit=$rc" >> reports/entry_run.log
           tail -c 60000 reports/entry_run.log >> "$GITHUB_STEP_SUMMARY"
           exit $rc
+      - name: Save candle store
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/store
+          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Commit report
         if: always()
         run: |

@@ -192,7 +192,7 @@ def test_decoders():
     assert t == [(7200, 1.1, 1.10009, 1.1, 1.10009)]
 
 
-def test_main_flow_with_fake_db(monkeypatch, capsys):
+def test_main_flow_with_fake_db(monkeypatch, capsys, tmp_path):
     """Whole run with an in-memory DB and synthetic candles: writes rows, logs the run, no exceptions."""
     from slk import db, live
     store, runs, settings, sent = {}, {}, {"pairs": "EURUSD,GBPJPY"}, []
@@ -210,6 +210,9 @@ def test_main_flow_with_fake_db(monkeypatch, capsys):
     monkeypatch.setattr(db, "upsert_entry", lambda e: 1)
     monkeypatch.setattr(live, "send_telegram", lambda t: sent.append(t) or True)
     monkeypatch.setattr(live, "recent", lambda p, days: walk(24 * 500, seed=3 if p == "EURUSD" else 4))
+    monkeypatch.setattr(live, "prepare_candles", lambda pairs, now: {})
+    monkeypatch.setattr(live.candles_store, "DIR", str(tmp_path))
+    monkeypatch.setattr(db, "count_entries", lambda st: 0)
     assert live.main([]) == 0
     assert runs[1]["ok"] and runs[1]["job"] == "live" and "pairs ok 2" in runs[1]["note"]
     assert {k[0] for k in store} == {"EURUSD", "GBPJPY"}

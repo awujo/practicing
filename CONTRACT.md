@@ -20,7 +20,9 @@ Never print secrets. Never commit them.
 ## Database (MySQL 8). Schema file: `db/schema.sql` (idempotent CREATE TABLE IF NOT EXISTS)
 - `bias` — one row per story: `id` PK, `pair`, `story` (M/W/D), `side` (BUY/SELL), `status`
   (TAPPED/CONFIRMED/TARGET_HIT/INVALIDATED/CANCELLED), `level_kind`, `level`, `point_b`, `target`, `invalidation`,
-  `tap_time`, `confirm_time`, `updated_at`; UNIQUE(pair, story, tap_time).
+  `tap_time`, `confirm_time`, `no_trade` (0/1; 1 = do not trade, e.g. D story while M and W disagree),
+  `no_trade_reason` (e.g. `M/W conflict`), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
+  created on existing tables by `slk/db.py` `migrate()` (run by `apply_schema()`).
 - `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `entry`, `stop`, `tp1`, `tp2`, `status`
   (PENDING/TRIGGERED/MISSED/CANCELLED), `created_at`, `alerted_at`.
 - `orders` — `id`, `entry_id`, `client_order_id` UNIQUE (idempotency), `ctrader_position_id`, `volume`, `status`,
@@ -36,9 +38,23 @@ Never print secrets. Never commit them.
   - Entry rules: `continuation_entries`, `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)
   - Risk & trading: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.1-2)
-  - Alerts: `alert_tapped`, `alert_confirmed`, `alert_ended`, `alert_entry`, `daily_summary` (on/off)
-  - Internal (not in the form): `last_summary`, `ctrader_access_token`, `ctrader_refresh_token`, `ctrader_token_expiry`.
+  - Alerts: `alert_tapped`, `alert_confirmed`, `alert_ended`, `alert_entry`, `daily_summary` (on/off),
+    `status_updates` (each_run | every_4h (default) | off: Telegram "bot alive" message with time, pairs checked,
+    active biases, pending entries, start delay, run time, errors; errors always reported unless off)
+  - Internal (not in the form): `last_summary`, `last_status` (ISO UTC of the last status message), `weekend_done`
+    (NY date of the Friday close whose final weekend run is done), `ctrader_access_token`, `ctrader_refresh_token`,
+    `ctrader_token_expiry`.
 - `runs` — `id`, `job`, `planned_at`, `started_at`, `finished_at`, `ok`, `note`.
+
+## Candles (no DB table)
+H1 candles are NOT stored in MySQL (decision: HANDOVER.md log). `slk/store.py` keeps one file per pair,
+`$SLK_STORE/<PAIR>.npz` (default `data/store`; arrays `t` UTC seconds of the bar start, `open`, `high`, `low`, `close`,
+`q` source 3=month file / 2=day file / 1=tick file, plus `meta` JSON of finished months/days), and
+`$SLK_STORE/memo/<PAIR>.pkl` (live engine output cache). The directory is kept between runs by actions/cache:
+key prefix `candles-live-` (live.yml, backfill.yml, same concurrency group `slk-live`) and `candles-full-`
+(backtest.yml, restores `candles-full-` then `candles-live-`). API: `store.update(pair, now, days=..)`,
+`store.recent(pair, days)` (= `data.recent`), `store.hourly(pair, y0, y1)` (= `data.hourly`, month files only),
+`python -m slk.store --start 2018` (backfill).
 
 Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_setting(k, default)`,
 `get_settings()`, `set_setting(k, v)`), using PyMySQL.
