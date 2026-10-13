@@ -143,6 +143,14 @@ def mark_mw_conflict(rows, cfg=None):
     return rows
 
 
+def state_stories(stories, cfg):
+    """Stories the engine must compute: the M/W check for D stories needs M and W even when only D is
+    watched (settings `stories`). Rows of the extra stories are used for the check, not stored."""
+    if "D" in stories and {**DEFAULT, **(cfg or {})}.get("mw_conflict_filter", True):
+        return list(stories) + [s for s in ("W", "M") if s not in stories]
+    return list(stories)
+
+
 def filter_alerts(alerts):
     """Drop TAPPED/CONFIRMED alerts of NO_TRADE (M/W conflict) stories; outcomes are still announced."""
     return [(ev, r) for ev, r in alerts if not (r.get("no_trade") and ev in ACTIVE)]
@@ -395,7 +403,7 @@ def main(argv=None):
         stories = (a.stories or "D,W,M").split(",")
         for p in pairs:
             h1 = recent(p, HISTORY_DAYS)
-            rows = pair_state(p, h1, started, stories, cfg)
+            rows = [r for r in pair_state(p, h1, started, state_stories(stories, cfg), cfg) if r["story"] in stories]
             for r in rows:
                 if r["status"] in ACTIVE and not (r.get("no_trade") and r["story"] == "D"):
                     print(format_alert(r["status"], r) + "\n")
@@ -430,7 +438,7 @@ def main(argv=None):
             try:
                 h1 = recent(p, HISTORY_DAYS)
                 now = datetime.now(timezone.utc)
-                new = pair_state(p, h1, now, stories, cfg)
+                new = [r for r in pair_state(p, h1, now, state_stories(stories, cfg), cfg) if r["story"] in stories]
                 old = [r for r in db.get_bias(p) if r["story"] in stories]
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:

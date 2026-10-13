@@ -40,8 +40,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [x] Entry alerts wired into live runner: CONFIRMED tradable stories -> `slk.entry` (sim=False) -> table `entries` (PENDING/TRIGGERED/MISSED) + Telegram on new PENDING and on TRIGGERED ("confirm in Mini App" note when auto_trade=confirm).
 - [x] Strategy settable from the Mini App Settings tab (5 groups, help text per field) -> table `settings`, read by
       `slk/live.py` every run (fallback = code defaults). Schema: `slk/settings.py` (CONTRACT.md lists the keys).
-      New story option `confirm_break` = external (default) | external_or_sweep (QM: wick sweep of B, then body
-      close beyond B confirms without the origin-bar close). No "internal" bias option: internal = entries only.
+      No setting changes what confirms the bias (external break beyond B only; `confirm_break` removed in
+      Validation 3). Story dicts carry `break_kind` = breakout | sweep_break (label only).
 - [ ] Top open review items: swing rule (fractal vs close-beyond), alternative story start.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
@@ -61,3 +61,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-13: Settings from Mini App: `slk/settings.py` schema (stdlib only) -> `/api/settings/schema`, validated
   `/api/settings`, dynamic grouped form; live runner builds story/entry cfg + pairs/stories/alert toggles from DB.
   `story.DEFAULT["confirm_break"]` (external / external_or_sweep, `break_kind` in story dicts). Tests `tests/test_settings.py`.
+- 2026-10-13: Validation 3 (d22cdd8, 7716d7d): `external_or_sweep` was not Kevin's sweep-and-break (it swept B itself
+  and waived the same-day close) -> removed; sweep-and-break = label `break_kind`, break always external beyond B.
+  Live computes M/W for the D-story check even if only D is watched; `stories` can't be empty; approve uses
+  validated settings. REVIEW.md "Validation 3".

@@ -200,10 +200,10 @@ def post_settings(body: dict = Body(...), user=Depends(require_user)):
 
 @app.post("/api/entries/{entry_id}/approve")
 def approve(entry_id: int, user=Depends(require_user)):
-    st = _db(db.get_settings)
-    if st.get("auto_trade", DEFAULTS["auto_trade"]) != "confirm":
+    st = S.load(_db(db.get_settings))  # invalid stored values -> defaults (off)
+    if st["auto_trade"] != "confirm":
         raise HTTPException(409, "auto_trade is not 'confirm'")
-    if st.get("kill_switch", DEFAULTS["kill_switch"]) == "on":
+    if st["kill_switch"] == "on":
         raise HTTPException(409, "kill switch is on")
     n = _db(db.execute, "UPDATE entries SET status = 'APPROVED' WHERE id = %s AND status = 'PENDING'", (entry_id,))
     if not n:

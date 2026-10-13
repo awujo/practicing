@@ -29,9 +29,9 @@ Never print secrets. Never commit them.
   `slk/settings.py` (`SCHEMA`: name, type, default, min/max/choices, help; stdlib only), used by `slk/live.py`
   (`build_cfg`, re-read every run; missing/invalid -> code default = Kevin's rules) and by the Mini App
   (`GET /api/settings/schema`, `GET/POST /api/settings`, server-side validation):
-  - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M)
-  - Bias rules: `confirm_break` (external | external_or_sweep; external break = bias, internal break = entries
-    only), `trend_filter`, `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20),
+  - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M; at least one)
+  - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
+    point B; internal breaks = entries only): `trend_filter`, `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20),
     `max_retaps` (0-10), `tap_tol_pips` (0-5)
   - Entry rules: `continuation_entries`, `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)

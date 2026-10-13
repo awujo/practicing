@@ -134,8 +134,8 @@ def test_settings_schema_endpoint(client):
     j = r.json()
     assert j["groups"] == ["Markets", "Bias rules", "Entry rules", "Risk & trading", "Alerts"]
     by = {s["name"]: s for s in j["settings"]}
-    assert by["confirm_break"]["choices"] == ["external", "external_or_sweep"]
-    assert "Internal break = continuation entries only" in by["confirm_break"]["help"]
+    assert "confirm_break" not in by  # no setting may change what confirms the bias (external break only)
+    assert "Internal break = continuation entries only" in by["continuation_entries"]["help"]
     assert by["max_wait"]["min"] == 1 and by["max_wait"]["max"] == 20 and len(by["pairs"]["choices"]) == 28
     assert client.get("/api/settings/schema", headers=hdr(make_init_data(tamper=True))).status_code == 403
 
@@ -143,14 +143,14 @@ def test_settings_schema_endpoint(client):
 def test_settings_get_defaults_and_post_validation(client):
     client.store["max_wait"] = "junk"
     r = client.get("/api/settings", headers=hdr(make_init_data())).json()
-    assert r["max_wait"] == "5" and r["confirm_break"] == "external" and r["alert_entry"] == "on"
+    assert r["max_wait"] == "5" and "confirm_break" not in r and r["alert_entry"] == "on"
     assert r["auto_trade"] == "confirm" and r["entry_tfs"] == "D=H4,H2,H1;W=D,H4;M=W,D"
-    body = {"confirm_break": "external_or_sweep", "max_wait": 8, "trend_filter": False, "risk_pct": 1.5,
+    body = {"max_wait": 8, "trend_filter": False, "risk_pct": 1.5,
             "entry_tfs": "D=H1", "continuation_entries": "off", "daily_summary": "off"}
     r = client.post("/api/settings", json=body, headers=hdr(make_init_data()))
     assert r.status_code == 200
     s = client.store
-    assert s["confirm_break"] == "external_or_sweep" and s["max_wait"] == "8" and s["trend_filter"] == "off"
+    assert "confirm_break" not in s and s["max_wait"] == "8" and s["trend_filter"] == "off"
     assert s["risk_pct"] == "1.5" and s["entry_tfs"] == "D=H1;W=D,H4;M=W,D" and s["continuation_entries"] == "off"
     for bad in ({"max_wait": 99}, {"risk_pct": 3}, {"confirm_break": "internal"}, {"bogus": 1},
                 {"tap_tol_pips": "x"}):

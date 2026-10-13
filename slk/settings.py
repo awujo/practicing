@@ -26,11 +26,6 @@ SCHEMA = [
     _s("pairs", "pairs", "", "Markets", "Pairs the bot watches. Empty = all 28.", choices=PAIRS),
     _s("stories", "multi", "D,W,M", "Markets", "Story timeframes: Monthly, Weekly, Daily.",
        choices=["M", "W", "D"]),
-    _s("confirm_break", "choice", "external", "Bias rules",
-       "External break = confirms direction (bias). Internal break = continuation entries only. "
-       "external = lower-TF body close beyond point B (Kevin). external_or_sweep = that, or a wick sweep of B "
-       "then a body close beyond B (QM).",
-       choices=["external", "external_or_sweep"]),
     _s("trend_filter", "bool", "on", "Bias rules", "Only levels that agree with the origin-TF trend."),
     _s("htf_filter", "bool", "on", "Bias rules", "Never trade against the higher-TF trend."),
     _s("mw_conflict_filter", "bool", "on", "Bias rules", "M and W disagree -> Daily stories are NO_TRADE."),
@@ -135,7 +130,9 @@ def clean(name, value):
             bad = [x for x in v if x not in s["choices"]]
             if bad:
                 raise ValueError("must be from " + ",".join(s["choices"]))
-            if name == "stories":  # canonical order D,W,M (as before)
+            if name == "stories":  # canonical order D,W,M (as before); none = nothing to watch
+                if not v:
+                    raise ValueError("pick at least one story")
                 return ",".join(x for x in ("D", "W", "M") if x in v)
             return ",".join(x for x in s["choices"] if x in v)
         if t == "pairs":
@@ -201,7 +198,7 @@ def as_strings(stored=None):
 
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
-    return {k: vals[k] for k in ("confirm_break", "trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
+    return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
                                  "max_retaps", "tap_tol_pips", "use_oc")}
 
 
