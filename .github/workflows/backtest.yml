@@ -30,8 +30,13 @@ jobs:
         run: |
           ARGS="--start ${{ inputs.start || '2018' }} --end ${{ inputs.end || '2025' }} --out reports"
           [ -n "${{ inputs.pairs }}" ] && ARGS="$ARGS --pairs ${{ inputs.pairs }}"
-          python -m slk.backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' | tee -a "$GITHUB_STEP_SUMMARY"
+          mkdir -p reports
+          set +e
+          python -m slk.backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' > reports/run.log 2>&1
+          echo "exit=$?" >> reports/run.log
+          tail -c 60000 reports/run.log >> "$GITHUB_STEP_SUMMARY"
       - name: Commit report
+        if: always()
         run: |
           git config user.name "slk-backtest"; git config user.email "actions@github.com"
           git add reports
