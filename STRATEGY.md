@@ -36,7 +36,7 @@ Priority: **1. Bias** (this document). 2. Entry alerts. 3. Trade execution (cTra
 - **Invalid / flip**: a full-body close through the level. A broken A-shape becomes a buy level on retest,
   a broken V-shape a sell level. [T key-levels-pt3@296-420]
 - Kevin uses each level **once**; higher timeframe levels are stronger. [T key-levels-pt4@1087-1110, story-line@979]
-- **OUR CHOICE:** zone = from the shared body line to the far body edge of the smaller of the two candles;
+- Zone drawing: see §5 Q3 (from frames). **OUR CHOICE:**
   only A/V at a confirmed swing point count (otherwise every pair of candles would be a level);
   OC only counts if the move that starts from it breaks structure.
 
@@ -109,9 +109,9 @@ A bias version is only promoted if it beats a coin-flip baseline on out-of-sampl
 
 | # | Question | Default (OUR CHOICE) |
 |---|---|---|
-| Q1 | Daily candle close time | 17:00 New York (broker standard) |
-| Q2 | Swing detection | pivot with 2 candles each side, confirmed by opposite break |
-| Q3 | KL zone height | §1 rule; pad ±10% of ATR(14) |
+| Q1 | Daily candle close time | **17:00 New York** (= 00:00 IC Markets server time). Kevin charts on TradingView (frames show clock "UTC+1"); TradingView forex daily candles close at 17:00 NY whatever the display timezone, and cTrader/IC Markets uses the same close. Weekly = Friday 17:00 NY. |
+| Q2 | Swing detection | **Structural swings, not a fixed fractal.** Frames [F basic-ms/sheet_004] show him labelling only the major leg extremes (L, H, HL, HH) at the wick tip, a few per week on H1, skipping small pivots. Code: zigzag where a swing is fixed only when price body-closes beyond the previous opposite swing [T basic-ms@159-620]. |
+| Q3 | KL zone height | **Shaded box from the level candles' bodies to their wick extreme**, extended right until price comes back. Frames [F key-levels-pt1/sheet_020, sheet_022] (USDJPY H4, ~15-20 pip box) and [F story-line-pt2/sheet_013] (CADJPY D, two lines 112.903 / 112.730). The tap = a wick into the box; the rejection candle closes back out of it. |
 | Q4 | Several fresh KLs — which one? | most recent fresh KL price reacted from |
 | Q5 | "Fresh" conflict: story-line says *body* entry spends an OC level; key-levels-pt4 says *wick* touch spends it | follow key-levels-pt4 (dedicated lesson) |
 | Q6 | Max wait from tap to breakout | 5 origin-TF candles, then drop |
