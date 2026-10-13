@@ -1,0 +1,132 @@
+[0.7-5.5] Good day guys, this is Timothy, creator of the SLK buyers but
+[6.3-13.0] SLK reader and I'm going to be doing a small walkthrough of how to use the buts
+[13.6-18.5] how to take advantage of the alerts, how to understand the alerts, how it drops and
+[20.4-21.8] also
+[21.8-23.8] in another video
+[23.8-28.0] we'll probably go through the portal and the features that you can
+[28.0-34.2] turn on and off from the portal, the things you can do
+[35.8-43.1] So we'll be using URNZ as the example, Stratos dropped on Friday or Dibiasis dropped on Friday
+[44.0-46.0] Trade executed on Friday
+[47.4-50.8] Also helps me pass fees on one of my accounts and
+[52.3-56.3] Yeah, I wasn't on seats yesterday Monday, so I don't have an example
+[58.0-59.2] for
+[59.2-60.2] Monday
+[60.2-63.5] So this was the alerts dropped
+[64.1-66.1] external breakout cell URNZD
+[66.7-68.7] from the daily to the H4
+[68.8-70.5] This means that
+[70.5-76.5] the rejection happened on the daily which was the higher time frame in this case and the bias was confirmed on the H4
+[77.3-79.3] So external breakout confirmed
+[81.2-86.1] Here we can see that you've rejected at the open and close
+[86.8-92.8] At this price. So these prices are under prices currently at the time of making this video
+[93.6-95.6] but we are
+[95.7-99.9] Stepping on the gas to get for X.com. We have experienced some delays
+[100.6-104.7] But we'll be getting for X.com access very soon
+[105.2-115.0] Also, this was going to be a great opportunity to actually explain the logic behind the buts. I tried to
+[116.1-119.0] break the logic down into something that
+[119.7-125.9] Even a machine would be able to understand and so it's also be easier for we humans to understand
+[126.0-134.4] This is how the boats work. So it checks on the higher time frame with a daily or weekly for
+[135.7-141.7] The last break of structure and what direction it went in so for example
+[142.1-170.6] The last break of structure here. So it's not confusing. This was the open and closed up price rejected from right here
+[170.7-179.5] Once you look for the last record structure to have happened on the chart
+[179.5-184.9] You just easily go to your line chart. So it's not confusing and then you see that this was it
+[185.1-190.6] So it's super and break to the downside and then we add one little break out here
+[191.4-196.6] but yeah, we can say that for now prices beat bearish and
+[198.1-203.3] So price rejected from this open and close right here
+[203.9-209.1] So the way I do it is I just look for this one that price and
+[209.6-214.7] Then I just try to look for an open and close eyes around that price on my friends.com charts
+[215.3-219.3] Which is how because this for X.com and these are being
+[220.6-225.3] Using it. I mean, but once we have for X.com is going to be way easier
+[225.9-229.4] So the rejection happened like it said so you see
+[230.4-238.2] Rejected the open and close the external break out from here, but you see the DT rejected Wednesday the 7th of October
+[240.0-243.3] At 10 p.m. So this basically means that
+[244.2-246.2] It's rejected on Thursday
+[246.9-252.0] Why because the condo times you're seeing here are open times and
+[252.7-254.9] Thursdays daily condo starts at
+[256.0-258.9] 10 p.m. West African time the previous day
+[259.4-261.1] so
+[261.1-265.7] Basically, if you go to the for our this daily country that rejected
+[267.1-269.1] If you check for
+[270.1-273.6] Among the free plan
+[275.6-277.6] This so if you go to the for our
+[278.3-283.0] You'll see that this is Wednesday the 7th of October
+[283.6-287.0] 10 p.m. So that's when the daily country started
+[287.2-293.8] But you just know that it stores this can do and we put your line here it to appear on Thursday
+[294.2-297.7] at the end of the day so Thursdays can be rejected and
+[300.3-302.3] X.com breakout at this price
+[302.9-309.8] Friday and the condo started by before I can do started by
+[310.3-315.2] 2 a.m. So to the for our
+[316.1-322.7] I already know this was the external breakouts if you look at the candle that actually cause the external breakouts
+[322.9-324.9] It started at 2
+[325.8-331.6] Started to M. You can just look towards the bottom of the screen four hours after the candle clues
+[331.6-334.8] That was 6 a.m. And the alert came by
+[335.4-340.8] 6 a.m. So yeah sent 9th of October 6 a.m. West African time
+[341.8-348.2] For me, I'm in Nigeria. So sometimes I'm West African time, but you can go to your portal and
+[348.8-357.1] Change your time zone according to where you are so you can get the times in your time zone this
+[359.7-361.1] External breakouts
+[361.1-364.1] that shown it rejected on this day and
+[366.5-369.8] It's saying trend aligned with day one daily one
+[370.5-375.3] Which means trend aligned with daily and that means the rejection
+[376.2-381.4] Was in line with the daily trend the hard time frame where it checked it
+[382.1-384.1] Do you understand so?
+[385.6-392.6] External breakouts formed and you have your alerts the next thing that might be confusing is this next day rule
+[393.1-398.0] so this was the alerts before I walked a little bit weekend and
+[398.9-402.5] So this was it on Friday, but I've added
+[403.3-411.6] More clarity to the text, but I will explain what the next day remains next day rule means that the rejection
+[412.8-418.6] On the higher time frame and the external breakouts on the lower time frame to confirm the bias
+[419.1-421.7] happened on two different days, so
+[422.7-425.4] Kelvin King shout out going king for this book
+[426.3-429.3] During his studies, he noticed that high probability
+[430.4-432.6] trades usually came when
+[433.0-438.3] The rejection happened on one day and then the external break out happened on that day. So for example
+[439.1-446.1] Thursday was the rejection day the external break out happened on Friday or even days after Friday
+[446.8-455.0] So that is my probability compared to if the rejection happened on Thursday and the breakout also happened on Thursday
+[455.4-459.3] It's even worse when fries comes into the
+[459.9-461.9] breakout
+[464.3-470.0] Breakouts area price area that same day. So rejection happen same day
+[470.3-476.2] Breakout happen same day price even still comes into that level to rejection that same day. It's even
+[477.0-484.7] Worse so that is not going to probably be a very high probability set up for you. So you can just note that
+[485.7-491.4] So I guess we have explained everything about the alerts. This is just the disclaimer
+[492.2-494.5] Saying you should wait for your entry model
+[494.7-502.2] So when I got my own for our external breakouts, I looked for my entry model and I took it straight down to
+[504.3-510.1] Somewhere before here. I didn't hold to food CP because I already reached my profit targets
+[511.1-516.2] So I also have features of it on my ex you can check them out
+[516.9-521.5] But we have some more
+[521.7-525.5] Features so like you see here. We have in time internal breakouts
+[526.7-528.7] turned on I
+[528.8-532.1] Personally do not use internal breakouts. I don't treat them
+[532.4-538.5] But they are there as a nice to have and the reason why they are turned on for me currently is because as a developer
+[538.5-540.5] I won't see all the alerts coming
+[540.8-544.9] So in your alerts preferences, you just click on this
+[545.6-548.3] You might see a menu if you're on like a mobile phone
+[549.1-553.8] You click on alerts and you see what you currently have turned on
+[553.8-559.4] So these like your small little dashboard and these are your buttons that you can use to change them
+[560.9-567.9] So I'm supposed to have everything on but this my second take of this video. So I already clicked on one of the buttons
+[568.9-575.5] And this is not required. So for external breakouts, let me just explain what an external breakout is
+[575.5-583.3] It means that this was the lower time frame each for candle that tapped into the rejection to daily rejection
+[584.4-592.4] Price so this was the key level I subjected from on the daily
+[593.0-595.0] This was the four-hour candle
+[595.3-600.4] That tapped into it and you want to look for the last V shape
+[600.9-604.0] Key level that formed before this tap
+[605.1-609.2] or the last support as you might know it, which is this and
+[610.9-612.9] You can see that
+[613.7-619.1] When price closed below it is when we got a bias confirmation
+[619.3-625.5] Any other breakout that happened before this but in close below this would have been considered internal
+[626.3-632.3] So that's like the difference and external breakouts are way more high probability, which is why I only treat them
+[632.8-637.3] So for this external breakouts on you can turn it on or off
+[638.1-640.1] Same thing for this one
+[641.7-648.1] Same thing here trend aligned rejections. This basically saying that we already know from the daily
+[649.1-655.4] From checking the last break of structure. We know it's the downside. So we are saying that
+[656.2-658.2] any
+[658.2-662.0] trade or any bias confirmation that comes in and
+[662.6-668.7] Is not bearish is not trend aligned and you can choose to get them or not
+[668.8-674.7] So for example, if you only want to get rejection as I line with the trend you make it required
+[674.7-676.7] So you see change gets required
+[677.6-683.2] Same thing for strips. So this slip of liquidity from a bus with the strip of liquidity
+[683.6-685.6] If you want it to be strictly
+[686.1-692.7] In line with the trend that you can make it required also and I'm so forth
+[692.7-695.5] But right now I have this most loose setting you can get
+[696.7-700.7] The setting you must likely get on default is in turn out on the off
+[701.6-704.2] required and required right here
+[704.5-710.2] So you see them that would probably be your default setting and that would actually be that way
+[710.2-722.6] By asses up way more probability when you leave them at your default setting. I think we can
