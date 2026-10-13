@@ -187,6 +187,8 @@ class _Pair:
             if tf in ("D", "W", "M") and len(end):  # a still-forming last bar is not closed (live data)
                 end[-1] = max(end[-1], np.datetime64(nominal_end(pd.Timestamp(B["start"][-1], tz="UTC"), tf)
                                                      .tz_convert(None), "ns"))
+            elif len(end):  # H4/H2 too: live h1 ends inside a forming H4 (only the H1 hour is closed)
+                end[-1] = max(end[-1], B["start"][-1] + np.timedelta64(int(tf[1:]), "h"))
             c = B["close"]
             br = _breaks(structural_swings(c, pivots(c, self.cfg["story_cfg"]["swing_pivot"])))
             self._brk[tf] = (np.array([end[i] for i, _, _ in br], dtype="datetime64[ns]"), [u for _, u, _ in br])

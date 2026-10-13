@@ -121,6 +121,12 @@ def test_retrace_followup_and_row_compare():
     assert w and [e for e, _ in a] == ["RETRACE"]
     w, a = live.reconcile([{**base, "retrace": True}], [{**base, "retrace": None}], now)  # row stored before the
     assert w and a == []                                                                  # column: no burst of alerts
+    # Validation 5: breakout_time is stored too (a cadjpy row has next_day/retrace None, so only this column
+    # differs from a row stored before the migration): rewritten once, silently
+    cj = {**base, "rule": "cadjpy", "next_day": None, "retrace": None, "breakout_time": datetime(2023, 1, 9, 18)}
+    w, a = live.reconcile([cj], [{**cj, "breakout_time": None}], now)
+    assert w == [cj] and a == []
+    assert live.reconcile([cj], [dict(cj)], now) == ([], [])
     assert live.ALERT_KEY["RETRACE"] == "alert_confirmed"
 
 
@@ -195,6 +201,27 @@ def test_entry_alignment_d_h4_and_w_d_h4():
     # QMR entries are not filtered
     q = lambda m: [r for r in find_entries("EURUSD", h1, st, {"alignment": m, "entry_models": ["qmr"]})]  # noqa
     assert q("off") == q("w_d_h4")
+
+
+def test_entry_alignment_ignores_forming_h4():
+    """Validation 5: live h1 ends inside a forming H4 bar (only its first H1 hour closed). A structural break made
+    by that unfinished H4 close must not count as 'the last H4 break' (Kevin: wait for the candle to close)."""
+    from slk.candles import resample
+    from slk.entry import DEFAULT as EDEF
+    h1 = walk(24 * 1500, 3)
+    H4 = resample(h1, "H4")
+    checked = 0
+    for n in range(200, 1200):
+        cut = h1[h1.index < H4["start"].iloc[n] + pd.Timedelta(hours=1)]  # first hour of H4 bar n only
+        c = resample(cut, "H4")["close"].to_numpy()
+        br = S._breaks(S.structural_swings(c, S.pivots(c, S.DEFAULT["swing_pivot"])))
+        if not br or br[-1][0] != len(c) - 1:
+            continue
+        px = _Pair("EURUSD", cut, {**EDEF, "story_cfg": S.DEFAULT, "entry_tfs": {}})
+        prev = ("up" if br[-2][1] else "down") if len(br) > 1 else None
+        assert px.last_break("H4", px.bars("H4")["end"][-1]) == prev, n
+        checked += 1
+    assert checked >= 3
 
 
 # ------------------------------------------------------------------ 6. /terms

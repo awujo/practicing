@@ -196,3 +196,24 @@ Judgement calls left open (not changed):
   `flip` levels, or the flipped zone = the swept level).
 - #30 higher-TF levels capping a D target (not shown by Kevin); #31b alignment as a start, not as a filter;
   `overlap_tol_pips` = 3; flip uses fresh levels only.
+
+## Validation 5 (SLK Radar adopt, commit 7cba861) — 2026-10-13
+
+Checked against STRATEGY.md §2/§3/§5 #21-#22, knowledge-base/study/compare_slk_radar.md (#17, adopt 1-6) and
+notes_entry.md (D reject D + H4 BO, same-day cancel, entries from the next day).
+
+| # | Area | Verdict | Finding / change |
+|---|---|---|---|
+| V5-1 | Next Day Rule definition | OK | `next_day` = confirm-TF breakout candle opens after the origin (rejection) candle (`c2o[brk] > bar`), Kevin story-line-pt3@1358-1401 / qns-pt2@1946-1962. `require` drops a story whose first valid breakout is inside the rejection candle (documented OUR CHOICE §5 #21); a same-day H4 break cancelled by the D close still lets a next-day break count. Alignment stories always break after D bar d; CADJPY `None`. Causal (indices only). |
+| V5-2 | Retrace flag look-ahead | OK | Uses confirm-TF closes up to the end of the origin bar holding the breakout = the confirmation time (`same_bar_close` True, not a setting), so the backtest label uses no later bar. Consequence: a CONFIRMED row's `retrace` is final when it is first written, so the RETRACE follow-up alert practically never fires (the CONFIRMED alert already carries the warning). Harmless, left. |
+| V5-3 | Entry alignment uses a forming H4 | FIXED | `_Pair.last_break` gave the still-forming last D/W/M bar its nominal close, but not H4/H2: live entries get h1 cut at the last closed HOUR, so the forming H4 bar's partial close could count as "the last H4 structural break" at an H1 pattern's breakout (reproduced on the walk: a 1-hour-old H4 flipped the answer up -> down). Now the last intraday bar also ends at start + TF hours. Test `test_entry_alignment_ignores_forming_h4` (fails before the fix). Backtest unaffected (last bar of the data only). |
+| V5-4 | Alignment semantics | OK | d_h4 = the confirmed origin story (D reject D) + last H4 structural break (close beyond the last close-line structural swing, not an internal pattern line) the same way, checked at the pattern's `active` time (breakout close / confirmation, no later bars); w_d_h4 adds W (forming W bar not counted). QMR untouched. For W/M stories the same H4(/W) check is applied (owner setting, documented). |
+| V5-5 | Early breakout alert | OK | Only TAPPED, tradable rows; only CLOSED confirm-TF candles inside the open origin candle (`drop_forming`); point B = external break level; never stored, never CONFIRMED; once per story (`early_alerts_sent`, pruned after 40 days). Note: a key is marked sent even if Telegram fails (no token) -> no retry; acceptable for an optional alert. |
+| V5-6 | DB migrate / one-time rewrite | OK + FIXED | `ALTER TABLE bias ADD COLUMN ... AFTER ...` is valid MySQL 8, guarded by information_schema (idempotent), applied in order. Old CONFIRMED rows (next_day NULL) are rewritten once with no alert: status unchanged and RETRACE needs stored `retrace` = 0, not NULL (test). FIXED: `_same` did not compare `breakout_time`, so CADJPY rows (next_day/retrace NULL) stored before the migration never got their `breakout_time`; now compared (one silent rewrite). Test in `test_retrace_followup_and_row_compare`. |
+| V5-7 | Alerts with None fields / tz | OK | format_alert run with DB-shaped rows (Decimal prices, point_b/target None, no level_time/trend) for M/W/D, every event: no crash; times converted with DST (`WAT`, `EDT`, `UTC`), each labelled open/close. `_aligned` would KeyError on an M row with `htf_trend`, but M stories never carry it (HIGHER["M"] is None). |
+| V5-8 | /telegram/webhook security | OK | Secret header compared with `hmac.compare_digest`, endpoint off (403) without `TELEGRAM_WEBHOOK_SECRET`, wrong/missing header 403, only the owner chat gets a reply, only `/terms`, no token use, secret never logged. Mini App `require_user` unchanged (initData HMAC + TELEGRAM_CHAT_ID). |
+| V5-9 | Settings consistency | OK | New settings in slk/settings.py, CONTRACT.md (all schema names present), Mini App (`tz` falls back to a text field; server validates with zoneinfo; `tzdata` in webapp requirements); story_cfg/entry_cfg map next_day_rule / entry_alignment -> alignment. db/schema.sql == webapp/schema.sql (test). |
+| V5-10 | Backtest variants / workflow | OK | Story variants run `{**cfg, **override}` (memoised per cfg, base reused), entry variants `find_entries(..., {**ecfg, **override}, cfg)` on the base tradable stories; test checks the numbers equal a direct engine run. backtest.yml parses (`IN_ENTRY_CFG` defaults to `{}`). |
+
+Tests: 180 passed (179 + new `test_entry_alignment_ignores_forming_h4`; breakout_time asserts added to
+`test_retrace_followup_and_row_compare`).

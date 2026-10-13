@@ -270,7 +270,7 @@ def filter_alerts(alerts):
 def _same(a, b):
     if bool(a.get("no_trade")) != bool(b.get("no_trade")):
         return False
-    for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason"):
+    for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason", "breakout_time"):
         if a.get(k) != b.get(k):
             return False
     for k in ("next_day", "retrace"):
