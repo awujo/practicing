@@ -1,0 +1,39 @@
+name: SLK backtest
+on:
+  push:
+    branches: [claude-kevin-king]
+    paths: ["slk/**", ".github/workflows/backtest.yml"]
+  workflow_dispatch:
+    inputs:
+      pairs: {description: "Comma list, empty = all 28", default: ""}
+      start: {default: "2018"}
+      end: {default: "2025"}
+      cfg: {description: "JSON overrides of slk/story.py DEFAULT", default: "{}"}
+permissions:
+  contents: write
+concurrency: {group: slk-backtest, cancel-in-progress: true}
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas tabulate pytest
+      - run: python -m pytest -q tests
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: dukascopy-h1-${{ inputs.start || '2018' }}-${{ inputs.end || '2025' }}-v1
+      - name: Backtest
+        run: |
+          ARGS="--start ${{ inputs.start || '2018' }} --end ${{ inputs.end || '2025' }} --out reports"
+          [ -n "${{ inputs.pairs }}" ] && ARGS="$ARGS --pairs ${{ inputs.pairs }}"
+          python -m slk.backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit report
+        run: |
+          git config user.name "slk-backtest"; git config user.email "actions@github.com"
+          git add reports
+          git commit -m "Backtest report ($(date -u +%F))" || exit 0
+          git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
