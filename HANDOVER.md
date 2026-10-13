@@ -136,3 +136,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Golden engine output regenerated for these intended changes (backtest numbers change). verify_examples: CADJPY
   exception + EURGBP overlap examples. Engine ~40% slower (0.55 -> 0.76 s per pair, 3 years, D+W+M). Tests
   `tests/test_bias_rules.py`.
+- 2026-10-13: Validation 4 (6dda831, bias rules v0.6). Verdicts: #26 faithful (edge fixed: a newer level closed
+  through on the tap bar no longer blocks the older level that held), #29 faithful, #30 partly (higher-TF caps =
+  our reading), #31a faithful (TP at next KL 0.8722 confirmed on all-in-1 sheet_026), #31b partly (start, not
+  filter), #31c fixed (needs the daily to have flipped first: D close through an opposite level within max_wait).
+  Live look-ahead fixed: forming W/M bar treated as closed (overlap, HTF targets) -> nominal close. flip_scan speed
+  fixed (memo). Golden regenerated for these three logic fixes only. REVIEW.md "Validation 4".

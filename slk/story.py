@@ -13,7 +13,7 @@ Rules built here (each story dict carries `rule`, and `end_reason` once it is ov
 import numpy as np
 import pandas as pd
 
-from .candles import resample
+from .candles import nominal_end, resample
 from .levels import Level, find_levels, run_levels, sweep_taps
 from .structure import SwingBook, pivots, structural_swings, swings, trend
 
@@ -149,8 +149,11 @@ def _point_b(sw, k0, sell):
     [T story-line-pt3@1690-1790; F story-line-pt2/sheet_015 t=1140-1180: CADJPY 4H line chart, ray at the last
     small peak ~113.2 just before the tap]. `sw` = swings known at the close of k0 (the touch bar's close may
     complete a turn made at k0-1); the rejection's own swing (index >= k0) never counts."""
-    pts = [s[2] for s in sw if s[1] == ("L" if sell else "H") and s[0] < k0]
-    return pts[-1] if pts else None
+    want = "L" if sell else "H"
+    for s in reversed(sw):  # swings are in bar order: the last matching one before k0 (= the old list's [-1])
+        if s[1] == want and s[0] < k0:
+            return s[2]
+    return None
 
 
 def _htf_trend(hb, hpiv, t):
@@ -170,13 +173,18 @@ def _r(x):
 class _LevelSet:
     """Key levels of one timeframe with fast 'fresh at bar i' lookups."""
 
-    def __init__(self, bars, levels):
-        self.start, self.end = bars["start"].to_numpy(), bars["end"].to_numpy()
+    def __init__(self, bars, levels, tf=None):
+        self.start, self.end = bars["start"].to_numpy(), bars["end"].to_numpy().copy()
+        if tf in ("D", "W", "M") and len(self.end):
+            # the last bar may still be forming (live: data cut at the last closed ORIGIN bar, mid-week): its
+            # 'end' is then only the last hour seen, so it would look closed. Use the bar's nominal close.
+            self.end[-1] = max(self.end[-1], nominal_end(self.start[-1], tf))
         self.levels = levels
         self.buy = np.array([lv.side == "buy" for lv in levels], dtype=bool)
         self.born = np.array([lv.born for lv in levels], dtype=np.int64)
         self.first = np.array([lv.events[0][0] if lv.events else np.iinfo(np.int64).max for lv in levels],
                               dtype=np.int64)
+        self.first_tap = np.array([bool(lv.events) and lv.events[0][1] == "tap" for lv in levels], dtype=bool)
 
     def fresh_prices(self, buy, upto):
         """Prices of levels of this side born by bar `upto` with no event (tap/break) up to that bar, in order."""
@@ -218,8 +226,10 @@ class _Ctx:
         if cfg["htf_targets"] or cfg["overlap_rule"]:
             for tf in HIGHER_ALL[story]:
                 hb = self.hb if tf == self.htf else resample(h1, tf)
-                self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol))))
+                self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol), tf)))
         self.taps = _taps(self.levels, ob, cfg)
+        self._bs = {}       # break_search memo
+        self._flips = None  # lazy: break bars of opposite levels (CADJPY precondition)
 
     # ------------------------------------------------------------------ choosing the start
     def htf_trend(self, t):
@@ -236,7 +246,9 @@ class _Ctx:
         if lv.kind in ("sweep", "align"):
             return True
         L = self.lv
-        m = (L.buy == (lv.side == "buy")) & (L.born <= bar) & (L.first >= bar)
+        # fresh before the tap bar; a newer level closed through ON the tap bar failed ("abused", not fresh), so
+        # only a newer level tapped (wick in, close back) on that bar still outranks the tapped one
+        m = (L.buy == (lv.side == "buy")) & (L.born <= bar) & ((L.first > bar) | ((L.first == bar) & L.first_tap))
         return not m.any() or lv.born >= L.born[m].max()
 
     def choose(self, bar, tr):
@@ -263,13 +275,31 @@ class _Ctx:
         close level, next candle wicks below the previous day low and closes above, line "target" 114.466 drawn at
         once)]: D story, higher-TF (W) trend in the story direction, the tap candle's wick sweeps the previous day's
         low (high for a sell) INTO a D open-close level (or the flipped zone, as in his example) and the candle
-        closes back above the previous low and the level. Confirmed at that D close, no H4 breakout needed."""
+        closes back above the previous low and the level. Confirmed at that D close, no H4 breakout needed.
+        Precondition (Validation 4): the daily has ALREADY flipped the story's way: "after the bullish close above
+        this guy, price did a sweep of previous day low" / "weekly is bullish and now daily has flipped the zone"
+        [T cadjpy-bd@440-560, 680-720; F cadjpy-bd/sheet_008: the big bull D candle closes above the D sell zone,
+        the sweep comes 1-2 candles later] = a D body close through an OPPOSITE key level within `max_wait` D bars
+        before the sweep. Without it this is an ordinary tap and the H4 breakout is required."""
         if not self.cfg["cadjpy_exception"] or self.story != "D" or lv.kind not in ("OC", "flip") or bar < 1:
+            return False
+        if not self.flipped_before(lv.side, bar):
             return False
         O = self.O
         if lv.side == "buy":
             return h_tr == "up" and O["low"][bar] < O["low"][bar - 1] and O["close"][bar] > O["low"][bar - 1]
         return h_tr == "down" and O["high"][bar] > O["high"][bar - 1] and O["close"][bar] < O["high"][bar - 1]
+
+    def flipped_before(self, side, bar):
+        """True when an opposite key level (sell levels for a buy) was broken by an origin body close in the
+        `max_wait` bars before `bar` (the daily flipped that way)."""
+        if self._flips is None:
+            self._flips = {k: np.array(sorted(b for lv in self.levels if lv.side != k and lv.kind != "sweep"
+                                              for b, kind, _ in lv.events if kind == "break"), dtype=np.int64)
+                           for k in ("buy", "sell")}
+        b = self._flips[side]
+        i = int(np.searchsorted(b, bar, "left"))  # breaks strictly before the tap bar
+        return i > 0 and b[i - 1] >= bar - self.cfg["max_wait"]
 
     def overlap(self, lv, bar, t_conf):
         """#31a [T all-in-1@1424-1620 ("two timeframes overlap ... weekly and daily are using exactly this key level
@@ -295,7 +325,14 @@ class _Ctx:
     # ------------------------------------------------------------------ confirmation
     def break_search(self, lv, bar):
         """Point B before the first touch and the external break of it (same rules as before #26-#31).
-        Returns (k0, B, swings at k0, breakout confirm-bar index) or None."""
+        Returns (k0, B, swings at k0, breakout confirm-bar index) or None. Memoised per (level, bar): flip_scan
+        asks again for the same opposite taps (pure function of the context)."""
+        key = (id(lv), bar)
+        if key not in self._bs:
+            self._bs[key] = self._break_search(lv, bar)
+        return self._bs[key]
+
+    def _break_search(self, lv, bar):
         cfg, O, C, c2o = self.cfg, self.O, self.C, self.c2o
         sell = lv.side == "sell"
         tol = self.tol

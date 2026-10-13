@@ -59,7 +59,8 @@ SCHEMA = [
        "the last daily swing and an H4 break the same way = daily continuation story. Without that alignment no "
        "continuation story (weekly-recap@151-282, 626-670, 2098-2160). Kevin uses it: on."),
     _s("cadjpy_exception", "bool", "on", "Bias rules",
-       "Exception (c) CADJPY: weekly trend in the story direction + the daily candle sweeps the previous day "
+       "Exception (c) CADJPY: weekly trend in the story direction + the daily already flipped that way (a daily "
+       "close through an opposite key level in the last max_wait days) + the daily candle sweeps the previous day "
        "low (high) into a daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
        "H4 breakout, target the previous high (low) (cadjpy-bd@400-995). Kevin uses it: on. Off = H4 breakout "
        "always required."),

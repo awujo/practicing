@@ -126,6 +126,39 @@ def test_most_recent_fresh_level_formed_before_the_tap():
     assert X.choose(8, "down") is older                       # `later` (born 10) did not exist at the tap
 
 
+def test_newer_level_closed_through_on_the_tap_bar_does_not_block():
+    """Validation 4 (story-line-pt2@940-990: "this one already abused ... not fresh. The nearest fresh key level is
+    this one"): price runs through a newer level, closes beyond it and rejects at the older one on the same bar ->
+    the older level is the nearest FRESH one. A newer level only TAPPED on that bar still wins (_pick)."""
+    X = ctx(flip_days())
+    older = Level(1.0300, "sell", "A", 2, [(8, "tap", True)])
+    newer = Level(1.0250, "sell", "OC", 5, [(8, "break", False)])  # closed through on the tap bar
+    X.levels = [older, newer]
+    X.lv = S._LevelSet(pd.DataFrame({"start": X.o_start, "end": X.o_end}), X.levels)
+    X.taps = {8: [older]}
+    assert X.choose(8, "down") is older
+    newer.events[0] = (8, "tap", True)                               # only tapped: it is the most recent fresh one
+    X.lv = S._LevelSet(pd.DataFrame({"start": X.o_start, "end": X.o_end}), X.levels)
+    assert X.choose(8, "down") is None
+
+
+def test_forming_weekly_bar_is_not_closed():
+    """Validation 4 (no look-ahead, live = backtest): live data stop at the last closed D bar, so mid-week the last
+    W bar's 'end' is only the last hour seen. It must not count as a closed weekly candle (overlap: "weekly judged
+    after its close"; higher-TF targets: levels as of the last CLOSED bar)."""
+    from slk.candles import nominal_end
+    h1 = h1_from_h4(cad_days())                     # Mon 2023-01-02 .. ; cut after Wednesday's D close
+    cut = h1[h1.index < pd.Timestamp("2023-01-04 22:00", tz="UTC")]
+    X = S._Ctx("EURUSD", cut, "D", {**S.DEFAULT, **OFF})
+    tf, H = X.higher[0]
+    assert tf == "W" and H.end[-1] == nominal_end(H.start[-1], "W") == pd.Timestamp("2023-01-06 22:00", tz="UTC")
+    assert H.closed_upto(X.o_end[-1]) == len(H.start) - 2
+    assert nominal_end(pd.Timestamp("2023-01-03 22:00", tz="UTC"), "D") == pd.Timestamp("2023-01-04 22:00", tz="UTC")
+    assert nominal_end(pd.Timestamp("2023-01-01 22:00", tz="UTC"), "M") == pd.Timestamp("2023-01-31 22:00", tz="UTC")
+    full = S._Ctx("EURUSD", h1, "D", {**S.DEFAULT, **OFF}).higher[0][1]
+    assert full.end[0] == pd.Timestamp("2023-01-06 22:00", tz="UTC")  # a finished week keeps its real close
+
+
 # ------------------------------------------------------------------ #31c CADJPY
 def cad_days(sweep=True):
     """OC buy level at 1.0040 (bear days 0-1 to the close valley 1.000, bull days 2-3: line at the close of day 2),
@@ -143,12 +176,23 @@ def test_cadjpy_exception_conditions():
     X = ctx(cad_days())
     oc = [l for l in X.levels if l.kind == "OC" and l.side == "buy" and np.isclose(l.price, 1.004)]
     assert oc and np.isclose(oc[0].price, 1.004) and oc[0].events[0][:2] == (5, "tap")
+    # Validation 4: the daily must already have flipped bullish ("after the bullish close above this guy, price
+    # did a sweep of previous day low", cadjpy-bd@440-560): a D body close above a sell level shortly before
+    assert not X.cadjpy(oc[0], 5, "up")                                       # no D flip yet: H4 breakout needed
+    X.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))     # day 3 closes above a D sell level
+    X._flips = None
     assert X.cadjpy(oc[0], 5, "up")
+    X.cfg = {**X.cfg, "max_wait": 1}
+    assert not X.cadjpy(oc[0], 5, "up")                                       # that flip is too old
+    X.cfg = {**X.cfg, "max_wait": S.DEFAULT["max_wait"]}
     assert not X.cadjpy(oc[0], 5, "down") and not X.cadjpy(oc[0], 5, "range")  # needs the weekly trend
     v = Level(oc[0].price, "buy", "V", oc[0].born)
     assert not X.cadjpy(v, 5, "up")                                            # open-close / flipped zone only
-    assert not ctx(cad_days(), cadjpy_exception=False).cadjpy(oc[0], 5, "up")
+    Z = ctx(cad_days(), cadjpy_exception=False)
+    Z.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))
+    assert not Z.cadjpy(oc[0], 5, "up")
     Y = ctx(cad_days(sweep=False))                                             # previous low already lower: no sweep
+    Y.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))
     assert not Y.cadjpy(Level(1.004, "buy", "OC", 4), 5, "up")
 
 

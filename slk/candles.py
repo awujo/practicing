@@ -32,3 +32,11 @@ def resample(h1, tf):
         "close": g["close"].last(), "start": g["t"].min(), "end": g["t"].max() + pd.Timedelta(hours=1),
     })
     return out.reset_index(drop=True)
+
+
+def nominal_end(start, tf):
+    """Nominal close (UTC) of the D/W/M bar that starts at `start`: 17:00 New York; a week closes Friday 17:00,
+    a month at 17:00 New York on its last day (same clock as slk/live.py drop_forming)."""
+    k = _key(pd.DatetimeIndex([pd.Timestamp(start)]), tf)[0]
+    e = k + (pd.offsets.MonthBegin(1) if tf == "M" else pd.Timedelta(days=5 if tf == "W" else 1))
+    return (e - pd.Timedelta(hours=7)).tz_localize("America/New_York").tz_convert("UTC")

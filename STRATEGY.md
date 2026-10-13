@@ -85,7 +85,8 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
    (A-shape or bearish OC for a sell), formed **before** the tap; older levels are ignored ("you place your mark at
    the most recent one ... we just remove everything and mark that last one") [T story-line-pt2@897-1000;
    F story-line-pt2/sheet_013-016]. Bot (#26, `most_recent_level`): a tapped level counts only if no newer fresh
-   level of the same side existed at the tap; levels formed after the tap never count.
+   level of the same side existed at the tap; levels formed after the tap never count; a newer level that the tap
+   candle closed through has failed ("abused ... not fresh"), so it does not block the deeper level that held.
    Also mark the target: the next opposite fresh KL of the **same or a higher TF** (D story: D, W, M levels;
    W story: W, M; M story: M "next monthly fresh level"), or the ERL, whichever comes first, so the TP is capped at the
    next level of the weaker TF [T story-line@648, story-line-pt2@1914-1968, class-wrok@480-620; F story-line-pt2/
@@ -161,6 +162,10 @@ target price, invalidation price, status
   low into a daily OC level and closes back above it → daily bias confirmed **without** an H4 breakout (at that D
   close); target = previous high [T cadjpy-bd@400-760, 940-995 "you really do not need to be waiting for this
   breakout again", 1380-1600; F cadjpy-bd/sheet_008-009: line ~113.2, sweep candle closes above, "target" 114.466].
+  Only after the daily has **already flipped** that way: "after the bullish close above this guy, price did a sweep
+  of previous day low", "weekly is bullish and now daily has flipped the zone" [T cadjpy-bd@440-560, 680-720;
+  F cadjpy-bd/sheet_008: the big bull D candle closes above the D sell zone, the sweep comes 1-2 candles later].
+  Bot: a D body close through an opposite key level within `max_wait` D bars before the sweep (Validation 4).
   Mirror for sells. The only place where the external break is not required.
 
 ---
@@ -244,6 +249,6 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 15 | Most recent level (#26) | OUR CHOICE: "most recent" = latest `born` among fresh same-side origin-TF levels (sweeps excluded) at the tap bar; a stale level tapped instead -> no KL start (the sweep start may still apply). |
 | 16 | Flip (#29) | OUR CHOICE: "on the way" = strictly between the origin level and the target; only origin-TF key levels (no sweeps); first flip confirmed wins (ties: most recent level); it must happen inside `max_hold`; trade view exits at the flip close; the new opposite story keeps the HTF filter but not the origin-trend filter. |
 | 17 | Targets (#30) | OUR CHOICE: nearest of (fresh opposite KLs of origin + all higher TFs as of their last closed candle, origin-TF structural swings = ERL); previous-candle highs/lows are not targets. |
-| 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation, else the normal target; overlap TP = next KL, ERL only without a KL. |
+| 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation (its nominal Friday 17:00 New York close, also in live where the last W bar is still forming), else the normal target; overlap TP = next KL, ERL only without a KL. |
 | 19 | Alignment (#31b) | OUR CHOICE: W/D breaks = `structural_swings` fixes (§1); H4 break = close beyond the last order-`b_pivot` H4 close turn made since the D break bar started, within `max_wait` D bars, same-day D close; stop beyond the D break bar's wick; D story only. |
-| 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close or flipped (his "daily open close level" was a flipped zone); W trend (structural) in the story direction; tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
+| 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close or flipped (his "daily open close level" was a flipped zone); W trend (structural) in the story direction; the daily flipped that way first = a D body close through an opposite key level within `max_wait` (5) D bars before the sweep (Kevin: "after the bullish close above this guy"; the window is ours); tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
