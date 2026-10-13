@@ -34,6 +34,18 @@ CASES = [  # (pair, seed, hours, cfg)
 ]
 
 
+LABELS = ("next_day", "retrace", "level_time")  # story labels added later (Next Day Rule etc.): no effect on outcomes
+
+
+def strip_labels(x):
+    """Story/tap dicts without LABELS (the golden files predate them; tests compare without them)."""
+    if isinstance(x, dict):
+        return {k: v for k, v in x.items() if k not in LABELS}
+    if isinstance(x, list):
+        return [strip_labels(v) for v in x]
+    return x
+
+
 def data(pair, seed, hours):
     h1 = walk(hours, seed)
     if pair.endswith("JPY"):
@@ -64,12 +76,12 @@ def compute():
         case = {"pair": pair, "seed": seed, "hours": hours, "cfg": cfg, "stories": {}, "taps": {}, "entries": {}}
         for st in ("D", "W", "M"):
             s = find_stories(pair, h1, st, cfg)
-            case["stories"][st] = _clean(s)
+            case["stories"][st] = _clean(strip_labels(s))
             # entries pinned with the old entry model (continuation only, breakout on c4), as tests/test_speed.py checks
-            old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"]}, cfg, sim=True)
+            old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off"}, cfg, sim=True)
             case["entries"][st] = _clean([{k: v for k, v in r.items() if k not in ("model", "bo_candle")} for r in old])
             cuts = range(len(h1) // 2, len(h1), max(1, len(h1) // 25))
-            case["taps"][st] = [_clean(current_tap(pair, h1.iloc[:n], st, cfg)) for n in cuts]
+            case["taps"][st] = [_clean(strip_labels(current_tap(pair, h1.iloc[:n], st, cfg))) for n in cuts]
         out.append(case)
     return out
 

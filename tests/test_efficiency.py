@@ -177,6 +177,9 @@ def test_migrate_adds_missing_columns(monkeypatch):
     assert ddl == ["ALTER TABLE bias ADD COLUMN no_trade_reason VARCHAR(64) NULL AFTER no_trade",
                    "ALTER TABLE bias ADD COLUMN rule VARCHAR(32) NULL AFTER no_trade_reason",
                    "ALTER TABLE bias ADD COLUMN end_reason VARCHAR(200) NULL AFTER rule",
+                   "ALTER TABLE bias ADD COLUMN breakout_time DATETIME NULL AFTER end_reason",
+                   "ALTER TABLE bias ADD COLUMN next_day TINYINT(1) NULL AFTER breakout_time",
+                   "ALTER TABLE bias ADD COLUMN retrace TINYINT(1) NULL AFTER next_day",
                    "ALTER TABLE entries ADD COLUMN model VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"]
     schema = (ROOT / "db" / "schema.sql").read_text()
     assert "no_trade      TINYINT(1)" in schema and "no_trade_reason VARCHAR(64)" in schema

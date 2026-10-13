@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 import db  # also puts the repo root on sys.path
 from slk import settings as S  # stdlib only (no pandas)
+from slk import terms as T  # stdlib only
 
 log = logging.getLogger("slk.webapp")
 STATIC = Path(__file__).resolve().parent / "static"
@@ -24,6 +25,7 @@ BIAS_STATUSES = {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP
 ACTIVE_BIAS = ("TAPPED", "CONFIRMED")
 PUBLIC_SETTINGS = tuple(s["name"] for s in S.SCHEMA)
 DEFAULTS = dict(S.DEFAULTS)
+OWNER_CHAT_ID = "1410229777"  # default owner chat (as the workflows); TELEGRAM_CHAT_ID wins
 
 
 # ---------------------------------------------------------------- auth
@@ -208,3 +210,36 @@ def approve(entry_id: int, user=Depends(require_user)):
     if not n:
         raise HTTPException(409, "entry not found or not PENDING")
     return {"id": entry_id, "status": "APPROVED"}
+
+
+# ---------------------------------------------------------------- Telegram bot commands (webhook)
+def owner_chat_id() -> str:
+    return (os.environ.get("TELEGRAM_CHAT_ID", "").strip() or OWNER_CHAT_ID)
+
+
+def bot_reply(update: dict):
+    """Webhook reply for one Telegram update, or None. Only the owner's chat gets an answer; only /terms is known.
+    The reply goes back in the webhook response body (Telegram runs it as a sendMessage call), so the web service
+    needs no outbound request and never handles the bot token here."""
+    msg = update.get("message") or update.get("edited_message") or {}
+    chat = (msg.get("chat") or {}).get("id")
+    if chat is None or str(chat) != owner_chat_id() or not T.is_terms(msg.get("text")):
+        return None
+    return {"method": "sendMessage", "chat_id": chat, "text": T.TERMS, "disable_web_page_preview": True}
+
+
+@app.post("/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """Telegram setWebhook target (HANDOVER.md: owner sets TELEGRAM_WEBHOOK_SECRET on Render and registers the URL
+    with that secret_token). Requests without the matching X-Telegram-Bot-Api-Secret-Token header are refused;
+    with no secret configured the endpoint is off."""
+    secret = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "")
+    got = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    if not secret or not hmac.compare_digest(got.encode(), secret.encode()):
+        raise HTTPException(status_code=403, detail="forbidden")
+    try:
+        update = await request.json()
+    except Exception:  # noqa: BLE001 - junk body: acknowledge so Telegram does not retry
+        return {"ok": True}
+    reply = bot_reply(update if isinstance(update, dict) else {})
+    return reply or {"ok": True}

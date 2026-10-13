@@ -44,7 +44,7 @@ jobs:
           [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
           mkdir -p reports
           set +e
-          python -m slk.backtest "${ARGS[@]}" --cfg "$IN_CFG" > reports/run.log 2>&1
+          python -m slk.backtest "${ARGS[@]}" --cfg "$IN_CFG" --entry-cfg "$IN_ENTRY_CFG" --variants > reports/run.log 2>&1
           rc=$?
           echo "exit=$rc" >> reports/run.log
           tail -c 60000 reports/run.log >> "$GITHUB_STEP_SUMMARY"

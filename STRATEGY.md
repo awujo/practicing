@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.6, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.7, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -141,6 +141,12 @@ target price, invalidation price, status
 - Never against the higher-timeframe trend [T liquidity-pt3@712-723].
 - Trend unclear (range, takes effort to read) → skip [T story-line-pt4@1195-1217].
 - After an H4 breakout in a **daily** story, the daily candle must also close beyond B the same day, otherwise cancel [F qns-pt2].
+- **Next Day Rule (built `next_day_rule`, §5 #21):** the cleanest breakout comes after the rejection candle has
+  closed: "you go to four hours after the close of this day, you just see a clean breakout" [T story-line-pt3@1358-1401];
+  the trade comes "the next day ... not that particular day" [T qns-pt2@1946-1962]. Every story carries `next_day`.
+- **Retrace on the breakout day (flag, §5 #22):** the day that gave the breakout "should not trade back into the breakout
+  zone"; if it does it is "no longer high probability" [T qns-pt2@1946-2030]. Flagged (`retrace`), not cancelled:
+  only the D close back through B cancels (rule above).
 - **Overlap (exception a, built `overlap_rule`, rule `+overlap`):** a weekly KL that is also a daily KL (same spot,
   fresh) counts as "daily rejects daily": the D story with its H4 breakout. A weekly tap is judged only after the
   weekly candle closes [T all-in-1@1424-1620, cadjpy-bd@811-905 "for it to overlap it needs to be on the same spot";
@@ -214,6 +220,7 @@ Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59;
 | Trigger TF | H4/H2/H1 QM → 1H (his H4 → 1H); D QM → H4; W QM → D; never below the story's lowest entry TF (W story: H4 QM triggers on H4). |
 | QMR stop | beyond the head wick + 1 pip if ≤ `max_stop_pips`, else beyond the trigger rejection wick + 1 pip. |
 | QMR vs. continuation close together | no merged "stop covers both" zone; the rank rule above decides. |
+| Alignment for continuation entries (`entry_alignment`, owner decision) | `d_h4` (default): model A only when D and H4 are in line = the CONFIRMED origin-TF story ("daily reject daily") AND the last H4 structural break (close beyond the last H4 close-line swing, §1) in the trade direction, checked at the pattern's breakout close [T entry-4@1670-1690 "I only like to trade continuation ... daily reject daily, 4 hours break, which means daily and 4 hours they are in line"; T entry3@696-818: W story, daily breakout, then a recent 4H breakout = "4 hours are aligned with daily ... that is our alignment"]. `w_d_h4`: also the last W structural break the same way [T weekly-recap@151-282, story-line@304-322]. `off`: no check. QMR not affected. Backtest compares all three (REPORT.md "Variants"). |
 
 **Stop loss:** just beyond the rejecting candle / small zone. Seen: 8–21 pips; 15–20 pip max is stated, 38 pips called "valid but unwanted"; skip if spread is wide (AUDNZD, NZDCHF avoided) [T wr@1590-1630].
 **Take profit:** TP1 = next key level / R 1.4–2, TP2 = point B / target, R up to ~5 [F weekly-recap, all-in-1].
@@ -252,3 +259,7 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation (its nominal Friday 17:00 New York close, also in live where the last W bar is still forming), else the normal target; overlap TP = next KL, ERL only without a KL. |
 | 19 | Alignment (#31b) | OUR CHOICE: W/D breaks = `structural_swings` fixes (§1); H4 break = close beyond the last order-`b_pivot` H4 close turn made since the D break bar started, within `max_wait` D bars, same-day D close; stop beyond the D break bar's wick; D story only. |
 | 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close or flipped (his "daily open close level" was a flipped zone); W trend (structural) in the story direction; the daily flipped that way first = a D body close through an opposite key level within `max_wait` (5) D bars before the sweep (Kevin: "after the bullish close above this guy"; the window is ours); tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
+| 21 | Next Day Rule | OUR CHOICE `next_day_rule` = `flag` (default): every story is kept and marked `next_day` = the confirm-TF breakout candle opens at/after the origin (tap/rejection) candle's close; alerts say "✅ Next Day Rule" or "⚠ same-day breakout". `require`: a story whose first valid breakout is inside the rejection candle is dropped (not moved to the next day); also in `current_tap` and flips, same for M→W, W→D, D→H4. Alignment stories always break the next day; CADJPY has no breakout (`next_day` n/a, kept). Kevin calls multi-day waits "also valid" and the clean next-day case "the best" [T pt3@1331-1401]: a quality flag until the backtest variants say otherwise. |
+| 22 | Retrace warning | OUR CHOICE: `retrace` = a later confirm-TF candle of the origin bar holding the breakout closes back at/beyond B (known at that origin close = the confirmation, no look-ahead). Shown as a warning line (follow-up `RETRACE` alert if it ever appears after the CONFIRMED alert); never invalidates. |
+| 23 | Early breakout alert | OUR CHOICE `early_breakout_alert` off by default: "H4 breakout — waiting for the daily close" when a closed confirm-TF candle inside the still-open origin candle closed beyond B of a TAPPED story. The row stays TAPPED; sent once per story (settings key `early_alerts_sent`). |
+| 24 | Alert times | OUR CHOICE: alert times in `display_tz` (default Africa/Lagos), each labelled candle open or close; the rejection candle is named by its trading day (17:00 New York close: the D candle opening Wed 17:00 NY is Thursday's); "formed" = the origin candle at whose close the level existed. |

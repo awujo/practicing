@@ -64,6 +64,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [x] Bias rules v0.6 (REVIEW #26 #29 #30 #31): most recent level before the tap, story ends early by a flip
       (status ENDED_FLIP), targets on the same or a higher TF, overlap / alignment / CADJPY exceptions; all switchable
       in Mini App "Bias rules" (default on), `rule` + `end_reason` per story (DB columns, Telegram, Mini App).
+- [x] SLK Radar ideas 1-6 built (compare_slk_radar.md "Worth adopting"): Next Day Rule, clearer alerts in
+      `display_tz`, optional early breakout alert, retrace warning, level "formed" date, `/terms`; continuation entries
+      need D+H4 alignment (`entry_alignment` d_h4, owner decision). Backtest REPORT.md "Variants" compares
+      next_day_rule flag/require, cadjpy on/off, entry_alignment d_h4/w_d_h4/off: pick defaults from it.
+- [ ] **User, once (for /terms):** Render env `TELEGRAM_WEBHOOK_SECRET` + `setWebhook` (steps in `webapp/README.md`
+      "Bot command /terms"). Until then /terms gets no answer; everything else works.
 - [ ] Read `reports/EXAMPLES.md` after the verify-examples workflow ran (Kevin's own examples PASS/FAIL).
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
@@ -151,3 +157,13 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-13: New release `SLK-radar-video-and-other-bots-video` (developer's SLK Radar bias-bot walkthrough, Kevin mentee):
   transcribe.yml + extract-frames.yml (10 s, 1280 px) -> knowledge-base/videos|frames/kevin-devt-building-the-slk-bias-bot-*;
   then a validator agent compares its logic to STRATEGY.md -> knowledge-base/study/compare_slk_radar.md.
+- 2026-10-13: SLK Radar adoption (STRATEGY v0.7, tests `tests/test_slk_radar.py`), one line per change:
+  - Next Day Rule: `story.DEFAULT["next_day_rule"]` flag (default, story key `next_day`) / require (same-day breakout dropped, also in current_tap + flips); setting `next_day_rule` (Bias rules); STRATEGY §2 + §5 #21.
+  - Story labels `retrace` (closed back beyond B later on the breakout day; flag only, §5 #22) and `level_time` ("formed"); golden tests compare without these labels (logic unchanged under flag).
+  - Alerts rewritten: header "SELL · EURNZD · D1→H4", key level kind/price/formed, rejection candle trading day, breakout candle + B, confirmation close, "Trend aligned with W1/D1", Next Day line, retrace warning, target/invalidation/rule kept, every time labelled open/close; setting `display_tz` (type `tz`, zoneinfo-validated, default Africa/Lagos).
+  - Early alert: setting `early_breakout_alert` (off): TAPPED row + closed H4 beyond B inside the open day -> "H4 breakout — waiting for the daily close"; never stored as CONFIRMED; once per story via settings key `early_alerts_sent`.
+  - Retrace follow-up alert `RETRACE` when a stored CONFIRMED row turns retrace=1 (toggle `alert_confirmed`).
+  - DB: `bias.breakout_time`, `next_day`, `retrace` (db/schema.sql = webapp/schema.sql, `db.migrate`); Mini App bias cards show them.
+  - `/terms`: no Telegram update handler existed -> `POST /telegram/webhook` in webapp/app.py (secret header `TELEGRAM_WEBHOOK_SECRET`, owner chat only, reply in the webhook response), glossary `slk/terms.py`; owner setup in webapp/README.md.
+  - Entries: setting `entry_alignment` (owner: d_h4 default = D story + last H4 structural break agree; w_d_h4 adds W; off), continuation only, checked per pattern at its breakout close (entry-4@1670-1690, entry3@696-818, weekly-recap@151-282); STRATEGY §3 OUR CHOICE.
+  - Backtest: `python -m slk.backtest --variants` (backtest.yml passes it) -> REPORT.md "Variants" (trades, win%, avg R, total R per variant) + `reports/variants.csv`, plus "By story and Next Day Rule"; not run here (no Dukascopy from the sandbox).

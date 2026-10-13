@@ -8,7 +8,7 @@ import pandas as pd
 from slk import data
 from slk.candles import resample
 from slk.db import parse_url
-from slk.live import (drop_forming, format_alert, format_summary, pair_state, planned_time, reconcile,
+from slk.live import (drop_forming, fmt_time, format_alert, format_summary, pair_state, planned_time, reconcile,
                       summary_due, summary_line)
 from slk.story import DEFAULT, current_tap, find_stories
 from tests.test_engine import walk
@@ -26,18 +26,34 @@ def row(**kw):
 
 # ------------------------------------------------------------- messages
 def test_alert_format():
-    m = format_alert("CONFIRMED", row())
-    assert m.splitlines()[0] == "BIAS | EURUSD | Daily story (D->H4) | BEARISH (SELL) | CONFIRMED"
-    assert "Origin level 1.08450 (A-shape, D)" in m and "Point B 1.08120 (H4 body close below" in m
-    assert "Target 1.07600" in m and "Invalid if D close above 1.08450" in m and "Not an entry" in m
-    assert "Tap 2026-10-11 21:00 UTC" in m and "Confirmed 2026-10-12 21:00 UTC" in m
+    m = format_alert("CONFIRMED", row(breakout_time=datetime(2026, 10, 12, 5), next_day=True, level_time=datetime(2026, 10, 1, 21),
+                                      trend="down", htf_trend="down"))
+    L = m.splitlines()
+    assert L[0] == "SELL \u00b7 EURUSD \u00b7 D1\u2192H4" and L[1] == "BIAS \u00b7 Daily story \u00b7 BEARISH"
+    assert L[2] == "External breakout confirmed"
+    # default display_tz Africa/Lagos (WAT = UTC+1); every time says candle open or close
+    assert "Rejected at A-shape KL (D1) @ 1.08450 \u00b7 formed Fri 2 Oct (D1 candle)" in m
+    assert "Rejection candle: D1 Mon 12 Oct (open Sun 11 Oct 22:00 WAT, close Mon 12 Oct 22:00 WAT)" in m
+    assert ("External break: H4 close below point B 1.08120 \u00b7 H4 candle open Mon 12 Oct 06:00 WAT, "
+            "close Mon 12 Oct 10:00 WAT") in m
+    assert "Confirmed at candle close Mon 12 Oct 22:00 WAT" in m and "Trend aligned with W1/D1" in m
+    assert "\u2705 Next Day Rule \u00b7 breakout after the rejection candle closed" in m and "Retrace" not in m
+    assert "Target 1.07600" in m and "Invalid if D1 closes above 1.08450" in m and "Rule: key level tap" in m
+    assert "Not an entry signal" in m and "Times: Africa/Lagos (WAT)" in m
+    u = format_alert("CONFIRMED", row(next_day=False, retrace=1, trend="down", htf_trend="up"), "UTC")
+    assert "\u26a0 same-day breakout" in u and "\u26a0 Retrace: a later H4 candle" in u and "not invalidated" in u
+    assert "Trend aligned with D1" in u and "W1/D1" not in u and "close Mon 12 Oct 21:00 UTC" in u
     j = format_alert("TAPPED", row(pair="GBPJPY", side="BUY", level=190.123, point_b=191.5, target=None,
                                    invalidation=190.123, confirm_time=None, status="TAPPED"))
     assert "TAPPED" in j and "190.123" in j and "Target -" in j and "below" in j and "Confirmed" not in j
-    assert "BULLISH (BUY)" in j and "NO_TRADE until the H4 breakout" in j
+    assert j.startswith("BUY \u00b7 GBPJPY") and "BULLISH" in j and "NO_TRADE until the H4 breakout" in j
+    assert "Next Day" not in j and "same-day" not in j
     w = format_alert("CONFIRMED", row(story="W", level_kind="sweep", side="BUY", no_trade=True,
                                       no_trade_reason="M/W conflict"))
-    assert "Weekly story (W->D)" in w and "sweep of previous week low" in w and "NO_TRADE (M/W conflict)" in w
+    assert "W1\u2192D1" in w and "Weekly story" in w and "sweep of previous week low" in w
+    assert "NO_TRADE (M/W conflict)" in w and "W1 week of Mon 12 Oct" in w
+    assert fmt_time(datetime(2026, 10, 12, 21)) == "2026-10-12 21:00 UTC"
+    assert fmt_time(datetime(2026, 10, 12, 21), "Europe/London") == "Mon 12 Oct 22:00 BST"
 
 
 def test_summary():

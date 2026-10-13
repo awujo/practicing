@@ -161,3 +161,41 @@ def test_settings_get_defaults_and_post_validation(client):
         r = client.post("/api/settings", json=bad, headers=hdr(make_init_data()))
         assert r.status_code == 422, bad
     assert s["max_wait"] == "8"
+
+
+# ---------------------------------------------------------------- /terms (Telegram webhook)
+def upd(text, chat=OWNER):
+    return {"update_id": 1, "message": {"message_id": 5, "chat": {"id": chat, "type": "private"}, "text": text}}
+
+
+def test_terms_webhook_owner_only(client, monkeypatch):
+    url, ok = "/telegram/webhook", {"X-Telegram-Bot-Api-Secret-Token": "s3cret"}
+    monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
+    assert client.post(url, json=upd("/terms"), headers=ok).status_code == 403   # no secret set: webhook off
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "s3cret")
+    assert client.post(url, json=upd("/terms")).status_code == 403                # header missing
+    assert client.post(url, json=upd("/terms"), headers={"X-Telegram-Bot-Api-Secret-Token": "x"}).status_code == 403
+    r = client.post(url, json=upd("/terms@SlkBot"), headers=ok).json()
+    assert r["method"] == "sendMessage" and r["chat_id"] == OWNER
+    for w in ("Point B", "External break", "Next Day Rule", "A-shape", "V-shape", "open-close", "TAPPED",
+              "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "NO_TRADE"):
+        assert w in r["text"], w
+    assert client.post(url, json=upd("/terms", chat=123), headers=ok).json() == {"ok": True}   # not the owner
+    assert client.post(url, json=upd("hello"), headers=ok).json() == {"ok": True}
+    assert client.post(url, content=b"junk", headers=ok).json() == {"ok": True}
+    monkeypatch.delenv("TELEGRAM_CHAT_ID")                                          # default owner chat id
+    assert webapp.bot_reply(upd("/terms", chat=1410229777))["chat_id"] == 1410229777
+    assert webapp.bot_reply(upd("/terms")) is None
+
+
+def test_new_settings_in_schema(client):
+    s = {x["name"]: x for x in client.get("/api/settings/schema", headers=hdr(make_init_data())).json()["settings"]}
+    assert s["next_day_rule"]["choices"] == ["flag", "require"] and s["next_day_rule"]["default"] == "flag"
+    assert s["display_tz"]["type"] == "tz" and s["display_tz"]["default"] == "Africa/Lagos"
+    assert s["early_breakout_alert"]["default"] == "off"
+    assert s["entry_alignment"]["choices"] == ["d_h4", "w_d_h4", "off"] and s["entry_alignment"]["default"] == "d_h4"
+    r = client.post("/api/settings", json={"display_tz": "Mars/Base"}, headers=hdr(make_init_data()))
+    assert r.status_code == 422 and "display_tz" in r.text
+    r = client.post("/api/settings", json={"display_tz": "Europe/London", "next_day_rule": "require"},
+                    headers=hdr(make_init_data()))
+    assert r.status_code == 200 and r.json()["display_tz"] == "Europe/London" and r.json()["next_day_rule"] == "require"

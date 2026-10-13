@@ -55,6 +55,19 @@ Use the HTTPS URL of the service root, e.g. `https://slk-miniapp.onrender.com/`.
 
 Open the bot chat in Telegram and tap the menu button. The Mini App follows Telegram's light/dark theme.
 
+## Bot command /terms (Telegram webhook)
+The service also answers `/terms` (glossary of the alert words, `slk/terms.py`) through a Telegram webhook at
+`POST /telegram/webhook`. Only the owner chat (`TELEGRAM_CHAT_ID`, default 1410229777) gets an answer; the reply is
+returned in the webhook response, so no outgoing call is needed. Set it up once:
+1. Render → the service → Environment → add `TELEGRAM_WEBHOOK_SECRET` = a random string (letters, digits, `_`, `-`;
+   e.g. `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Redeploy.
+2. Register the webhook (run on your own computer; replace the token, URL and secret):
+   `curl "https://api.telegram.org/bot<TOKEN>/setWebhook" -d url=https://<service>.onrender.com/telegram/webhook -d secret_token=<SECRET> -d 'allowed_updates=["message"]'`
+   Check with `curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"`.
+3. Optional command menu: @BotFather → `/setcommands` → `terms - What the words in an alert mean`.
+Without the secret the endpoint answers 403 (off). Alerts are unaffected (they are sent by the live job). Free plan:
+a sleeping service answers the first `/terms` after ~30-60 s (Telegram retries).
+
 ## Run locally
 ```
 pip install -r webapp/requirements.txt

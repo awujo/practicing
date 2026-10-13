@@ -31,9 +31,9 @@ Public:
 import numpy as np
 import pandas as pd
 
-from .candles import resample
+from .candles import nominal_end, resample
 from .story import DEFAULT as STORY_DEFAULT, STORIES, pip
-from .structure import pivots
+from .structure import pivots, structural_swings
 
 ENTRY_TFS = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
 
@@ -55,7 +55,11 @@ DEFAULT = {
     "max_trade_bars": 60,      # entry-TF bars a trade is held before it is closed at market
     "entry_models": ["continuation", "qmr"],
     "qmr_max_bars": 30,        # OUR CHOICE: QM-TF bars after the neck break for the zone reaction + trigger
+    "alignment": "d_h4",       # setting entry_alignment: continuation entries only when D and H4 are in line (the
+                               # CONFIRMED story = "daily reject daily" + the last H4 structural break the same way);
+                               # w_d_h4 = also the last W structural break; off = no check
 }
+ALIGN_TFS = {"off": (), "d_h4": ("H4",), "w_d_h4": ("W", "H4")}
 MODELS = ("continuation", "qmr")
 # OUR CHOICE beyond Kevin's H4 -> 1H: QM on TF -> trigger TF (one or two steps lower)
 QMR_TRIGGER_TF = {"H1": "H1", "H2": "H1", "H4": "H1", "D": "H4", "W": "D"}
@@ -155,7 +159,7 @@ class _Pair:
     def __init__(self, pair, h1, cfg):
         self.pair, self.cfg, self.P = pair, cfg, pip(pair)
         self.h1 = _arrays(resample(h1, "H1"))
-        self._bars, self._piv, self._pat, self._qm = {}, {}, {}, {}
+        self._bars, self._piv, self._pat, self._qm, self._brk = {}, {}, {}, {}, {}
         self.h1df = h1
 
     def bars(self, tf):
@@ -172,6 +176,30 @@ class _Pair:
         if (tf, sell) not in self._pat:
             self._pat[(tf, sell)] = patterns(self.bars(tf), sell, self.cfg, self.P)
         return self._pat[(tf, sell)]
+
+    def last_break(self, tf, t):
+        """Direction ('up' / 'down' / None) of the last structural break (STRATEGY §1: a close beyond the last
+        close-line swing, story swing_pivot) on tf known at time t (that bar closed by t)."""
+        if tf not in self._brk:
+            from .story import _breaks  # noqa: PLC0415 (story imports nothing from entry)
+            B = self.bars(tf)
+            end = B["end"].copy()
+            if tf in ("D", "W", "M") and len(end):  # a still-forming last bar is not closed (live data)
+                end[-1] = max(end[-1], np.datetime64(nominal_end(pd.Timestamp(B["start"][-1], tz="UTC"), tf)
+                                                     .tz_convert(None), "ns"))
+            c = B["close"]
+            br = _breaks(structural_swings(c, pivots(c, self.cfg["story_cfg"]["swing_pivot"])))
+            self._brk[tf] = (np.array([end[i] for i, _, _ in br], dtype="datetime64[ns]"), [u for _, u, _ in br])
+        when, ups = self._brk[tf]
+        j = int(np.searchsorted(when, t, "right")) - 1
+        return None if j < 0 else ("up" if ups[j] else "down")
+
+    def aligned(self, sell, t, mode):
+        """entry_alignment: the story itself is the confirmed origin-TF bias (D reject D); d_h4 adds the last H4
+        structural break in the story direction [T entry-4@1670-1690, entry3@696-818], w_d_h4 also the last W
+        break [T weekly-recap@151-282, story-line@304-322]. Checked at time t (the pattern's breakout close)."""
+        want = "down" if sell else "up"
+        return all(self.last_break(tf, t) == want for tf in ALIGN_TFS.get(mode or "off", ()))
 
     def qms(self, tf, sell):
         if (tf, sell) not in self._qm:
@@ -350,11 +378,17 @@ def find_entry(px, story):
     t_end = _story_end(px, story, sell, t_conf, cfg["story_cfg"], cfg)
     notes = []
     models = cfg.get("entry_models") or MODELS
+    mode = cfg.get("alignment") or "off"
     for tf in cfg["entry_tfs"][story["story"]]:
         cands = []
         for m in models:
             got, why = (_candidates(px, tf, story, sell, t_bo, t_conf, t_end) if m == "continuation"
                         else _qmr_candidates(px, tf, story, sell, t_conf, t_end))
+            if m == "continuation" and mode != "off":
+                n0 = len(got)
+                got = [c for c in got if px.aligned(sell, c["active"], mode)]
+                if n0 > len(got):
+                    notes.append(f"{tf}: {n0 - len(got)} continuation not aligned ({mode})")
             cands += got
             if why:
                 notes.append(f"{tf}{'' if m == 'continuation' else ' ' + m}: wide_stop {why['wide_stop']}, no_room {why['no_room']}")

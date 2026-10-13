@@ -11,12 +11,16 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "db", "schema.sql")
 BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b", "target", "invalidation",
-             "tap_time", "confirm_time", "no_trade", "no_trade_reason", "rule", "end_reason")
+             "tap_time", "confirm_time", "no_trade", "no_trade_reason", "rule", "end_reason", "breakout_time",
+             "next_day", "retrace")
 # columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
 MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
               ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"),
               ("bias", "rule", "VARCHAR(32) NULL AFTER no_trade_reason"),
               ("bias", "end_reason", "VARCHAR(200) NULL AFTER rule"),
+              ("bias", "breakout_time", "DATETIME NULL AFTER end_reason"),
+              ("bias", "next_day", "TINYINT(1) NULL AFTER breakout_time"),
+              ("bias", "retrace", "TINYINT(1) NULL AFTER next_day"),
               ("entries", "model", "VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"))
 
 
@@ -125,7 +129,8 @@ def set_setting(k, v):
 def upsert_bias(row):
     """Insert or update one story by (pair, story, tap_time). Returns the bias id."""
     row = {**row, "no_trade": int(bool(row.get("no_trade"))),
-           "no_trade_reason": row.get("no_trade_reason") if row.get("no_trade") else None}
+           "no_trade_reason": row.get("no_trade_reason") if row.get("no_trade") else None,
+           **{k: None if row.get(k) is None else int(bool(row[k])) for k in ("next_day", "retrace")}}
     vals = [row.get(c) for c in BIAS_COLS]
     upd = ", ".join(f"{c}=VALUES({c})" for c in BIAS_COLS if c not in ("pair", "story", "tap_time"))
     return execute(f"INSERT INTO bias ({', '.join(BIAS_COLS)}) VALUES ({', '.join(['%s'] * len(BIAS_COLS))}) "

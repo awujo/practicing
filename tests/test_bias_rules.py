@@ -304,7 +304,7 @@ def test_rules_off_equal_v05_engine():
     off = {"most_recent_level": False, "flip_end": False, "htf_targets": False, "overlap_rule": False,
            "alignment_start": False, "cadjpy_exception": False}
     gold = json.load(open(G.PATH_V05))
-    new = ("rule", "end_reason", "end_time")
+    new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time")
     for i in (0, 2, 3):
         pair, seed, hours, cfg = G.CASES[i]
         h1 = G.data(pair, seed, hours)
@@ -331,7 +331,8 @@ def test_live_rows_and_messages_show_rules():
     e = to_row({**base, "rule": "standard+overlap", "side": "SELL", "end_reason": "flip: D V level 1.0 rejected"},
                "ENDED_FLIP")
     m = format_alert("ENDED_FLIP", e)
-    assert "ENDED EARLY (flip)" in m.splitlines()[0] and "Reason: flip: D V level" in m
+    assert m.splitlines()[0] == "SELL \u00b7 EURUSD \u00b7 D1\u2192H4" and "Story over: ENDED EARLY (flip)" in m
+    assert "Reason: flip: D V level" in m
     assert "overlap with W level" in m and "opposite story may start" in m
     assert "[alignment]" in summary_line("EURUSD", [{**r, "rule": "alignment"}])
     assert to_row({**base, "B": None}, "CONFIRMED")["point_b"] is None

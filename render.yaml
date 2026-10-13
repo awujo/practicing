@@ -19,3 +19,5 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         value: "1410229777"
+      - key: TELEGRAM_WEBHOOK_SECRET  # bot webhook /telegram/webhook (/terms); see webapp/README.md
+        sync: false

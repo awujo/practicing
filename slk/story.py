@@ -7,6 +7,9 @@ Rules built here (each story dict carries `rule`, and `end_reason` once it is ov
   alignment    W close beyond the last W swing -> D close beyond the last D swing -> H4 break, same way (#31b)
   cadjpy       W trend + D sweep of the previous-day low/high INTO a D open-close level, close back: confirmed at
                the D close without an H4 breakout (#31c)
+  Labels on every story (no effect on the outcome): next_day (Next Day Rule; None for cadjpy = no breakout),
+  retrace (a later confirm-TF candle of the breakout's origin bar closed back beyond B, Kevin qns-pt2@1946-2030),
+  level_time (start of the origin candle at whose close the level was known, i.e. "formed").
   "+overlap"   appended when the origin level is also a fresh higher-TF level rejected by a CLOSED higher-TF
                candle (#31a): the take profit is the next key level ("we take our profit at this key level").
 """
@@ -45,6 +48,11 @@ DEFAULT = {
     "overlap_tol_pips": 3.0,  # OUR CHOICE: two TF levels within this distance are "the same spot"
     "alignment_start": True,  # #31b W BOS -> D BOS -> H4 BOS the same way = a D continuation story
     "cadjpy_exception": True,  # #31c W trend + D sweep of the previous day low/high into a D OC level, close back
+    # Next Day Rule [T story-line-pt3@1358-1401 "you go to four hours after the close of this day, you just see a
+    # clean breakout"; qns-pt2@1946-1962 "the next day ... not that particular day"]: the confirm-TF breakout should
+    # come from a candle that opens after the origin (tap/rejection) candle closed. "flag" = every story carries
+    # next_day True/False (label only); "require" = a story whose breakout is inside the rejection candle is dropped.
+    "next_day_rule": "flag",
 }
 # Point B is broken only by an EXTERNAL break: a confirm-TF body close beyond B, the last opposite swing before
 # the first tap (+ same_bar_close). Kevin's two confirmations, "sweep and break" (advanced structure: sweep of
@@ -371,6 +379,8 @@ class _Ctx:
             k += 1
         if brk is None:
             return None
+        if cfg["next_day_rule"] == "require" and c2o[brk] <= bar:
+            return None  # same-day breakout (inside the rejection candle): Next Day Rule required
         return k0, B, sw, brk
 
     def conf_index(self, brk, bar):
@@ -428,10 +438,25 @@ class _Ctx:
         if r is None:
             return None
         r.update(pair=self.pair, story=self.story, trend=tr, level_kind=lv.kind, level=lv.price,
-                 tap_time=str(self.o_start[bar])[:16])
+                 tap_time=str(self.o_start[bar])[:16], level_time=self.level_time(lv, bar),
+                 next_day=None if kind == "none" else bool(self.c2o[brk] > bar))
         if self.htf:
             r["htf_trend"] = h_tr
         return r
+
+    def level_time(self, lv, bar):
+        """Start of the origin candle at whose close the level was known ("formed"); the tap bar for a sweep."""
+        i = bar if lv.kind == "sweep" else min(max(int(lv.born) - 1, 0), bar)
+        return str(self.o_start[i])[:16]
+
+    def retrace(self, sell, B, brk):
+        """Kevin [T qns-pt2@1946-2030]: the breakout day "should not trade back into the breakout zone", if it does
+        it is "no longer high probability". True when a later confirm-TF candle of the origin bar holding the
+        breakout closes back at or beyond B (above for a sell). Known at that origin bar's close (= confirmation
+        with same_bar_close). Label only: the D close back through B (same_bar_close) is the cancel rule."""
+        ks = range(brk + 1, int(self.first_k[self.c2o[brk] + 1]))
+        c = self.C["close"]
+        return bool(any((c[k] >= B) if sell else (c[k] <= B) for k in ks))
 
     def flip_scan(self, lv, target, closed_o, end_o):
         """#29 [T story-line-pt2@1779-1869: "the moment we tap on another daily key level before the zone we are
@@ -520,6 +545,7 @@ class _Ctx:
             "confirm_time": str(self.c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
             "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
             "stop_pips": round(risk / P, 1), "break_kind": kind, "rule": rule, "_busy": int(done_o),
+            "retrace": None if kind == "none" else self.retrace(sell, B, brk),
         }
         if inv == "ended_flip":
             _, fo, f, fB = fl
@@ -667,6 +693,6 @@ def current_tap(pair, h1, story, cfg=None):
             "pair": pair, "story": story, "side": "SELL" if sell else "BUY", "status": "TAPPED", "trend": tr,
             "level_kind": lv.kind, "level": lv.price, "B": B, "target": tg,
             "tap_time": str(X.o_start[bar])[:16], "bars_left": int(bar + cfg["max_wait"] - last),
-            "rule": "sweep_start" if lv.kind == "sweep" else "standard",
+            "rule": "sweep_start" if lv.kind == "sweep" else "standard", "level_time": X.level_time(lv, bar),
         }
     return None

@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS bias (
   no_trade_reason VARCHAR(64) NULL,                 -- why (e.g. "M/W conflict")
   rule          VARCHAR(32)  NULL,                  -- standard / sweep_start / flip / alignment / cadjpy (+overlap)
   end_reason    VARCHAR(200) NULL,                  -- why the story ended (target / invalidated / flip ...)
+  breakout_time DATETIME     NULL,                  -- UTC, open of the confirm-TF candle that broke point B
+  next_day      TINYINT(1)   NULL,                  -- Next Day Rule: 1 = breakout after the rejection candle closed
+  retrace       TINYINT(1)   NULL,                  -- 1 = closed back beyond B later on the breakout day (warning)
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)

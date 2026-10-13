@@ -5,6 +5,7 @@ Dependency-free on purpose (stdlib only): the web app imports it without pandas.
 must match slk.story.DEFAULT / slk.entry.DEFAULT (tests/test_settings.py checks this).
 """
 import re
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 PAIRS = ("EURUSD GBPUSD AUDUSD NZDUSD USDJPY USDCAD USDCHF EURGBP EURJPY EURAUD EURCAD EURCHF EURNZD "
          "GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDCHF AUDNZD NZDJPY NZDCAD NZDCHF CADJPY "
@@ -21,7 +22,7 @@ def _s(name, type_, default, group, help_, **kw):
 
 
 # type: bool ("on"/"off"), int, float, choice (one of choices), multi (subset of choices, CSV),
-# pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2,H1;W=D,H4;M=W,D")
+# pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2,H1;W=D,H4;M=W,D"), tz (IANA time zone name)
 SCHEMA = [
     _s("pairs", "pairs", "", "Markets", "Pairs the bot watches. Empty = all 28.", choices=PAIRS),
     _s("stories", "multi", "D,W,M", "Markets", "Story timeframes: Monthly, Weekly, Daily.",
@@ -64,6 +65,12 @@ SCHEMA = [
        "low (high) into a daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
        "H4 breakout, target the previous high (low) (cadjpy-bd@400-995). Kevin uses it: on. Off = H4 breakout "
        "always required."),
+    _s("next_day_rule", "choice", "flag", "Bias rules",
+       "Next Day Rule: the lower-TF breakout should come AFTER the rejection candle (e.g. the D tap candle) has "
+       "closed (story-line-pt3@1358-1401 'go to four hours after the close of this day'; qns-pt2@1946-1962). "
+       "flag = keep every story and mark it (alert shows Next Day Rule or same-day breakout); require = drop "
+       "stories whose breakout is inside the rejection candle. Same for M->W, W->D, D->H4.",
+       choices=["flag", "require"]),
     _s("entry_tfs", "ladder", "D=H4,H2,H1;W=D,H4;M=W,D", "Entry rules",
        "Entry timeframes per story, tried in this order (lower than the story TF)."),
     _s("continuation_entries", "bool", "on", "Entry rules",
@@ -80,6 +87,12 @@ SCHEMA = [
        "0 = no limit (default). Set a number to only accept a breakout within that many candles after the "
        "rejection candle (1 = 4th candle only). A close back through the line before it cancels the level.",
        min=0, max=100),
+    _s("entry_alignment", "choice", "d_h4", "Entry rules",
+       "Continuation entries (model A) only when the timeframes are in line. d_h4 = the confirmed story on the "
+       "origin TF ('daily reject daily') AND the last H4 structural break in the same direction (entry-4@1670-1690 "
+       "'daily and 4 hours they are in line'; entry3@696-818). w_d_h4 = also the last weekly break the same way "
+       "(weekly-recap@151-282). off = no check. QMR entries are not affected.",
+       choices=["d_h4", "w_d_h4", "off"]),
     _s("skip_first_retracement", "bool", "on", "Entry rules",
        "Ignore patterns formed before the top of the first retracement after the breakout."),
     _s("max_stop_pips", "float", "20", "Entry rules", "Wider stop = the pattern does not qualify.",
@@ -96,6 +109,13 @@ SCHEMA = [
     _s("alert_confirmed", "bool", "on", "Alerts", "Telegram when a story is confirmed."),
     _s("alert_ended", "bool", "on", "Alerts", "Telegram when a story hits target or is invalidated."),
     _s("alert_entry", "bool", "on", "Alerts", "Telegram on new / triggered entries."),
+    _s("early_breakout_alert", "bool", "off", "Alerts",
+       "Extra early message when a TAPPED story's lower-TF candle (H4 for a daily story) closes beyond point B "
+       "while the origin candle (the day) is still open: 'H4 breakout - waiting for the daily close'. Not a "
+       "confirmation (Kevin: cancel if the day does not close beyond it); sent once per story."),
+    _s("display_tz", "tz", "Africa/Lagos", "Alerts",
+       "Time zone for times in Telegram alerts (IANA name, e.g. Africa/Lagos, Europe/London, UTC). Each time says "
+       "whether it is a candle open or close."),
     _s("daily_summary", "bool", "on", "Alerts", "Daily bias summary after the 17:00 New York close."),
     _s("status_updates", "choice", "every_4h", "Alerts",
        "'Bot alive' message: time, pairs checked, active biases, pending entries, start delay, run time, errors. "
@@ -190,6 +210,15 @@ def clean(name, value):
         if t == "ladder":
             lad = _ladder(value)
             return ";".join(f"{k}={','.join(lad[k])}" for k in STORY_KEYS)
+        if t == "tz":
+            v = str(value).strip()
+            if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_+\-]*(/[A-Za-z0-9_+\-]+)*", v):
+                raise ValueError("must be an IANA time zone name like Africa/Lagos")
+            try:
+                ZoneInfo(v)
+            except (ZoneInfoNotFoundError, ValueError, OSError):
+                raise ValueError(f"unknown time zone '{v}'") from None
+            return v
     except (TypeError, ValueError) as e:
         raise ValueError(f"{name}: {e}") from None
     raise ValueError(f"{name}: unknown type {t}")
@@ -249,7 +278,7 @@ def story_cfg(vals):
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
                                  "max_retaps", "tap_tol_pips", "use_oc", "most_recent_level", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
-                                 "cadjpy_exception")}
+                                 "cadjpy_exception", "next_day_rule")}
 
 
 def entry_cfg(vals):
@@ -257,7 +286,8 @@ def entry_cfg(vals):
     return {"entry_tfs": {k: tuple(v) for k, v in vals["entry_tfs"].items()},
             "max_stop_pips": vals["max_stop_pips"], "tp1_min_rr": vals["tp1_rr"],
             "avoid_pairs": list(vals["avoid_pairs"]), "skip_first": vals["skip_first_retracement"],
-            "entry_models": list(vals["entry_models"]), "breakout_max_bars": vals["breakout_max_bars"]}
+            "entry_models": list(vals["entry_models"]), "breakout_max_bars": vals["breakout_max_bars"],
+            "alignment": vals["entry_alignment"]}
 
 
 def schema_json():

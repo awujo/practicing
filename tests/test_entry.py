@@ -44,7 +44,8 @@ def story_row(h1, **kw):
     return r
 
 
-H1ONLY = {"entry_tfs": {"D": ["H1"], "W": ["H1"], "M": ["H1"]}}
+# hand-built patterns test the pattern mechanics; the D/H4 alignment check (entry_alignment) is tested separately
+H1ONLY = {"entry_tfs": {"D": ["H1"], "W": ["H1"], "M": ["H1"]}, "alignment": "off"}
 
 
 def scenario(retest=True, second=False):

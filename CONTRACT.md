@@ -10,7 +10,8 @@ functions without updating callers; `slk.story.find_stories(pair, h1_df, story, 
 | `DATABASE_PASSWORD` | optional; used when `DATABASE_URL` has no password (whitespace stripped) |
 | `DATABASE_CA` | optional Aiven CA (path or PEM text) to verify the server cert |
 | `TELEGRAM_BOT_TOKEN` | bot token |
-| `TELEGRAM_CHAT_ID` | owner chat id (also the only Telegram user id allowed in the Mini App) |
+| `TELEGRAM_CHAT_ID` | owner chat id (also the only Telegram user id allowed in the Mini App and the only chat the bot answers; default 1410229777) |
+| `TELEGRAM_WEBHOOK_SECRET` | Render only: secret_token of the bot webhook `POST /telegram/webhook` (answers `/terms`); unset = webhook off |
 | `CTRADER_CLIENT_ID`, `CTRADER_CLIENT_SECRET` | Open API app (app "SLK" id 43716) |
 | `CTRADER_ACCESS_TOKEN`, `CTRADER_REFRESH_TOKEN`, `CTRADER_ACCOUNT_ID` | first values; refreshed tokens are stored in DB table `settings` |
 | `CTRADER_ENV` | `demo` (default) or `live` |
@@ -22,7 +23,9 @@ Never print secrets. Never commit them.
   (TAPPED/CONFIRMED/TARGET_HIT/INVALIDATED/ENDED_FLIP/CANCELLED), `level_kind`, `level`, `point_b`, `target`, `invalidation`,
   `tap_time`, `confirm_time`, `no_trade` (0/1; 1 = do not trade, e.g. D story while M and W disagree),
   `no_trade_reason` (e.g. `M/W conflict`), `rule` (standard / sweep_start / flip / alignment / cadjpy, `+overlap`),
-  `end_reason` (why the story ended), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
+  `end_reason` (why the story ended), `breakout_time` (UTC open of the confirm-TF candle that broke B),
+  `next_day` (1/0, NULL = no breakout or TAPPED: Next Day Rule), `retrace` (1 = closed back beyond B later on the
+  breakout day, warning only), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
   created on existing tables by `slk/db.py` `migrate()` (run by `apply_schema()`).
 - `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `model` (`continuation` | `qmr`, default
   `continuation`; added to existing tables by a guarded ALTER at the end of `db/schema.sql` and by `migrate()`),
@@ -38,15 +41,20 @@ Never print secrets. Never commit them.
     point B; internal breaks = entries only, except Kevin's CADJPY exception `cadjpy_exception`): `trend_filter`,
     `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
     (0-5), `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
-    (on/off, all on by default), `overlap_tol_pips` (0-20, default 3)
+    (on/off, all on by default), `overlap_tol_pips` (0-20, default 3), `next_day_rule` (`flag` (default) | `require`)
   - Entry rules: `continuation_entries` (on/off = all entry alerts), `entry_models` (`continuation,qmr`; at least one),
+    `entry_alignment` (`d_h4` (default) | `w_d_h4` | `off`: continuation entries only when D story + last H4 break
+    (+ last W break) agree; entry cfg key `alignment`),
     `breakout_max_bars` (1-12, default 5), `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)
   - Risk & trading: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.1-2)
-  - Alerts: `alert_tapped`, `alert_confirmed`, `alert_ended`, `alert_entry`, `daily_summary` (on/off),
+  - Alerts: `alert_tapped`, `alert_confirmed` (also the RETRACE follow-up), `alert_ended`, `alert_entry`,
+    `daily_summary` (on/off), `early_breakout_alert` (on/off, default off: "H4 breakout - waiting for the daily close",
+    never CONFIRMED), `display_tz` (type `tz`: IANA zone name checked with zoneinfo, default `Africa/Lagos`),
     `status_updates` (each_run | every_4h (default) | off: Telegram "bot alive" message with time, pairs checked,
     active biases, pending entries, start delay, run time, errors; errors always reported unless off)
-  - Internal (not in the form): `last_summary`, `last_status` (ISO UTC of the last status message), `weekend_done`
+  - Internal (not in the form): `early_alerts_sent` (JSON {"PAIR|story|tap_time": ISO sent}, dedupe of early
+    breakout alerts, pruned after 40 days), `last_summary`, `last_status` (ISO UTC of the last status message), `weekend_done`
     (NY date of the Friday close whose final weekend run is done), `ctrader_access_token`, `ctrader_refresh_token`,
     `ctrader_token_expiry`.
 - `runs` — `id`, `job`, `planned_at`, `started_at`, `finished_at`, `ok`, `note`.
