@@ -19,7 +19,7 @@ MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_
 
 def parse_url(url):
     """DATABASE_URL -> dict of connect kwargs (without ssl) plus 'ssl_mode'."""
-    u = urlparse(url)
+    u = urlparse(url.strip().strip('"').strip("'").strip())
     if u.scheme not in ("mysql", "mysql+pymysql"):
         raise ValueError("DATABASE_URL must start with mysql://")
     q = {k.lower().replace("_", "-"): v[0] for k, v in parse_qs(u.query).items()}
@@ -27,7 +27,7 @@ def parse_url(url):
         "host": u.hostname, "port": u.port or 3306,
         "user": unquote(u.username or ""),
         # a non-empty secret DATABASE_PASSWORD wins over the URL password (URL may hold a stale one)
-        "password": os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or ""),
+        "password": os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or "").strip(),
         "database": unquote((u.path or "/").lstrip("/")) or None,
         "ssl_mode": q.get("ssl-mode", "REQUIRED").upper(),
     }

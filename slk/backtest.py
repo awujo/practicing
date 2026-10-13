@@ -50,7 +50,11 @@ def mw_section(df, cfg):
 def pair_rows(pair, start, end, stories, cfg):
     """All story rows of one pair; D stories carry `no_trade` from the M/W filter (M and W are computed for it
     even when not requested, and then dropped)."""
-    h1 = store.hourly(pair, start, end)
+    try:
+        h1 = store.hourly(pair, start, end)
+    except RuntimeError as e:  # no candles for this pair (download refused): skip it, keep the other pairs
+        print(f"{pair}: skipped ({e})", flush=True)
+        return []
     h1 = h1[(h1.index.year >= start) & (h1.index.year <= end)]
     need = list(stories) + ([s for s in ("W", "M") if s not in stories] if "D" in stories else [])
     found = {st: find_stories(pair, h1, st, cfg) for st in need}

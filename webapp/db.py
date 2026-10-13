@@ -23,7 +23,7 @@ def _local_connect():
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise RuntimeError("DATABASE_URL not set")
-    u = urlparse(url)
+    u = urlparse(url.strip().strip('"').strip("'").strip())
     q = parse_qs(u.query)
     ssl_mode = (q.get("ssl-mode") or q.get("ssl_mode") or ["REQUIRED"])[0].upper()
     ssl = None if ssl_mode == "DISABLED" else {"ssl": {}}
@@ -31,7 +31,7 @@ def _local_connect():
         host=u.hostname,
         port=u.port or 3306,
         user=unquote(u.username or ""),
-        password=os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or ""),
+        password=os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or "").strip(),
         database=(u.path or "/").lstrip("/") or None,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,

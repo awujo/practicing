@@ -244,7 +244,7 @@ def hourly(pair, start_year, end_year, root=None, now=None):
     return df
 
 
-def months_all(pairs, start_year, end_year, threads=8, root=None, now=None):
+def months_all(pairs, start_year, end_year, threads=3, root=None, now=None):
     """Download missing month files for many pairs in parallel threads (before a backtest)."""
     def one(p):
         try:
@@ -256,7 +256,7 @@ def months_all(pairs, start_year, end_year, threads=8, root=None, now=None):
         list(ex.map(one, pairs))
 
 
-def backfill(pairs, start_year, now=None, threads=8, root=None):
+def backfill(pairs, start_year, now=None, threads=3, root=None):
     """All month files from start_year plus the current month for many pairs. Returns {pair: error}."""
     now = _utc(now)
     since = pd.Timestamp(start_year, 1, 1, tz="UTC")
@@ -270,7 +270,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Fill the candle store (python -m slk.store --start 2018)")
     ap.add_argument("--pairs", default="")
     ap.add_argument("--start", type=int, default=datetime.now(timezone.utc).year - 3)
-    ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--threads", type=int, default=3)  # Dukascopy answers 503 when hit harder
     a = ap.parse_args(argv)
     pairs = [x.strip().upper() for x in a.pairs.split(",") if x.strip()] or list(PAIRS)
     t = datetime.now()
