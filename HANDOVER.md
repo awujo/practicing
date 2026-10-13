@@ -34,7 +34,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] **Backtest results on real data** — run in progress (28 pairs, 2018–2025). Read `reports/REPORT.md` when committed.
 - [ ] **Live runner** — fails: Aiven `Access denied` → user must fix the password in GitHub secret `DATABASE_URL`.
 - [x] Code review done (`REVIEW.md`): 9 fixed (incl. look-ahead in story backtest, HTF filter now applied), 30 open.
-- [ ] **Default branch must be `claude-kevin-king`** (now `qwen-kevin-king`) or the hourly live job never runs (GitHub runs cron only on the default branch). User: Settings → General → Default branch.
+- [x] Default branch is `claude-kevin-king` (set 2026-10-13): hourly cron + manual Run buttons work.
 - [ ] Render deploy of Mini App (user: set branch + root dir + 2 env vars).
 - [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
 - [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts) and stored in
@@ -94,3 +94,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Simulated feed (0.1 s/file): download 29 s -> 1.1 s for 28 pairs. Also: `bias.no_trade(_reason)` (+ migration in
   `db.migrate`), backtest M/W filter + report section, `status_updates` setting, failure alert. Tests
   `tests/test_store.py`, `tests/test_efficiency.py`, `tests/test_speed.py`.
+
+- 2026-10-13: Default branch switched to claude-kevin-king. Mini App live on Render (opens in Telegram; DB 503 until DATABASE_PASSWORD set on Render). Backfill + backtest queued.
