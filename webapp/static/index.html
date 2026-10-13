@@ -45,22 +45,8 @@
     <section id="orders" hidden><div id="orders-list" class="list"></div></section>
 
     <section id="settings" hidden>
-      <form id="settings-form" class="card form">
-        <label class="row"><span>Kill switch</span>
-          <input type="checkbox" id="s-kill" class="switch"></label>
-        <p class="hint">On = no new orders are placed.</p>
-        <label class="row"><span>Auto trade</span>
-          <select id="s-auto"><option value="off">off</option><option value="confirm">confirm</option><option value="auto">auto</option></select></label>
-        <label class="row"><span>Risk % per trade</span>
-          <input type="number" id="s-risk" step="0.05" min="0.05" max="5" inputmode="decimal"></label>
-        <label class="col"><span>Pairs (comma separated)</span>
-          <textarea id="s-pairs" rows="3" autocapitalize="characters"></textarea></label>
-        <div class="col"><span>Stories</span>
-          <div class="chips">
-            <label><input type="checkbox" value="D" class="s-story"> Daily</label>
-            <label><input type="checkbox" value="W" class="s-story"> Weekly</label>
-            <label><input type="checkbox" value="M" class="s-story"> Monthly</label>
-          </div></div>
+      <form id="settings-form" class="form">
+        <div id="settings-fields" class="form"></div>
         <button type="submit" class="primary">Save</button>
       </form>
     </section>

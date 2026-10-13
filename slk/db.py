@@ -97,6 +97,11 @@ def get_setting(k, default=None):
     return rows[0]["v"] if rows and rows[0]["v"] is not None else default
 
 
+def get_settings():
+    """All rows of table `settings` as {k: v}."""
+    return {r["k"]: r["v"] for r in query("SELECT k, v FROM settings")}
+
+
 def set_setting(k, v):
     execute("INSERT INTO settings (k, v) VALUES (%s, %s) ON DUPLICATE KEY UPDATE v=VALUES(v)", (k, str(v)))
 

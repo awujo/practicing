@@ -202,6 +202,7 @@ def test_main_flow_with_fake_db(monkeypatch, capsys):
     monkeypatch.setattr(db, "start_run", lambda job, pl, st: runs.setdefault(1, {"job": job, "planned": pl, "started": st}) and 1)
     monkeypatch.setattr(db, "finish_run", lambda i, ok, note: runs[i].update(ok=ok, note=note))
     monkeypatch.setattr(db, "get_setting", lambda k, d=None: settings.get(k, d))
+    monkeypatch.setattr(db, "get_settings", lambda: dict(settings))
     monkeypatch.setattr(db, "set_setting", lambda k, v: settings.__setitem__(k, v))
     monkeypatch.setattr(db, "upsert_bias", lambda r: store.__setitem__((r["pair"], r["story"], r["tap_time"]), dict(r)))
     monkeypatch.setattr(db, "get_bias", lambda p, s=None: [r for k, r in store.items() if k[0] == p])

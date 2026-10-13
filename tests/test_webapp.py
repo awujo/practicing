@@ -126,3 +126,34 @@ def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
     assert len(stmts) == 6 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:5])
     assert stmts[5].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
+
+
+def test_settings_schema_endpoint(client):
+    r = client.get("/api/settings/schema", headers=hdr(make_init_data()))
+    assert r.status_code == 200
+    j = r.json()
+    assert j["groups"] == ["Markets", "Bias rules", "Entry rules", "Risk & trading", "Alerts"]
+    by = {s["name"]: s for s in j["settings"]}
+    assert by["confirm_break"]["choices"] == ["external", "external_or_sweep"]
+    assert "Internal break = continuation entries only" in by["confirm_break"]["help"]
+    assert by["max_wait"]["min"] == 1 and by["max_wait"]["max"] == 20 and len(by["pairs"]["choices"]) == 28
+    assert client.get("/api/settings/schema", headers=hdr(make_init_data(tamper=True))).status_code == 403
+
+
+def test_settings_get_defaults_and_post_validation(client):
+    client.store["max_wait"] = "junk"
+    r = client.get("/api/settings", headers=hdr(make_init_data())).json()
+    assert r["max_wait"] == "5" and r["confirm_break"] == "external" and r["alert_entry"] == "on"
+    assert r["auto_trade"] == "confirm" and r["entry_tfs"] == "D=H4,H2,H1;W=D,H4;M=W,D"
+    body = {"confirm_break": "external_or_sweep", "max_wait": 8, "trend_filter": False, "risk_pct": 1.5,
+            "entry_tfs": "D=H1", "continuation_entries": "off", "daily_summary": "off"}
+    r = client.post("/api/settings", json=body, headers=hdr(make_init_data()))
+    assert r.status_code == 200
+    s = client.store
+    assert s["confirm_break"] == "external_or_sweep" and s["max_wait"] == "8" and s["trend_filter"] == "off"
+    assert s["risk_pct"] == "1.5" and s["entry_tfs"] == "D=H1;W=D,H4;M=W,D" and s["continuation_entries"] == "off"
+    for bad in ({"max_wait": 99}, {"risk_pct": 3}, {"confirm_break": "internal"}, {"bogus": 1},
+                {"tap_tol_pips": "x"}):
+        r = client.post("/api/settings", json=bad, headers=hdr(make_init_data()))
+        assert r.status_code == 422, bad
+    assert s["max_wait"] == "8"

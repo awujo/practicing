@@ -4,18 +4,17 @@ import hmac
 import json
 import logging
 import os
-import re
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import parse_qsl
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Body, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 
-import db
+import db  # also puts the repo root on sys.path
+from slk import settings as S  # stdlib only (no pandas)
 
 log = logging.getLogger("slk.webapp")
 STATIC = Path(__file__).resolve().parent / "static"
@@ -23,8 +22,8 @@ MAX_AGE = 24 * 3600
 
 BIAS_STATUSES = {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "CANCELLED"}
 ACTIVE_BIAS = ("TAPPED", "CONFIRMED")
-PUBLIC_SETTINGS = ("kill_switch", "auto_trade", "risk_pct", "pairs", "stories")
-DEFAULTS = {"kill_switch": "off", "auto_trade": "off", "risk_pct": "0.5", "pairs": "", "stories": "D,W,M"}
+PUBLIC_SETTINGS = tuple(s["name"] for s in S.SCHEMA)
+DEFAULTS = dict(S.DEFAULTS)
 
 
 # ---------------------------------------------------------------- auth
@@ -174,50 +173,25 @@ def runs(limit: int = 30, user=Depends(require_user)):
     return rows
 
 
+@app.get("/api/settings/schema")
+def settings_schema(user=Depends(require_user)):
+    return S.schema_json()
+
+
 @app.get("/api/settings")
 def get_settings(user=Depends(require_user)):
-    stored = _db(db.get_settings)
-    return {k: stored.get(k, DEFAULTS[k]) for k in PUBLIC_SETTINGS}
+    return S.as_strings(_db(db.get_settings))
 
 
-class SettingsIn(BaseModel):
-    kill_switch: str | None = None
-    auto_trade: str | None = None
-    risk_pct: float | None = None
-    pairs: str | None = None
-    stories: str | None = None
-
-
-def clean_settings(s: SettingsIn) -> dict:
-    out = {}
-    if s.kill_switch is not None:
-        if s.kill_switch not in ("on", "off"):
-            raise HTTPException(422, "kill_switch must be on/off")
-        out["kill_switch"] = s.kill_switch
-    if s.auto_trade is not None:
-        if s.auto_trade not in ("off", "confirm", "auto"):
-            raise HTTPException(422, "auto_trade must be off/confirm/auto")
-        out["auto_trade"] = s.auto_trade
-    if s.risk_pct is not None:
-        if not (0 < s.risk_pct <= 5):
-            raise HTTPException(422, "risk_pct must be in (0, 5]")
-        out["risk_pct"] = f"{s.risk_pct:g}"
-    if s.pairs is not None:
-        pairs = [p.strip().upper() for p in re.split(r"[,\s]+", s.pairs) if p.strip()]
-        bad = [p for p in pairs if not re.fullmatch(r"[A-Z0-9]{3,12}", p)]
-        if bad:
-            raise HTTPException(422, f"bad pairs: {', '.join(bad)}")
-        out["pairs"] = ",".join(dict.fromkeys(pairs))
-    if s.stories is not None:
-        st = [x.strip().upper() for x in s.stories.split(",") if x.strip()]
-        if any(x not in ("D", "W", "M") for x in st):
-            raise HTTPException(422, "stories must be from D,W,M")
-        out["stories"] = ",".join(x for x in ("D", "W", "M") if x in st)
-    return out
+def clean_settings(body) -> dict:
+    try:
+        return S.clean_all(body)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from None
 
 
 @app.post("/api/settings")
-def post_settings(body: SettingsIn, user=Depends(require_user)):
+def post_settings(body: dict = Body(...), user=Depends(require_user)):
     changes = clean_settings(body)
     for k, v in changes.items():
         _db(db.set_setting, k, v)

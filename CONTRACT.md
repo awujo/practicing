@@ -25,12 +25,23 @@ Never print secrets. Never commit them.
   (PENDING/TRIGGERED/MISSED/CANCELLED), `created_at`, `alerted_at`.
 - `orders` — `id`, `entry_id`, `client_order_id` UNIQUE (idempotency), `ctrader_position_id`, `volume`, `status`,
   `opened_at`, `closed_at`, `pnl`.
-- `settings` — `k` PK, `v` TEXT. Keys: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.5),
-  `pairs` (CSV), `stories` (D,W,M), `ctrader_access_token`, `ctrader_refresh_token`, `ctrader_token_expiry`.
+- `settings` — `k` PK, `v` TEXT (numbers/bools as strings, bools `on`/`off`). Strategy keys are defined ONCE in
+  `slk/settings.py` (`SCHEMA`: name, type, default, min/max/choices, help; stdlib only), used by `slk/live.py`
+  (`build_cfg`, re-read every run; missing/invalid -> code default = Kevin's rules) and by the Mini App
+  (`GET /api/settings/schema`, `GET/POST /api/settings`, server-side validation):
+  - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M)
+  - Bias rules: `confirm_break` (external | external_or_sweep; external break = bias, internal break = entries
+    only), `trend_filter`, `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20),
+    `max_retaps` (0-10), `tap_tol_pips` (0-5)
+  - Entry rules: `continuation_entries`, `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
+    `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)
+  - Risk & trading: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.1-2)
+  - Alerts: `alert_tapped`, `alert_confirmed`, `alert_ended`, `alert_entry`, `daily_summary` (on/off)
+  - Internal (not in the form): `last_summary`, `ctrader_access_token`, `ctrader_refresh_token`, `ctrader_token_expiry`.
 - `runs` — `id`, `job`, `planned_at`, `started_at`, `finished_at`, `ok`, `note`.
 
 Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_setting(k, default)`,
-`set_setting(k, v)`), using PyMySQL.
+`get_settings()`, `set_setting(k, v)`), using PyMySQL.
 
 ## Layout
 - `slk/` engine (backtest, stories, entries) — `slk/live.py` live runner, `slk/entry.py` entry model

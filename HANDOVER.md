@@ -38,6 +38,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
 - [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts); `story.apply_mw_filter` + DEFAULT `mw_conflict_filter` for backtest (TODO: call it in slk/backtest.py scoring).
 - [x] Entry alerts wired into live runner: CONFIRMED tradable stories -> `slk.entry` (sim=False) -> table `entries` (PENDING/TRIGGERED/MISSED) + Telegram on new PENDING and on TRIGGERED ("confirm in Mini App" note when auto_trade=confirm).
+- [x] Strategy settable from the Mini App Settings tab (5 groups, help text per field) -> table `settings`, read by
+      `slk/live.py` every run (fallback = code defaults). Schema: `slk/settings.py` (CONTRACT.md lists the keys).
+      New story option `confirm_break` = external (default) | external_or_sweep (QM: wick sweep of B, then body
+      close beyond B confirms without the origin-bar close). No "internal" bias option: internal = entries only.
 - [ ] Top open review items: swing rule (fractal vs close-beyond), alternative story start.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
@@ -54,3 +58,6 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Fixed CI deps (`requirements-dev.txt`). Chat id default set. Live run blocked by Aiven password.
   User DB = `Claude-KK-SLK` (Qwen uses defaultdb). Review agent fixed 9 issues; old backtest reports invalid (look-ahead), rerun.
 - 2026-10-13: REVIEW #24 (M/W conflict -> NO_TRADE for D in live; backtest helper) and #11 (entries + entry alerts in live runner, `db.upsert_entry`/`get_entries`). `DATABASE_PASSWORD` env now wins over URL password (slk/db.py). Tests `tests/test_mw_entries.py`.
+- 2026-10-13: Settings from Mini App: `slk/settings.py` schema (stdlib only) -> `/api/settings/schema`, validated
+  `/api/settings`, dynamic grouped form; live runner builds story/entry cfg + pairs/stories/alert toggles from DB.
+  `story.DEFAULT["confirm_break"]` (external / external_or_sweep, `break_kind` in story dicts). Tests `tests/test_settings.py`.

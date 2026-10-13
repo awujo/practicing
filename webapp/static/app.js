@@ -104,31 +104,70 @@
     }).join("") : empty("No orders");
   }
 
-  // ---------------- Settings
+  // ---------------- Settings (form built from /api/settings/schema = slk/settings.py)
+  let schema = null;
+  const fid = (n) => `s-${n}`;
+  const csv = (v) => String(v || "").split(/[,\s;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
+  const ladder = (v) => Object.fromEntries(String(v || "").split(";").filter((p) => p.includes("="))
+    .map((p) => { const [k, tfs] = p.split("="); return [k.trim(), tfs.trim()]; }));
+
+  function renderField(s, v) {
+    const id = fid(s.name);
+    const label = s.name.replace(/_/g, " ");
+    let input;
+    if (s.type === "bool") {
+      return `<label class="row"><span>${esc(label)}</span><input type="checkbox" id="${id}" class="switch" ${v === "on" ? "checked" : ""}></label>
+        <p class="hint">${esc(s.help)}</p>`;
+    }
+    if (s.type === "choice") {
+      input = `<select id="${id}">${s.choices.map((c) => `<option ${c === v ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>`;
+    } else if (s.type === "int" || s.type === "float") {
+      const step = s.type === "int" ? 1 : s.max <= 5 ? 0.1 : 1;
+      input = `<input type="number" id="${id}" value="${esc(v)}" min="${s.min}" max="${s.max}" step="${step}" inputmode="decimal">`;
+    } else if (s.type === "multi" || s.type === "pairs") {
+      const on = new Set(csv(v));
+      const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(c) ? "checked" : ""}> ${esc(c)}</label>`).join("");
+      const extra = s.type === "pairs" ? `<input type="text" id="${id}-x" placeholder="other symbols, comma separated" autocapitalize="characters" value="${esc([...on].filter((x) => !s.choices.includes(x)).join(","))}">` : "";
+      return `<div class="col"><span>${esc(label)}</span><div class="chips">${chips}</div>${extra}</div><p class="hint">${esc(s.help)}</p>`;
+    } else if (s.type === "ladder") {
+      const l = ladder(v);
+      input = ["D", "W", "M"].map((k) => `<label class="row"><span>${k}</span><input type="text" id="${id}-${k}" value="${esc(l[k] || "")}" autocapitalize="characters"></label>`).join("");
+      return `<div class="col"><span>${esc(label)}</span>${input}</div><p class="hint">${esc(s.help)}</p>`;
+    } else {
+      input = `<input type="text" id="${id}" value="${esc(v)}">`;
+    }
+    return `<label class="row"><span>${esc(label)}</span>${input}</label><p class="hint">${esc(s.help)}</p>`;
+  }
+
+  function readField(s) {
+    const id = fid(s.name);
+    if (s.type === "bool") return $(`#${id}`).checked ? "on" : "off";
+    if (s.type === "multi" || s.type === "pairs") {
+      const v = [...document.querySelectorAll(`.${id}-c:checked`)].map((c) => c.value);
+      if (s.type === "pairs") v.push(...csv($(`#${id}-x`).value));
+      return v.join(",");
+    }
+    if (s.type === "ladder") return ["D", "W", "M"].map((k) => `${k}=${$(`#${id}-${k}`).value.trim()}`).filter((x) => !x.endsWith("=")).join(";");
+    return String($(`#${id}`).value).trim();
+  }
+
   async function loadSettings() {
+    if (!schema) schema = await api("/api/settings/schema");
     settings = await api("/api/settings");
-    $("#s-kill").checked = settings.kill_switch === "on";
-    $("#s-auto").value = settings.auto_trade;
-    $("#s-risk").value = settings.risk_pct;
-    $("#s-pairs").value = settings.pairs;
-    const st = (settings.stories || "").split(",");
-    document.querySelectorAll(".s-story").forEach((c) => { c.checked = st.includes(c.value); });
+    $("#settings-fields").innerHTML = schema.groups.map((g) => `
+      <fieldset class="card form"><legend>${esc(g)}</legend>
+        ${schema.settings.filter((s) => s.group === g).map((s) => renderField(s, settings[s.name])).join("")}
+      </fieldset>`).join("");
   }
 
   async function saveSettings(ev) {
     ev.preventDefault();
-    const body = {
-      kill_switch: $("#s-kill").checked ? "on" : "off",
-      auto_trade: $("#s-auto").value,
-      risk_pct: parseFloat($("#s-risk").value),
-      pairs: $("#s-pairs").value,
-      stories: [...document.querySelectorAll(".s-story:checked")].map((c) => c.value).join(","),
-    };
+    const body = Object.fromEntries(schema.settings.map((s) => [s.name, readField(s)]));
     try {
       settings = await api("/api/settings", { method: "POST", body: JSON.stringify(body) });
       await loadSettings();
       if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
-      msg("Settings saved");
+      msg("Settings saved. The live runner uses them from its next hourly run.");
     } catch (e) { msg(e.message, true); }
   }
 

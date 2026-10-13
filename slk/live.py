@@ -19,9 +19,11 @@ from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
+from . import settings as S
 from .backtest import PAIRS
 from .candles import _key, resample
 from .data import recent
+from .entry import DEFAULT as ENTRY_DEFAULT
 from .story import DEFAULT, STORIES, current_tap, find_stories, mw_conflict, pip
 
 JOB = "live"
@@ -201,16 +203,16 @@ def _bar(r):
 ENTRY_LIVE = ("PENDING", "TRIGGERED", "MISSED")
 
 
-def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None):
+def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None):
     """Entry rows (table `entries` shape) for CONFIRMED, tradable stories. bias_ids maps (story, tap_time)
-    to bias.id. `finder` defaults to slk.entry.find_entries (injectable for tests)."""
+    to bias.id. cfg = story cfg, ecfg = entry cfg. `finder` defaults to slk.entry.find_entries (injectable)."""
     if finder is None:
         from .entry import find_entries as finder
     src = [r for r in rows if r["status"] == "CONFIRMED" and not r.get("no_trade") and r.get("_story")]
     if not src:
         return []
     out = []
-    for r, e in zip(src, finder(pair, h1, [r["_story"] for r in src], None, cfg, sim=False)):
+    for r, e in zip(src, finder(pair, h1, [r["_story"] for r in src], ecfg, cfg, sim=False)):
         if e.get("status") not in ENTRY_LIVE:
             continue
         out.append({"bias_id": bias_ids.get((r["story"], r["tap_time"])), "pair": pair, "story": r["story"],
@@ -340,6 +342,33 @@ def send_telegram(text, token=None, chat=None):
     return ok
 
 
+# ------------------------------------------------------------------ settings (DB table `settings`)
+ALERT_KEY = {"TAPPED": "alert_tapped", "CONFIRMED": "alert_confirmed", "TARGET_HIT": "alert_ended",
+             "INVALIDATED": "alert_ended"}
+
+
+def build_cfg(stored=None, overrides=None):
+    """(story cfg, entry cfg, typed settings) from stored strings (slk/settings.py schema); anything missing
+    or invalid falls back to the code defaults (Kevin's rules). `overrides` (--cfg JSON) win over both."""
+    vals = S.load(stored)
+    cfg = {**DEFAULT, **S.story_cfg(vals), **(overrides or {})}
+    ecfg = {**ENTRY_DEFAULT, **S.entry_cfg(vals)}
+    return cfg, ecfg, vals
+
+
+def alerts_enabled(alerts, vals):
+    """Drop story alerts whose Telegram toggle is off."""
+    return [(ev, r) for ev, r in alerts if vals.get(ALERT_KEY.get(ev, ""), True)]
+
+
+def _load_settings(db):
+    try:
+        return db.get_settings()
+    except Exception as e:  # settings unreadable -> code defaults
+        print(f"settings read failed ({type(e).__name__}); using code defaults", flush=True)
+        return {}
+
+
 # ------------------------------------------------------------------ main
 def planned_time(now, event):
     """The cron slot (minute 7 of the hour) this run belongs to; for manual runs = start time."""
@@ -356,7 +385,8 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true", help="no DB, no Telegram; print results")
     ap.add_argument("--cfg", default="{}", help="JSON overrides of story.DEFAULT")
     a = ap.parse_args(argv)
-    cfg = {**DEFAULT, **json.loads(a.cfg)}
+    overrides = json.loads(a.cfg)
+    cfg, ecfg, vals = build_cfg({}, overrides)
     started = datetime.now(timezone.utc).replace(microsecond=0)
     naive = lambda t: t.replace(tzinfo=None)  # noqa: E731
 
@@ -369,7 +399,7 @@ def main(argv=None):
             for r in rows:
                 if r["status"] in ACTIVE and not (r.get("no_trade") and r["story"] == "D"):
                     print(format_alert(r["status"], r) + "\n")
-            for e in entry_rows(p, drop_forming(h1, "H1", started), rows, {}, cfg):
+            for e in entry_rows(p, drop_forming(h1, "H1", started), rows, {}, cfg, ecfg=ecfg):
                 print(format_entry_alert("ENTRY_" + e["status"], e) + "\n")
             print(summary_line(p, rows))
         return 0
@@ -390,11 +420,12 @@ def main(argv=None):
 
     errors, sent, by_pair = [], 0, {}
     try:
-        pairs = [p.strip().upper() for p in (a.pairs or db.get_setting("pairs") or ",".join(PAIRS)).split(",") if p.strip()]
-        stories = [s.strip().upper() for s in (a.stories or db.get_setting("stories") or "D,W,M").split(",")
-                   if s.strip().upper() in STORIES]
-        kill = db.get_setting("kill_switch", "off")
-        auto = db.get_setting("auto_trade", "off")
+        cfg, ecfg, vals = build_cfg(_load_settings(db), overrides)  # re-read every run
+        pairs = [p.strip().upper() for p in a.pairs.split(",") if p.strip()] if a.pairs else (vals["pairs"] or list(PAIRS))
+        stories = [s.strip().upper() for s in a.stories.split(",") if s.strip().upper() in STORIES] if a.stories \
+            else [s for s in vals["stories"] if s in STORIES]
+        kill = "on" if vals["kill_switch"] == "on" else "off"
+        auto = vals["auto_trade"]
         for p in pairs:
             try:
                 h1 = recent(p, HISTORY_DAYS)
@@ -404,22 +435,24 @@ def main(argv=None):
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
                     db.upsert_bias(r)
-                for ev, r in filter_alerts(alerts):
+                for ev, r in alerts_enabled(filter_alerts(alerts), vals):
                     sent += send_telegram(format_alert(ev, r))
                 by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
                 ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}
-                ew, ea = reconcile_entries(entry_rows(p, drop_forming(h1, "H1", now), new, ids, cfg),
-                                           db.get_entries(p))
+                ew, ea = [], []
+                if vals["continuation_entries"]:
+                    ew, ea = reconcile_entries(entry_rows(p, drop_forming(h1, "H1", now), new, ids, cfg,
+                                                          ecfg=ecfg), db.get_entries(p))
                 for e in ew:
                     db.upsert_entry(e)
-                for ev, e in ea:
+                for ev, e in ea if vals["alert_entry"] else []:
                     sent += send_telegram(format_entry_alert(ev, e, auto))
                 print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts, "
                       f"{len(ew)} entries written", flush=True)
             except Exception as e:  # one bad pair must not stop the others
                 errors.append(f"{p}: {type(e).__name__}: {e}")
                 traceback.print_exc()
-        if by_pair and summary_due(started, db.get_setting("last_summary")):
+        if by_pair and vals["daily_summary"] and summary_due(started, db.get_setting("last_summary")):
             if send_telegram(format_summary(started, by_pair, kill)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
                 db.set_setting("last_summary", _ts(started).tz_convert("America/New_York").strftime("%Y-%m-%d"))
     except Exception as e:

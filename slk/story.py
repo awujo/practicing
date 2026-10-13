@@ -22,7 +22,14 @@ DEFAULT = {
     "stop_buffer_pips": 2.0,
     "max_hold": 20,         # origin bars after confirmation
     "mw_conflict_filter": True,  # latest M and W stories point opposite ways -> D stories are NO_TRADE (§2)
+    # how the confirm TF must break point B (§2 step 5). External break = confirms direction (bias); internal
+    # breaks are for continuation entries only (slk/entry.py), never for the bias.
+    #   "external": confirm-TF body close beyond B (+ same_bar_close). Kevin's plain breakout.
+    #   "external_or_sweep": also a sweep + break (QM): a confirm-TF wick beyond B that closed back inside,
+    #   then a later body close beyond B confirms even when the origin bar does not close beyond B.
+    "confirm_break": "external",
 }
+CONFIRM_BREAKS = ("external", "external_or_sweep")
 
 
 def _side_at(stories, t):
@@ -57,8 +64,14 @@ def pip(pair):
     return 0.01 if pair.endswith("JPY") else 0.0001
 
 
+def _check_cfg(cfg):
+    if cfg["confirm_break"] not in CONFIRM_BREAKS:
+        raise ValueError(f"confirm_break must be one of {CONFIRM_BREAKS}")
+    return cfg
+
+
 def find_stories(pair, h1, story, cfg=None):
-    cfg = {**DEFAULT, **(cfg or {})}
+    cfg = _check_cfg({**DEFAULT, **(cfg or {})})
     otf, ctf = STORIES[story]
     ob, cb = resample(h1, otf), resample(h1, ctf)
     P = pip(pair)
@@ -138,7 +151,8 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
         return None
 
     last_o = min(bar + cfg["max_wait"], len(O["close"]) - 1)
-    retaps, k, brk = 0, k0, None
+    retaps, k, brk, swept, kind = 0, k0, None, False, "external"
+    sweep_ok = cfg["confirm_break"] == "external_or_sweep"
     while k < len(C["close"]) and c2o[k] <= last_o:
         oi = c2o[k]
         if oi > bar and k == np.searchsorted(c2o, oi, "left"):  # new origin bar starts: judge the previous one
@@ -152,18 +166,21 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
                         return None  # messy level
         if (C["close"][k] < B) if sell else (C["close"][k] > B):
             ok = (O["close"][oi] < B) if sell else (O["close"][oi] > B)
-            if not cfg["same_bar_close"] or ok:
+            if not cfg["same_bar_close"] or ok or (sweep_ok and swept):
                 brk = k
+                kind = "external" if (ok or not cfg["same_bar_close"]) else "sweep"
                 break
             k = np.searchsorted(c2o, oi, "right")  # cancelled for this day; try from the next one
             continue
+        if (C["low"][k] < B) if sell else (C["high"][k] > B):
+            swept = True  # wick beyond B, body closed back inside = sweep of B
         k += 1
     if brk is None:
         return None
 
     # confirmed when the breakout bar and the tap bar have closed, and (same_bar_close) the origin bar holding
     # the breakout too: its close beyond B was used above, so it must not be known earlier (no look-ahead)
-    need_end = o_end[c2o[brk]] if cfg["same_bar_close"] else o_end[bar]
+    need_end = o_end[c2o[brk]] if cfg["same_bar_close"] and kind == "external" else o_end[bar]
     conf_k = brk
     while conf_k + 1 < len(c_end) and c_end[conf_k] < need_end:
         conf_k += 1
@@ -215,7 +232,7 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
         "side": "SELL" if sell else "BUY", "B": B, "breakout_time": str(c_start[brk])[:16],
         "confirm_time": str(c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
         "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
-        "stop_pips": round(risk / P, 1), "_busy": int(done_o),
+        "stop_pips": round(risk / P, 1), "break_kind": kind, "_busy": int(done_o),
     }
 
 
@@ -224,7 +241,7 @@ def current_tap(pair, h1, story, cfg=None):
     out yet and is still within max_wait origin bars (STRATEGY §2 step 3, no-trade rule 1). Same rules as
     find_stories/_confirm. `h1` must end with closed bars only. Returns a dict (status 'TAPPED') or None.
     A tap that already broke out is find_stories' job, so None is returned for it."""
-    cfg = {**DEFAULT, **(cfg or {})}
+    cfg = _check_cfg({**DEFAULT, **(cfg or {})})
     otf, ctf = STORIES[story]
     ob, cb = resample(h1, otf), resample(h1, ctf)
     P = pip(pair)
@@ -276,13 +293,16 @@ def current_tap(pair, h1, story, cfg=None):
         if (sell and B >= lv.price) or (not sell and B <= lv.price):
             continue
 
-        state, retaps = "TAPPED", 0
+        state, retaps, swept = "TAPPED", 0, False
+        sweep_ok = cfg["confirm_break"] == "external_or_sweep"
         for oi in range(bar, last + 1):
             for k in range(max(k0, np.searchsorted(c2o, oi, "left")), np.searchsorted(c2o, oi, "right")):
                 if (C["close"][k] < B) if sell else (C["close"][k] > B):
                     ok = (O["close"][oi] < B) if sell else (O["close"][oi] > B)
-                    if not cfg["same_bar_close"] or ok:
+                    if not cfg["same_bar_close"] or ok or (sweep_ok and swept):
                         return None  # broke out: a confirmed story (or rejected by find_stories)
+                elif (C["low"][k] < B) if sell else (C["high"][k] > B):
+                    swept = True
             if oi > bar:
                 if (O["close"][oi] > lv.price) if sell else (O["close"][oi] < lv.price):
                     state = "INVALIDATED"
