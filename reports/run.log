@@ -1,0 +1,35 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/trading/trading/slk/backtest.py", line 83, in <module>
+    main()
+  File "/home/runner/work/trading/trading/slk/backtest.py", line 70, in main
+    h1 = hourly(pair, a.start, a.end)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 66, in hourly
+    rows = [r for chunk in ex.map(lambda ym: _month(pair, *ym), months) for r in chunk]
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 66, in <lambda>
+    rows = [r for chunk in ex.map(lambda ym: _month(pair, *ym), months) for r in chunk]
+                                             ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 40, in _month
+    raw = _get(URL.format(pair=pair, y=y, m=m - 1))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 36, in _get
+    raise RuntimeError(f"download failed: {url}")
+RuntimeError: download failed: https://datafeed.dukascopy.com/datafeed/EURUSD/2018/04/BID_candles_hour_1.bi5
+exit=1
