@@ -54,8 +54,8 @@
           ${field("Level", `${num(r.level)} ${r.level_kind || ""}`)}${field("Point B", num(r.point_b))}
           ${field("Target", num(r.target))}${field("Invalid", num(r.invalidation))}
           ${field("Tap", dt(r.tap_time))}${field("Confirm", dt(r.confirm_time))}
-          ${field("Updated", dt(r.updated_at))}
-        </div></div>`).join("") : empty("No stories");
+          ${field("Rule", r.rule || "standard")}${field("Updated", dt(r.updated_at))}
+        </div>${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}</div>`).join("") : empty("No stories");
   }
 
   // ---------------- Entries

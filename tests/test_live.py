@@ -130,7 +130,7 @@ def test_pair_state_statuses():
     h1 = walk(24 * 500, seed=2)
     now = h1.index[-1] + pd.Timedelta(hours=1)
     rows = pair_state("EURUSD", h1, now, ["D", "W"], DEFAULT)
-    assert rows and {r["status"] for r in rows} <= {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "CANCELLED"}
+    assert rows and {r["status"] for r in rows} <= {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "CANCELLED"}
     assert sum(r["status"] == "TAPPED" for r in rows) <= 2
     for r in rows:
         assert r["invalidation"] == r["level"] and isinstance(r["tap_time"], datetime)

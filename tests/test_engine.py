@@ -45,5 +45,5 @@ def test_stories_run():
     for st in ("D", "W"):
         rows = find_stories("EURUSD", h1, st)
         for r in rows:
-            assert r["stop_pips"] > 0 and r["outcome"] in ("win", "loss", "timeout")
+            assert r["stop_pips"] > 0 and r["outcome"] in ("win", "loss", "timeout", "flip")
     assert len(find_stories("EURUSD", h1, "D")) > 0

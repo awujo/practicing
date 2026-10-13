@@ -19,9 +19,10 @@ Never print secrets. Never commit them.
 
 ## Database (MySQL 8). Schema file: `db/schema.sql` (idempotent CREATE TABLE IF NOT EXISTS)
 - `bias` — one row per story: `id` PK, `pair`, `story` (M/W/D), `side` (BUY/SELL), `status`
-  (TAPPED/CONFIRMED/TARGET_HIT/INVALIDATED/CANCELLED), `level_kind`, `level`, `point_b`, `target`, `invalidation`,
+  (TAPPED/CONFIRMED/TARGET_HIT/INVALIDATED/ENDED_FLIP/CANCELLED), `level_kind`, `level`, `point_b`, `target`, `invalidation`,
   `tap_time`, `confirm_time`, `no_trade` (0/1; 1 = do not trade, e.g. D story while M and W disagree),
-  `no_trade_reason` (e.g. `M/W conflict`), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
+  `no_trade_reason` (e.g. `M/W conflict`), `rule` (standard / sweep_start / flip / alignment / cadjpy, `+overlap`),
+  `end_reason` (why the story ended), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
   created on existing tables by `slk/db.py` `migrate()` (run by `apply_schema()`).
 - `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `model` (`continuation` | `qmr`, default
   `continuation`; added to existing tables by a guarded ALTER at the end of `db/schema.sql` and by `migrate()`),
@@ -34,8 +35,10 @@ Never print secrets. Never commit them.
   (`GET /api/settings/schema`, `GET/POST /api/settings`, server-side validation):
   - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M; at least one)
   - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
-    point B; internal breaks = entries only): `trend_filter`, `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20),
-    `max_retaps` (0-10), `tap_tol_pips` (0-5)
+    point B; internal breaks = entries only, except Kevin's CADJPY exception `cadjpy_exception`): `trend_filter`,
+    `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
+    (0-5), `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
+    (on/off, all on by default), `overlap_tol_pips` (0-20, default 3)
   - Entry rules: `continuation_entries` (on/off = all entry alerts), `entry_models` (`continuation,qmr`; at least one),
     `breakout_max_bars` (1-12, default 5), `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)

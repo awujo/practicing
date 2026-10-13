@@ -35,7 +35,8 @@ JOB = "live"
 HISTORY_DAYS = 3 * 365 + 30       # enough months for M/W stories
 ALERT_WINDOW = timedelta(hours=36)  # a story first seen by the bot is announced only if this fresh
 ACTIVE = ("TAPPED", "CONFIRMED")
-ALERT_ON = ("TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED")
+ALERT_ON = ("TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP")
+STATUS_OF = {"target": "TARGET_HIT", "invalidated": "INVALIDATED", "ended_flip": "ENDED_FLIP"}  # engine -> bias
 BAR_LEN = {"H1": pd.Timedelta(hours=1), "H4": pd.Timedelta(hours=4), "D": pd.Timedelta(days=1),
            "W": pd.Timedelta(days=5)}  # a week closes Friday 17:00 New York (shifted Saturday 00:00)
 
@@ -82,10 +83,12 @@ def _dt(s):
 
 def to_row(s, status):
     return {"pair": s["pair"], "story": s["story"], "side": s["side"], "status": status,
-            "level_kind": s.get("level_kind"), "level": float(s["level"]), "point_b": float(s["B"]),
+            "level_kind": s.get("level_kind"), "level": float(s["level"]),
+            "point_b": None if s.get("B") is None else float(s["B"]),
             "target": None if s.get("target") is None else float(s["target"]),
             "invalidation": float(s["level"]), "tap_time": _dt(s["tap_time"]),
-            "confirm_time": _dt(s.get("confirm_time"))}
+            "confirm_time": _dt(s.get("confirm_time")), "rule": s.get("rule") or "standard",
+            "end_reason": s.get("end_reason") if status not in ACTIVE else None}
 
 
 def _beyond_target(row, bars):
@@ -157,7 +160,7 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
         rows = []
         found, t = engine_rows(pair, h, st, cfg, memo)
         for s in found:
-            status = {"target": "TARGET_HIT", "invalidated": "INVALIDATED"}.get(s["kevin_outcome"], "CONFIRMED")
+            status = STATUS_OF.get(s["kevin_outcome"], "CONFIRMED")
             r = to_row(s, status)
             r["_story"] = s  # raw engine story (breakout_time etc.) for the entry model; not stored
             if status == "CONFIRMED":
@@ -165,8 +168,10 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
                 since = int((pd.to_datetime(ob["start"]) >= _ts(r["confirm_time"])).sum())
                 if _beyond_target(r, h1[h1.index >= _ts(r["confirm_time"])]):
                     r["status"] = "TARGET_HIT"  # wick reached target in hours after the last closed origin bar
+                    r["end_reason"] = f"target {r['target']} reached"
                 elif since > cfg["max_hold"]:
                     r["status"] = "CANCELLED"   # held max_hold bars without an outcome
+                    r["end_reason"] = f"no outcome within {cfg['max_hold']} {otf} bars"
             rows.append(r)
         if t and not any(r["tap_time"] == _dt(t["tap_time"]) for r in rows) \
                 and not any(r["status"] == "CONFIRMED" for r in rows):
@@ -205,7 +210,7 @@ def filter_alerts(alerts):
 def _same(a, b):
     if bool(a.get("no_trade")) != bool(b.get("no_trade")):
         return False
-    for k in ("status", "side", "level_kind", "confirm_time"):
+    for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason"):
         if a.get(k) != b.get(k):
             return False
     for k in ("level", "point_b", "target", "invalidation"):
@@ -336,8 +341,27 @@ def fmt_time(t):
 
 STORY_NAME = {"D": "Daily", "W": "Weekly", "M": "Monthly"}
 HEAD = {"TAPPED": "TAPPED (waiting for breakout)", "CONFIRMED": "CONFIRMED", "TARGET_HIT": "TARGET HIT",
-        "INVALIDATED": "INVALIDATED"}
-KIND_NAME = {"A": "A-shape", "V": "V-shape", "OC": "open-close", "flip": "flipped level"}
+        "INVALIDATED": "INVALIDATED", "ENDED_FLIP": "ENDED EARLY (flip)"}
+KIND_NAME = {"A": "A-shape", "V": "V-shape", "OC": "open-close", "flip": "flipped level",
+             "align": "protected swing of the W+D+H4 alignment"}
+RULE_NAME = {"standard": "key level tap + {ctf} breakout", "sweep_start": "sweep of previous candle + {ctf} breakout",
+             "flip": "flip: previous story ended at this level + {ctf} breakout",
+             "alignment": "alignment: W break -> D break -> {ctf} break, same way",
+             "cadjpy": "CADJPY exception: W trend + D sweep into D open-close level, no {ctf} breakout needed"}
+
+
+def rule_name(r):
+    """Story rule in words, e.g. 'key level tap + H4 breakout, overlap with W level (TP at next key level)'."""
+    rule = str(r.get("rule") or "standard")
+    base, _, extra = rule.partition("+")
+    ctf = STORIES[r["story"]][1]
+    s = RULE_NAME.get(base, base).format(ctf=ctf)
+    if extra == "overlap":
+        s += f", overlap with {HIGHER_TF[r['story']]} level (TP at the next key level)"
+    return s
+
+
+HIGHER_TF = {"D": "W", "W": "M", "M": "-"}
 PERIOD = {"D": "day", "W": "week", "M": "month"}
 
 
@@ -359,7 +383,10 @@ def format_alert(event, r):
     lines = [f"BIAS | {p} | {STORY_NAME[r['story']]} story ({otf}->{ctf}) | {'BEARISH' if sell else 'BULLISH'} "
              f"({r['side']}) | {HEAD.get(event, event)}",
              f"Origin level {fp(r['level'])} ({level_name(r)})",
-             f"Point B {fp(r['point_b'])} ({ctf} body close {'below' if sell else 'above'} it confirms)",
+             f"Rule: {rule_name(r)}",
+             (f"No point B: confirmed by the {otf} close back {'below' if sell else 'above'} the level"
+              if str(r.get("rule") or "").startswith("cadjpy") else
+              f"Point B {fp(r['point_b'])} ({ctf} body close {'below' if sell else 'above'} it confirms)"),
              f"Target {fp(r['target'])}  Invalid if {otf} close {'above' if sell else 'below'} "
              f"{fp(r['invalidation'])}",
              f"Tap {fmt_time(r['tap_time'])}"]
@@ -373,6 +400,10 @@ def format_alert(event, r):
         lines.append("Status: bias confirmed. Not an entry: wait for an entry alert")
     else:
         lines.append(f"Status: story over ({HEAD.get(event, event)})")
+        if r.get("end_reason"):
+            lines.append(f"Reason: {r['end_reason']}")
+        if event == "ENDED_FLIP":
+            lines.append("The opposite story may start now: watch for its own alert")
     return "\n".join(lines)
 
 
@@ -384,6 +415,9 @@ def summary_line(pair, rows):
     parts = []
     for r in act:
         s = f"{r['story']} {r['side']}"
+        rule = str(r.get("rule") or "standard")
+        if rule not in ("standard", "sweep_start"):
+            s += f" [{rule}]"
         if r["status"] == "TAPPED":
             s += " tapped (NO_TRADE until breakout)"
         else:
@@ -431,7 +465,7 @@ def send_telegram(text, token=None, chat=None):
 
 # ------------------------------------------------------------------ settings (DB table `settings`)
 ALERT_KEY = {"TAPPED": "alert_tapped", "CONFIRMED": "alert_confirmed", "TARGET_HIT": "alert_ended",
-             "INVALIDATED": "alert_ended"}
+             "INVALIDATED": "alert_ended", "ENDED_FLIP": "alert_ended"}
 
 
 def build_cfg(stored=None, overrides=None):

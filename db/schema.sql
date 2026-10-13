@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS bias (
   pair          VARCHAR(16)  NOT NULL,
   story         CHAR(1)      NOT NULL,              -- M / W / D
   side          VARCHAR(4)   NOT NULL,              -- BUY / SELL
-  status        VARCHAR(16)  NOT NULL,              -- TAPPED / CONFIRMED / TARGET_HIT / INVALIDATED / CANCELLED
+  status        VARCHAR(16)  NOT NULL,              -- TAPPED / CONFIRMED / TARGET_HIT / INVALIDATED / ENDED_FLIP / CANCELLED
   level_kind    VARCHAR(8)   NULL,                  -- A / V / OC / flip
   level         DOUBLE       NULL,
   point_b       DOUBLE       NULL,
@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS bias (
   confirm_time  DATETIME     NULL,                  -- UTC
   no_trade      TINYINT(1)   NOT NULL DEFAULT 0,   -- 1 = do not trade (e.g. D story while M and W disagree)
   no_trade_reason VARCHAR(64) NULL,                 -- why (e.g. "M/W conflict")
+  rule          VARCHAR(32)  NULL,                  -- standard / sweep_start / flip / alignment / cadjpy (+overlap)
+  end_reason    VARCHAR(200) NULL,                  -- why the story ended (target / invalidated / flip ...)
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)

@@ -1,13 +1,25 @@
-"""The story line (bias): tap-reject-close on the origin TF, breakout of point B one TF lower. STRATEGY §2."""
+"""The story line (bias): tap-reject-close on the origin TF, breakout of point B one TF lower. STRATEGY §2.
+
+Rules built here (each story dict carries `rule`, and `end_reason` once it is over):
+  standard     key-level tap-reject-close + confirm-TF body close beyond point B (the external break)
+  sweep_start  the same after a wick sweep of the previous origin candle's high/low (no key level)
+  flip         a new story that started when the previous one ended early by a flip (#29)
+  alignment    W close beyond the last W swing -> D close beyond the last D swing -> H4 break, same way (#31b)
+  cadjpy       W trend + D sweep of the previous-day low/high INTO a D open-close level, close back: confirmed at
+               the D close without an H4 breakout (#31c)
+  "+overlap"   appended when the origin level is also a fresh higher-TF level rejected by a CLOSED higher-TF
+               candle (#31a): the take profit is the next key level ("we take our profit at this key level").
+"""
 import numpy as np
 import pandas as pd
 
 from .candles import resample
-from .levels import find_levels, run_levels, sweep_taps
+from .levels import Level, find_levels, run_levels, sweep_taps
 from .structure import SwingBook, pivots, structural_swings, swings, trend
 
 STORIES = {"M": ("M", "W"), "W": ("W", "D"), "D": ("D", "H4")}
 HIGHER = {"D": "W", "W": "M", "M": None}
+HIGHER_ALL = {"D": ("W", "M"), "W": ("M",), "M": ()}
 
 DEFAULT = {
     "level_pivot": 1,       # A/V must be a close-line turning point of this order
@@ -25,6 +37,14 @@ DEFAULT = {
     "mw_conflict_filter": True,  # latest M and W stories point opposite ways -> D stories are NO_TRADE (§2)
     "sweep_start": True,    # alternative start without a key level: wick sweep of the previous origin candle's
                             # high/low + close back inside [T story-line-pt3@1887-2010, pt4@1349-1500]
+    # --- REVIEW #26, #29, #30, #31 (STRATEGY v0.6) ---
+    "most_recent_level": True,  # #26 only the most recent fresh trend level formed before the tap counts
+    "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
+    "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
+    "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL
+    "overlap_tol_pips": 3.0,  # OUR CHOICE: two TF levels within this distance are "the same spot"
+    "alignment_start": True,  # #31b W BOS -> D BOS -> H4 BOS the same way = a D continuation story
+    "cadjpy_exception": True,  # #31c W trend + D sweep of the previous day low/high into a D OC level, close back
 }
 # Point B is broken only by an EXTERNAL break: a confirm-TF body close beyond B, the last opposite swing before
 # the first tap (+ same_bar_close). Kevin's two confirmations, "sweep and break" (advanced structure: sweep of
@@ -32,7 +52,9 @@ DEFAULT = {
 # beyond the last V/A before the tap [F frames_D story-line-pt2 sheet_001-021 + Corrections: "BMS" (sweep+break)
 # and "BO" are both a body close through the last A/V before the tap]; the sweep only
 # labels which one it was (story["break_kind"]). Internal breaks (BOS after the tap) never confirm the bias;
-# they are for continuation entries only (slk/entry.py). Deliberately no setting changes this.
+# they are for continuation entries only (slk/entry.py). Deliberately no setting changes this, except Kevin's own
+# CADJPY exception (#31c, `cadjpy_exception`) [T cadjpy-bd@940-995: "you really do not need to be waiting for this
+# breakout again ... the weekly is bullish and the daily just bullish and there's a very obvious target"].
 
 
 def _side_at(stories, t):
@@ -69,51 +91,29 @@ def pip(pair):
 
 def find_stories(pair, h1, story, cfg=None):
     cfg = {**DEFAULT, **(cfg or {})}
-    otf, ctf = STORIES[story]
-    ob, cb = resample(h1, otf), resample(h1, ctf)
-    P = pip(pair)
-    tol = cfg["tap_tol_pips"] * P
-    levels = run_levels(ob, find_levels(ob, cfg), tol)
-    opiv, cpiv = _structure(ob, cfg), pivots(cb["close"], cfg["b_pivot"])
-    htf = HIGHER[story]
-    hb = resample(h1, htf) if htf else None
-    hpiv = _structure(hb, cfg) if htf else None
-
-    O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
-    C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
-    o_start, o_end = ob["start"].to_numpy(), ob["end"].to_numpy()
-    c_start, c_end = cb["start"].to_numpy(), cb["end"].to_numpy()
-    c2o = np.searchsorted(o_start, c_start, side="right") - 1  # origin bar holding each confirm bar
-    X = _Ctx(O, c2o, opiv, cpiv, hb, hpiv, levels)
-
-    taps = _taps(levels, ob, cfg)
-
-    rows, busy_until = [], -1
-    for bar in sorted(taps):
+    X = _Ctx(pair, h1, story, cfg)
+    aligns = X.align_starts() if cfg["alignment_start"] and story == "D" else {}
+    rows, busy_until, forced = [], -1, {}
+    for bar in sorted(set(X.taps) | set(aligns)):
         if bar <= busy_until or bar < 2:
             continue
-        tr = trend(X.osw.at(bar - 1), O["close"][bar - 1])
-        if cfg["trend_filter"]:
-            if tr == "range":
-                continue
-            cands = [lv for lv in taps[bar] if lv.side == ("sell" if tr == "down" else "buy")]
-        else:
-            cands = taps[bar]
-        if not cands:
-            continue
-        lv = _pick(cands)
-        h_tr = X.htf_trend(o_start[bar]) if htf else None
-        if cfg["htf_filter"] and _against(lv.side, h_tr):
-            continue
-        r = _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, X)
+        tr = trend(X.osw.at(bar - 1), X.O["close"][bar - 1])
+        r = None
+        if bar in forced:  # #29: the level that ended the previous story starts the opposite one
+            r = X.start(forced.pop(bar), bar, "flip", tr)
+        if r is None and bar in X.taps:
+            lv = X.choose(bar, tr)
+            if lv is not None:
+                r = X.start(lv, bar, "sweep_start" if lv.kind == "sweep" else "standard", tr)
+        if r is None and bar in aligns:
+            r = X.start(aligns[bar], bar, "alignment", tr)
         if r is None:
             continue
-        r.update(pair=pair, story=story, trend=tr, level_kind=lv.kind, level=lv.price,
-                 tap_time=str(o_start[bar])[:16])
-        if htf:
-            r["htf_trend"] = h_tr
         rows.append(r)
         busy_until = r.pop("_busy")
+        fl = r.pop("_flip", None)
+        if fl is not None:
+            forced[fl[0]] = fl[1]
     return rows
 
 
@@ -159,131 +159,398 @@ def _htf_trend(hb, hpiv, t):
     return trend(swings(hpiv, hi), hb["close"].iat[hi]) if hi >= 2 else "range"
 
 
-class _Ctx:
-    """Per-call caches (speed only, same results): swing lists by `upto`, HTF arrays, first event bar of each
-    level, first/last confirm bar of each origin bar."""
+def _against(side, htf_trend):
+    return (side == "sell" and htf_trend == "up") or (side == "buy" and htf_trend == "down")
 
-    def __init__(self, O, c2o, opiv, cpiv, hb, hpiv, levels):
-        self.osw, self.csw = SwingBook(opiv), SwingBook(cpiv)
-        if hb is not None:
-            self.h_start, self.h_close, self.hsw = hb["start"].to_numpy(), hb["close"].to_numpy(), SwingBook(hpiv)
-        n = len(O["close"])
-        self.first_k = np.searchsorted(c2o, np.arange(n + 1), "left")  # first confirm bar of origin bar i
+
+def _r(x):
+    return None if x is None else round(float(x), 5)
+
+
+class _LevelSet:
+    """Key levels of one timeframe with fast 'fresh at bar i' lookups."""
+
+    def __init__(self, bars, levels):
+        self.start, self.end = bars["start"].to_numpy(), bars["end"].to_numpy()
         self.levels = levels
-        self.lv_buy = np.array([lv.side == "buy" for lv in levels], dtype=bool)
-        self.lv_born = np.array([lv.born for lv in levels], dtype=np.int64)
-        self.lv_first = np.array([lv.events[0][0] if lv.events else np.iinfo(np.int64).max for lv in levels],
-                                 dtype=np.int64)
+        self.buy = np.array([lv.side == "buy" for lv in levels], dtype=bool)
+        self.born = np.array([lv.born for lv in levels], dtype=np.int64)
+        self.first = np.array([lv.events[0][0] if lv.events else np.iinfo(np.int64).max for lv in levels],
+                              dtype=np.int64)
 
+    def fresh_prices(self, buy, upto):
+        """Prices of levels of this side born by bar `upto` with no event (tap/break) up to that bar, in order."""
+        m = (self.buy == buy) & (self.born <= upto) & (self.first > upto)
+        return [self.levels[i].price for i in np.flatnonzero(m)]
+
+    def closed_upto(self, t):
+        """Index of the last bar of this TF closed at time t (-1 if none)."""
+        return int(np.searchsorted(self.end, t, "right")) - 1
+
+
+class _Ctx:
+    """Everything one story run needs (bars, levels, swings, caches). Speed caches give the same results as the
+    plain loops: swing lists by `upto`, first event bar of each level, first confirm bar of each origin bar."""
+
+    def __init__(self, pair, h1, story, cfg):
+        self.cfg, self.story, self.pair = cfg, story, pair
+        otf, ctf = STORIES[story]
+        self.otf, self.ctf = otf, ctf
+        ob, cb = resample(h1, otf), resample(h1, ctf)
+        self.P = pip(pair)
+        self.tol = cfg["tap_tol_pips"] * self.P
+        self.levels = run_levels(ob, find_levels(ob, cfg), self.tol)
+        self.lv = _LevelSet(ob, self.levels)
+        self.osw, self.csw = SwingBook(_structure(ob, cfg)), SwingBook(pivots(cb["close"], cfg["b_pivot"]))
+        self.O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
+        self.C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
+        self.o_start, self.o_end = ob["start"].to_numpy(), ob["end"].to_numpy()
+        self.c_start, self.c_end = cb["start"].to_numpy(), cb["end"].to_numpy()
+        self.c2o = np.searchsorted(self.o_start, self.c_start, side="right") - 1  # origin bar of each confirm bar
+        n = len(self.O["close"])
+        self.first_k = np.searchsorted(self.c2o, np.arange(n + 1), "left")  # first confirm bar of origin bar i
+        self.htf = HIGHER[story]
+        self.hb = resample(h1, self.htf) if self.htf else None
+        if self.htf:
+            self.h_start, self.h_close = self.hb["start"].to_numpy(), self.hb["close"].to_numpy()
+            self.hsw = SwingBook(_structure(self.hb, cfg))
+        self.higher = []  # [(tf, _LevelSet)] next higher TF first
+        if cfg["htf_targets"] or cfg["overlap_rule"]:
+            for tf in HIGHER_ALL[story]:
+                hb = self.hb if tf == self.htf else resample(h1, tf)
+                self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol))))
+        self.taps = _taps(self.levels, ob, cfg)
+
+    # ------------------------------------------------------------------ choosing the start
     def htf_trend(self, t):
         """= _htf_trend(hb, hpiv, t)."""
         hi = np.searchsorted(self.h_start, t, side="right") - 2
         return trend(self.hsw.at(hi), self.h_close[hi]) if hi >= 2 else "range"
 
-    def fresh_prices(self, buy, upto):
-        """Prices of levels of this side born by bar `upto` with no event (tap/break) up to that bar, in order."""
-        m = (self.lv_buy == buy) & (self.lv_born <= upto) & (self.lv_first > upto)
-        return [self.levels[i].price for i in np.flatnonzero(m)]
+    def most_recent_ok(self, lv, bar):
+        """#26 [T story-line-pt2@897-1000: "you place your mark at the most recent one ... the nearest fresh key
+        level ... we just remove everything and mark that last one"; F story-line-pt2/sheet_013-016 (CADJPY: three
+        candidate levels, the most recent fresh one kept, the stale ones removed)]: the tapped level must be the most
+        recent fresh level of its side that existed BEFORE the tap (born <= tap bar, untouched before it). An older
+        level tapped while a newer fresh one exists is ignored; levels formed after the tap never count."""
+        if lv.kind in ("sweep", "align"):
+            return True
+        L = self.lv
+        m = (L.buy == (lv.side == "buy")) & (L.born <= bar) & (L.first >= bar)
+        return not m.any() or lv.born >= L.born[m].max()
 
+    def choose(self, bar, tr):
+        """Level tapped on `bar` that starts a story (trend filter, most recent fresh level), or None."""
+        cfg = self.cfg
+        if cfg["trend_filter"]:
+            if tr == "range":
+                return None
+            cands = [lv for lv in self.taps[bar] if lv.side == ("sell" if tr == "down" else "buy")]
+        else:
+            cands = self.taps[bar]
+        if not cands:
+            return None
+        lv = _pick(cands)
+        if cfg["most_recent_level"] and not self.most_recent_ok(lv, bar):
+            sw = [x for x in cands if x.kind == "sweep"]  # a stale level is no key level: the sweep start may apply
+            return sw[0] if sw else None
+        return lv
 
-def _against(side, htf_trend):
-    return (side == "sell" and htf_trend == "up") or (side == "buy" and htf_trend == "down")
+    def cadjpy(self, lv, bar, h_tr):
+        """#31c CADJPY exception [T cadjpy-bd@400-760 ("price did a sweep of previous day low into the daily open
+        close level, when we are already bullish on the weekly ... direction is confirmed"), 940-995 ("you really do
+        not need to be waiting for this breakout again"); F cadjpy-bd/sheet_008-009 (short line ~113.2 on the open-
+        close level, next candle wicks below the previous day low and closes above, line "target" 114.466 drawn at
+        once)]: D story, higher-TF (W) trend in the story direction, the tap candle's wick sweeps the previous day's
+        low (high for a sell) INTO a D open-close level (or the flipped zone, as in his example) and the candle
+        closes back above the previous low and the level. Confirmed at that D close, no H4 breakout needed."""
+        if not self.cfg["cadjpy_exception"] or self.story != "D" or lv.kind not in ("OC", "flip") or bar < 1:
+            return False
+        O = self.O
+        if lv.side == "buy":
+            return h_tr == "up" and O["low"][bar] < O["low"][bar - 1] and O["close"][bar] > O["low"][bar - 1]
+        return h_tr == "down" and O["high"][bar] > O["high"][bar - 1] and O["close"][bar] < O["high"][bar - 1]
 
+    def overlap(self, lv, bar, t_conf):
+        """#31a [T all-in-1@1424-1620 ("two timeframes overlap ... weekly and daily are using exactly this key level
+        ... it becomes daily reject daily ... we go to four hours for break out ... instead of swing it to here, we
+        take our profit at this key level"); F all-in-1/sheet_020-026 (EURGBP: weekly V = daily V ~0.8657, TP at the
+        next KL 0.8722); F cadjpy-bd/sheet_014-017 + T cadjpy-bd@811-905 ("for it to overlap it needs to be on the
+        same spot ... must be on a fresh level"); T qns-pt2 / F qns-pt2 (a weekly tap is judged after the weekly
+        close)]: the origin level is also a fresh level of the next higher TF (within overlap_tol_pips, same side),
+        that higher-TF candle tapped it (first touch) and has CLOSED back on the rejection side by confirmation."""
+        if not self.cfg["overlap_rule"] or not self.higher or lv.kind in ("sweep", "align"):
+            return False
+        _, H = self.higher[0]
+        hi = int(np.searchsorted(H.start, self.o_start[bar], "right")) - 1
+        if hi < 0 or H.end[hi] > t_conf:
+            return False  # the higher-TF candle is still open: judged only after its close
+        tol = self.cfg["overlap_tol_pips"] * self.P
+        for L in H.levels:
+            if (L.side == lv.side and abs(L.price - lv.price) <= tol and L.events and L.events[0][0] == hi
+                    and L.events[0][1] == "tap"):
+                return True
+        return False
 
-def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, X):
-    sell = lv.side == "sell"
-    tol = cfg["tap_tol_pips"] * P
-    # first confirm-TF bar inside the tap bar that touched the level = "price first tapped"
-    ks = np.arange(X.first_k[bar], X.first_k[bar + 1])
-    if not len(ks):
-        return None
-    touch = [k for k in ks if (C["high"][k] >= lv.price - tol if sell else C["low"][k] <= lv.price + tol)]
-    k0 = touch[0] if touch else ks[0]
-    sw = X.csw.at(k0)
-    B = _point_b(sw, k0, sell)
-    if B is None:
-        return None
-    if (sell and B >= lv.price) or (not sell and B <= lv.price):
-        return None
+    # ------------------------------------------------------------------ confirmation
+    def break_search(self, lv, bar):
+        """Point B before the first touch and the external break of it (same rules as before #26-#31).
+        Returns (k0, B, swings at k0, breakout confirm-bar index) or None."""
+        cfg, O, C, c2o = self.cfg, self.O, self.C, self.c2o
+        sell = lv.side == "sell"
+        tol = self.tol
+        # first confirm-TF bar inside the tap bar that touched the level = "price first tapped"
+        ks = np.arange(self.first_k[bar], self.first_k[bar + 1])
+        if not len(ks):
+            return None
+        touch = [k for k in ks if (C["high"][k] >= lv.price - tol if sell else C["low"][k] <= lv.price + tol)]
+        k0 = touch[0] if touch else ks[0]
+        sw = self.csw.at(k0)
+        B = _point_b(sw, k0, sell)
+        if B is None:
+            return None
+        if (sell and B >= lv.price) or (not sell and B <= lv.price):
+            return None
+        last_o = min(bar + cfg["max_wait"], len(O["close"]) - 1)
+        retaps, k, brk = 0, k0, None
+        while k < len(C["close"]) and c2o[k] <= last_o:
+            oi = c2o[k]
+            if oi > bar and k == self.first_k[oi]:  # new origin bar starts: judge the previous one
+                prev = oi - 1
+                if prev > bar:
+                    if (O["close"][prev] > lv.price) if sell else (O["close"][prev] < lv.price):
+                        return None  # body close through the origin level before breakout: invalid
+                    if (O["high"][prev] >= lv.price - tol) if sell else (O["low"][prev] <= lv.price + tol):
+                        retaps += 1
+                        if retaps > cfg["max_retaps"]:
+                            return None  # messy level
+            if (C["close"][k] < B) if sell else (C["close"][k] > B):
+                ok = (O["close"][oi] < B) if sell else (O["close"][oi] > B)
+                if not cfg["same_bar_close"] or ok:
+                    brk = k
+                    break
+                k = self.first_k[oi + 1]  # cancelled for this day; try from the next one
+                continue
+            k += 1
+        if brk is None:
+            return None
+        return k0, B, sw, brk
 
-    last_o = min(bar + cfg["max_wait"], len(O["close"]) - 1)
-    retaps, k, brk = 0, k0, None
-    while k < len(C["close"]) and c2o[k] <= last_o:
-        oi = c2o[k]
-        if oi > bar and k == X.first_k[oi]:  # new origin bar starts: judge the previous one
-            prev = oi - 1
-            if prev > bar:
-                if (O["close"][prev] > lv.price) if sell else (O["close"][prev] < lv.price):
-                    return None  # body close through the origin level before breakout: invalid
-                if (O["high"][prev] >= lv.price - tol) if sell else (O["low"][prev] <= lv.price + tol):
-                    retaps += 1
-                    if retaps > cfg["max_retaps"]:
-                        return None  # messy level
-        if (C["close"][k] < B) if sell else (C["close"][k] > B):
-            ok = (O["close"][oi] < B) if sell else (O["close"][oi] > B)
-            if not cfg["same_bar_close"] or ok:
-                brk = k
+    def conf_index(self, brk, bar):
+        """Confirm-TF bar at whose close the story is known: the breakout bar and the tap bar have closed, and
+        (same_bar_close) the origin bar holding the breakout too: its close beyond B was used (no look-ahead)."""
+        c_end = self.c_end
+        need_end = self.o_end[self.c2o[brk]] if self.cfg["same_bar_close"] else self.o_end[bar]
+        k = brk
+        while k + 1 < len(c_end) and c_end[k] < need_end:
+            k += 1
+        return k
+
+    def target(self, sell, closed_o, t, ref, mode="nearest"):
+        """#30 [T story-line@648 (monthly story -> next monthly fresh level), story-line-pt2@1914-1968; F story-line-
+        pt2/sheet_025-028 (CADJPY TP = previous D high 114.65); T class-wrok@480-620 (H4 story on a level shared
+        with D: TP at the next H4 level, never swung past the stronger opposing daily zone)]: nearest of the
+        opposite fresh key levels of the origin TF and every HIGHER TF (each as of its last closed bar), and the
+        origin-TF structural swings (ERL). Nearest = the TP is capped at the next level of the weaker TF.
+        mode 'kl' (overlap): next key level, ERL only if none; mode 'erl' (CADJPY "previous high"): ERL first."""
+        kls = self.lv.fresh_prices(sell, closed_o)  # opposite side: buy levels for a sell
+        if self.cfg["htf_targets"]:
+            for _, H in self.higher:
+                kls += H.fresh_prices(sell, H.closed_upto(t))
+        erl = [s[2] for s in self.osw.at(closed_o) if s[1] == ("L" if sell else "H")]
+        beyond = lambda xs: [x for x in xs if (x < ref if sell else x > ref)]  # noqa: E731
+        near = lambda xs: (max(xs) if sell else min(xs)) if xs else None  # noqa: E731
+        kls, erl = beyond(kls), beyond(erl)
+        if mode == "kl" and kls:
+            return near(kls)
+        if mode == "erl" and erl:
+            return near(erl)
+        return near(kls + erl)
+
+    def start(self, src, bar, rule, tr):
+        """One story from a tap/sweep/alignment start on origin bar `bar` (None if it never confirms)."""
+        cfg = self.cfg
+        lv, pre = (src[0], src[1:]) if isinstance(src, tuple) else (src, None)
+        h_tr = self.htf_trend(self.o_start[bar]) if self.htf else None
+        if cfg["htf_filter"] and _against(lv.side, h_tr):
+            return None
+        if pre is not None:  # alignment: B and breakout found by align_starts
+            B, brk = pre
+            kind = "breakout"
+        elif rule == "standard" and self.cadjpy(lv, bar, h_tr):
+            rule, B, brk, kind = "cadjpy", lv.price, int(self.first_k[bar + 1]) - 1, "none"
+            if brk < self.first_k[bar]:
+                return None
+        else:
+            b = self.break_search(lv, bar)
+            if b is None:
+                return None
+            k0, B, sw, brk = b
+            kind = _break_kind(lv.side == "sell", sw, k0, brk, self.C)
+        r = self.finish(lv, bar, B, brk, kind, rule)
+        if r is None:
+            return None
+        r.update(pair=self.pair, story=self.story, trend=tr, level_kind=lv.kind, level=lv.price,
+                 tap_time=str(self.o_start[bar])[:16])
+        if self.htf:
+            r["htf_trend"] = h_tr
+        return r
+
+    def flip_scan(self, lv, target, closed_o, end_o):
+        """#29 [T story-line-pt2@1779-1869: "the moment we tap on another daily key level before the zone we are
+        expecting price to come into, the moment price closes below it and then gives us a breakout in four hours,
+        it means that that daily has flipped"; "if we don't get a rejection and a breakout to the downside ... we are
+        still bullish"; F story-line-pt2/sheet_023 (CADJPY D: levels 113.946 / 113.49 between the origin 112.903 and
+        the target ~114.65, sketch of a rejection there and a drop)]: the earliest opposite fresh origin-TF key level
+        between the origin level and the target, tapped-rejected-closed after the confirmation, whose own point B
+        then breaks on the confirm TF (same external-break rules). Returns (conf index, tap bar, level, B) or None."""
+        sell = lv.side == "sell"
+        best = None
+        for o in range(closed_o + 1, end_o + 1):
+            for f in self.taps.get(o, ()):
+                if f.kind == "sweep" or (f.side == "sell") == sell:
+                    continue
+                if not ((target < f.price < lv.price) if sell else (lv.price < f.price < target)):
+                    continue  # not on the way to the target
+                b = self.break_search(f, o)
+                if b is None:
+                    continue
+                ck = self.conf_index(b[3], o)
+                if best is None or (ck, -f.born) < (best[0], -best[2].born):  # earliest; then most recent level
+                    best = (ck, o, f, b[1])
+        return best
+
+    def finish(self, lv, bar, B, brk, kind, rule):
+        cfg, O, C, c2o, P = self.cfg, self.O, self.C, self.c2o, self.P
+        sell = lv.side == "sell"
+        conf_k = self.conf_index(brk, bar)
+        ref = C["close"][conf_k]
+        conf_o = c2o[conf_k]
+        t_conf = self.c_end[conf_k]
+        closed_o = int(np.searchsorted(self.o_end, t_conf, "right")) - 1  # last origin bar closed at confirmation
+
+        if self.overlap(lv, bar, t_conf):
+            rule += "+overlap"
+            target = self.target(sell, closed_o, t_conf, ref, "kl")
+        else:
+            target = self.target(sell, closed_o, t_conf, ref, "erl" if rule == "cadjpy" else "nearest")
+        if target is None:
+            return None
+        stop = (O["high"][bar] + cfg["stop_buffer_pips"] * P) if sell else (O["low"][bar] - cfg["stop_buffer_pips"] * P)
+        risk = (stop - ref) if sell else (ref - stop)
+        if risk <= 0:
+            return None
+        R = abs(target - ref) / risk
+
+        # outcome A (trade): target vs stop on confirm-TF bars. Outcome B (Kevin): target vs origin close through
+        # level, or the story ends early by a flip (#29)
+        end_o = min(conf_o + cfg["max_hold"], len(O["close"]) - 1)
+        fl = self.flip_scan(lv, target, closed_o, end_o) if cfg["flip_end"] else None
+        flip_k = fl[0] if fl else None
+        out, res, inv, exit_k, inv_k = "timeout", None, "open", None, None
+        k = conf_k + 1
+        while k < len(C["close"]) and c2o[k] <= end_o:
+            hit_stop = C["high"][k] >= stop if sell else C["low"][k] <= stop
+            hit_tgt = C["low"][k] <= target if sell else C["high"][k] >= target
+            if out == "timeout":
+                if hit_stop:
+                    out, res, exit_k = "loss", -1.0, k
+                elif hit_tgt:
+                    out, res, exit_k = "win", R, k
+            if inv == "open":
+                if hit_tgt:
+                    inv, inv_k = "target", k
+                elif k == self.first_k[c2o[k] + 1] - 1 and ((O["close"][c2o[k]] > lv.price) if sell else (O["close"][c2o[k]] < lv.price)):
+                    inv, inv_k = "invalidated", k
+            if k == flip_k:
+                if inv == "open":
+                    inv, inv_k = "ended_flip", k
+                if out == "timeout":  # the trade is closed when the story ends
+                    out, exit_k = "flip", k
+                    res = ((ref - C["close"][k]) if sell else (C["close"][k] - ref)) / risk
+            if out != "timeout" and inv != "open":
                 break
-            k = X.first_k[oi + 1]  # cancelled for this day; try from the next one
-            continue
-        k += 1
-    if brk is None:
-        return None
-    kind = _break_kind(sell, sw, k0, brk, C)
-
-    # confirmed when the breakout bar and the tap bar have closed, and (same_bar_close) the origin bar holding
-    # the breakout too: its close beyond B was used above, so it must not be known earlier (no look-ahead)
-    need_end = o_end[c2o[brk]] if cfg["same_bar_close"] else o_end[bar]
-    conf_k = brk
-    while conf_k + 1 < len(c_end) and c_end[conf_k] < need_end:
-        conf_k += 1
-    ref = C["close"][conf_k]
-    conf_o = c2o[conf_k]
-    closed_o = int(np.searchsorted(o_end, c_end[conf_k], "right")) - 1  # last origin bar closed at confirmation
-
-    # target: nearest opposite fresh level or origin-TF swing beyond the entry reference
-    cands = X.fresh_prices(sell, closed_o)  # opposite side: buy levels for a sell
-    cands += [s[2] for s in X.osw.at(closed_o) if s[1] == ("L" if sell else "H")]
-    cands = [x for x in cands if (x < ref if sell else x > ref)]
-    if not cands:
-        return None
-    target = max(cands) if sell else min(cands)
-    stop = (O["high"][bar] + cfg["stop_buffer_pips"] * P) if sell else (O["low"][bar] - cfg["stop_buffer_pips"] * P)
-    risk = (stop - ref) if sell else (ref - stop)
-    if risk <= 0:
-        return None
-    R = abs(target - ref) / risk
-
-    # outcome A (trade): target vs stop on confirm-TF bars. Outcome B (Kevin): target vs origin close through level
-    end_o = min(conf_o + cfg["max_hold"], len(O["close"]) - 1)
-    out, res, inv, exit_k = "timeout", None, "open", None
-    k = conf_k + 1
-    while k < len(C["close"]) and c2o[k] <= end_o:
-        hit_stop = C["high"][k] >= stop if sell else C["low"][k] <= stop
-        hit_tgt = C["low"][k] <= target if sell else C["high"][k] >= target
+            k += 1
+        last = min(k, len(C["close"])) - 1  # last bar inside the hold window (k is the first one past it)
         if out == "timeout":
-            if hit_stop:
-                out, res, exit_k = "loss", -1.0, k
-            elif hit_tgt:
-                out, res, exit_k = "win", R, k
-        if inv == "open":
-            if hit_tgt:
-                inv = "target"
-            elif k == X.first_k[c2o[k] + 1] - 1 and ((O["close"][c2o[k]] > lv.price) if sell else (O["close"][c2o[k]] < lv.price)):
-                inv = "invalidated"
-        if out != "timeout" and inv != "open":
-            break
-        k += 1
-    last = min(k, len(C["close"])) - 1  # last bar inside the hold window (k is the first one past it)
-    if out == "timeout":
-        res = ((ref - C["close"][last]) if sell else (C["close"][last] - ref)) / risk
-    done_o = c2o[exit_k] if exit_k is not None else c2o[last]
-    return {
-        "side": "SELL" if sell else "BUY", "B": B, "breakout_time": str(c_start[brk])[:16],
-        "confirm_time": str(c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
-        "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
-        "stop_pips": round(risk / P, 1), "break_kind": kind, "_busy": int(done_o),
-    }
+            res = ((ref - C["close"][last]) if sell else (C["close"][last] - ref)) / risk
+        done_o = c2o[exit_k] if exit_k is not None else c2o[last]
+        why = {"target": f"target {_r(target)} reached",
+               "invalidated": f"{self.otf} close back through the origin level {_r(lv.price)}",
+               "open": None}
+        r = {
+            "side": "SELL" if sell else "BUY", "B": B, "breakout_time": str(self.c_start[brk])[:16],
+            "confirm_time": str(self.c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
+            "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
+            "stop_pips": round(risk / P, 1), "break_kind": kind, "rule": rule, "_busy": int(done_o),
+        }
+        if inv == "ended_flip":
+            _, fo, f, fB = fl
+            r["end_reason"] = (f"flip: {self.otf} {f.kind} level {_r(f.price)} rejected the other way "
+                               f"({str(self.o_start[fo])[:10]}) + {self.ctf} close {'above' if sell else 'below'} "
+                               f"its point B {_r(fB)}")
+            r["end_time"] = str(self.c_end[inv_k])[:16]
+            r["_busy"] = int(min(done_o, fo - 1))
+            r["_flip"] = (fo, f)
+        else:
+            r["end_reason"] = why.get(inv)
+            if inv_k is not None:
+                r["end_time"] = str(self.c_end[inv_k])[:16]
+        return r
+
+    # ------------------------------------------------------------------ #31b alignment
+    def align_starts(self):
+        """#31b [T weekly-recap@151-282 ("a simple BOS on weekly and then it should happen on daily and then it should
+        happen on the four hours ... when it is not like this ... no trading opportunities because these alignments
+        were not there"), 626-670 ("weekly and daily breaking structure on the downside: an H4 structure up, does
+        it make sense to buy? No"), 2098-2160 ("if weekly does this, wait for daily to do it, maybe not on Monday
+        ... Friday"); F weekly-recap/sheet_003-008 (W close below the last weekly V 1.7172, D line-chart ladder of
+        swing lows, H4 sell)]: origin bar d -> (Level 'align' at the protected D swing, point B, breakout index).
+        W: the last W structural break (a W close beyond the last W swing) closed before D bar d starts.
+        D: bar d closes beyond the last D swing the same way (structural_swings fix at d).
+        H4: after D bar d closes, a close beyond the last H4 close turn made since d started (same day close rule),
+        within max_wait D bars; a D close back through the protected D swing first cancels it."""
+        cfg, O, C, c2o = self.cfg, self.O, self.C, self.c2o
+        if self.hb is None:
+            return {}
+        w_end = self.hb["end"].to_numpy()
+        wbr = _breaks(_structure(self.hb, cfg))  # [(known_at, dir, protected)]
+        w_t = np.array([w_end[i] for i, _, _ in wbr]) if wbr else np.array([], dtype=w_end.dtype)
+        out = {}
+        for d, up, prot in _breaks(_structure(pd.DataFrame({"close": O["close"]}), cfg)):
+            j = int(np.searchsorted(w_t, self.o_start[d], "right")) - 1  # last W break closed before d
+            if j < 0 or wbr[j][1] != up or d + 1 >= len(self.first_k):
+                continue
+            k = int(self.first_k[d + 1])
+            last_o = min(d + cfg["max_wait"], len(O["close"]) - 1)
+            brk = B = None
+            while k < len(C["close"]) and c2o[k] <= last_o:
+                oi = c2o[k]
+                if k == self.first_k[oi] and oi - 1 > d and \
+                        ((O["close"][oi - 1] < prot) if up else (O["close"][oi - 1] > prot)):
+                    break  # D close back through the protected swing: no alignment
+                pts = [s for s in self.csw.at(k - 1) if s[1] == ("H" if up else "L") and s[0] >= self.first_k[d]]
+                if pts and ((C["close"][k] > pts[-1][2]) if up else (C["close"][k] < pts[-1][2])):
+                    ok = (O["close"][oi] > pts[-1][2]) if up else (O["close"][oi] < pts[-1][2])
+                    if not cfg["same_bar_close"] or ok:
+                        brk, B = k, pts[-1][2]
+                        break
+                    k = int(self.first_k[oi + 1])
+                    continue
+                k += 1
+            if brk is not None:
+                out[d] = (Level(prot, "buy" if up else "sell", "align", d, [(d, "tap", True)]), B, brk)
+        return out
+
+
+def _breaks(sw):
+    """Structural breaks from structural_swings output: [(breaking bar, up?, protected swing price)]. The last
+    swing fixed at a breaking bar is the opposite swing that pushed price through (L = a close above the swing
+    high = up; its price is the protected HL)."""
+    last = {}
+    for s in sw:
+        last[s[3]] = s
+    return [(i, s[1] == "L", s[2]) for i, s in sorted(last.items())]
 
 
 def _break_kind(sell, sw, k0, brk, C):
@@ -304,44 +571,28 @@ def _break_kind(sell, sw, k0, brk, C):
 def current_tap(pair, h1, story, cfg=None):
     """Live 'current state': the latest tap-reject-close on a fresh, trend-agreeing level that has NOT broken
     out yet and is still within max_wait origin bars (STRATEGY §2 step 3, no-trade rule 1). Same rules as
-    find_stories/_confirm. `h1` must end with closed bars only. Returns a dict (status 'TAPPED') or None.
-    A tap that already broke out is find_stories' job, so None is returned for it."""
+    find_stories (incl. #26 most recent level, #30 targets). `h1` must end with closed bars only. Returns a dict
+    (status 'TAPPED') or None. A tap that already broke out, or that the CADJPY exception confirmed at its close,
+    is find_stories' job, so None is returned for it."""
     cfg = {**DEFAULT, **(cfg or {})}
-    otf, ctf = STORIES[story]
-    ob, cb = resample(h1, otf), resample(h1, ctf)
-    P = pip(pair)
-    tol = cfg["tap_tol_pips"] * P
-    levels = run_levels(ob, find_levels(ob, cfg), tol)
-    opiv, cpiv = _structure(ob, cfg), pivots(cb["close"], cfg["b_pivot"])
-    O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
-    C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
-    o_start = ob["start"].to_numpy()
-    c2o = np.searchsorted(o_start, cb["start"].to_numpy(), side="right") - 1
+    X = _Ctx(pair, h1, story, cfg)
+    O, C = X.O, X.C
     last = len(O["close"]) - 1
-    htf = HIGHER[story]
-    hb = resample(h1, htf) if htf else None
-    hpiv = _structure(hb, cfg) if htf else None
-    X = _Ctx(O, c2o, opiv, cpiv, hb, hpiv, levels)
-
-    taps = _taps(levels, ob, cfg)
-
-    for bar in sorted(taps, reverse=True):
+    tol = X.tol
+    for bar in sorted(X.taps, reverse=True):
         if bar < last - cfg["max_wait"]:
             break
         if bar < 2:
             continue
         tr = trend(X.osw.at(bar - 1), O["close"][bar - 1])
-        if cfg["trend_filter"]:
-            if tr == "range":
-                continue
-            cands = [lv for lv in taps[bar] if lv.side == ("sell" if tr == "down" else "buy")]
-        else:
-            cands = taps[bar]
-        if not cands:
+        lv = X.choose(bar, tr)
+        if lv is None:
             continue
-        lv = _pick(cands)
-        if htf and cfg["htf_filter"] and _against(lv.side, X.htf_trend(o_start[bar])):
+        h_tr = X.htf_trend(X.o_start[bar]) if X.htf else None
+        if X.htf and cfg["htf_filter"] and _against(lv.side, h_tr):
             continue
+        if X.cadjpy(lv, bar, h_tr):
+            return None  # confirmed at the D close (CADJPY exception): a find_stories row
         sell = lv.side == "sell"
         ks = np.arange(X.first_k[bar], X.first_k[bar + 1])
         if not len(ks):
@@ -374,13 +625,11 @@ def current_tap(pair, h1, story, cfg=None):
             continue
 
         ref = O["close"][last]
-        tg = X.fresh_prices(sell, last)
-        tg += [s[2] for s in X.osw.at(last) if s[1] == ("L" if sell else "H")]
-        tg = [x for x in tg if (x < min(ref, B) if sell else x > max(ref, B))]
+        tg = X.target(sell, last, X.o_end[last], min(ref, B) if sell else max(ref, B))
         return {
             "pair": pair, "story": story, "side": "SELL" if sell else "BUY", "status": "TAPPED", "trend": tr,
-            "level_kind": lv.kind, "level": lv.price, "B": B,
-            "target": (max(tg) if sell else min(tg)) if tg else None,
-            "tap_time": str(o_start[bar])[:16], "bars_left": int(bar + cfg["max_wait"] - last),
+            "level_kind": lv.kind, "level": lv.price, "B": B, "target": tg,
+            "tap_time": str(X.o_start[bar])[:16], "bars_left": int(bar + cfg["max_wait"] - last),
+            "rule": "sweep_start" if lv.kind == "sweep" else "standard",
         }
     return None

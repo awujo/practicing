@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.5, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.6, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -82,8 +82,14 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
 
 1. **Trend (origin TF, line chart).** Down or up? A range means stop, no bias.
 2. **Pick the level.** Take the most recent **fresh** key level that agrees with the trend
-   (A-shape or bearish OC for a sell). Also mark the target: the next opposite KL of the same or a higher TF,
-   or the ERL.
+   (A-shape or bearish OC for a sell), formed **before** the tap; older levels are ignored ("you place your mark at
+   the most recent one ... we just remove everything and mark that last one") [T story-line-pt2@897-1000;
+   F story-line-pt2/sheet_013-016]. Bot (#26, `most_recent_level`): a tapped level counts only if no newer fresh
+   level of the same side existed at the tap; levels formed after the tap never count.
+   Also mark the target: the next opposite fresh KL of the **same or a higher TF** (D story: D, W, M levels;
+   W story: W, M; M story: M "next monthly fresh level"), or the ERL, whichever comes first, so the TP is capped at the
+   next level of the weaker TF [T story-line@648, story-line-pt2@1914-1968, class-wrok@480-620; F story-line-pt2/
+   sheet_025-028]. Bot (#30, `htf_targets`): each higher-TF level as of its last closed candle.
 3. **Tap, reject, close (origin TF, candles).** A candle **wicks into** the level and **closes back below it**.
    Wait for the candle to close. → status `TAPPED`
    *Alternative start (no key level):* the origin candle's wick sweeps the **previous origin candle's high**
@@ -106,7 +112,16 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
 6. **Hold until:**
    - target reached → `TARGET_HIT`;
    - a body close back above the origin level → `INVALIDATED`;
-   - a daily KL on the way is rejected the other way **and** H4 breaks the other way → story over [T story-line-pt2@1779-1832].
+   - a daily KL on the way is rejected the other way **and** H4 breaks the other way → story over, status
+     `ENDED_FLIP` with the reason, and the opposite story may start from that level [T story-line-pt2@1779-1869:
+     "the moment we tap on another daily key level before the zone we are expecting price to come into, the moment
+     price closes below it and then gives us a breakout in four hours, it means that that daily has flipped";
+     F story-line-pt2/sheet_023: CADJPY levels 113.946 / 113.49 between origin 112.903 and target 114.65].
+     Bot (#29, `flip_end`): an opposite fresh origin-TF key level strictly between the origin level and the target,
+     tapped-rejected-closed after the confirmation, then a confirm-TF body close beyond **its own point B** (same
+     external-break rules: last V/A before its first touch, same-day close, `max_wait`, `max_retaps`). The trade view
+     closes at that close (outcome `flip`); the new story (rule `flip`) skips the origin-trend filter (the flip is
+     the change of direction) but keeps the higher-TF filter.
 
 ### Output per pair (what the bot sends)
 
@@ -125,10 +140,28 @@ target price, invalidation price, status
 - Never against the higher-timeframe trend [T liquidity-pt3@712-723].
 - Trend unclear (range, takes effort to read) → skip [T story-line-pt4@1195-1217].
 - After an H4 breakout in a **daily** story, the daily candle must also close beyond B the same day, otherwise cancel [F qns-pt2].
-- **Overlap:** a weekly KL that is also a daily KL counts as "daily rejects daily"; the weekly target becomes the TP. A weekly tap is judged only after the weekly candle closes [F all-in-1, T class-wrok@480-620].
-- **Alignment (continuation):** a weekly close beyond the last weekly swing first, then Daily and H4 must break the same way. No alignment, no trade [F weekly-recap].
+- **Overlap (exception a, built `overlap_rule`, rule `+overlap`):** a weekly KL that is also a daily KL (same spot,
+  fresh) counts as "daily rejects daily": the D story with its H4 breakout. A weekly tap is judged only after the
+  weekly candle closes [T all-in-1@1424-1620, cadjpy-bd@811-905 "for it to overlap it needs to be on the same spot";
+  F all-in-1/sheet_020-027, qns-pt2]. TP: Kevin says "instead of swing it to here, we take our profit at this key
+  level" and the frame shows TP at the next KL 0.8722 (EURGBP) — so the TP is the **next opposite key level** (same
+  or higher TF), not a far swing; this replaces v0.5's "the weekly target becomes the TP" (the 0.8722 line is the
+  next D/W key level, and class-wrok@480-620 caps the weaker TF the same way). Bot: origin D level within
+  `overlap_tol_pips` of a fresh W level of the same side whose first touch is on the W candle holding the D tap, that
+  W candle closed by the confirmation; target = nearest opposite KL, ERL only if there is none.
+- **Alignment (continuation, exception b, built `alignment_start`, rule `alignment`):** a weekly close beyond the
+  last weekly swing first, then Daily and H4 must break the same way. No alignment, no continuation trade
+  [T weekly-recap@151-282, 626-670, 2098-2160 ("if weekly does this, wait for daily to do it"); F weekly-recap/
+  sheet_003-008]. Bot: last W structural break closed before the D bar, that D bar closes beyond the last D
+  structural swing the same way (origin = the protected D swing, invalidation = a D close back through it), then
+  within `max_wait` D bars an H4 close beyond the last H4 close turn made since that D bar started (same-day D
+  close rule). Continuation stories exist only through this chain.
 - **Swing ladder (bot helper):** on the daily close line, keep a line at every unbroken close-swing high/low extended right; these are the candidates for point B and for targets [F weekly-recap].
-- Exception seen on CADJPY: weekly bullish + daily sweeps the previous-day low into a daily OC level and closes back above it → daily bias confirmed **without** an H4 breakout; target = previous high [F cadjpy-bd].
+- **CADJPY exception (c, built `cadjpy_exception`, rule `cadjpy`):** weekly bullish + daily sweeps the previous-day
+  low into a daily OC level and closes back above it → daily bias confirmed **without** an H4 breakout (at that D
+  close); target = previous high [T cadjpy-bd@400-760, 940-995 "you really do not need to be waiting for this
+  breakout again", 1380-1600; F cadjpy-bd/sheet_008-009: line ~113.2, sweep candle closes above, "target" 114.466].
+  Mirror for sells. The only place where the external break is not required.
 
 ---
 
@@ -207,3 +240,10 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 11 | Sweep start on M | OUR CHOICE: Kevin shows previous day / previous week; the bot also allows previous month for the M story. Trend and HTF filters apply as for a key level. |
 | 12 | Sweep start vs key level | OUR CHOICE: a key-level tap on the same origin bar wins; the sweep start is used only when no fresh trend level was tapped. |
 | 13 | Other engine defaults | OUR CHOICE: `level_pivot` = 1, `max_hold` = 20 origin bars, `stop_buffer_pips` = 2, `max_retaps` = 3 (Kevin skips at "4-5" taps), `same_bar_close` on (written rule). |
+| 14 | Rules #26/#29/#30/#31 on or off | All on by default (`most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`; Mini App "Bias rules"): Kevin uses each one in class. Every story carries `rule` (standard / sweep_start / flip / alignment / cadjpy, `+overlap`) and `end_reason`. |
+| 15 | Most recent level (#26) | OUR CHOICE: "most recent" = latest `born` among fresh same-side origin-TF levels (sweeps excluded) at the tap bar; a stale level tapped instead -> no KL start (the sweep start may still apply). |
+| 16 | Flip (#29) | OUR CHOICE: "on the way" = strictly between the origin level and the target; only origin-TF key levels (no sweeps); first flip confirmed wins (ties: most recent level); it must happen inside `max_hold`; trade view exits at the flip close; the new opposite story keeps the HTF filter but not the origin-trend filter. |
+| 17 | Targets (#30) | OUR CHOICE: nearest of (fresh opposite KLs of origin + all higher TFs as of their last closed candle, origin-TF structural swings = ERL); previous-candle highs/lows are not targets. |
+| 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation, else the normal target; overlap TP = next KL, ERL only without a KL. |
+| 19 | Alignment (#31b) | OUR CHOICE: W/D breaks = `structural_swings` fixes (§1); H4 break = close beyond the last order-`b_pivot` H4 close turn made since the D break bar started, within `max_wait` D bars, same-day D close; stop beyond the D break bar's wick; D story only. |
+| 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close or flipped (his "daily open close level" was a flipped zone); W trend (structural) in the story direction; tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |

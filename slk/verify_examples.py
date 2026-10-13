@@ -5,8 +5,9 @@ same code the hourly runner uses) on real Dukascopy candles from the candle stor
 
 Each example is a story Kevin drew in class, with the date/price read from the transcript and the frames
 (knowledge-base/study/notes_storyline.md §3, frames_D/A2/H). Kinds:
-  BIAS      a confirmed story (CONFIRMED / TARGET_HIT / INVALIDATED / CANCELLED) with its tap in the window, on
-            the expected side, origin level within the tolerance (target is shown, not judged);
+  BIAS      a confirmed story (CONFIRMED / TARGET_HIT / INVALIDATED / ENDED_FLIP / CANCELLED) with its tap in the
+            window, on the expected side, origin level within the tolerance, and (if given) built by `rule` (target
+            is shown, not judged);
   NO_TRADE  at `now` (the class time) no tradable confirmed story with a tap in the window ("no H4 breakout ->
             no trade"); a TAPPED row is fine and is shown;
   SIDE      every tradable confirmed story of `stories` confirmed in the window is on the expected side (>= 1).
@@ -23,7 +24,7 @@ import pandas as pd
 from .candles import _key
 from .story import STORIES
 
-CONFIRMED = ("CONFIRMED", "TARGET_HIT", "INVALIDATED", "CANCELLED")
+CONFIRMED = ("CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "CANCELLED")
 
 # day windows are trading days (17:00 New York close); `now` is UTC
 EXAMPLES = [
@@ -33,6 +34,19 @@ EXAMPLES = [
      "evidence": "story-line-pt2@686-1980; F story-line-pt2/sheet_013-016 (OC level 112.903, daily wick tap Jan 8 "
                  "2026), sheet_015-021 (4H replay, last small close peak ~113.2 = B, 'bms'), sheet_025-028 "
                  "(target 114.65 hit)"},
+    {"id": "cadjpy-d-buy-no-h4-exception", "pair": "CADJPY", "kind": "BIAS", "story": "D", "side": "BUY",
+     "tap": ("2026-01-28", "2026-02-02"), "origin": 113.2, "tol": 0.30, "target": 114.466, "rule": "cadjpy",
+     "now": "2026-02-03 00:00",
+     "evidence": "REVIEW #31c. cadjpy-bd@400-995 ('price did a sweep of previous day low into the daily open close "
+                 "level, when we are already bullish on the weekly ... direction is confirmed ... you really do not "
+                 "need to be waiting for this breakout'); F cadjpy-bd/sheet_008-009 (line ~113.2, sweep candle closes "
+                 "above, 'target' 114.466 drawn at once, replay to Mon Feb 2 2026)"},
+    {"id": "eurgbp-d-buy-overlap", "pair": "EURGBP", "kind": "BIAS", "story": "D", "side": "BUY",
+     "tap": ("2026-01-09", "2026-01-16"), "origin": 0.8657, "tol": 0.0012, "target": 0.8722,
+     "now": "2026-01-24 00:00",
+     "evidence": "REVIEW #31a/#30. all-in-1@1424-1620 ('weekly and daily are using exactly this key level ... it "
+                 "becomes daily reject daily ... we take our profit at this key level'); F all-in-1/sheet_020-027 "
+                 "(EURGBP W=D V ~0.8657, 4H EXB, TP at the next KL 0.8722, hit). Target shown, not judged"},
     {"id": "gbpjpy-d-no-h4-breakout", "pair": "GBPJPY", "kind": "NO_TRADE", "story": "D", "side": "BUY",
      "tap": ("2026-01-19", "2026-01-20"), "origin": 210.809, "tol": 0.20, "now": "2026-01-20 04:00",
      "evidence": "story-line-pt4@204-830 ('can we say the daily is bullish? No... breakout has not been "
@@ -82,10 +96,11 @@ def _fmt(pair, x):
 
 
 def _desc(pair, r):
-    return (f"{r['story']} {r['side']} {r['status']}{' NO_TRADE(' + r.get('no_trade_reason', '') + ')' if r.get('no_trade') else ''}"
+    return (f"{r['story']} {r['side']} {r['status']} [{r.get('rule') or 'standard'}]{' NO_TRADE(' + r.get('no_trade_reason', '') + ')' if r.get('no_trade') else ''}"
             f" level {_fmt(pair, r['level'])} ({r.get('level_kind')}) B {_fmt(pair, r['point_b'])}"
             f" target {_fmt(pair, r['target'])} tap {_day(r['tap_time'], 'D')}"
-            + (f" confirmed {str(r['confirm_time'])[:16]}" if r.get("confirm_time") else ""))
+            + (f" confirmed {str(r['confirm_time'])[:16]}" if r.get("confirm_time") else "")
+            + (f" ended: {r['end_reason']}" if r.get("end_reason") else ""))
 
 
 def load(pair, now):
@@ -115,7 +130,8 @@ def check(ex, h1, cfg=None):
     if ex["kind"] == "NO_TRADE":
         return ("PASS" if not conf else "FAIL"), text
     good = [r for r in conf if r["side"] == ex["side"]
-            and (ex.get("origin") is None or abs(r["level"] - ex["origin"]) <= ex["tol"])]
+            and (ex.get("origin") is None or abs(r["level"] - ex["origin"]) <= ex["tol"])
+            and (not ex.get("rule") or str(r.get("rule") or "").startswith(ex["rule"]))]
     return ("PASS" if good else "FAIL"), text
 
 
@@ -127,6 +143,8 @@ def expected(ex):
         s = f"{ex['story']} NO_TRADE at {ex['now']} UTC (tap {ex['tap'][0]}..{ex['tap'][1]})"
         return s + (f", level ~{_fmt(p, ex['origin'])}" if ex.get("origin") else "")
     s = f"{ex['story']} {ex['side']}, tap {ex['tap'][0]}..{ex['tap'][1]}, origin {_fmt(p, ex['origin'])} ± {ex['tol']}"
+    if ex.get("rule"):
+        s += f", rule {ex['rule']}"
     return s + (f", target ~{_fmt(p, ex['target'])}" if ex.get("target") else "")
 
 

@@ -11,10 +11,12 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "db", "schema.sql")
 BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b", "target", "invalidation",
-             "tap_time", "confirm_time", "no_trade", "no_trade_reason")
+             "tap_time", "confirm_time", "no_trade", "no_trade_reason", "rule", "end_reason")
 # columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
 MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
               ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"),
+              ("bias", "rule", "VARCHAR(32) NULL AFTER no_trade_reason"),
+              ("bias", "end_reason", "VARCHAR(200) NULL AFTER rule"),
               ("entries", "model", "VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"))
 
 

@@ -36,6 +36,33 @@ SCHEMA = [
     _s("tap_tol_pips", "float", "1", "Bias rules", "A wick this close to the line (pips) counts as a tap.",
        min=0, max=5),
     _s("use_oc", "bool", "on", "Bias rules", "Draw levels on open/close (line chart), not wicks."),
+    _s("most_recent_level", "bool", "on", "Bias rules",
+       "Only the most recent fresh key level (formed before the tap) can start a story; an older level tapped "
+       "while a newer fresh one exists is ignored (Kevin: 'mark the most recent one, remove everything else', "
+       "story-line-pt2@897-1000)."),
+    _s("flip_end", "bool", "on", "Bias rules",
+       "Story ends early (ENDED_FLIP) when, on the way to the target, price taps an opposite daily key level, "
+       "rejects it with a close the other way AND H4 breaks that level's point B the other way; the opposite "
+       "story may then start (story-line-pt2@1779-1832)."),
+    _s("htf_targets", "bool", "on", "Bias rules",
+       "Target = next opposite fresh key level of the same OR a higher timeframe (W/M for a daily story), or the "
+       "swing liquidity (ERL), whichever comes first (story-line@648, class-wrok@480-620). Off = origin TF only."),
+    _s("overlap_rule", "bool", "on", "Bias rules",
+       "Exception (a) overlap: the daily level is also a fresh weekly level rejected by a CLOSED weekly candle "
+       "-> 'daily reject daily', take profit at the next key level instead of swinging (all-in-1@1424-1620). "
+       "Kevin uses it in class: on."),
+    _s("overlap_tol_pips", "float", "3", "Bias rules",
+       "Overlap: two timeframes' levels within this many pips are 'the same spot' (our choice; Kevin: must be "
+       "exactly the same spot).", min=0, max=20),
+    _s("alignment_start", "bool", "on", "Bias rules",
+       "Exception (b) alignment/continuation: weekly close beyond the last weekly swing, then a daily close beyond "
+       "the last daily swing and an H4 break the same way = daily continuation story. Without that alignment no "
+       "continuation story (weekly-recap@151-282, 626-670, 2098-2160). Kevin uses it: on."),
+    _s("cadjpy_exception", "bool", "on", "Bias rules",
+       "Exception (c) CADJPY: weekly trend in the story direction + the daily candle sweeps the previous day "
+       "low (high) into a daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
+       "H4 breakout, target the previous high (low) (cadjpy-bd@400-995). Kevin uses it: on. Off = H4 breakout "
+       "always required."),
     _s("entry_tfs", "ladder", "D=H4,H2,H1;W=D,H4;M=W,D", "Entry rules",
        "Entry timeframes per story, tried in this order (lower than the story TF)."),
     _s("continuation_entries", "bool", "on", "Entry rules",
@@ -219,7 +246,9 @@ def as_strings(stored=None):
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
-                                 "max_retaps", "tap_tol_pips", "use_oc")}
+                                 "max_retaps", "tap_tol_pips", "use_oc", "most_recent_level", "flip_end",
+                                 "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
+                                 "cadjpy_exception")}
 
 
 def entry_cfg(vals):

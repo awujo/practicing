@@ -50,12 +50,12 @@ not written down. A choice is listed but not changed.
 | 23 | slk/structure.py:5 | med | mismatch | fixed (Bias audit B2) | A swing is a fixed-order fractal on closes (`swing_pivot=2` bars each side). STRATEGY §1/§5.1 says a swing is fixed "by a later close beyond the previous opposite swing". This affects trend, point B and targets. |
 | 24 | slk/story.py:67 | med | mismatch | open | M/W conflict leads to NO_TRADE only in the daily summary text (slk/live.py:225). It is not applied to stories, D-story gating or the backtest. |
 | 25 | slk/story.py (no code) | med | mismatch | fixed (Bias audit B18) | The alternative start (wick sweeps the previous day/week high or low, then the close comes back inside) is not built. |
-| 26 | slk/story.py:67 | low | mismatch | open | The level is whichever fresh level agreeing with the trend gets tapped first (newest if several are tapped on one bar). Kevin picks "the most recent fresh KL" first, then waits for its tap, and ignores older levels. |
+| 26 | slk/story.py:67 | low | mismatch | fixed (v0.6, `_Ctx.most_recent_ok`) | The level is whichever fresh level agreeing with the trend gets tapped first (newest if several are tapped on one bar). Kevin picks "the most recent fresh KL" first, then waits for its tap, and ignores older levels. |
 | 27 | slk/story.py:106 | low | choice | fixed (Bias audit B9) | Point B = last confirm-TF fractal low/high confirmed before the touch bar. A swing made in the last 2 bars before the tap is not confirmed yet, so an older one is used. Kevin reads it in Replay. |
 | 28 | slk/story.py:18 | low | choice | open | `max_retaps=3` allows 4 taps in all. Kevin skips at "4–5" taps, so `max_retaps=2` would match more closely. |
-| 29 | slk/story.py:22 | low | choice | open | Stories end after `max_hold=20` origin bars. STRATEGY's third end rule (a daily KL rejected the other way plus an H4 break the other way) is not built. |
-| 30 | slk/story.py:153 | low | mismatch | open | Target = nearest opposite fresh level or swing on the origin TF only. STRATEGY says "same or higher TF KL, or ERL". |
-| 31 | slk/story.py (no code) | low | mismatch | open | Overlap rule (a weekly KL that is also a daily KL), alignment/continuation rule, and the CADJPY no-H4 exception are not built. |
+| 29 | slk/story.py:22 | low | choice | fixed (v0.6, flip end built: `_Ctx.flip_scan`, status ENDED_FLIP; `max_hold` stays) | Stories end after `max_hold=20` origin bars. STRATEGY's third end rule (a daily KL rejected the other way plus an H4 break the other way) is not built. |
+| 30 | slk/story.py:153 | low | mismatch | fixed (v0.6, `_Ctx.target`: same or higher TF + ERL) | Target = nearest opposite fresh level or swing on the origin TF only. STRATEGY says "same or higher TF KL, or ERL". |
+| 31 | slk/story.py (no code) | low | mismatch | fixed (v0.6: `overlap_rule`, `alignment_start`, `cadjpy_exception`) | Overlap rule (a weekly KL that is also a daily KL), alignment/continuation rule, and the CADJPY no-H4 exception are not built. |
 | 32 | slk/levels.py:37 | low | choice | open | The OC level is only looked for at the first two same-colour candles leaving a close-line swing, with the line at the close of candle 1. Kevin's OC levels can appear elsewhere. |
 | 33 | slk/entry.py:224 | low | mismatch | open | The entry TF is the first TF on the ladder (H4→H2→H1) that has any pattern. STRATEGY also says to choose the TF with the better R:R (EURGBP example). |
 | 34 | slk/entry.py patterns() | low | choice | open | Breakout may now be c4 or any later candle up to `breakout_max_bars` (user correction, frames_E "4th+ candle"). The "internal BOS" is approximated as a close beyond the c1–c3 extremes, with body ≥ the average body of the last 10 bars. |
@@ -127,7 +127,7 @@ the intended logic changes B2, B9, B18 (and the entry guard B20 that the new sto
 | B4 | KL = two candles turning at the same BODY price: A (bull->bear), V (bear->bull), OC (two same-colour candles, line at close 1/open 2); thin line, no box | T key-levels-pt1@1173-1711; F key-levels-pt1/sheet_016-022, story-line-pt2/sheet_013-016 (OC 112.903) | slk/levels.py:18-39 | OK (OC only at a leg start: open #32) |
 | B5 | Fresh = no wick touch since it formed; first wick touch uses it; used once | T key-levels-pt4@441-1010; F key-levels-pt4/sheet_011-016 | slk/levels.py:43-63 | OK (open #19 for `level_pivot` > 1) |
 | B6 | Full-body close through = flips role, fresh again | T key-levels-pt3@296-420, 1536-1671; F key-levels-pt3/sheet_005-012 | slk/levels.py:64-65 | OK |
-| B7 | Only trend-agreeing levels; the most recent fresh one | T key-levels-pt3@985-1160, story-line-pt2@897-1000 | slk/story.py:97-103, 140 `_pick` | OK / open #26 (most recent among the TAPPED ones, not chosen before the tap) |
+| B7 | Only trend-agreeing levels; the most recent fresh one | T key-levels-pt3@985-1160, story-line-pt2@897-1000 | slk/story.py `_Ctx.choose`, `most_recent_ok` | OK / **fixed #26** |
 | B8 | Tap-reject-close on the origin TF: wick in, candle closes back; wait for the close | T story-line@1314-1541; F story-line/sheet_015-021 ("TAP AND REJECT / CLOSE") | slk/levels.py:63 (a tap bar is never the break bar); slk/story.py:236 (confirmed only after origin closes) | OK |
 | B9 | Point B = the last lower-TF V-shape (A for a buy) made BEFORE price first tapped; not the rejection's own swing | T story-line-pt3@1690-1790 ("it's B, not A"), pt4@1441-1461; F story-line-pt3/sheet_021 (A/B ticks), story-line-pt2/sheet_015 t=1140-1180 (CADJPY 4H line chart: ray at the last small close peak ~113.2 right before the tapping 4H bar) | slk/story.py:147 `_point_b`, 203, 351 | **fixed**: was an order-2 fractal known before the touch bar, so a turn in the last 2 bars before the tap (CADJPY's B) was skipped for an older one. Now an order-1 close turn (two-candle V/A, STRATEGY §5.10) with index < first touching bar; the touching bar's close may complete it. |
 | B10 | External break = confirm-TF BODY close beyond B; "sweep and break" and "breakout" both end in it; later breaks are internal (entries only) | T story-line-pt2@297-650, pt3@594-1260; F story-line-pt2/sheet_001-007 (BMS / BO), story-line-pt3/sheet_015-018 (EXT then BOS) | slk/story.py:222-226; label `_break_kind` :289 | OK |
@@ -135,11 +135,37 @@ the intended logic changes B2, B9, B18 (and the entry guard B20 that the new sto
 | B12 | Many re-taps (4-5) before the break = skip; break on day 3-5 still valid | T qns-pt2@2076-2150, story-line-pt3@360-536 | slk/story.py:218-221, `max_wait` | OK (`max_retaps` 3 = choice #28) |
 | B13 | M and W stories disagree -> NO_TRADE | T class-wrok@1236-1312 | slk/story.py:50; slk/live.py:178; slk/backtest.py | OK |
 | B14 | Never against the higher-TF trend | T liquidity-pt3@712-723 | slk/story.py:106, 343 (HTF trend now on structural swings) | OK |
-| B15 | Target = next opposite KL of the same/higher TF or obvious liquidity (ERL) | T story-line@648, pt2@1914-1968; F story-line-pt2/sheet_025-028 (CADJPY 114.65 = previous D high) | slk/story.py:244-250 (fresh opposite origin-TF levels + structural swings = ERL) | OK for same TF; higher-TF KLs still open #30 |
+| B15 | Target = next opposite KL of the same/higher TF or obvious liquidity (ERL) | T story-line@648, pt2@1914-1968, class-wrok@480-620; F story-line-pt2/sheet_025-028 (CADJPY 114.65 = previous D high) | slk/story.py `_Ctx.target` | **fixed #30** (higher-TF levels as of their last closed candle) |
 | B16 | Invalidation = body close back through the origin level | T story-line-pt4@383-396; F story-line-pt2 (112.903 line) | slk/story.py:216-217, 272-273; slk/live.py:97 `_closed_through` | OK |
-| B17 | Story over when a D KL on the way is rejected the other way + H4 breaks the other way | T story-line-pt2@1779-1832 | - | open #29 |
+| B17 | Story over when a D KL on the way is rejected the other way + H4 breaks the other way | T story-line-pt2@1779-1869; F story-line-pt2/sheet_023 | slk/story.py `_Ctx.flip_scan`, `finish` | **fixed #29**: status ENDED_FLIP + `end_reason`; opposite story (rule `flip`) may start |
 | B18 | Alternative start: wick sweep of the previous day/week high (low) + close back, then break of the last V before the sweep; the sweep candle's own swing does not count; "too far" = no | T story-line-pt3@1887-2096, pt4@1349-1500; F story-line-pt3/sheet_026-029 | slk/levels.py:70 `sweep_taps`; slk/story.py:126 `_taps`, 140 `_pick`; `sweep_start` | **fixed (built)**: pseudo level at the swept high/low, then the normal steps (B before the first touch, external close, same-day rule, invalidation through the swept price, `max_wait` = "too far"). Only where no KL was tapped on that bar (§5.12). |
 | B19 | Telegram BIAS message: clearly bias (not entry), pair, story (M/W/D, origin->confirm TF), direction, origin level + type + TF, point B, target, invalidation, status, NO_TRADE reason | CONTRACT / STRATEGY §2 output | slk/live.py:352 `format_alert`, 379 `summary_line`, summary header | **fixed**: header now `BIAS | PAIR | Daily story (D->H4) | BEARISH (SELL) | status`; level type in words (A-shape/V-shape/open-close/flipped/sweep of previous day high); "Point B x (H4 body close below it confirms)"; status line: TAPPED = "NO_TRADE until the H4 breakout of point B", CONFIRMED = "bias confirmed. Not an entry", NO_TRADE reason (M/W conflict); summary: "NO_TRADE (no story)", "tapped (NO_TRADE until breakout)", "-> NO_TRADE (M/W disagree)". |
 | B20 | (found by the new stories) entry stop that rounds to 0.0 pips | - | slk/entry.py:210 `_setup` | **fixed**: such a setup is skipped (a stop on the entry is no stop) |
-| B21 | Overlap rule, W+D+H4 alignment for continuation, CADJPY no-H4 exception | T all-in-1@1424-1910, weekly-recap@151-282; F cadjpy-bd | - | open #31 |
+| B21 | Overlap rule, W+D+H4 alignment for continuation, CADJPY no-H4 exception | T all-in-1@1424-1620, weekly-recap@151-282, 626-670, 2098-2160, cadjpy-bd@400-995; F all-in-1/sheet_020-027, weekly-recap/sheet_003-008, cadjpy-bd/sheet_008-009 | slk/story.py `_Ctx.overlap`, `align_starts`, `cadjpy` | **fixed #31** (all switchable, default on; `rule` label) |
 | B22 | Kevin's own worked examples as replay checks | notes_storyline §3; frames above | slk/verify_examples.py -> reports/EXAMPLES.md (workflow verify-examples.yml) | built; runs on Actions (Dukascopy blocked here). Examples: CADJPY D buy (112.903 -> 114.65), GBPJPY + USDJPY D "no H4 breakout -> no trade" (Jan 20 2026), USDCAD D sell from the Friday sweep into 1.39201, EURAUD + GBPAUD sells (Feb 2026 recap), USDCHF D reject at 0.7890 with no H4 breakout. |
+
+## Bias rules v0.6 (REVIEW #26, #29, #30, #31) — 2026-10-13
+
+Each rule was checked against the transcript and by opening the frame sheets; numbers Kevin does not give are in
+STRATEGY.md §5 rows 14-20 (OUR CHOICE). Code: slk/story.py (`_Ctx`), switches in slk/settings.py ("Bias rules",
+all default on), labels `rule` / `end_reason` in every story dict, `bias.rule` / `bias.end_reason` columns
+(migration in slk/db.py), status ENDED_FLIP in the live runner, Telegram and Mini App. Tests: tests/test_bias_rules.py
+(hand-built H4/D candles + walk properties); with all six switches off the engine still reproduces the v0.5 golden
+output (tests/golden/engine_golden_v05.json), so the regenerated tests/golden/engine_golden.json differs only by
+these rules. Replay checks added to slk/verify_examples.py: `cadjpy-d-buy-no-h4-exception` (#31c) and
+`eurgbp-d-buy-overlap` (#31a/#30). No concrete flip (#29) example exists in the course (story-line-pt2 sheet_023 is
+a "what if" drawing), so none was added; alignment (#31b) is covered by the EURAUD/GBPAUD SIDE examples.
+
+| # | Rule | Evidence | Built |
+|---|---|---|---|
+| 26 | Most recent fresh KL formed before the tap | T story-line-pt2@897-1000; F story-line-pt2/sheet_013-016 | `most_recent_ok`, `choose` |
+| 29 | Story ends early: D KL on the way rejected + H4 break of its own B the other way | T story-line-pt2@1779-1869; F story-line-pt2/sheet_023 | `flip_scan`, `finish` (ENDED_FLIP, outcome `flip`), forced opposite start in `find_stories` |
+| 30 | Target = next opposite fresh KL of same or higher TF, or ERL; weaker TF caps | T story-line@648, class-wrok@480-620; F story-line-pt2/sheet_025-028 | `target` |
+| 31a | Overlap W=D level -> daily reject daily, TP at the next KL, W judged after its close | T all-in-1@1424-1620, cadjpy-bd@811-905; F all-in-1/sheet_020-027 | `overlap` (rule `+overlap`) |
+| 31b | Alignment W BOS -> D BOS -> H4 BOS, else no continuation | T weekly-recap@151-282, 626-670, 2098-2160; F weekly-recap/sheet_003-008 | `align_starts` (rule `alignment`) |
+| 31c | CADJPY: W bullish + D sweep of PDL into D OC level, close back -> no H4 needed | T cadjpy-bd@400-760, 940-995, 1380-1600; F cadjpy-bd/sheet_008-009 | `cadjpy` (rule `cadjpy`, break_kind `none`) |
+
+Correction found while checking #31a: the v0.5 text "the weekly target becomes the TP" does not match the class.
+Kevin: "instead of swing it to here, we take our profit at this key level, because we now have daily reject daily"
+[T all-in-1@1599-1617], and the frame TP is the next key level 0.8722 [F all-in-1/sheet_025-027]. Built that way
+(next opposite KL), STRATEGY.md updated.

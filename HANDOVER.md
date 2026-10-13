@@ -11,7 +11,7 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 ## Architecture
 | Part | Where | Runs on |
 |---|---|---|
-| Strategy (the rules) | `STRATEGY.md` (v0.5) | — |
+| Strategy (the rules) | `STRATEGY.md` (v0.6) | — |
 | Course evidence | `knowledge-base/` (transcripts, frame sheets), `knowledge-base/study/*.md` notes | — |
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
@@ -60,7 +60,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       Mini App show the model, ENTRY_REPORT.md has "By entry model". Guessed rules = OUR CHOICE table in STRATEGY §3.
 - [x] Bias audit (REVIEW.md "Bias audit" B1-B22): structural swings (close beyond the previous opposite swing)
       for trend/targets, point B = last close-line V/A before the first touch, alternative start (sweep of previous
-      day/week high/low) built, Telegram bias messages say BIAS + status/NO_TRADE reason. Open: #26, #29, #30, #31.
+      day/week high/low) built, Telegram bias messages say BIAS + status/NO_TRADE reason.
+- [x] Bias rules v0.6 (REVIEW #26 #29 #30 #31): most recent level before the tap, story ends early by a flip
+      (status ENDED_FLIP), targets on the same or a higher TF, overlap / alignment / CADJPY exceptions; all switchable
+      in Mini App "Bias rules" (default on), `rule` + `end_reason` per story (DB columns, Telegram, Mini App).
 - [ ] Read `reports/EXAMPLES.md` after the verify-examples workflow ran (Kevin's own examples PASS/FAIL).
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
@@ -123,3 +126,13 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   numbers change; the backtest workflow reruns on push). New `slk/verify_examples.py` + workflow
   `verify-examples.yml` replays Kevin's CADJPY/GBPJPY/USDJPY/USDCAD/EURAUD/GBPAUD/USDCHF examples on real candles.
   Tests `tests/test_bias_audit.py`.
+- 2026-10-13: Bias rules v0.6 (STRATEGY v0.6, REVIEW "Bias rules v0.6"). slk/story.py refactored into `_Ctx`
+  (identical v0.5 output with the new switches off, test against tests/golden/engine_golden_v05.json): #26
+  `most_recent_level`, #29 `flip_end` (kevin_outcome `ended_flip`, trade outcome `flip`, the opposite story starts
+  with rule `flip`), #30 `htf_targets` (W/M levels for D, M for W), #31a `overlap_rule` (+`overlap_tol_pips` 3, TP =
+  next KL; v0.5 "weekly target" wording corrected from all-in-1@1599-1617), #31b `alignment_start` (W->D->H4 breaks),
+  #31c `cadjpy_exception` (no H4 breakout). Live: status ENDED_FLIP (alert_ended toggle), alert lines "Rule:" and
+  "Reason:", summary tags; `bias.rule`/`bias.end_reason` (db.migrate); webapp status filter + rule/end reason shown.
+  Golden engine output regenerated for these intended changes (backtest numbers change). verify_examples: CADJPY
+  exception + EURGBP overlap examples. Engine ~40% slower (0.55 -> 0.76 s per pair, 3 years, D+W+M). Tests
+  `tests/test_bias_rules.py`.

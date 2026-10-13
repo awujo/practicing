@@ -20,7 +20,7 @@ log = logging.getLogger("slk.webapp")
 STATIC = Path(__file__).resolve().parent / "static"
 MAX_AGE = 24 * 3600
 
-BIAS_STATUSES = {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "CANCELLED"}
+BIAS_STATUSES = {"TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "CANCELLED"}
 ACTIVE_BIAS = ("TAPPED", "CONFIRMED")
 PUBLIC_SETTINGS = tuple(s["name"] for s in S.SCHEMA)
 DEFAULTS = dict(S.DEFAULTS)

@@ -70,11 +70,15 @@ def test_build_cfg_from_stored_strings():
 
 def test_break_is_always_external():
     """Kevin: "sweep and break" OR "breakout" [T story-line-pt2@297-441]; both are a confirm-TF body close beyond
-    point B (last swing before the first tap). The sweep is only a label; no cfg relaxes the break."""
+    point B (last swing before the first tap). The sweep is only a label; no cfg relaxes the break, except Kevin's
+    own CADJPY exception (#31c, rule 'cadjpy', break_kind 'none'), which `cadjpy_exception` switches off."""
     h1 = walk()
-    rows = story.find_stories("EURUSD", h1, "D")
+    allrows = story.find_stories("EURUSD", h1, "D")
+    rows = [r for r in allrows if r["rule"] != "cadjpy"]
+    assert all(r["break_kind"] == "none" for r in allrows if r["rule"] == "cadjpy")
+    assert all(r["rule"] != "cadjpy" for r in story.find_stories("EURUSD", h1, "D", {"cadjpy_exception": False}))
     assert rows and {r["break_kind"] for r in rows} <= {"breakout", "sweep_break"}
-    assert story.find_stories("EURUSD", h1, "D", {"confirm_break": "external_or_sweep"}) == rows  # ignored
+    assert story.find_stories("EURUSD", h1, "D", {"confirm_break": "external_or_sweep"}) == allrows  # ignored
     h4, d = resample(h1, "H4"), resample(h1, "D")
     close4 = dict(zip(h4["start"].astype(str).str[:16], h4["close"]))
     for r in rows:

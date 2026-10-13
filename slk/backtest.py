@@ -97,7 +97,7 @@ def report(df, cfg, path):
         df["year"] = df["tap_time"].str[:4]
         sections = [("By story", ["story"]), ("By story and side", ["story", "side"]),
                     ("By story and higher-TF agreement", ["story", "htf_agree"]),
-                    ("By story and level type", ["story", "level_kind"]), ("By year (D story)", ["year"]),
+                    ("By story and level type", ["story", "level_kind"]), ("By story and rule", ["story", "rule"]), ("By year (D story)", ["year"]),
                     ("By pair (D story)", ["pair"])]
         df["htf_agree"] = df.apply(lambda r: "agree" if (r["side"] == "BUY" and r.get("htf_trend") == "up") or
                                    (r["side"] == "SELL" and r.get("htf_trend") == "down") else
