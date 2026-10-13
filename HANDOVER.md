@@ -32,9 +32,11 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [x] Bias engine, entry model, live runner, cTrader client, Mini App — all built, tests pass (`pytest -q tests`).
 - [ ] **Backtest results on real data** — run in progress (28 pairs, 2018–2025). Read `reports/REPORT.md` when committed.
 - [ ] **Live runner** — fails: Aiven `Access denied` → user must fix the password in GitHub secret `DATABASE_URL`.
-- [ ] Review agent fixing bugs/strategy mismatches → `REVIEW.md` (pending at time of writing).
+- [x] Code review done (`REVIEW.md`): 9 fixed (incl. look-ahead in story backtest, HTF filter now applied), 30 open.
+- [ ] **Default branch must be `claude-kevin-king`** (now `qwen-kevin-king`) or the hourly live job never runs (GitHub runs cron only on the default branch). User: Settings → General → Default branch.
 - [ ] Render deploy of Mini App (user: set branch + root dir + 2 env vars).
 - [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
+- [ ] Top open review items: swing rule (fractal vs close-beyond), M/W conflict not enforced, alternative story start, entries not wired into live runner.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB; alerts for entries (`entries` table) in live runner;
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
 
@@ -48,3 +50,4 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-12/13: Kevin King course study (transcripts + frames), STRATEGY v0.1→v0.3.
 - 2026-10-13: Built engine + backtest; parallel agents built entry model, live runner, cTrader client, Mini App.
   Fixed CI deps (`requirements-dev.txt`). Chat id default set. Live run blocked by Aiven password.
+  User DB = `Claude-KK-SLK` (Qwen uses defaultdb). Review agent fixed 9 issues; old backtest reports invalid (look-ahead), rerun.
