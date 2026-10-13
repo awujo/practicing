@@ -171,3 +171,88 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
         "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
         "stop_pips": round(risk / P, 1), "_busy": int(done_o),
     }
+
+
+def current_tap(pair, h1, story, cfg=None):
+    """Live 'current state': the latest tap-reject-close on a fresh, trend-agreeing level that has NOT broken
+    out yet and is still within max_wait origin bars (STRATEGY §2 step 3, no-trade rule 1). Same rules as
+    find_stories/_confirm. `h1` must end with closed bars only. Returns a dict (status 'TAPPED') or None.
+    A tap that already broke out is find_stories' job, so None is returned for it."""
+    cfg = {**DEFAULT, **(cfg or {})}
+    otf, ctf = STORIES[story]
+    ob, cb = resample(h1, otf), resample(h1, ctf)
+    P = pip(pair)
+    tol = cfg["tap_tol_pips"] * P
+    levels = run_levels(ob, find_levels(ob, cfg), tol)
+    opiv, cpiv = pivots(ob["close"], cfg["swing_pivot"]), pivots(cb["close"], cfg["swing_pivot"])
+    O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
+    C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
+    o_start = ob["start"].to_numpy()
+    c2o = np.searchsorted(o_start, cb["start"].to_numpy(), side="right") - 1
+    last = len(O["close"]) - 1
+
+    taps = {}
+    for lv in levels:
+        for b, kind, _ in lv.events:
+            if kind == "tap":
+                taps.setdefault(b, []).append(lv)
+
+    for bar in sorted(taps, reverse=True):
+        if bar < last - cfg["max_wait"]:
+            break
+        if bar < 2:
+            continue
+        tr = trend(swings(opiv, bar - 1), O["close"][bar - 1])
+        if cfg["trend_filter"]:
+            if tr == "range":
+                continue
+            cands = [lv for lv in taps[bar] if lv.side == ("sell" if tr == "down" else "buy")]
+        else:
+            cands = taps[bar]
+        if not cands:
+            continue
+        lv = max(cands, key=lambda x: x.born)
+        sell = lv.side == "sell"
+        ks = np.arange(np.searchsorted(c2o, bar, "left"), np.searchsorted(c2o, bar, "right"))
+        if not len(ks):
+            continue
+        touch = [k for k in ks if (C["high"][k] >= lv.price - tol if sell else C["low"][k] <= lv.price + tol)]
+        k0 = touch[0] if touch else ks[0]
+        pts = [s[2] for s in swings(cpiv, k0 - 1) if s[1] == ("L" if sell else "H")]
+        if not pts:
+            continue
+        B = pts[-1]
+        if (sell and B >= lv.price) or (not sell and B <= lv.price):
+            continue
+
+        state, retaps = "TAPPED", 0
+        for oi in range(bar, last + 1):
+            for k in range(max(k0, np.searchsorted(c2o, oi, "left")), np.searchsorted(c2o, oi, "right")):
+                if (C["close"][k] < B) if sell else (C["close"][k] > B):
+                    ok = (O["close"][oi] < B) if sell else (O["close"][oi] > B)
+                    if not cfg["same_bar_close"] or ok:
+                        return None  # broke out: a confirmed story (or rejected by find_stories)
+            if oi > bar:
+                if (O["close"][oi] > lv.price) if sell else (O["close"][oi] < lv.price):
+                    state = "INVALIDATED"
+                    break
+                if (O["high"][oi] >= lv.price - tol) if sell else (O["low"][oi] <= lv.price + tol):
+                    retaps += 1
+                    if retaps > cfg["max_retaps"]:
+                        state = "MESSY"
+                        break
+        if state != "TAPPED":
+            continue
+
+        ref = O["close"][last]
+        tg = [o.price for o in levels if o.side == ("buy" if sell else "sell") and o.born <= last
+              and not any(e[0] <= last for e in o.events)]
+        tg += [s[2] for s in swings(opiv, last) if s[1] == ("L" if sell else "H")]
+        tg = [x for x in tg if (x < min(ref, B) if sell else x > max(ref, B))]
+        return {
+            "pair": pair, "story": story, "side": "SELL" if sell else "BUY", "status": "TAPPED", "trend": tr,
+            "level_kind": lv.kind, "level": lv.price, "B": B,
+            "target": (max(tg) if sell else min(tg)) if tg else None,
+            "tap_time": str(o_start[bar])[:16], "bars_left": int(bar + cfg["max_wait"] - last),
+        }
+    return None

@@ -1,0 +1,60 @@
+name: SLK live bias
+# Hourly bias runner (no VPS). Needs repo secrets DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+# (optional DATABASE_CA = Aiven CA certificate, to verify the server). Without secrets it exits green.
+on:
+  schedule:
+    - cron: "7 * * * *"   # best effort: GitHub may start it some minutes late; runs table logs planned vs started
+  workflow_dispatch:
+    inputs:
+      pairs: {description: "Comma list, empty = settings 'pairs' or all 28", default: ""}
+  push:
+    branches: [claude-kevin-king]
+    paths: ["slk/live.py"]
+permissions:
+  contents: read
+concurrency: {group: slk-live, cancel-in-progress: false}
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SLK_CACHE: data
+    steps:
+      - name: Check secrets
+        id: s
+        run: |
+          missing=""
+          for v in DATABASE_URL TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do [ -z "${!v}" ] && missing="$missing $v"; done
+          if [ -n "$missing" ]; then
+            echo "::warning::Missing repo secrets:$missing. Add them in Settings > Secrets and variables > Actions. Skipping run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.s.outputs.ok == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.s.outputs.ok == 'true'
+        with: {python-version: "3.12"}
+      - if: steps.s.outputs.ok == 'true'
+        run: pip install -q pandas pymysql pytest tabulate
+      - name: Finished-month candle cache
+        if: steps.s.outputs.ok == 'true'
+        uses: actions/cache@v4
+        with:
+          path: data/months
+          key: dukascopy-months-${{ github.run_id }}
+          restore-keys: dukascopy-months-
+      - name: Apply db/schema.sql
+        if: steps.s.outputs.ok == 'true'
+        run: python -c "from slk import db; db.apply_schema(); print('schema ok')"
+      - name: Run live bias
+        if: steps.s.outputs.ok == 'true'
+        env:
+          PAIRS_IN: ${{ inputs.pairs }}
+        run: |
+          if [ -n "$PAIRS_IN" ]; then python -m slk.live --pairs "$PAIRS_IN"; else python -m slk.live; fi
