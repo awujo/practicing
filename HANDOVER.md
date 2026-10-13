@@ -11,7 +11,7 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 ## Architecture
 | Part | Where | Runs on |
 |---|---|---|
-| Strategy (the rules) | `STRATEGY.md` (v0.4) | — |
+| Strategy (the rules) | `STRATEGY.md` (v0.5) | — |
 | Course evidence | `knowledge-base/` (transcripts, frame sheets), `knowledge-base/study/*.md` notes | — |
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
@@ -21,7 +21,8 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 | cTrader client | `ctrader/` (README has OAuth steps) | Actions `ctrader-smoke.yml` |
 | Telegram Mini App | `webapp/` (FastAPI), `render.yaml` | Render, branch claude-kevin-king, root `webapp` |
 | Shared names (env vars, DB tables) | `CONTRACT.md` | — |
-| Code review findings | `REVIEW.md` | — |
+| Code review findings | `REVIEW.md` (incl. "Bias audit") | — |
+| Kevin's worked examples replay | `slk/verify_examples.py` → `reports/EXAMPLES.md` | Actions `verify-examples.yml` (push on that file / manual) |
 
 Data: Dukascopy free hourly candles (works from Actions; blocked from Claude's sandbox). cTrader candles later.
 Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (chat id defaults to owner).
@@ -57,9 +58,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       (`breakout_max_bars`, default 5, no close back through the line first) and **QMR** = Quasimodo Reversal
       (was "QMRO" = Whisper). Setting `entry_models` (both on), `entries.model` column (guarded ALTER), alerts and
       Mini App show the model, ENTRY_REPORT.md has "By entry model". Guessed rules = OUR CHOICE table in STRATEGY §3.
-- [ ] Top open review items: swing rule (fractal vs close-beyond), alternative story start.
+- [x] Bias audit (REVIEW.md "Bias audit" B1-B22): structural swings (close beyond the previous opposite swing)
+      for trend/targets, point B = last close-line V/A before the first touch, alternative start (sweep of previous
+      day/week high/low) built, Telegram bias messages say BIAS + status/NO_TRADE reason. Open: #26, #29, #30, #31.
+- [ ] Read `reports/EXAMPLES.md` after the verify-examples workflow ran (Kevin's own examples PASS/FAIL).
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
-      HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
+      HTF-agreement filter in live runner.
 
 ## Next steps (in order)
 0. Run "SLK candle backfill" once (see Status).
@@ -109,3 +113,13 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   PREPARE + `db.migrate`); alert line "PAIR | TF | SIDE | Continuation/QMR | ...". QMRO renamed QMR in docs/notes
   (raw transcripts and frame indexes keep Whisper's "QMRO"). Bias confirmation untouched (slk/story.py unchanged).
   Golden test pins the old entry output with `breakout_max_bars=1, entry_models=[continuation]`. STRATEGY v0.4.
+- 2026-10-13: Bias audit (STRATEGY v0.5). `structure.structural_swings` (swing fixed by a close beyond the previous
+  opposite swing; HL = lowest close that pushed through the high) now drives trend, HTF trend and targets; point B =
+  last order-1 close turn on the confirm TF before the first touching bar (CADJPY 4H replay frame); `sweep_start`
+  (wick sweep of the previous origin candle high/low + close back, only where no KL was tapped) via
+  `levels.sweep_taps`; new story DEFAULT keys `b_pivot`, `sweep_start` (code defaults, not Mini App settings).
+  Telegram bias alert/summary reworded (BIAS, story TFs, BEARISH/BULLISH, level type, status, NO_TRADE reasons).
+  Entry `_setup` skips 0.0-pip stops. Golden engine output regenerated for these intended changes (backtest
+  numbers change; the backtest workflow reruns on push). New `slk/verify_examples.py` + workflow
+  `verify-examples.yml` replays Kevin's CADJPY/GBPJPY/USDJPY/USDCAD/EURAUD/GBPAUD/USDCHF examples on real candles.
+  Tests `tests/test_bias_audit.py`.

@@ -209,7 +209,7 @@ def _setup(px, tf, story, sell, entry, stop, bo, t_conf, why, extra):
     B = px.bars(tf)
     n = len(B["close"])
     risk = (stop - entry) if sell else (entry - stop)
-    if risk <= 0:
+    if round(risk / P, 1) <= 0:  # stop on (or within 0.05 pip of) the entry: no stop at all
         return None
     if risk / P > cfg["max_stop_pips"] + 1e-9:
         why["wide_stop"] += 1

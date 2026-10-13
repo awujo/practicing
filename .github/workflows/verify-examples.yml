@@ -1,0 +1,51 @@
+name: SLK verify Kevin examples
+# Replays Kevin King's own worked bias examples (slk/verify_examples.py) on real Dukascopy candles and commits
+# reports/EXAMPLES.md. Examples that fail are marked FAIL in the report; the job stays green unless the script crashes.
+on:
+  push:
+    branches: [claude-kevin-king]
+    paths: ["slk/verify_examples.py", ".github/workflows/verify-examples.yml"]
+  workflow_dispatch:
+    inputs:
+      only: {description: "Comma list of pairs or example ids, empty = all", default: ""}
+permissions:
+  contents: write
+concurrency: {group: slk-verify-examples, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:  # inputs reach the script only through env (no shell injection)
+      IN_ONLY: ${{ inputs.only }}
+      SLK_STORE: data/store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements-dev.txt
+      - name: Restore candle store (same store as the live job / backfill / backtest)
+        uses: actions/cache/restore@v4
+        with:
+          path: data/store
+          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            candles-full-
+            candles-live-
+      - name: Verify examples
+        run: |
+          mkdir -p reports
+          set +e
+          python -m slk.verify_examples --out reports --only "$IN_ONLY" > reports/examples_run.log 2>&1
+          rc=$?
+          echo "exit=$rc" >> reports/examples_run.log
+          cat reports/examples_run.log >> "$GITHUB_STEP_SUMMARY"
+          [ -f reports/EXAMPLES.md ] && cat reports/EXAMPLES.md >> "$GITHUB_STEP_SUMMARY"
+          grep -q "| \*\*FAIL\*\*\|| \*\*ERROR\*\*" reports/EXAMPLES.md 2>/dev/null && echo "::warning::some Kevin examples FAIL, see reports/EXAMPLES.md"
+          exit $rc
+      - name: Commit report
+        if: always()
+        run: |
+          git config user.name "slk-verify"; git config user.email "actions@github.com"
+          git add reports/EXAMPLES.md reports/examples_run.log 2>/dev/null || true
+          git commit -m "Kevin examples replay ($(date -u +%F))" || exit 0
+          git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}

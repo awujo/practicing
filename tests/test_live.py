@@ -27,20 +27,24 @@ def row(**kw):
 # ------------------------------------------------------------- messages
 def test_alert_format():
     m = format_alert("CONFIRMED", row())
-    assert m.splitlines()[0] == "EURUSD | Daily story | SELL | CONFIRMED"
-    assert "Level 1.08450 (A)" in m and "Point B 1.08120" in m and "Target 1.07600" in m
-    assert "Invalid if close above 1.08450" in m
+    assert m.splitlines()[0] == "BIAS | EURUSD | Daily story (D->H4) | BEARISH (SELL) | CONFIRMED"
+    assert "Origin level 1.08450 (A-shape, D)" in m and "Point B 1.08120 (H4 body close below" in m
+    assert "Target 1.07600" in m and "Invalid if D close above 1.08450" in m and "Not an entry" in m
     assert "Tap 2026-10-11 21:00 UTC" in m and "Confirmed 2026-10-12 21:00 UTC" in m
     j = format_alert("TAPPED", row(pair="GBPJPY", side="BUY", level=190.123, point_b=191.5, target=None,
                                    invalidation=190.123, confirm_time=None, status="TAPPED"))
     assert "TAPPED" in j and "190.123" in j and "Target -" in j and "below" in j and "Confirmed" not in j
+    assert "BULLISH (BUY)" in j and "NO_TRADE until the H4 breakout" in j
+    w = format_alert("CONFIRMED", row(story="W", level_kind="sweep", side="BUY", no_trade=True,
+                                      no_trade_reason="M/W conflict"))
+    assert "Weekly story (W->D)" in w and "sweep of previous week low" in w and "NO_TRADE (M/W conflict)" in w
 
 
 def test_summary():
-    assert summary_line("EURUSD", []) == "EURUSD: NO_TRADE"
-    assert summary_line("EURUSD", [row(status="TARGET_HIT")]) == "EURUSD: NO_TRADE"
+    assert summary_line("EURUSD", []) == "EURUSD: NO_TRADE (no story)"
+    assert summary_line("EURUSD", [row(status="TARGET_HIT")]) == "EURUSD: NO_TRADE (no story)"
     s = summary_line("EURUSD", [row(), row(story="W", status="TAPPED", side="BUY")])
-    assert s.startswith("EURUSD: W BUY tapped, D SELL B 1.08120")
+    assert s.startswith("EURUSD: W BUY tapped (NO_TRADE until breakout), D SELL B 1.08120")
     c = summary_line("EURUSD", [row(story="M", side="BUY"), row(story="W")])
     assert c.endswith("NO_TRADE (M/W disagree)")
     txt = format_summary(pd.Timestamp("2026-10-13 21:10", tz=UTC), {"EURUSD": [row()], "USDJPY": []}, "on")

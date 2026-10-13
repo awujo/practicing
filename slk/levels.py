@@ -65,3 +65,20 @@ def run_levels(bars, levels, tol):
             lv.events.append((b0 + nb, "break", False))
             queue.append(Level(lv.price, "buy" if lv.side == "sell" else "sell", "flip", b0 + nb + 1))
     return out
+
+
+def sweep_taps(bars):
+    """Alternative story start without a key level [T story-line-pt3@1887-2010, pt4@1349-1500; F story-line-pt3
+    sheet_026-029]: an origin candle's WICK goes beyond the previous candle's high (low) and the candle CLOSES
+    back below (above) it. Returned as already-tapped pseudo levels (kind 'sweep', price = the swept previous
+    high/low, born = tap = the sweep candle), so the rest of the story is the normal one: point B = the last
+    lower-TF swing made before the sweep (the sweep candle's own swing does not count), body close beyond B,
+    invalidation = a body close back beyond the swept high/low."""
+    h, l, c = bars["high"].to_numpy(), bars["low"].to_numpy(), bars["close"].to_numpy()
+    out = []
+    for j in range(1, len(c)):
+        if h[j] > h[j - 1] and c[j] < h[j - 1]:
+            out.append(Level(h[j - 1], "sell", "sweep", j, [(j, "tap", True)]))
+        if l[j] < l[j - 1] and c[j] > l[j - 1]:
+            out.append(Level(l[j - 1], "buy", "sweep", j, [(j, "tap", True)]))
+    return out

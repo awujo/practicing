@@ -337,31 +337,55 @@ def fmt_time(t):
 STORY_NAME = {"D": "Daily", "W": "Weekly", "M": "Monthly"}
 HEAD = {"TAPPED": "TAPPED (waiting for breakout)", "CONFIRMED": "CONFIRMED", "TARGET_HIT": "TARGET HIT",
         "INVALIDATED": "INVALIDATED"}
+KIND_NAME = {"A": "A-shape", "V": "V-shape", "OC": "open-close", "flip": "flipped level"}
+PERIOD = {"D": "day", "W": "week", "M": "month"}
+
+
+def level_name(r):
+    """Origin level type in words, e.g. 'A-shape, D' or 'sweep of previous day high'."""
+    k = r.get("level_kind")
+    if k == "sweep":
+        return f"sweep of previous {PERIOD[r['story']]} {'high' if r['side'] == 'SELL' else 'low'}"
+    return f"{KIND_NAME.get(k, k or '-')}, {STORIES[r['story']][0]}"
 
 
 def format_alert(event, r):
+    """Telegram BIAS message (not an entry): pair, story, direction, origin level + type, point B, target,
+    invalidation, status, NO_TRADE reason."""
     p = r["pair"]
     fp = lambda x: fmt_price(p, x)  # noqa: E731
-    lines = [f"{p} | {STORY_NAME[r['story']]} story | {r['side']} | {HEAD.get(event, event)}",
-             f"Level {fp(r['level'])} ({r.get('level_kind') or '-'})  Point B {fp(r['point_b'])}",
-             f"Target {fp(r['target'])}  Invalid if close {'above' if r['side'] == 'SELL' else 'below'} "
+    otf, ctf = STORIES[r["story"]]
+    sell = r["side"] == "SELL"
+    lines = [f"BIAS | {p} | {STORY_NAME[r['story']]} story ({otf}->{ctf}) | {'BEARISH' if sell else 'BULLISH'} "
+             f"({r['side']}) | {HEAD.get(event, event)}",
+             f"Origin level {fp(r['level'])} ({level_name(r)})",
+             f"Point B {fp(r['point_b'])} ({ctf} body close {'below' if sell else 'above'} it confirms)",
+             f"Target {fp(r['target'])}  Invalid if {otf} close {'above' if sell else 'below'} "
              f"{fp(r['invalidation'])}",
              f"Tap {fmt_time(r['tap_time'])}"]
     if r.get("confirm_time"):
         lines.append(f"Confirmed {fmt_time(r['confirm_time'])}")
+    if r.get("no_trade"):
+        lines.append(f"Status: NO_TRADE ({r.get('no_trade_reason') or 'filter'})")
+    elif event == "TAPPED":
+        lines.append(f"Status: NO_TRADE until the {ctf} breakout of point B (no breakout, no story)")
+    elif event == "CONFIRMED":
+        lines.append("Status: bias confirmed. Not an entry: wait for an entry alert")
+    else:
+        lines.append(f"Status: story over ({HEAD.get(event, event)})")
     return "\n".join(lines)
 
 
 def summary_line(pair, rows):
     act = sorted((r for r in rows if r["status"] in ACTIVE), key=lambda r: "MWD".index(r["story"]))
     if not act:
-        return f"{pair}: NO_TRADE"
+        return f"{pair}: NO_TRADE (no story)"
     conf = {r["story"]: r["side"] for r in act if r["status"] == "CONFIRMED"}
     parts = []
     for r in act:
         s = f"{r['story']} {r['side']}"
         if r["status"] == "TAPPED":
-            s += " tapped"
+            s += " tapped (NO_TRADE until breakout)"
         else:
             s += f" B {fmt_price(pair, r['point_b'])} T {fmt_price(pair, r['target'])}"
         parts.append(s)
@@ -373,7 +397,7 @@ def summary_line(pair, rows):
 
 def format_summary(now, by_pair, kill_switch="off"):
     ny = _ts(now).tz_convert("America/New_York")
-    head = [f"SLK daily bias {ny:%a %Y-%m-%d} (NY close)",
+    head = [f"SLK daily BIAS {ny:%a %Y-%m-%d} (NY close) - direction only, not entries",
             "Trading: OFF (kill switch)" if str(kill_switch).lower() == "on" else "Trading: kill switch off"]
     return "\n".join(head + [summary_line(p, rows) for p, rows in by_pair.items()])
 

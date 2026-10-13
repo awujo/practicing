@@ -53,8 +53,7 @@ def ob_start(h, tap_time):
 
 
 def test_current_tap_respects_htf_filter():
-    from slk.story import _htf_trend
-    from slk.structure import pivots
+    from slk.story import _htf_trend, _structure
     h1 = walk(24 * 500, seed=1)
     found = 0
     for end in pd.date_range(h1.index[24 * 300], h1.index[-1], freq="1D")[:60]:
@@ -64,7 +63,7 @@ def test_current_tap_respects_htf_filter():
             continue
         found += 1
         hb = resample(h, "W")
-        tr = _htf_trend(hb, pivots(hb["close"], DEFAULT["swing_pivot"]), ob_start(h, t["tap_time"]))
+        tr = _htf_trend(hb, _structure(hb, DEFAULT), ob_start(h, t["tap_time"]))
         assert not (t["side"] == "SELL" and tr == "up") and not (t["side"] == "BUY" and tr == "down")
     assert found > 0
 

@@ -3,15 +3,16 @@ import numpy as np
 import pandas as pd
 
 from .candles import resample
-from .levels import find_levels, run_levels
-from .structure import SwingBook, pivots, swings, trend
+from .levels import find_levels, run_levels, sweep_taps
+from .structure import SwingBook, pivots, structural_swings, swings, trend
 
 STORIES = {"M": ("M", "W"), "W": ("W", "D"), "D": ("D", "H4")}
 HIGHER = {"D": "W", "W": "M", "M": None}
 
 DEFAULT = {
     "level_pivot": 1,       # A/V must be a close-line turning point of this order
-    "swing_pivot": 2,       # swings for trend / point B / targets
+    "swing_pivot": 2,       # close-line turning points that can become structural swings (trend, targets)
+    "b_pivot": 1,           # point B = last close-line V/A turn of this order on the confirm TF before the tap
     "use_oc": True,
     "trend_filter": True,   # only levels that agree with the origin-TF trend
     "tap_tol_pips": 1.0,    # wick within this distance of the line counts as a touch
@@ -22,6 +23,8 @@ DEFAULT = {
     "stop_buffer_pips": 2.0,
     "max_hold": 20,         # origin bars after confirmation
     "mw_conflict_filter": True,  # latest M and W stories point opposite ways -> D stories are NO_TRADE (§2)
+    "sweep_start": True,    # alternative start without a key level: wick sweep of the previous origin candle's
+                            # high/low + close back inside [T story-line-pt3@1887-2010, pt4@1349-1500]
 }
 # Point B is broken only by an EXTERNAL break: a confirm-TF body close beyond B, the last opposite swing before
 # the first tap (+ same_bar_close). Kevin's two confirmations, "sweep and break" (advanced structure: sweep of
@@ -71,10 +74,10 @@ def find_stories(pair, h1, story, cfg=None):
     P = pip(pair)
     tol = cfg["tap_tol_pips"] * P
     levels = run_levels(ob, find_levels(ob, cfg), tol)
-    opiv, cpiv = pivots(ob["close"], cfg["swing_pivot"]), pivots(cb["close"], cfg["swing_pivot"])
+    opiv, cpiv = _structure(ob, cfg), pivots(cb["close"], cfg["b_pivot"])
     htf = HIGHER[story]
     hb = resample(h1, htf) if htf else None
-    hpiv = pivots(hb["close"], cfg["swing_pivot"]) if htf else None
+    hpiv = _structure(hb, cfg) if htf else None
 
     O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
     C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
@@ -83,11 +86,7 @@ def find_stories(pair, h1, story, cfg=None):
     c2o = np.searchsorted(o_start, c_start, side="right") - 1  # origin bar holding each confirm bar
     X = _Ctx(O, c2o, opiv, cpiv, hb, hpiv, levels)
 
-    taps = {}
-    for lv in levels:
-        for b, kind, _ in lv.events:
-            if kind == "tap":
-                taps.setdefault(b, []).append(lv)
+    taps = _taps(levels, ob, cfg)
 
     rows, busy_until = [], -1
     for bar in sorted(taps):
@@ -102,7 +101,7 @@ def find_stories(pair, h1, story, cfg=None):
             cands = taps[bar]
         if not cands:
             continue
-        lv = max(cands, key=lambda x: x.born)  # most recent fresh level
+        lv = _pick(cands)
         h_tr = X.htf_trend(o_start[bar]) if htf else None
         if cfg["htf_filter"] and _against(lv.side, h_tr):
             continue
@@ -116,6 +115,42 @@ def find_stories(pair, h1, story, cfg=None):
         rows.append(r)
         busy_until = r.pop("_busy")
     return rows
+
+
+def _structure(bars, cfg):
+    """Structural swings of the close line (trend, targets): STRATEGY §1, slk/structure.structural_swings."""
+    c = bars["close"].to_numpy()
+    return structural_swings(c, pivots(c, cfg["swing_pivot"]))
+
+
+def _taps(levels, ob, cfg):
+    """origin bar -> levels tapped (wick in, close back) on it; plus the alternative start (sweep of the
+    previous origin candle's high/low) when cfg['sweep_start']."""
+    taps = {}
+    for lv in levels:
+        for b, kind, _ in lv.events:
+            if kind == "tap":
+                taps.setdefault(b, []).append(lv)
+    if cfg.get("sweep_start"):
+        for lv in sweep_taps(ob):
+            taps.setdefault(lv.born, []).append(lv)
+    return taps
+
+
+def _pick(cands):
+    """Most recent fresh key level; the sweep start only when no key level was tapped on that bar ("sometimes
+    there will not be any key level" [T story-line-pt3@1887-1917]); a sweep INTO a key level is that level's tap."""
+    kl = [x for x in cands if x.kind != "sweep"]
+    return max(kl or cands, key=lambda x: x.born)
+
+
+def _point_b(sw, k0, sell):
+    """Point B: the last confirm-TF close-line V-shape (sell) / A-shape (buy) made BEFORE the first touch bar k0
+    [T story-line-pt3@1690-1790; F story-line-pt2/sheet_015 t=1140-1180: CADJPY 4H line chart, ray at the last
+    small peak ~113.2 just before the tap]. `sw` = swings known at the close of k0 (the touch bar's close may
+    complete a turn made at k0-1); the rejection's own swing (index >= k0) never counts."""
+    pts = [s[2] for s in sw if s[1] == ("L" if sell else "H") and s[0] < k0]
+    return pts[-1] if pts else None
 
 
 def _htf_trend(hb, hpiv, t):
@@ -164,11 +199,10 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, X):
         return None
     touch = [k for k in ks if (C["high"][k] >= lv.price - tol if sell else C["low"][k] <= lv.price + tol)]
     k0 = touch[0] if touch else ks[0]
-    sw = X.csw.at(k0 - 1)
-    pts = [s[2] for s in sw if s[1] == ("L" if sell else "H")]
-    if not pts:
+    sw = X.csw.at(k0)
+    B = _point_b(sw, k0, sell)
+    if B is None:
         return None
-    B = pts[-1]
     if (sell and B >= lv.price) or (not sell and B <= lv.price):
         return None
 
@@ -257,7 +291,7 @@ def _break_kind(sell, sw, k0, brk, C):
     first tap and the breakout, a confirm-TF wick went beyond the last swing high (sell; low for buy) made
     before the tap and the candle closed back inside: a sweep of that liquidity, then the break (advanced
     structure = sweep -> BOS) [T story-line-pt2@405-436; notes_structure §4]. Otherwise "breakout"."""
-    liq = [s[0] for s in sw if s[1] == ("H" if sell else "L")]
+    liq = [s[0] for s in sw if s[1] == ("H" if sell else "L") and s[0] < k0]
     if not liq:
         return "breakout"
     x = C["high"][liq[-1]] if sell else C["low"][liq[-1]]
@@ -278,7 +312,7 @@ def current_tap(pair, h1, story, cfg=None):
     P = pip(pair)
     tol = cfg["tap_tol_pips"] * P
     levels = run_levels(ob, find_levels(ob, cfg), tol)
-    opiv, cpiv = pivots(ob["close"], cfg["swing_pivot"]), pivots(cb["close"], cfg["swing_pivot"])
+    opiv, cpiv = _structure(ob, cfg), pivots(cb["close"], cfg["b_pivot"])
     O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
     C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
     o_start = ob["start"].to_numpy()
@@ -286,14 +320,10 @@ def current_tap(pair, h1, story, cfg=None):
     last = len(O["close"]) - 1
     htf = HIGHER[story]
     hb = resample(h1, htf) if htf else None
-    hpiv = pivots(hb["close"], cfg["swing_pivot"]) if htf else None
+    hpiv = _structure(hb, cfg) if htf else None
     X = _Ctx(O, c2o, opiv, cpiv, hb, hpiv, levels)
 
-    taps = {}
-    for lv in levels:
-        for b, kind, _ in lv.events:
-            if kind == "tap":
-                taps.setdefault(b, []).append(lv)
+    taps = _taps(levels, ob, cfg)
 
     for bar in sorted(taps, reverse=True):
         if bar < last - cfg["max_wait"]:
@@ -309,7 +339,7 @@ def current_tap(pair, h1, story, cfg=None):
             cands = taps[bar]
         if not cands:
             continue
-        lv = max(cands, key=lambda x: x.born)
+        lv = _pick(cands)
         if htf and cfg["htf_filter"] and _against(lv.side, X.htf_trend(o_start[bar])):
             continue
         sell = lv.side == "sell"
@@ -318,10 +348,9 @@ def current_tap(pair, h1, story, cfg=None):
             continue
         touch = [k for k in ks if (C["high"][k] >= lv.price - tol if sell else C["low"][k] <= lv.price + tol)]
         k0 = touch[0] if touch else ks[0]
-        pts = [s[2] for s in X.csw.at(k0 - 1) if s[1] == ("L" if sell else "H")]
-        if not pts:
+        B = _point_b(X.csw.at(k0), k0, sell)
+        if B is None:
             continue
-        B = pts[-1]
         if (sell and B >= lv.price) or (not sell and B <= lv.price):
             continue
 

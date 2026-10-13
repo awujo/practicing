@@ -27,6 +27,46 @@ def pivots(close, n):
     return [(int(i), "H" if hi[i - n] else "L", c[i], int(i) + n) for i in np.flatnonzero(hi | lo) + n]
 
 
+def structural_swings(close, piv):
+    """Kevin's swings for TREND and targets (STRATEGY §1, REVIEW #23): only the main legs of the close line.
+
+    A swing is fixed only when a later close goes beyond the previous opposite swing [T basic-ms@456-620,
+    F basic-ms/sheet_004]: a close above the last swing high fixes the swing low = the lowest close between that
+    high and the breaking close ("the lowest point that pushed price to take out the high"; a deeper dip before
+    the break replaces an earlier candidate); a close below the last swing low fixes the swing high = the highest
+    close in between (mirror; a break against the trend = BMS). The high/low that has to be broken is the most
+    extreme close-line turning point (`piv`, already known) after the last fix, so wiggles inside a pullback
+    (a lower high in an uptrend, a higher low in a downtrend) never become swings.
+
+    Returns (idx, 'H'/'L', price, known_at) like `pivots`, strictly alternating; known_at = the breaking bar
+    (no look-ahead), non-decreasing, so SwingBook/swings() work on it unchanged."""
+    c = np.asarray(close, dtype=float)
+    out = []
+    ref = {"H": None, "L": None}  # (idx, price) a close must go beyond; the protected one is never moved
+    pend = {"H", "L"}             # refs still being searched: the most extreme turning point since the last fix
+    since, j = 0, 0
+    for i in range(len(c)):
+        while j < len(piv) and piv[j][3] <= i:  # turning points known by bar i
+            p = piv[j]
+            j += 1
+            k = p[1]
+            if k in pend and p[0] >= since and (ref[k] is None or (p[2] > ref[k][1] if k == "H" else p[2] < ref[k][1])):
+                ref[k] = (p[0], p[2])
+        for k, beyond in (("H", lambda x, r: x > r), ("L", lambda x, r: x < r)):
+            r = ref[k]
+            if r is None or not beyond(c[i], r[1]) or i < r[0] + 2:
+                continue
+            if not out or out[-1][1] != k:
+                out.append((r[0], k, r[1], i))        # the broken extreme is a swing (unless already the last one)
+            seg = c[r[0] + 1:i]
+            m = r[0] + 1 + int(seg.argmin() if k == "H" else seg.argmax())
+            o = "L" if k == "H" else "H"
+            out.append((m, o, c[m], i))                # the opposite swing that pushed price through it
+            ref[o], ref[k], pend, since = (m, c[m]), None, {k}, i
+            break
+    return out
+
+
 def swings(piv, upto):
     """Alternating swing list from pivots known at bar `upto` (keep the more extreme of repeats)."""
     sw = []

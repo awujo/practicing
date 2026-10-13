@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.4, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.5, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -28,7 +28,13 @@ breaks from **body closes**.
 
 **Swing.** A turning point of the close line, i.e. the highest/lowest close of a leg. It is fixed only when a
 later close goes beyond the previous opposite swing. Kevin marks only the main legs, not every wiggle
-[T basic-ms@159-620, F basic-ms/sheet_004].
+[T basic-ms@159-620, F basic-ms/sheet_004]. The low that counts is "the lowest point that pushed price to take out
+the high"; if price dips deeper before the break, the deeper dip becomes the HL [T basic-ms@456-620].
+Bot (`slk/structure.structural_swings`, used for **trend and targets**): a close above the last swing high fixes
+the swing low = lowest close since that high; a close below the last swing low fixes the swing high = highest
+close since that low (against the trend = BMS). The high/low to be broken is the most extreme close-line turning
+point since the last fix, so a lower high inside an uptrend pullback (higher low in a downtrend) is never a swing.
+Swings are known only at the breaking close (no look-ahead).
 
 **Trend.** HH + HL = up, LH + LL = down, otherwise **range → no bias** [T basic-ms-pt2@1590].
 
@@ -80,9 +86,19 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
    or the ERL.
 3. **Tap, reject, close (origin TF, candles).** A candle **wicks into** the level and **closes back below it**.
    Wait for the candle to close. → status `TAPPED`
-   *Alternative start:* the wick sweeps the previous day/week high and the candle closes back below [T story-line-pt3@1887-2090].
+   *Alternative start (no key level):* the origin candle's wick sweeps the **previous origin candle's high**
+   (previous day high for D, previous week high for W) and the candle closes back below it; then the same steps 4-6
+   with point B = the last lower-TF V-shape made **before the sweep** (the sweep candle's own swing does not count)
+   and invalidation = a body close back above the swept high [T story-line-pt3@1887-2096, pt4@1349-1500;
+   F story-line-pt3/sheet_026-029]. "Sometimes there will not be any key level": the bot uses it only on a bar
+   where no fresh trend level was tapped (a sweep INTO a key level, like USDCAD, is that level's tap). Built
+   (`sweep_start`, kind `sweep`).
 4. **Find point B (confirm TF).** On the lower timeframe, find the **last swing low made before price first
    tapped the level**. Not the low made by the rejection itself [T story-line-pt3@1690-1790, F story-line-pt2].
+   "Last V-shape" = the last valley of the lower-TF close line, i.e. a two-candle turn (as the V key level); in the
+   CADJPY replay B is the small 4H close peak (~113.2) right before the tapping 4H candle [F story-line-pt2/sheet_015
+   t=1140-1180]. Bot: close-line turning points of order `b_pivot` = 1 made before the first touching lower-TF
+   candle; the touching candle's close may complete that turn.
 5. **Breakout (confirm TF, candles).** A candle **body closes below B** → story **confirmed**, bias **BEARISH**.
    He labels it `bms` / `EXT`. Any later breaks are internal BOS and are for entries only.
    The confirm TF may also show a **sweep + break (QM)** instead of a plain break; either confirms [T story-line-pt2@330-436].
@@ -178,7 +194,7 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 
 | # | Point | Answer |
 |---|---|---|
-| 1 | Swing detection | Turning points of the **close line**, fixed by a close beyond the previous opposite swing (§1). |
+| 1 | Swing detection | Turning points of the **close line**, fixed by a close beyond the previous opposite swing (§1), for trend and targets. Point B uses the last close-line V/A turn before the tap (§2 step 4). |
 | 2 | Key-level price | **Body/close price** where two candles turn: the line-chart peak/valley, not the wick tip [F key-levels-pt1/sheet_018]. |
 | 3 | Zone height | None: a thin line. Tap = wick touches/crosses the line, rejection = close back on the original side. |
 | 4 | Daily close | 17:00 New York (TradingView forex and IC Markets cTrader use the same close). |
@@ -186,3 +202,8 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 6 | Tap tolerance | OUR CHOICE: a wick within 1 pip of the line counts as a touch. |
 | 7 | Max wait tap → breakout | OUR CHOICE: 5 origin-TF candles. |
 | 8 | Pairs / sessions | All pairs, no session filter. |
+| 9 | Structural swing candidates | OUR CHOICE: the high/low that must be broken is a close-line turning point of order `swing_pivot` = 2 (2 closes each side); Kevin gives no size for "main leg". |
+| 10 | Point B turn | OUR CHOICE grounded in the V/A-shape definition (two candles turning) and the CADJPY replay: order `b_pivot` = 1 on the confirm-TF close line. |
+| 11 | Sweep start on M | OUR CHOICE: Kevin shows previous day / previous week; the bot also allows previous month for the M story. Trend and HTF filters apply as for a key level. |
+| 12 | Sweep start vs key level | OUR CHOICE: a key-level tap on the same origin bar wins; the sweep start is used only when no fresh trend level was tapped. |
+| 13 | Other engine defaults | OUR CHOICE: `level_pivot` = 1, `max_hold` = 20 origin bars, `stop_buffer_pips` = 2, `max_retaps` = 3 (Kevin skips at "4-5" taps), `same_bar_close` on (written rule). |
