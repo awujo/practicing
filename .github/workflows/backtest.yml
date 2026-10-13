@@ -17,6 +17,12 @@ jobs:
   backtest:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:  # workflow inputs reach the scripts only through env (no shell injection)
+      IN_START: ${{ inputs.start || '2018' }}
+      IN_END: ${{ inputs.end || '2025' }}
+      IN_PAIRS: ${{ inputs.pairs }}
+      IN_CFG: ${{ inputs.cfg || '{}' }}
+      IN_ENTRY_CFG: ${{ inputs.entry_cfg || '{}' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,24 +33,31 @@ jobs:
         with:
           path: data
           key: dukascopy-h1-${{ inputs.start || '2018' }}-${{ inputs.end || '2025' }}-v1
+      # a failing run turns the step red (the report is still committed below)
       - name: Backtest
+        id: bt
         run: |
-          ARGS="--start ${{ inputs.start || '2018' }} --end ${{ inputs.end || '2025' }} --out reports"
-          [ -n "${{ inputs.pairs }}" ] && ARGS="$ARGS --pairs ${{ inputs.pairs }}"
+          ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
+          [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
           mkdir -p reports
           set +e
-          python -m slk.backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' > reports/run.log 2>&1
-          echo "exit=$?" >> reports/run.log
+          python -m slk.backtest "${ARGS[@]}" --cfg "$IN_CFG" > reports/run.log 2>&1
+          rc=$?
+          echo "exit=$rc" >> reports/run.log
           tail -c 60000 reports/run.log >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
       - name: Entry backtest
+        if: ${{ !cancelled() && steps.bt.outcome != 'skipped' }}  # also after a failed story backtest
         run: |
-          ARGS="--start ${{ inputs.start || '2018' }} --end ${{ inputs.end || '2025' }} --out reports"
-          [ -n "${{ inputs.pairs }}" ] && ARGS="$ARGS --pairs ${{ inputs.pairs }}"
+          ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
+          [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
           mkdir -p reports
           set +e
-          python -m slk.entry_backtest $ARGS --cfg '${{ inputs.cfg || '{}' }}' --entry-cfg '${{ inputs.entry_cfg || '{}' }}' > reports/entry_run.log 2>&1
-          echo "exit=$?" >> reports/entry_run.log
+          python -m slk.entry_backtest "${ARGS[@]}" --cfg "$IN_CFG" --entry-cfg "$IN_ENTRY_CFG" > reports/entry_run.log 2>&1
+          rc=$?
+          echo "exit=$rc" >> reports/entry_run.log
           tail -c 60000 reports/entry_run.log >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
       - name: Commit report
         if: always()
         run: |

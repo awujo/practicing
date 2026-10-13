@@ -17,6 +17,7 @@ DEFAULT = {
     "max_wait": 5,          # origin bars from tap to breakout
     "max_retaps": 3,        # more re-taps before breakout = messy, skip
     "same_bar_close": True, # origin bar holding the breakout must close beyond B too
+    "htf_filter": True,     # never against the higher-TF trend (STRATEGY §2 no-trade rules)
     "stop_buffer_pips": 2.0,
     "max_hold": 20,         # origin bars after confirmation
 }
@@ -64,17 +65,29 @@ def find_stories(pair, h1, story, cfg=None):
         if not cands:
             continue
         lv = max(cands, key=lambda x: x.born)  # most recent fresh level
+        h_tr = _htf_trend(hb, hpiv, o_start[bar]) if htf else None
+        if cfg["htf_filter"] and _against(lv.side, h_tr):
+            continue
         r = _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, opiv, levels)
         if r is None:
             continue
         r.update(pair=pair, story=story, trend=tr, level_kind=lv.kind, level=lv.price,
                  tap_time=str(o_start[bar])[:16])
         if htf:
-            hi = np.searchsorted(hb["start"].to_numpy(), o_start[bar], side="right") - 2  # last closed HTF bar
-            r["htf_trend"] = trend(swings(hpiv, hi), hb["close"].iat[hi]) if hi >= 2 else "range"
+            r["htf_trend"] = h_tr
         rows.append(r)
         busy_until = r.pop("_busy")
     return rows
+
+
+def _htf_trend(hb, hpiv, t):
+    """Trend of the higher TF on its last bar closed before time t."""
+    hi = np.searchsorted(hb["start"].to_numpy(), t, side="right") - 2  # last closed HTF bar
+    return trend(swings(hpiv, hi), hb["close"].iat[hi]) if hi >= 2 else "range"
+
+
+def _against(side, htf_trend):
+    return (side == "sell" and htf_trend == "up") or (side == "buy" and htf_trend == "down")
 
 
 def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, opiv, levels):
@@ -118,19 +131,22 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
     if brk is None:
         return None
 
-    # confirmed when both the breakout bar and the tap bar have closed
+    # confirmed when the breakout bar and the tap bar have closed, and (same_bar_close) the origin bar holding
+    # the breakout too: its close beyond B was used above, so it must not be known earlier (no look-ahead)
+    need_end = o_end[c2o[brk]] if cfg["same_bar_close"] else o_end[bar]
     conf_k = brk
-    while conf_k + 1 < len(c_end) and c_end[conf_k] < o_end[bar]:
+    while conf_k + 1 < len(c_end) and c_end[conf_k] < need_end:
         conf_k += 1
     ref = C["close"][conf_k]
     conf_o = c2o[conf_k]
+    closed_o = int(np.searchsorted(o_end, c_end[conf_k], "right")) - 1  # last origin bar closed at confirmation
 
     # target: nearest opposite fresh level or origin-TF swing beyond the entry reference
     cands = []
     for o in levels:
-        if o.side == ("buy" if sell else "sell") and o.born <= conf_o and not any(e[0] <= conf_o for e in o.events):
+        if o.side == ("buy" if sell else "sell") and o.born <= closed_o and not any(e[0] <= closed_o for e in o.events):
             cands.append(o.price)
-    cands += [s[2] for s in swings(opiv, conf_o) if s[1] == ("L" if sell else "H")]
+    cands += [s[2] for s in swings(opiv, closed_o) if s[1] == ("L" if sell else "H")]
     cands = [x for x in cands if (x < ref if sell else x > ref)]
     if not cands:
         return None
@@ -161,7 +177,7 @@ def _confirm(lv, bar, cfg, P, O, C, o_start, o_end, c_start, c_end, c2o, cpiv, o
         if out != "timeout" and inv != "open":
             break
         k += 1
-    last = min(k, len(C["close"]) - 1)
+    last = min(k, len(C["close"])) - 1  # last bar inside the hold window (k is the first one past it)
     if out == "timeout":
         res = ((ref - C["close"][last]) if sell else (C["close"][last] - ref)) / risk
     done_o = c2o[exit_k] if exit_k is not None else c2o[last]
@@ -190,6 +206,9 @@ def current_tap(pair, h1, story, cfg=None):
     o_start = ob["start"].to_numpy()
     c2o = np.searchsorted(o_start, cb["start"].to_numpy(), side="right") - 1
     last = len(O["close"]) - 1
+    htf = HIGHER[story]
+    hb = resample(h1, htf) if htf else None
+    hpiv = pivots(hb["close"], cfg["swing_pivot"]) if htf else None
 
     taps = {}
     for lv in levels:
@@ -212,6 +231,8 @@ def current_tap(pair, h1, story, cfg=None):
         if not cands:
             continue
         lv = max(cands, key=lambda x: x.born)
+        if htf and cfg["htf_filter"] and _against(lv.side, _htf_trend(hb, hpiv, o_start[bar])):
+            continue
         sell = lv.side == "sell"
         ks = np.arange(np.searchsorted(c2o, bar, "left"), np.searchsorted(c2o, bar, "right"))
         if not len(ks):

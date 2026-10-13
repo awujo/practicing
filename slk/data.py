@@ -60,11 +60,14 @@ def hourly(pair, start_year, end_year):
     """UTC-indexed hourly OHLC for [start_year, end_year], cached per pair."""
     os.makedirs(CACHE, exist_ok=True)
     path = os.path.join(CACHE, f"{pair}_H1.csv.gz")
+    now = datetime.utcnow()
     if os.path.exists(path):
         df = pd.read_csv(path, index_col=0, parse_dates=True)
-        if df.index[0].year <= start_year and df.index[-1].year >= min(end_year, datetime.utcnow().year):
+        # the cache must reach (almost) the end of end_year, or the last week when end_year is not over yet;
+        # a cache saved early in a year would otherwise be reused for that year forever
+        need = min(datetime(end_year, 12, 20), now - pd.Timedelta(days=7))
+        if df.index[0].year <= start_year and df.index[-1].tz_localize(None) >= pd.Timestamp(need):
             return df
-    now = datetime.utcnow()
     months = [(y, m) for y in range(start_year, end_year + 1) for m in range(1, 13) if (y, m) <= (now.year, now.month)]
 
     def safe(ym):

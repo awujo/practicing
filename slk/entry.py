@@ -250,7 +250,8 @@ def simulate(row, px):
     e, s = row["entry"], row["stop"]
     risk = abs(s - e)
     t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * TF_HOURS[row["tf"]]), "h")
-    last = min(int(np.searchsorted(H["start"], t_cap, "left")), len(H["close"]) - 1)
+    j = int(np.searchsorted(H["start"], t_cap, "left"))  # first H1 bar past the holding time
+    last = min(j, len(H["close"])) - 1
     for v in ("tp1", "tp2"):
         tp = row[v]
         res, out, k_exit = None, "timeout", last
@@ -265,7 +266,7 @@ def simulate(row, px):
                 break
         if res is None:
             res = ((e - H["close"][last]) if sell else (H["close"][last] - e)) / risk
-            if last >= len(H["close"]) - 1 and H["start"][last] < t_cap:
+            if j >= len(H["close"]) and H["end"][last] < t_cap:  # data ends before the holding time
                 out = "open"
         row[f"{v}_outcome"], row[f"{v}_R"] = out, round(float(res), 2)
         row[f"{v}_exit_time"] = _s(H["start"][k_exit])

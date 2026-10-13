@@ -124,4 +124,5 @@ def test_approve_needs_confirm_mode(client):
 
 def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
-    assert len(stmts) == 5 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts)
+    assert len(stmts) == 6 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:5])
+    assert stmts[5].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
