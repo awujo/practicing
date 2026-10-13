@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/trading/trading/slk/entry_backtest.py", line 98, in <module>
+    main()
+  File "/home/runner/work/trading/trading/slk/entry_backtest.py", line 83, in main
+    h1 = hourly(pair, a.start, a.end)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 83, in hourly
+    got[i] = _month(pair, *ym)
+             ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 44, in _month
+    raw = _get(URL.format(pair=pair, y=y, m=m - 1))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/trading/trading/slk/data.py", line 40, in _get
+    raise RuntimeError(f"download failed: {url} ({type(last).__name__}: {last})")
+RuntimeError: download failed: https://datafeed.dukascopy.com/datafeed/EURUSD/2019/01/BID_candles_hour_1.bi5 (HTTPError: HTTP Error 503: Service Unavailable)
+exit=1
