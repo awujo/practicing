@@ -1,5 +1,5 @@
 name: SLK live bias
-# Hourly bias runner (no VPS). Needs repo secrets DATABASE_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+# Hourly bias runner (no VPS). Needs repo secrets DATABASE_URL, TELEGRAM_BOT_TOKEN (chat id defaults to the owner, 1410229777)
 # (optional DATABASE_CA = Aiven CA certificate, to verify the server). Without secrets it exits green.
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_CA: ${{ secrets.DATABASE_CA }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1410229777' }}
       SLK_CACHE: data
     steps:
       - name: Check secrets
