@@ -2,7 +2,7 @@ name: SLK backtest
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/**", ".github/workflows/backtest.yml"]
+    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", ".github/workflows/backtest.yml"]
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = all 28", default: ""}
@@ -12,7 +12,7 @@ on:
       entry_cfg: {description: "JSON overrides of slk/entry.py DEFAULT", default: "{}"}
 permissions:
   contents: write
-concurrency: {group: slk-backtest, cancel-in-progress: true}
+concurrency: {group: slk-backtest, cancel-in-progress: false}
 jobs:
   backtest:
     runs-on: ubuntu-latest
