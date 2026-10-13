@@ -1,0 +1,39 @@
+name: cTrader smoke
+on:
+  push:
+    branches: [claude-kevin-king]
+    paths: ["ctrader/**", "tests/test_ctrader.py", ".github/workflows/ctrader-smoke.yml"]
+  workflow_dispatch:
+    inputs:
+      test_order:
+        description: "Demo only: open a min-volume EURUSD market order with SL/TP, then close it"
+        type: boolean
+        default: false
+      symbol: {default: "EURUSD"}
+permissions:
+  contents: read
+concurrency: {group: ctrader-smoke, cancel-in-progress: false}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install "protobuf>=3.20" pandas requests pymysql pytest
+      - run: python -m pytest -q tests/test_ctrader.py
+      - name: Smoke
+        run: |
+          ARGS="--symbol ${{ inputs.symbol || 'EURUSD' }}"
+          [ "${{ inputs.test_order }}" = "true" ] && ARGS="$ARGS --test-order"
+          python -m ctrader.smoke $ARGS | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}
