@@ -60,9 +60,13 @@ jobs:
               db.apply_schema(); print("schema ok")
           except Exception as e:
               msg = re.sub(r"://[^@]*@", "://***@", f"{type(e).__name__}: {e}").replace(os.environ.get("DATABASE_URL", "") or "\0", "***")
-              p = db.parse_url(os.environ.get("DATABASE_URL", ""))
+              msg = msg.replace(os.environ.get("DATABASE_PASSWORD", "").strip() or "\0", "***")
               print(f"::error title=Database::{msg}")
-              print(f"::error title=Parsed URL::user={p.get('user')} host={p.get('host')} port={p.get('port')} db={p.get('database')} password_length={len(p.get('password') or '')} starts_mysql={os.environ.get('DATABASE_URL','').startswith('mysql://')}")
+              try:
+                  p = db.parse_url(os.environ.get("DATABASE_URL", ""))
+                  print(f"::error title=Parsed URL::user={p.get('user')} host={p.get('host')} port={p.get('port')} db={p.get('database')} password_length={len(p.get('password') or '')} pw_starts_AVNS={(p.get('password') or '').startswith('AVNS_')} pw_from_url={bool(__import__('urllib.parse').parse.urlparse(os.environ.get('DATABASE_URL','')).password)} separate_secret_length={len(os.environ.get('DATABASE_PASSWORD','').strip())} starts_mysql={os.environ.get('DATABASE_URL','').startswith('mysql://')}")
+              except Exception as pe:
+                  print(f"::error title=Parsed URL::{type(pe).__name__}: {pe}")
               sys.exit(1)
           PY
       - name: Run live bias
