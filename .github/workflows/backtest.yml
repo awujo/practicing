@@ -34,10 +34,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            candles-full-
-            candles-live-
+          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v2-
       # a failing run turns the step red (the report is still committed below)
       - name: Backtest
         id: bt
@@ -63,12 +61,17 @@ jobs:
           echo "exit=$rc" >> reports/entry_run.log
           tail -c 60000 reports/entry_run.log >> "$GITHUB_STEP_SUMMARY"
           exit $rc
-      - name: Save candle store
+      - name: Is the candle store complete?
+        id: chk
         if: always()
+        run: |
+          if python -m slk.store --check --start 2018; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Save candle store
+        if: always() && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Commit report
         if: always()
         run: |

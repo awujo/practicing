@@ -63,8 +63,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-live-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: candles-live-
+          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v2-
       - name: Apply db/schema.sql
         if: steps.s.outputs.ok == 'true'
         run: |
@@ -90,12 +90,17 @@ jobs:
           PAIRS_IN: ${{ inputs.pairs }}
         run: |
           if [ -n "$PAIRS_IN" ]; then python -m slk.live --pairs "$PAIRS_IN"; else python -m slk.live; fi
+      - name: Is the candle store complete?
+        id: chk
+        if: always()
+        run: |
+          if python -m slk.store --check --start 2018; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Save candle store
-        if: always() && steps.s.outputs.ok == 'true'
+        if: always() && steps.s.outputs.ok == 'true' && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-live-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Telegram alert on failure
         if: failure()
         env:

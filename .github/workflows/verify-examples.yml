@@ -14,7 +14,7 @@ concurrency: {group: slk-verify-examples, cancel-in-progress: false}
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:  # inputs reach the script only through env (no shell injection)
       IN_ONLY: ${{ inputs.only }}
       SLK_STORE: data/store
@@ -27,10 +27,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-full-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            candles-full-
-            candles-live-
+          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v2-
       - name: Verify examples
         run: |
           mkdir -p reports

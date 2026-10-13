@@ -142,3 +142,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   filter), #31c fixed (needs the daily to have flipped first: D close through an opposite level within max_wait).
   Live look-ahead fixed: forming W/M bar treated as closed (overlap, HTF targets) -> nominal close. flip_scan speed
   fixed (memo). Golden regenerated for these three logic fixes only. REVIEW.md "Validation 4".
+- 2026-10-13: Cache fix: cancelled runs had saved PARTIAL candle stores and `restore-keys` picks the newest, so jobs kept
+  re-downloading and timing out. Now one prefix `candles-v2-`, and every workflow saves only when
+  `python -m slk.store --check --start 2018` says the store is complete. Backfill re-runs (push trigger) starting from the
+  old caches; live/backtest/examples wait for it via the shared candle cache.

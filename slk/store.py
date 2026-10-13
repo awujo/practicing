@@ -263,6 +263,20 @@ def backfill(pairs, start_year, now=None, threads=3, root=None):
     return update_all(pairs, now, days=(now - since).days + 1, threads=threads, root=root)
 
 
+def complete(pairs, start_year, root=None, now=None, max_age_days=10):
+    """True when every pair has candles from early January of start_year up to the last ~week.
+    Workflows save the candle cache only when this holds, so a cancelled run can't save a partial store."""
+    now = _utc(now)
+    first_ok = pd.Timestamp(start_year, 1, 15, tz="UTC").timestamp()
+    last_ok = (now - pd.Timedelta(days=max_age_days)).timestamp()
+    bad = []
+    for p in pairs:
+        d = Pair(p, root).df
+        if d.empty or d.index[0] > first_ok or d.index[-1] < last_ok:
+            bad.append(p)
+    return not bad, bad
+
+
 def main(argv=None):
     import argparse
     import sys
@@ -271,8 +285,13 @@ def main(argv=None):
     ap.add_argument("--pairs", default="")
     ap.add_argument("--start", type=int, default=datetime.now(timezone.utc).year - 3)
     ap.add_argument("--threads", type=int, default=3)  # Dukascopy answers 503 when hit harder
+    ap.add_argument("--check", action="store_true", help="only report whether the store is complete (exit 0/1)")
     a = ap.parse_args(argv)
     pairs = [x.strip().upper() for x in a.pairs.split(",") if x.strip()] or list(PAIRS)
+    if a.check:
+        ok, bad = complete(pairs, a.start)
+        print(f"store complete from {a.start}: {ok}" + (f" (missing/short: {', '.join(bad)})" if bad else ""))
+        return 0 if ok else 1
     t = datetime.now()
     err = backfill(pairs, a.start, threads=a.threads)
     for p in pairs:
