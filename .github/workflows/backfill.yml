@@ -2,6 +2,9 @@ name: SLK candle backfill
 # One-time (or after the candle cache was evicted): fill the H1 candle store (slk/store.py) for all pairs and save
 # it in the Actions cache that the hourly live job and the backtest restore. Run: Actions > SLK candle backfill.
 on:
+  push:  # runs once when this file changes (manual runs need it on the default branch)
+    branches: [claude-kevin-king]
+    paths: [".github/workflows/backfill.yml"]
   workflow_dispatch:
     inputs:
       start: {description: "First year (2018 = enough for the backtest too)", default: "2018"}
