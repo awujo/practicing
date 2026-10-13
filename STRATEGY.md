@@ -1,118 +1,140 @@
-# Kevin King SLK — Bias Strategy (v0.1, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.2, Claude branch)
 
-Source: only the `kevin_King` course (29 transcripts + contact sheets). Evidence notes with
-timestamps: `knowledge-base/study/notes_*.md`. Tags: `[T video@sec]` transcript, `[F video/sheet]` frame.
-Anything marked **OUR CHOICE** is not said by Kevin; it is a default we pick so it can be coded and
-then tuned by backtest.
+Built from the `kevin_King` course only. All 29 transcripts plus a frame-by-frame pass over the
+theory videos (structure, liquidity, key levels, story line: ~400 sheets).
+Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures).
+Tags: `[T video@sec]` transcript, `[F video/sheet_NNN]` frame. **OUR CHOICE** = Kevin does not say;
+default picked so it can be coded, then tuned by backtest.
 
-Priority: **1. Bias** (this document). 2. Entry alerts. 3. Trade execution (cTrader, later).
+Priority: **1. Bias** (this file). 2. Entry alerts. 3. Trade execution on cTrader (later).
 
 ---
 
-## 1. Core definitions
+## 0. Two views of the same chart
 
-| Term | Rule | Source |
+Kevin switches between two views all the time [F key-levels-pt1/sheet_018, story-line-pt2/sheet_010-013,
+advance-market-sturcture-pt2/sheet_018, pt3/sheet_015-017]:
+
+| View | Data | Used for |
 |---|---|---|
-| Swing high / low | Extreme point before a reversal. Confirmed only after price breaks the previous opposite swing. | [T basic-ms@159-620] |
-| Trend | Up = HH + HL. Down = LH + LL. Neither = range → stay away. | [T basic-ms-pt2@1590, pt3@1529] |
-| Break (BOS) | Candle **body closes** beyond the swing. A wick-only poke that closes back = **sweep** (liquidity taken), not a break. | [T liquidity@647-800, F basic-ms-pt3/sheet_015] |
-| Reversal break (his "BMS") | Body close beyond the last protected swing against the trend. Bias flips on the first one. | [T basic-ms-pt3@875-1211] |
-| Liquidity | Only two kinds: IRL (inside the swing range) and ERL (beyond it). Price takes IRL, then expands to ERL. ERL = target. | [T liquidity@269-423, 1196-1560] |
-| Single-candle liquidity | The previous month/week/day candle's high and low (PMH/PML, PWH/PWL, PDH/PDL). | [T liquidity-pt2@65-460] |
-| Sessions / equal highs-lows | **Not used** by Kevin. | [T liquidity-pt2@438-448] |
+| **Line chart** (closes only) | close prices | swing highs/lows, trend (HH/HL, LH/LL), A/V key levels |
+| **Candles** | open/high/low/close | wicks: sweeps, taps, rejections; body closes: breaks; open-close levels |
 
-### Key levels (KL) — built from two consecutive candles, bodies only, wicks ignored
-
-| Shape | Candles | Line drawn at | Used for |
-|---|---|---|---|
-| A-shape | bullish then bearish | shared body price (close of 1 ≈ open of 2) | SELL |
-| V-shape | bearish then bullish | shared body price | BUY |
-| Open-Close (OC) | two same-colour candles | close of 1 / open of 2 | bearish OC = SELL, bullish OC = BUY |
-
-[T key-levels-pt1@1173-1711, F key-levels-pt3/sheet_005, F key-levels-pt1/sheet_014]
-
-- **Fresh** = no wick has touched it since creation. First wick touch makes it *used*. A later full-body
-  close through it makes it fresh again (and flips its direction). [T key-levels-pt4@441-805]
-- **Invalid / flip**: a full-body close through the level. A broken A-shape becomes a buy level on retest,
-  a broken V-shape a sell level. [T key-levels-pt3@296-420]
-- Kevin uses each level **once**; higher timeframe levels are stronger. [T key-levels-pt4@1087-1110, story-line@979]
-- Zone drawing: see §5 Q3 (from frames). **OUR CHOICE:**
-  only A/V at a confirmed swing point count (otherwise every pair of candles would be a level);
-  OC only counts if the move that starts from it breaks structure.
+The bot does the same: structure and A/V levels from **closes**, sweeps and taps from **wicks**,
+breaks from **body closes**.
 
 ---
 
-## 2. The bias = "Story line" (two steps, two timeframes)
+## 1. Building blocks
+
+**Swing.** A turning point of the close line, i.e. the highest/lowest close of a leg. It is fixed only when a
+later close goes beyond the previous opposite swing. Kevin marks only the main legs, not every wiggle
+[T basic-ms@159-620, F basic-ms/sheet_004].
+
+**Trend.** HH + HL = up, LH + LL = down, otherwise **range → no bias** [T basic-ms-pt2@1590].
+
+**Break vs sweep** [T liquidity@647-800, F advance-market-sturcture-pt3]:
+- **Break (BOS)** = a candle **body closes** beyond a swing.
+- **Sweep** = a **wick** goes beyond a swing and the candle closes back inside. That swing was liquidity.
+- **First break against the trend = BMS** (his CHOCH). It flips the trend; later breaks the same way are BOS.
+
+**Key level (KL).** Two candles turning at the same price. Drawn as a **thin horizontal line** at
+the shared **body/close price**, wicks ignored, extended right. No boxes [F key-levels-pt1/sheet_016-022, T key-levels-pt1@1173-1711].
+
+| Shape | On line chart | Candles | Bias use |
+|---|---|---|---|
+| A-shape | peak of close line | bull then bear | SELL level |
+| V-shape | valley of close line | bear then bull | BUY level |
+| Open-Close | not visible | two same-colour candles; line at close 1 / open 2 | bear OC = SELL, bull OC = BUY |
+
+- **Fresh** = no wick has touched it since it formed. First wick touch = used. Kevin uses a level once.
+  A full-body close through it makes it fresh again with the **opposite role** (broken A → buy level on retest,
+  broken V → sell level). [T key-levels-pt3@296-420, key-levels-pt4@441-805]
+- Only levels that agree with the trend count: in an uptrend, V/bull-OC; in a downtrend, A/bear-OC [T key-levels-pt3@985-1160].
+- Freshness is judged on the level's own timeframe (W/D), not on H1/H4 [F key-levels-pt4].
+
+**Liquidity** [T liquidity@269-1560]:
+- **IRL** = inside the current swing range (the pullback low/high). **ERL** = beyond the range extreme.
+- Price takes IRL, then runs to ERL, then pulls back to a new IRL, and so on.
+- **Previous candle high/low** (month/week/day) is liquidity too, measured on the wick tips [T liquidity-pt2@65-460].
+- Kevin does **not** use sessions or equal highs/lows [T liquidity-pt2@438-448].
+
+---
+
+## 2. The story line — how everything goes together (the bias)
 
 Kevin: *"No breakout, no story line, no trade."* [T story-line-pt3@689-726]
 
-| Origin TF (step 1) | Confirm TF (step 2) | When to run |
-|---|---|---|
-| Monthly | Weekly | new month |
-| Weekly | Daily | new week |
-| Daily | H4 | every day (his main daily routine: "daily reject daily + H4 breakout") |
-| H4 | H1 | weaker; only when D has no story (TP capped at next H4 level) |
+Runs on three ladders. Each starts on one timeframe and is confirmed one timeframe lower:
 
-[T story-line@468, pt2@288-330, pt4@566, class-wrok@480-620]
+| Story | Origin TF | Confirm TF | Checked |
+|---|---|---|---|
+| Monthly | M | W | at a new month |
+| Weekly | W | D | at a new week |
+| Daily (his everyday one) | D | H4 | every day |
 
-**Step 1 — Tap, reject, close (origin TF).** A candle wicks into a *fresh* KL and **closes** back
-outside it on the rejection side. Wait for the close. [T story-line@1314-1541]
-Alternative origin: a sweep of the previous day/week high or low (wick beyond, close back). [T story-line-pt3@1887-2090]
+### Step by step (sell example; a buy is the mirror image)
 
-**Step 2 — Breakout (one TF lower).** Find the **last opposite swing created before price first tapped
-the KL** (for a sell: last V/swing low; for a buy: last A/swing high). A lower-TF candle **body closes**
-beyond it → bias confirmed. A sweep + BOS also qualifies. Breaks after the tap are *internal* and are
-used only for entries, not for bias. [T story-line-pt2@505-650, pt3@594-1260]
+1. **Trend (origin TF, line chart).** Down or up? A range means stop, no bias.
+2. **Pick the level.** Take the most recent **fresh** key level that agrees with the trend
+   (A-shape or bearish OC for a sell). Also mark the target: the next opposite KL of the same or a higher TF,
+   or the ERL.
+3. **Tap, reject, close (origin TF, candles).** A candle **wicks into** the level and **closes back below it**.
+   Wait for the candle to close. → status `TAPPED`
+   *Alternative start:* the wick sweeps the previous day/week high and the candle closes back below [T story-line-pt3@1887-2090].
+4. **Find point B (confirm TF).** On the lower timeframe, find the **last swing low made before price first
+   tapped the level**. Not the low made by the rejection itself [T story-line-pt3@1690-1790, F story-line-pt2].
+5. **Breakout (confirm TF, candles).** A candle **body closes below B** → story **confirmed**, bias **BEARISH**.
+   He labels it `bms` / `EXT`. Any later breaks are internal BOS and are for entries only.
+6. **Hold until:**
+   - target reached → `TARGET_HIT`;
+   - a body close back above the origin level → `INVALIDATED`;
+   - a daily KL on the way is rejected the other way **and** H4 breaks the other way → story over [T story-line-pt2@1779-1832].
 
-**Output** (per pair, per origin TF):
+### Output per pair (what the bot sends)
 
 ```
-bias:          BULLISH | BEARISH | NO_TRADE
-origin:        TF, KL type, KL price, tap candle time
-confirmed_by:  lower-TF breakout candle time + swing price
-target:        next fresh KL of same/higher TF in the bias direction, or ERL (previous high/low)
-invalidation:  body close beyond the origin KL
-status:        WAITING_TAP → TAPPED → CONFIRMED → TARGET_HIT | INVALIDATED | CANCELLED
+pair, story (M/W/D), bias BULLISH | BEARISH | NO_TRADE
+origin level (type, price, TF), tap time, point B price, breakout time
+target price, invalidation price, status
 ```
 
-### No-trade / cancel / flip rules
+### No-trade rules
 
-1. Step 1 without step 2 → **NO_TRADE**, keep waiting (the breakout may come 3–5 days later and is still valid). [T story-line-pt3@360-536]
-2. Monthly and weekly point opposite ways → **NO_TRADE**. [T class-wrok@1236-1312]
-3. Never against the higher-TF trend. [T liquidity-pt3@712-723]
-4. Same day the lower TF closes back through the breakout level → cancel; re-check next day. [T qns-pt2@1700-2030]
-5. Price taps the level many times (4–5) before breaking out → skip, messy. [T qns-pt2@2076-2150]
-6. A daily KL on the way to target is rejected + H4 breaks the other way → old story over, new one may start. [T story-line-pt2@1779-1832]
-7. Pair is hard to read in 30 seconds → skip. [T story-line-pt4@1195-1217]
-
----
-
-## 3. Entry (stage 2 — summary only, details in `knowledge-base/study/notes_entry.md`)
-
-- Entry TF = the TF that gave the breakout (D story → H4, W story → D). Drop to 2H/1H after the H4 reaction.
-- **Continuation model:** c1–c2 form an A/V level, c3 rejects, c4 breaks out, **c5 retests = entry**. Skip if no retest.
-- **QMRO model:** entry at the shoulder level after a 3rd-candle rejection, then a 1H breakout.
-- SL beyond the invalidation zone / rejecting candle; max ~10–15 pips (USD pairs), 15–20 (JPY); skip if bigger or spread > 5 pips.
-- TP = bias target; RR not fixed (his examples 1:3 to 1:5). Max daily loss 0.5%. [T structuring@836-1650]
+- Step 3 happened but no breakout yet → **NO_TRADE**, keep watching. A breakout 3–5 days later is still valid [T story-line-pt3@360-536].
+- Price taps the level many times (4–5) before breaking out → skip [T qns-pt2@2076-2150].
+- Breakout, then on the same day the price closes back through B → cancel, check again the next day [T qns-pt2@1700-2030].
+- Monthly and weekly stories point opposite ways → **NO_TRADE** [T class-wrok@1236-1312].
+- Never against the higher-timeframe trend [T liquidity-pt3@712-723].
+- Trend unclear (range, takes effort to read) → skip [T story-line-pt4@1195-1217].
 
 ---
 
-## 4. How we measure it (backtest)
+## 3. Entry (stage 2, summary only; see `knowledge-base/study/notes_entry.md`)
 
-For every CONFIRMED bias: did price reach the **target before the invalidation**? Report per pair, per
-origin TF, per year: count, hit rate, average R (target distance ÷ invalidation distance), time to target.
-A bias version is only promoted if it beats a coin-flip baseline on out-of-sample years.
+- Entry TF = the confirm TF (D story → H4, then 2H/1H).
+- Advanced structure order seen on every chart: **sweep (wick) → BOS (body) → inducement → return to KL** [F advance-market-sturcture-pt2/pt3].
+- Continuation model: A/V level, rejection, breakout, **retest = entry**. QMRO: entry at the shoulder level.
+- SL beyond the invalidation; max ~10–15 pips (USD pairs), 15–20 (JPY). TP = story target. Max daily loss 0.5%.
 
 ---
 
-## 5. Open questions (Kevin does not say — defaults chosen, tune by backtest)
+## 4. Backtest measure
 
-| # | Question | Default (OUR CHOICE) |
+For each CONFIRMED story: did price reach the **target before the invalidation**? Report by pair, story
+(M/W/D) and year: count, hit rate, average R, days to target. A coin-flip baseline must be beaten out of sample.
+
+---
+
+## 5. Settled points and remaining defaults
+
+| # | Point | Answer |
 |---|---|---|
-| Q1 | Daily candle close time | **17:00 New York** (= 00:00 IC Markets server time). Kevin charts on TradingView (frames show clock "UTC+1"); TradingView forex daily candles close at 17:00 NY whatever the display timezone, and cTrader/IC Markets uses the same close. Weekly = Friday 17:00 NY. |
-| Q2 | Swing detection | **Line chart (closing prices), not wicks.** Kevin reads structure on the line chart ("You can always switch to line charts", "based on line chart first of all" [T advance-market-sturcture-pt2@1066-1105]; line-chart assignments in 9 videos). Swing high/low = the highest/lowest CLOSE of a leg, fixed once a later close goes beyond the previous opposite swing. Wicks are only for sweeps. Note: inducement and some weak points don't show on the line chart [T advance-market-sturcture-pt2@1122-1146]. Frames [F basic-ms/sheet_004] show him labelling only major legs (L, H, HL, HH). |
-| Q3 | KL zone height | **Shaded box from the level candles' bodies to their wick extreme**, extended right until price comes back. Frames [F key-levels-pt1/sheet_020, sheet_022] (USDJPY H4, ~15-20 pip box) and [F story-line-pt2/sheet_013] (CADJPY D, two lines 112.903 / 112.730). The tap = a wick into the box; the rejection candle closes back out of it. |
-| Q4 | Several fresh KLs — which one? | most recent fresh KL price reacted from |
-| Q5 | "Fresh" conflict: story-line says *body* entry spends an OC level; key-levels-pt4 says *wick* touch spends it | follow key-levels-pt4 (dedicated lesson) |
-| Q6 | Max wait from tap to breakout | 5 origin-TF candles, then drop |
-| Q7 | Pairs / sessions | all pairs, no session filter (Kevin uses none; user: "any pair, any session") |
+| 1 | Swing detection | Turning points of the **close line**, fixed by a close beyond the previous opposite swing (§1). |
+| 2 | Key-level price | **Body/close price** where two candles turn: the line-chart peak/valley, not the wick tip [F key-levels-pt1/sheet_018]. |
+| 3 | Zone height | None: a thin line. Tap = wick touches/crosses the line, rejection = close back on the original side. |
+| 4 | Daily close | 17:00 New York (TradingView forex and IC Markets cTrader use the same close). |
+| 5 | Several fresh KLs | Most recent fresh KL that agrees with the trend (Kevin: "most recent") [T story-line-pt2@897-1000]. |
+| 6 | Tap tolerance | OUR CHOICE: a wick within 1 pip of the line counts as a touch. |
+| 7 | Max wait tap → breakout | OUR CHOICE: 5 origin-TF candles. |
+| 8 | Pairs / sessions | All pairs, no session filter. |
