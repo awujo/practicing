@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 40
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_CA: ${{ secrets.DATABASE_CA }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1410229777' }}

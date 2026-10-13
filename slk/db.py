@@ -22,7 +22,9 @@ def parse_url(url):
     q = {k.lower().replace("_", "-"): v[0] for k, v in parse_qs(u.query).items()}
     return {
         "host": u.hostname, "port": u.port or 3306,
-        "user": unquote(u.username or ""), "password": unquote(u.password or ""),
+        "user": unquote(u.username or ""),
+        # the password may also come separately (secret DATABASE_PASSWORD) to avoid URL-format mistakes
+        "password": unquote(u.password or "") or os.environ.get("DATABASE_PASSWORD", ""),
         "database": unquote((u.path or "/").lstrip("/")) or None,
         "ssl_mode": q.get("ssl-mode", "REQUIRED").upper(),
     }
