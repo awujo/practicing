@@ -1,1 +1,0 @@
-AUDUSD: download failed: https://datafeed.dukascopy.com/datafeed/AUDUSD/2020/02/BID_candles_hour_1.bi5 (URLError: <urlopen error _ssl.c:993: The handshake operation timed out>)
