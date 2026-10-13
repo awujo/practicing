@@ -1,5 +1,6 @@
 """The story line (bias): tap-reject-close on the origin TF, breakout of point B one TF lower. STRATEGY §2."""
 import numpy as np
+import pandas as pd
 
 from .candles import resample
 from .levels import find_levels, run_levels
@@ -20,7 +21,36 @@ DEFAULT = {
     "htf_filter": True,     # never against the higher-TF trend (STRATEGY §2 no-trade rules)
     "stop_buffer_pips": 2.0,
     "max_hold": 20,         # origin bars after confirmation
+    "mw_conflict_filter": True,  # latest M and W stories point opposite ways -> D stories are NO_TRADE (§2)
 }
+
+
+def _side_at(stories, t):
+    """Side of the latest story confirmed at or before t (None if none)."""
+    best = None
+    for s in stories:
+        c = s.get("confirm_time")
+        if c is None or (t is not None and pd.Timestamp(c) > pd.Timestamp(t)):
+            continue
+        if best is None or pd.Timestamp(c) > pd.Timestamp(best["confirm_time"]):
+            best = s
+    return None if best is None else best["side"]
+
+
+def mw_conflict(m_stories, w_stories, t=None):
+    """True when the latest M and W stories (confirmed at or before t) point opposite ways. STRATEGY §2."""
+    m, w = _side_at(m_stories, t), _side_at(w_stories, t)
+    return m is not None and w is not None and m != w
+
+
+def apply_mw_filter(d_stories, m_stories, w_stories, cfg=None):
+    """D stories with `no_trade` set when M and W disagreed at the D story's confirmation. With
+    cfg['mw_conflict_filter'] off, all D stories pass unchanged. Use in the backtest before scoring."""
+    cfg = {**DEFAULT, **(cfg or {})}
+    if not cfg["mw_conflict_filter"]:
+        return list(d_stories)
+    return [{**d, "no_trade": mw_conflict(m_stories, w_stories, d.get("confirm_time") or d.get("tap_time"))}
+            for d in d_stories]
 
 
 def pip(pair):

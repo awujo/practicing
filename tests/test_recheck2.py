@@ -23,7 +23,7 @@ def test_slk_parse_url_password_fallback(monkeypatch):
     from slk import db
     monkeypatch.setenv("DATABASE_PASSWORD", " pw ")
     assert db.parse_url("mysql://u@h/d")["password"] == "pw"
-    assert db.parse_url("mysql://u:inurl@h/d")["password"] == "inurl"
+    assert db.parse_url("mysql://u:inurl@h/d")["password"] == "pw"  # env secret wins
 
 
 def test_workflows_valid_and_pass_password_with_url():

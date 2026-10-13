@@ -205,6 +205,8 @@ def test_main_flow_with_fake_db(monkeypatch, capsys):
     monkeypatch.setattr(db, "set_setting", lambda k, v: settings.__setitem__(k, v))
     monkeypatch.setattr(db, "upsert_bias", lambda r: store.__setitem__((r["pair"], r["story"], r["tap_time"]), dict(r)))
     monkeypatch.setattr(db, "get_bias", lambda p, s=None: [r for k, r in store.items() if k[0] == p])
+    monkeypatch.setattr(db, "get_entries", lambda p: [])
+    monkeypatch.setattr(db, "upsert_entry", lambda e: 1)
     monkeypatch.setattr(live, "send_telegram", lambda t: sent.append(t) or True)
     monkeypatch.setattr(live, "recent", lambda p, days: walk(24 * 500, seed=3 if p == "EURUSD" else 4))
     assert live.main([]) == 0

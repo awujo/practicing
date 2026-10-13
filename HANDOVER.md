@@ -36,8 +36,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] **Default branch must be `claude-kevin-king`** (now `qwen-kevin-king`) or the hourly live job never runs (GitHub runs cron only on the default branch). User: Settings → General → Default branch.
 - [ ] Render deploy of Mini App (user: set branch + root dir + 2 env vars).
 - [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
-- [ ] Top open review items: swing rule (fractal vs close-beyond), M/W conflict not enforced, alternative story start, entries not wired into live runner.
-- [ ] Ideas not built: Mini App page to paste cTrader tokens into DB; alerts for entries (`entries` table) in live runner;
+- [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts); `story.apply_mw_filter` + DEFAULT `mw_conflict_filter` for backtest (TODO: call it in slk/backtest.py scoring).
+- [x] Entry alerts wired into live runner: CONFIRMED tradable stories -> `slk.entry` (sim=False) -> table `entries` (PENDING/TRIGGERED/MISSED) + Telegram on new PENDING and on TRIGGERED ("confirm in Mini App" note when auto_trade=confirm).
+- [ ] Top open review items: swing rule (fractal vs close-beyond), alternative story start.
+- [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
 
 ## Next steps (in order)
@@ -51,3 +53,4 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-13: Built engine + backtest; parallel agents built entry model, live runner, cTrader client, Mini App.
   Fixed CI deps (`requirements-dev.txt`). Chat id default set. Live run blocked by Aiven password.
   User DB = `Claude-KK-SLK` (Qwen uses defaultdb). Review agent fixed 9 issues; old backtest reports invalid (look-ahead), rerun.
+- 2026-10-13: REVIEW #24 (M/W conflict -> NO_TRADE for D in live; backtest helper) and #11 (entries + entry alerts in live runner, `db.upsert_entry`/`get_entries`). `DATABASE_PASSWORD` env now wins over URL password (slk/db.py). Tests `tests/test_mw_entries.py`.

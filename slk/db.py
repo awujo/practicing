@@ -23,8 +23,8 @@ def parse_url(url):
     return {
         "host": u.hostname, "port": u.port or 3306,
         "user": unquote(u.username or ""),
-        # the password may also come separately (secret DATABASE_PASSWORD) to avoid URL-format mistakes
-        "password": unquote(u.password or "") or os.environ.get("DATABASE_PASSWORD", "").strip(),
+        # a non-empty secret DATABASE_PASSWORD wins over the URL password (URL may hold a stale one)
+        "password": os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or ""),
         "database": unquote((u.path or "/").lstrip("/")) or None,
         "ssl_mode": q.get("ssl-mode", "REQUIRED").upper(),
     }
@@ -126,3 +126,27 @@ def finish_run(run_id, ok, note=""):
 def last_run(job, ok=True):
     rows = query("SELECT * FROM runs WHERE job=%s AND ok=%s ORDER BY started_at DESC LIMIT 1", (job, int(ok)))
     return rows[0] if rows else None
+
+
+ENTRY_COLS = ("bias_id", "pair", "tf", "side", "entry", "stop", "tp1", "tp2", "status")
+
+
+def get_entries(pair):
+    return query("SELECT * FROM entries WHERE pair=%s", (pair,))
+
+
+def upsert_entry(row):
+    """Update the entry by id, else by (bias_id, tf, side, entry); insert when none. Returns the entry id.
+    (Table `entries` has no unique key, so this is select-then-write; one live job runs at a time.)"""
+    eid = row.get("id")
+    if eid is None:
+        found = query("SELECT id FROM entries WHERE bias_id <=> %s AND tf <=> %s AND side <=> %s "
+                      "AND ABS(entry - %s) < 1e-9 ORDER BY id DESC LIMIT 1",
+                      (row.get("bias_id"), row.get("tf"), row.get("side"), row.get("entry")))
+        eid = found[0]["id"] if found else None
+    vals = [row.get(c) for c in ENTRY_COLS]
+    if eid is None:
+        return execute(f"INSERT INTO entries ({', '.join(ENTRY_COLS)}) VALUES ({', '.join(['%s'] * len(ENTRY_COLS))})",
+                       vals)
+    execute(f"UPDATE entries SET {', '.join(f'{c}=%s' for c in ENTRY_COLS)} WHERE id=%s", vals + [eid])
+    return eid

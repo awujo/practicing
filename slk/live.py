@@ -22,7 +22,7 @@ import pandas as pd
 from .backtest import PAIRS
 from .candles import _key, resample
 from .data import recent
-from .story import DEFAULT, STORIES, current_tap, find_stories, pip
+from .story import DEFAULT, STORIES, current_tap, find_stories, mw_conflict, pip
 
 JOB = "live"
 HISTORY_DAYS = 3 * 365 + 30       # enough months for M/W stories
@@ -111,6 +111,7 @@ def pair_state(pair, h1, now, stories, cfg):
         for s in find_stories(pair, h, st, cfg):
             status = {"target": "TARGET_HIT", "invalidated": "INVALIDATED"}.get(s["kevin_outcome"], "CONFIRMED")
             r = to_row(s, status)
+            r["_story"] = s  # raw engine story (breakout_time etc.) for the entry model; not stored
             if status == "CONFIRMED":
                 ob = resample(h, otf)
                 since = int((pd.to_datetime(ob["start"]) >= _ts(r["confirm_time"])).sum())
@@ -124,7 +125,25 @@ def pair_state(pair, h1, now, stories, cfg):
                 and not any(r["status"] == "CONFIRMED" for r in rows):
             rows.append(to_row(t, "TAPPED"))
         out += rows
-    return out
+    return mark_mw_conflict(out, cfg)
+
+
+def mark_mw_conflict(rows, cfg=None):
+    """STRATEGY §2: latest CONFIRMED M and W stories point opposite ways -> D stories get no_trade=True."""
+    cfg = {**DEFAULT, **(cfg or {})}
+    if not cfg.get("mw_conflict_filter", True):
+        return rows
+    conf = lambda st: [r for r in rows if r["story"] == st and r["status"] == "CONFIRMED"]  # noqa: E731
+    if mw_conflict(conf("M"), conf("W")):
+        for r in rows:
+            if r["story"] == "D":
+                r["no_trade"] = True
+    return rows
+
+
+def filter_alerts(alerts):
+    """Drop TAPPED/CONFIRMED alerts of NO_TRADE (M/W conflict) stories; outcomes are still announced."""
+    return [(ev, r) for ev, r in alerts if not (r.get("no_trade") and ev in ACTIVE)]
 
 
 def _same(a, b):
@@ -176,6 +195,67 @@ def _bar(r):
     # a TAPPED story is stamped with the start of its origin candle: allow one candle more
     return {"D": timedelta(days=1), "W": timedelta(days=7), "M": timedelta(days=31)}[r["story"]] \
         if r["status"] == "TAPPED" else timedelta(0)
+
+
+# ------------------------------------------------------------------ entries (stage 2)
+ENTRY_LIVE = ("PENDING", "TRIGGERED", "MISSED")
+
+
+def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None):
+    """Entry rows (table `entries` shape) for CONFIRMED, tradable stories. bias_ids maps (story, tap_time)
+    to bias.id. `finder` defaults to slk.entry.find_entries (injectable for tests)."""
+    if finder is None:
+        from .entry import find_entries as finder
+    src = [r for r in rows if r["status"] == "CONFIRMED" and not r.get("no_trade") and r.get("_story")]
+    if not src:
+        return []
+    out = []
+    for r, e in zip(src, finder(pair, h1, [r["_story"] for r in src], None, cfg, sim=False)):
+        if e.get("status") not in ENTRY_LIVE:
+            continue
+        out.append({"bias_id": bias_ids.get((r["story"], r["tap_time"])), "pair": pair, "story": r["story"],
+                    "tf": e["tf"], "side": r["side"], "entry": float(e["entry"]), "stop": float(e["stop"]),
+                    "tp1": float(e["tp1"]), "tp2": float(e["tp2"]), "status": e["status"],
+                    "stop_pips": e.get("stop_pips")})
+    return out
+
+
+def _entry_key(e):
+    return (e.get("bias_id"), e.get("tf"), e.get("side"), round(float(e["entry"]), 6))
+
+
+def reconcile_entries(new, old):
+    """(writes, alerts). Alert NEW when a PENDING entry first appears, TRIGGERED when it fills (first seen or
+    from PENDING). Stored rows with other statuses (APPROVED/CANCELLED ...) are never downgraded."""
+    old_by = {_entry_key(o): o for o in old}
+    writes, alerts = [], []
+    for e in new:
+        o = old_by.get(_entry_key(e))
+        if o is None:
+            writes.append(e)
+            if e["status"] in ("PENDING", "TRIGGERED"):
+                alerts.append(("ENTRY_" + e["status"], e))
+        elif o["status"] != e["status"] and o["status"] == "PENDING":
+            writes.append({**e, "id": o.get("id")})
+            if e["status"] == "TRIGGERED":
+                alerts.append(("ENTRY_TRIGGERED", e))
+    return writes, alerts
+
+
+def format_entry_alert(event, e, auto_trade="off"):
+    p = e["pair"]
+    fp = lambda x: fmt_price(p, x)  # noqa: E731
+    head = {"ENTRY_PENDING": "NEW ENTRY (pending limit)", "ENTRY_TRIGGERED": "ENTRY TRIGGERED"}.get(
+        event, event.replace("ENTRY_", "ENTRY "))
+    sp = e.get("stop_pips")
+    if sp is None:
+        sp = round(abs(e["entry"] - e["stop"]) / pip(p), 1)
+    lines = [f"{p} | {e['tf']} | {e['side']} | {head}",
+             f"Entry {fp(e['entry'])}  Stop {fp(e['stop'])} ({sp} pips)",
+             f"TP1 {fp(e['tp1'])}  TP2 {fp(e['tp2'])}"]
+    if event == "ENTRY_PENDING" and str(auto_trade).lower() == "confirm":
+        lines.append("Confirm in Mini App to place the order.")
+    return "\n".join(lines)
 
 
 # ------------------------------------------------------------------ messages
@@ -284,10 +364,13 @@ def main(argv=None):
         pairs = a.pairs.split(",") if a.pairs else list(PAIRS)
         stories = (a.stories or "D,W,M").split(",")
         for p in pairs:
-            rows = pair_state(p, recent(p, HISTORY_DAYS), started, stories, cfg)
+            h1 = recent(p, HISTORY_DAYS)
+            rows = pair_state(p, h1, started, stories, cfg)
             for r in rows:
-                if r["status"] in ACTIVE:
+                if r["status"] in ACTIVE and not (r.get("no_trade") and r["story"] == "D"):
                     print(format_alert(r["status"], r) + "\n")
+            for e in entry_rows(p, drop_forming(h1, "H1", started), rows, {}, cfg):
+                print(format_entry_alert("ENTRY_" + e["status"], e) + "\n")
             print(summary_line(p, rows))
         return 0
 
@@ -311,6 +394,7 @@ def main(argv=None):
         stories = [s.strip().upper() for s in (a.stories or db.get_setting("stories") or "D,W,M").split(",")
                    if s.strip().upper() in STORIES]
         kill = db.get_setting("kill_switch", "off")
+        auto = db.get_setting("auto_trade", "off")
         for p in pairs:
             try:
                 h1 = recent(p, HISTORY_DAYS)
@@ -320,10 +404,18 @@ def main(argv=None):
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
                     db.upsert_bias(r)
-                for ev, r in alerts:
+                for ev, r in filter_alerts(alerts):
                     sent += send_telegram(format_alert(ev, r))
                 by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
-                print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts", flush=True)
+                ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}
+                ew, ea = reconcile_entries(entry_rows(p, drop_forming(h1, "H1", now), new, ids, cfg),
+                                           db.get_entries(p))
+                for e in ew:
+                    db.upsert_entry(e)
+                for ev, e in ea:
+                    sent += send_telegram(format_entry_alert(ev, e, auto))
+                print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts, "
+                      f"{len(ew)} entries written", flush=True)
             except Exception as e:  # one bad pair must not stop the others
                 errors.append(f"{p}: {type(e).__name__}: {e}")
                 traceback.print_exc()
