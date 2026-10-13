@@ -31,7 +31,7 @@ def _local_connect():
         host=u.hostname,
         port=u.port or 3306,
         user=unquote(u.username or ""),
-        password=unquote(u.password or "") or os.environ.get("DATABASE_PASSWORD", "").strip(),
+        password=os.environ.get("DATABASE_PASSWORD", "").strip() or unquote(u.password or ""),
         database=(u.path or "/").lstrip("/") or None,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
