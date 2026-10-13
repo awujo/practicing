@@ -7,6 +7,8 @@ functions without updating callers; `slk.story.find_stories(pair, h1_df, story, 
 | Name | Use |
 |---|---|
 | `DATABASE_URL` | Aiven MySQL, `mysql://user:pass@host:port/db?ssl-mode=REQUIRED` |
+| `DATABASE_PASSWORD` | optional; used when `DATABASE_URL` has no password (whitespace stripped) |
+| `DATABASE_CA` | optional Aiven CA (path or PEM text) to verify the server cert |
 | `TELEGRAM_BOT_TOKEN` | bot token |
 | `TELEGRAM_CHAT_ID` | owner chat id (also the only Telegram user id allowed in the Mini App) |
 | `CTRADER_CLIENT_ID`, `CTRADER_CLIENT_SECRET` | Open API app (app "SLK" id 43716) |

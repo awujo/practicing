@@ -25,6 +25,8 @@ jobs:
       CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
       CTRADER_ENV: demo
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

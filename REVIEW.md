@@ -78,3 +78,23 @@ not written down. A choice is listed but not changed.
 - **Database:** SQL in slk/db.py and webapp/ matches db/schema.sql.
 - **Telegram:** initData HMAC check, 24 h expiry and owner-only access are correct. The bot token is never printed.
 - **cTrader:** live trading needs `allow_live=True` and a live account. The kill switch blocks every order path and does not block closes. Orders are idempotent through `client_order_id`.
+
+## Re-check 2 (commits 5236b8c..706ba7f, Render deploy readiness, workflows)
+
+- Render (`webapp` root, `pip install -r requirements.txt`, `uvicorn app:app --host 0.0.0.0 --port $PORT`): OK.
+  requirements.txt covers every import (fastapi, uvicorn, pymysql; pydantic via fastapi). Started locally in a clean
+  venv with only webapp/requirements.txt and no DATABASE_URL: startup completes (schema init logs and continues),
+  `/healthz` -> `{"ok":true}`, `/` -> 200, `/static/{app.js,style.css,index.html}` -> 200. `webapp/db.py` adds the repo
+  root to sys.path, so `slk.db.connect` is used on Render (full clone; slk/db.py is stdlib-only); local PyMySQL
+  fallback otherwise.
+- DATABASE_PASSWORD fallback works in both `slk/db.parse_url` and `webapp/db._local_connect` (URL password wins,
+  env value is stripped). Tests added: tests/test_recheck2.py.
+- FIXED live.yml: the failure diagnostic called `db.parse_url` unguarded, so the exact case it targets (URL not
+  starting with `mysql://`, e.g. leading whitespace) raised a ValueError traceback instead of the diagnostic. Now
+  guarded; the DB error message also masks the DATABASE_PASSWORD value.
+- FIXED ctrader-smoke.yml: passed DATABASE_URL without DATABASE_PASSWORD/DATABASE_CA, so the smoke job would fail
+  to connect when the password is kept in the separate secret. Test asserts every workflow using DATABASE_URL also
+  passes DATABASE_PASSWORD.
+- FIXED CONTRACT.md: documented DATABASE_PASSWORD and DATABASE_CA.
+- All 5 workflows parse as YAML; secret names match CONTRACT.md. backtest.yml path filter / no-cancel change: OK.
+- Not fixed (out of scope / minor): webapp `_local_connect` ignores DATABASE_CA (only matters if slk import fails).
