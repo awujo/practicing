@@ -129,7 +129,7 @@ break and retest, the most recent level.
 2. The **3rd candle rejects** the level with a wick (wick to the line, body closes back). More rejecting candles after it are fine.
 3. The **breakout = the 4th candle OR ANY LATER candle** ("4th+ candle BREAKS out", frames_E): an impulsive body close
    beyond the c1..(breakout−1) extreme (internal BOS). No candle may **close back through the line** before the
-   breakout (that kills the level). The breakout must come within `breakout_max_bars` candles after c3.
+   breakout (that kills the level). There is no limit on how many candles later the breakout comes (Kevin gives none); `breakout_max_bars` (0 = no limit, default) can set one.
 4. **Entry = retest of that line.** Skip the first retracement after the external breakout. If price never retests → missed, do not chase.
 
 **Model B — QMR = Quasimodo Reversal ("B series"; Whisper transcribed it "QMRO"):** [T entry-4@830-1905, cadjpy@117-260,
@@ -151,7 +151,7 @@ Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59;
 **OUR CHOICE (entry rules Kevin does not state; defaults, tuned by backtest):**
 | Point | Default |
 |---|---|
-| Latest breakout candle | `breakout_max_bars` = 5 → breakout on c4…c8 (his lines run 5–12 candles right; he never gives a number). |
+| Latest breakout candle | No limit by default (`breakout_max_bars` = 0); the user can set one in the Mini App. Kevin never gives a number. |
 | Breakout candle | first candle with an impulsive body (≥ 1× average body of the last 10) closing beyond c1..(breakout−1); a non-impulsive close beyond just widens the base. |
 | Stop (Model A) | beyond the highest wick (sell) / lowest wick (buy) of c3..(breakout−1) + 1 pip. |
 | QM swings | close-line pivots (order 2), consecutive shoulder → neck → head; head must be a higher close (sell) / lower close (buy). |

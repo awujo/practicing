@@ -47,10 +47,11 @@ SCHEMA = [
        "neck broken; wait for price back in the shoulder/neck zone, a 1H breakout, then the retest. "
        "A pending QMR is not replaced by a newer continuation level.",
        choices=["continuation", "qmr"]),
-    _s("breakout_max_bars", "int", "5", "Entry rules",
-       "Continuation: the breakout may come on the 4th candle or up to this many candles after the "
+    _s("breakout_max_bars", "int", "0", "Entry rules",
+       "Continuation: the breakout may be the 4th candle or ANY later one (Kevin sets no limit). "
+       "0 = no limit (default). Set a number to only accept a breakout within that many candles after the "
        "rejection candle (1 = 4th candle only). A close back through the line before it cancels the level.",
-       min=1, max=12),
+       min=0, max=100),
     _s("skip_first_retracement", "bool", "on", "Entry rules",
        "Ignore patterns formed before the top of the first retracement after the breakout."),
     _s("max_stop_pips", "float", "20", "Entry rules", "Wider stop = the pattern does not qualify.",

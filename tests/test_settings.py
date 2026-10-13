@@ -112,6 +112,7 @@ def test_entry_models_setting():
     for bad in ("", "abc"):
         with pytest.raises(ValueError):
             S.clean("entry_models", bad)
+    assert S.clean("breakout_max_bars", "0") == "0"  # 0 = no limit (default)
     with pytest.raises(ValueError):
-        S.clean("breakout_max_bars", "0")
+        S.clean("breakout_max_bars", "-1")
     assert S.clean("stories", "m,d") == "D,M"

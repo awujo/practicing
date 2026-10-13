@@ -42,7 +42,7 @@ DEFAULT = {
     "impulse_mult": 1.0,       # breakout body >= this x average body of the previous `impulse_lookback` bars
     "impulse_lookback": 10,
     "stop_buffer_pips": 1.0,   # stop = rejection extreme (c3 .. breakout-1) + buffer
-    "breakout_max_bars": 5,    # OUR CHOICE: breakout on c4 .. c3+5 (lines drawn 5-12 candles right)
+    "breakout_max_bars": 0,    # 0 = no limit (Kevin gives none): any later candle, until a close back through the line
     "max_stop_pips": 20.0,     # wider stop = pattern does not qualify (JPY pairs: same number of pips)
     "avoid_pairs": ["AUDNZD", "NZDCHF"],  # wide spread
     "retest_bars": 12,         # entry-TF bars after the breakout to wait for the retest, then MISSED
@@ -91,7 +91,8 @@ def patterns(B, sell, cfg, P):
     lb = cfg["impulse_lookback"]
     avg = pd.Series(body).rolling(lb, min_periods=3).mean().shift(1).to_numpy()  # avg before each bar
     imp = np.nan_to_num(body >= cfg["impulse_mult"] * avg, nan=False).astype(bool)
-    maxb = max(1, int(cfg.get("breakout_max_bars", 1)))
+    maxb = int(cfg.get("breakout_max_bars", 0) or 0)
+    maxb = n if maxb <= 0 else maxb  # 0 = no limit
     i = np.arange(n - 3)
     i1, i2 = i + 1, i + 2
     lvl = c[i]
