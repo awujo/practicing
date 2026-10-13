@@ -66,6 +66,7 @@ class Pair:
         self.df = pd.DataFrame({c: np.array([], float) for c in COLS} | {"q": np.array([], np.int8)},
                                index=pd.Index(np.array([], np.int64), name="t"))
         self.done_m, self.done_d, self.changed = set(), set(), False
+        self.failed = []  # month files that could not be downloaded this run (retried next run)
         if os.path.exists(self.path):
             try:
                 z = np.load(self.path, allow_pickle=False)
@@ -171,7 +172,14 @@ class Pair:
         for per in pd.period_range(pd.Period(year=since.year, month=since.month, freq="M"),
                                    pd.Period(year=today.year, month=today.month, freq="M"), freq="M"):
             if (per.year, per.month) < (today.year, today.month):
-                if self.ensure_month(per.year, per.month):
+                try:
+                    if self.ensure_month(per.year, per.month):
+                        if self.changed and len(self.done_m) % 6 == 0:
+                            self.save()  # keep progress if the run is cancelled
+                        continue
+                except RuntimeError as e:  # Dukascopy throttling: skip the month, keep the rest, retry next run
+                    self.failed.append(f"{per.year}-{per.month:02d}")
+                    print(f"{self.pair} {per.year}-{per.month:02d}: {e}", flush=True)
                     continue
                 last = per.days_in_month  # month file not out yet: its days
                 days += [pd.Timestamp(per.year, per.month, d, tz="UTC") for d in range(1, last + 1)]
@@ -192,8 +200,13 @@ def update(pair, now=None, since=None, days=None, root=None):
     now = _utc(now)
     since = _utc(since) if since is not None else now - pd.Timedelta(days=days or 30)
     with _lock(pair):
-        p = Pair(pair, root).update(now, since)
-        p.save()
+        p = Pair(pair, root)
+        try:
+            p.update(now, since)
+        finally:
+            p.save()  # whatever was downloaded stays, even when a later download fails
+    if p.failed:
+        raise RuntimeError(f"{len(p.failed)} month file(s) not downloaded, first {p.failed[0]} (kept the rest)")
     return p
 
 

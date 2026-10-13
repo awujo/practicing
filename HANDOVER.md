@@ -168,3 +168,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   - Entries: setting `entry_alignment` (owner: d_h4 default = D story + last H4 structural break agree; w_d_h4 adds W; off), continuation only, checked per pattern at its breakout close (entry-4@1670-1690, entry3@696-818, weekly-recap@151-282); STRATEGY §3 OUR CHOICE.
   - Backtest: `python -m slk.backtest --variants` (backtest.yml passes it) -> REPORT.md "Variants" (trades, win%, avg R, total R per variant) + `reports/variants.csv`, plus "By story and Next Day Rule"; not run here (no Dukascopy from the sandbox).
 - 2026-10-13: Validation 5 (SLK Radar adopt, 7cba861): fixed entry alignment counting a still-forming H4 bar in live and `breakout_time` missing from the row compare (CADJPY rows); rest OK (REVIEW.md "Validation 5"); 180 tests pass.
+- 2026-10-13: Backfill 38430625294 got 0 bars for all 28 pairs: Dukascopy 503/timeouts and one failed month threw away the
+  whole pair. store.update now skips a failed month (retried next run), saves every 6 months and in `finally`;
+  data._get honours SLK_MIN_GAP (backfill: 1 s, 2 threads), backoff capped at 60 s. Test tests/test_store_progress.py.
+- 2026-10-13: Commits 7cba861 (SLK Radar adopt: next_day_rule, alert format, display_tz, early alert, retrace, /terms,
+  entry_alignment d_h4 default, backtest --variants) + 52102a7 (Validation 5 fixes). Backtests cancelled until the store is complete.

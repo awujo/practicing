@@ -24,9 +24,14 @@ def point(pair):
     return 1e3 if pair.endswith("JPY") or pair.startswith("XAU") else 1e5
 
 
+_GAP = float(os.environ.get("SLK_MIN_GAP", "0"))  # seconds between requests per thread (backfill: be gentle)
+
+
 def _get(url, tries=7):
     last = None
     for k in range(tries):
+        if _GAP:
+            time.sleep(_GAP)
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=30) as r:
@@ -36,7 +41,7 @@ def _get(url, tries=7):
                 return b""
             last = e
             if k < tries - 1:
-                time.sleep(2 ** k + random.uniform(0, 1))
+                time.sleep(min(2 ** k, 60) + random.uniform(0, 2))
     raise RuntimeError(f"download failed: {url} ({type(last).__name__}: {last})")
 
 

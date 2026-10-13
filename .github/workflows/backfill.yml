@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 300  # ~3,000 month files at 3 parallel downloads (Dukascopy throttles); progress is kept anyway
     env:
       SLK_STORE: data/store
+      SLK_MIN_GAP: "1"  # 1 s between requests per thread: Dukascopy refuses bursts from runner IPs
       IN_START: ${{ inputs.start || '2018' }}
       IN_PAIRS: ${{ inputs.pairs }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -41,7 +42,7 @@ jobs:
             candles-live-
       - name: Backfill
         run: |
-          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" | tee -a "$GITHUB_STEP_SUMMARY" | grep -E "ERROR|^backfill" | sed 's/^/::warning::/' || true
+          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" --threads 2 | tee -a "$GITHUB_STEP_SUMMARY" | grep -E "ERROR|^backfill" | sed 's/^/::warning::/' || true
           du -sh data/store | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Is the candle store complete?
         id: chk
