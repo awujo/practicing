@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SLK Bias</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <nav id="tabs">
+      <button data-tab="bias" class="on">Bias</button>
+      <button data-tab="entries">Entries</button>
+      <button data-tab="orders">Orders</button>
+      <button data-tab="settings">Settings</button>
+      <button data-tab="status">Status</button>
+    </nav>
+  </header>
+  <main>
+    <div id="msg" class="msg" hidden></div>
+
+    <section id="bias">
+      <div class="filters">
+        <select id="f-pair"><option value="">All pairs</option></select>
+        <select id="f-story"><option value="">All stories</option><option>D</option><option>W</option><option>M</option></select>
+        <select id="f-status">
+          <option value="active">Active</option><option>CONFIRMED</option><option>TAPPED</option>
+          <option>TARGET_HIT</option><option>INVALIDATED</option><option>CANCELLED</option><option value="all">All</option>
+        </select>
+      </div>
+      <div id="bias-list" class="list"></div>
+    </section>
+
+    <section id="entries" hidden>
+      <div class="filters">
+        <select id="f-estatus">
+          <option value="">All</option><option>PENDING</option><option>APPROVED</option><option>TRIGGERED</option>
+          <option>MISSED</option><option>CANCELLED</option>
+        </select>
+      </div>
+      <div id="entries-list" class="list"></div>
+    </section>
+
+    <section id="orders" hidden><div id="orders-list" class="list"></div></section>
+
+    <section id="settings" hidden>
+      <form id="settings-form" class="card form">
+        <label class="row"><span>Kill switch</span>
+          <input type="checkbox" id="s-kill" class="switch"></label>
+        <p class="hint">On = no new orders are placed.</p>
+        <label class="row"><span>Auto trade</span>
+          <select id="s-auto"><option value="off">off</option><option value="confirm">confirm</option><option value="auto">auto</option></select></label>
+        <label class="row"><span>Risk % per trade</span>
+          <input type="number" id="s-risk" step="0.05" min="0.05" max="5" inputmode="decimal"></label>
+        <label class="col"><span>Pairs (comma separated)</span>
+          <textarea id="s-pairs" rows="3" autocapitalize="characters"></textarea></label>
+        <div class="col"><span>Stories</span>
+          <div class="chips">
+            <label><input type="checkbox" value="D" class="s-story"> Daily</label>
+            <label><input type="checkbox" value="W" class="s-story"> Weekly</label>
+            <label><input type="checkbox" value="M" class="s-story"> Monthly</label>
+          </div></div>
+        <button type="submit" class="primary">Save</button>
+      </form>
+    </section>
+
+    <section id="status" hidden><div id="runs-list" class="list"></div></section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

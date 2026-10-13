@@ -1,0 +1,57 @@
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --bg2: var(--tg-theme-secondary-bg-color, #f2f3f5);
+  --text: var(--tg-theme-text-color, #111111);
+  --hint: var(--tg-theme-hint-color, #8a8f98);
+  --link: var(--tg-theme-link-color, #2481cc);
+  --btn: var(--tg-theme-button-color, #2481cc);
+  --btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --buy: #1f9d55;
+  --sell: #d64545;
+  --warn: #c98a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: var(--tg-theme-bg-color, #17212b);
+    --bg2: var(--tg-theme-secondary-bg-color, #232e3c);
+    --text: var(--tg-theme-text-color, #f5f5f5);
+    --hint: var(--tg-theme-hint-color, #708499);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--bg2); }
+#tabs { display: flex; overflow-x: auto; scrollbar-width: none; }
+#tabs button { flex: 1 0 auto; padding: 12px 14px; border: 0; background: none; color: var(--hint);
+  font: inherit; font-weight: 600; border-bottom: 2px solid transparent; }
+#tabs button.on { color: var(--link); border-bottom-color: var(--link); }
+main { padding: 12px 16px 40px; max-width: 720px; margin: 0 auto; }
+.filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+select, input, textarea { font: inherit; color: var(--text); background: var(--bg2); border: 0;
+  border-radius: 8px; padding: 8px 10px; }
+.filters select { flex: 1 1 30%; min-width: 0; }
+.list { display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--bg2); border-radius: 12px; padding: 12px; }
+.card .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.card .title { font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 12px; font-size: 13px; }
+.grid div span { color: var(--hint); margin-right: 4px; }
+.tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--bg); white-space: nowrap; }
+.BUY { color: var(--buy); } .SELL { color: var(--sell); }
+.empty { color: var(--hint); text-align: center; padding: 30px 0; }
+.msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; background: var(--bg2); }
+.msg.err { color: var(--sell); }
+.form { display: flex; flex-direction: column; gap: 12px; }
+.form .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.form .row input[type=number], .form .row select { width: 120px; background: var(--bg); }
+.form .col { display: flex; flex-direction: column; gap: 6px; }
+.form textarea { background: var(--bg); resize: vertical; }
+.hint { color: var(--hint); font-size: 13px; margin: -8px 0 0; }
+.chips { display: flex; gap: 14px; flex-wrap: wrap; }
+button.primary, button.approve { background: var(--btn); color: var(--btn-text); border: 0; border-radius: 8px;
+  padding: 10px 14px; font: inherit; font-weight: 600; }
+button.approve { margin-top: 10px; width: 100%; }
+button:disabled { opacity: .5; }
+.switch { width: 22px; height: 22px; accent-color: var(--sell); }
+.late { color: var(--warn); } .bad { color: var(--sell); } .good { color: var(--buy); }
