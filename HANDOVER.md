@@ -146,3 +146,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   re-downloading and timing out. Now one prefix `candles-v2-`, and every workflow saves only when
   `python -m slk.store --check --start 2018` says the store is complete. Backfill re-runs (push trigger) starting from the
   old caches; live/backtest/examples wait for it via the shared candle cache.
+- 2026-10-13: Backfill run 38423241260 finished in 51 min but `--check` said incomplete -> saved as `candles-partial-`.
+  backfill.yml now prints ERROR lines and the `--check` result as annotations (logs can't be read from the sandbox); rerun resumes.
+- 2026-10-13: New release `SLK-radar-video-and-other-bots-video` (developer's SLK Radar bias-bot walkthrough, Kevin mentee):
+  transcribe.yml + extract-frames.yml (10 s, 1280 px) -> knowledge-base/videos|frames/kevin-devt-building-the-slk-bias-bot-*;
+  then a validator agent compares its logic to STRATEGY.md -> knowledge-base/study/compare_slk_radar.md.

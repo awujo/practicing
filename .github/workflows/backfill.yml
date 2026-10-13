@@ -41,13 +41,14 @@ jobs:
             candles-live-
       - name: Backfill
         run: |
-          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" | tee -a "$GITHUB_STEP_SUMMARY"
+          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" | tee -a "$GITHUB_STEP_SUMMARY" | grep -E "ERROR|^backfill" | sed 's/^/::warning::/' || true
           du -sh data/store | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Is the candle store complete?
         id: chk
         if: always()
         run: |
-          if python -m slk.store --check --start 2018; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          if out=$(python -m slk.store --check --start 2018); then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          echo "::notice::$out"  # annotations are readable through the API, logs are not
       - name: Save candle store
         if: always() && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
