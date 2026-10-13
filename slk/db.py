@@ -24,7 +24,7 @@ def parse_url(url):
         "host": u.hostname, "port": u.port or 3306,
         "user": unquote(u.username or ""),
         # the password may also come separately (secret DATABASE_PASSWORD) to avoid URL-format mistakes
-        "password": unquote(u.password or "") or os.environ.get("DATABASE_PASSWORD", ""),
+        "password": unquote(u.password or "") or os.environ.get("DATABASE_PASSWORD", "").strip(),
         "database": unquote((u.path or "/").lstrip("/")) or None,
         "ssl_mode": q.get("ssl-mode", "REQUIRED").upper(),
     }
