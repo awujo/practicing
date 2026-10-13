@@ -4,8 +4,8 @@ Frame timestamps paired with what is being said over them.
 Times are seconds from the start; the same number is burned
 into the top-left of each frame.
 
-Contact sheets hold 25 frames each, in reading order:
-sheet_001 covers frames 1-25, and so on.
+Contact sheets hold 4 frames each, in reading order:
+sheet_001 covers frames 1-4, and so on.
 
 | time | mm:ss | said over this frame |
 |---:|---|---|
