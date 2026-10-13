@@ -38,8 +38,14 @@ def summarize(df, by):
 def report(df, cfg, path):
     lines = ["# SLK entry-model backtest", "",
              "Each row = a CONFIRMED story (see REPORT.md). On the entry TF (D story: H4 > H2 > H1; W: D > H4;",
-             "M: W > D) the bot looks for the 4-candle continuation after the external breakout: c1-c2 A/V line,",
-             "c3 wick rejection, c4 impulsive close beyond c1..c3; limit at the line, stop beyond c3 + buffer.",
+             "M: W > D) the bot looks for two entry models (column `model`):",
+             "- `continuation`: c1-c2 A/V line, c3 wick rejection, breakout on c4 or a later candle (max",
+             "  `breakout_max_bars` after c3, no close back through the line first); limit at the line, stop beyond",
+             "  the rejection wick + buffer.",
+             "- `qmr` (Quasimodo Reversal): shoulder, head beyond it, neck broken by a close; price back in the",
+             "  shoulder/neck zone, a trigger-TF (H1 under H4) continuation breakout there, limit at its line; stop",
+             "  beyond the head if it fits `max_stop_pips`, else beyond the rejection wick.",
+             "A pending QMR is not replaced by a newer continuation level. Stories without a setup show model `-`.",
              "Fills and exits are simulated on H1 bars (same bar stop+target = loss).",
              "`setups` = stories with a qualifying pattern, `filled` = retest happened, `missed` = no retest in time.",
              "`tpN_expR` = average result in R per filled trade (TP1 = next swing / 1.5R min, TP2 = story target).", "",
@@ -51,14 +57,18 @@ def report(df, cfg, path):
     df = df.copy()
     df["year"] = df["tap_time"].str[:4]
     df["tf"] = df.get("tf", pd.Series(index=df.index, dtype=object)).fillna("-")
+    df["model"] = df.get("model", pd.Series(index=df.index, dtype=object)).fillna("-")
     lines += ["## Status count", "", df.groupby(["story", "status"]).size().unstack(fill_value=0).to_markdown(), ""]
-    sections = [("By story", ["story"]), ("By story and entry TF", ["story", "tf"]),
+    sections = [("By story", ["story"]), ("By entry model", ["model"]), ("By story and entry model", ["story", "model"]),
+                ("By story and entry TF", ["story", "tf"]),
                 ("By story and side", ["story", "side"]), ("By year (D story)", ["year"]),
                 ("By pair (D story)", ["pair"]), ("By year (all stories)", ["story", "year"])]
     for title, by in sections:
         d = df[df["story"] == "D"] if "D story" in title else df
         if "entry TF" in title:
             d = d[d["tf"] != "-"]
+        if "entry model" in title:
+            d = d[d["model"] != "-"]
         if d.empty:
             continue
         lines += [f"## {title}", "", summarize(d, by).to_markdown(), ""]

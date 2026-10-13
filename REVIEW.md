@@ -58,10 +58,10 @@ not written down. A choice is listed but not changed.
 | 31 | slk/story.py (no code) | low | mismatch | open | Overlap rule (a weekly KL that is also a daily KL), alignment/continuation rule, and the CADJPY no-H4 exception are not built. |
 | 32 | slk/levels.py:37 | low | choice | open | The OC level is only looked for at the first two same-colour candles leaving a close-line swing, with the line at the close of candle 1. Kevin's OC levels can appear elsewhere. |
 | 33 | slk/entry.py:224 | low | mismatch | open | The entry TF is the first TF on the ladder (H4→H2→H1) that has any pattern. STRATEGY also says to choose the TF with the better R:R (EURGBP example). |
-| 34 | slk/entry.py:81, 87 | low | choice | open | The c4 "internal BOS" is approximated as a close beyond the c1–c3 extremes, with body ≥ the average body of the last 10 bars. |
+| 34 | slk/entry.py patterns() | low | choice | open | Breakout may now be c4 or any later candle up to `breakout_max_bars` (user correction, frames_E "4th+ candle"). The "internal BOS" is approximated as a close beyond the c1–c3 extremes, with body ≥ the average body of the last 10 bars. |
 | 35 | slk/entry.py:38 | low | choice | open | TP1 = nearest unbroken swing between 1.5R and 3R, else 1.5R. STRATEGY says next key level / R 1.4–2. TP1 is not a key level. |
 | 36 | slk/entry.py:26 | low | choice | open | Entry TFs for W (D, H4) and M (W, D) stories are not in STRATEGY, which gives only the D-story ladder. |
-| 37 | slk/entry.py (no code) | low | mismatch | open | QMRO reversal entry, the 0.5% max daily loss, and the spread check (beyond the fixed avoid list) are not built. |
+| 37 | slk/entry.py (no code) | low | mismatch | partly fixed | QMR (Quasimodo Reversal; Whisper: "QMRO") entry built 2026-10-13 (`entry_models`). Still open: the 0.5% max daily loss and the spread check (beyond the fixed avoid list). |
 | 38 | slk/story.py:11-22 | low | choice | open | Defaults not written in STRATEGY §5: `swing_pivot=2`, `level_pivot=1`, `max_hold=20`, `stop_buffer_pips=2`, `max_retaps=3`, `same_bar_close` (the last two do follow written rules). Add them to the OUR CHOICE table. |
 | 39 | slk/story.py:16-17 | — | choice (documented) | ok | Tap tolerance of 1 pip (§5.6) and max wait of 5 origin bars (§5.7) are documented OUR CHOICE defaults and are built as written. |
 

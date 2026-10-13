@@ -14,7 +14,8 @@ BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b"
              "tap_time", "confirm_time", "no_trade", "no_trade_reason")
 # columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
 MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
-              ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"))
+              ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"),
+              ("entries", "model", "VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"))
 
 
 def parse_url(url):
@@ -152,7 +153,7 @@ def last_run(job, ok=True):
     return rows[0] if rows else None
 
 
-ENTRY_COLS = ("bias_id", "pair", "tf", "side", "entry", "stop", "tp1", "tp2", "status")
+ENTRY_COLS = ("bias_id", "pair", "tf", "side", "model", "entry", "stop", "tp1", "tp2", "status")
 
 
 def get_entries(pair):
@@ -168,7 +169,7 @@ def upsert_entry(row):
                       "AND ABS(entry - %s) < 1e-9 ORDER BY id DESC LIMIT 1",
                       (row.get("bias_id"), row.get("tf"), row.get("side"), row.get("entry")))
         eid = found[0]["id"] if found else None
-    vals = [row.get(c) for c in ENTRY_COLS]
+    vals = [row.get(c) if c != "model" else (row.get("model") or "continuation") for c in ENTRY_COLS]
     if eid is None:
         return execute(f"INSERT INTO entries ({', '.join(ENTRY_COLS)}) VALUES ({', '.join(['%s'] * len(ENTRY_COLS))})",
                        vals)

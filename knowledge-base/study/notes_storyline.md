@@ -93,5 +93,5 @@ Choosing the KL to build from [T pt2@897-1000; T pt2@950; T aio@1708-1750]:
 - Waiting time: no cap. Rangey H4 can last days. No time stop stated, he just waits.
 - No explicit session/time-of-day for the bias. Times in captions are his local time (UTC+1). Weekly recap and the "start with D/W/M" rule are the only timing rules.
 - Frames partly show the same chart tool (TradingView, replay mode) as the transcript says. No contradiction found. The pt2 transcript calls levels "V-shape/A-shape" with Whisper confusion ("A ship", "eye"). Treat "eye" as "high", "I/Eye" as high, "look" as low. "Ship" = shape.
-- Whisper artifacts: "essay" = SL (stop loss), "QMR/QMRO" = his entry model, "CRT" = candle range theory model.
+- Whisper artifacts: "essay" = SL (stop loss), "QMR/QMR" = his entry model, "CRT" = candle range theory model.
 - A bias for a pair that is "no trade" is the default whenever step 1 or step 2 is missing.

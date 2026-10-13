@@ -30,11 +30,11 @@ Tags: [T video@sec] transcript, [F video/sheet] frame. Videos: intro=kevin-intro
 - Candle-shape tie-breaker: prefers impulsive BO (volume); candle that formed rejection level vs. neighbour levels that are not "volume" candle excluded. [T e3@1005-1050, 1100-1118]
 - Entry executed on LTF screenshot may be 15m/1h, but real trigger is H4/2H; "90% of entries from H4/2H". [T e3@1970-2016] [F e2/sheet_017: USDJPY 1h short, stop ~9 pips, R:R 5.28 drawn]
 
-### Model B "QMRO" (Quasimodo; "B series"; stronger than A)
+### Model B "QMR" = Quasimodo Reversal (Whisper transcribed it "QMRO"; "B series"; stronger than A)
 - Needed: HTF bias + (e.g. daily rejects daily & H4 sweep-of-liquidity + BOS) = QM on the confirmation TF. Three zones: neck (BO level), shoulder, head/apex. Kevin uses the SHOULDER level (not head, not always neck) as the entry. [T e4@830-1000]
 - Zone must have 3rd-candle rejection; if both QM level and an A-model level have rejection and are close (< few pips), take QM; stop covers both. [T e4@1100-1260, 1422-1432; T cad@117-260]
-- Rank: QMRO level w/ rejection > BO level w/ rejection > plain level. [T e4@1420-1440, cad@147-190]
-- QMRO is reversal; he does not limit-order it directly (zone can be deep): wait for price to react from QM zone, then wait for LTF (1H) BO in bias direction, THEN take continuation. [T e4@1650-1850] (rarely limit directly)
+- Rank: QMR level w/ rejection > BO level w/ rejection > plain level. [T e4@1420-1440, cad@147-190]
+- QMR is reversal; he does not limit-order it directly (zone can be deep): wait for price to react from QM zone, then wait for LTF (1H) BO in bias direction, THEN take continuation. [T e4@1650-1850] (rarely limit directly)
 - If neck/shoulder not rejection-qualified, wait for next. If ANY level has no rejection, no entry there. [T e4@1893-1905]
 - Example: in eg frames H4 breakdown, then a zone retrace; [F eg/sheet_008] shows H4 gray zone+ retest of 0.8670 area then sell-off.
 

@@ -124,8 +124,12 @@ def test_approve_needs_confirm_mode(client):
 
 def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
-    assert len(stmts) == 6 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:5])
+    assert len(stmts) == 10 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:5])
     assert stmts[5].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
+    # entries.model for tables created before it existed: guarded ALTER via a prepared statement
+    assert stmts[6].startswith("SET @slk_add_model") and "ADD COLUMN model" in stmts[6]
+    assert [s.split()[0] for s in stmts[7:]] == ["PREPARE", "EXECUTE", "DEALLOCATE"]
+    assert "model       VARCHAR(16)  NOT NULL DEFAULT 'continuation'" in stmts[1] + stmts[2]
 
 
 def test_settings_schema_endpoint(client):

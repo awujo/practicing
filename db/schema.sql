@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS entries (
   pair        VARCHAR(16)  NOT NULL,
   tf          VARCHAR(4)   NULL,
   side        VARCHAR(4)   NULL,
+  model       VARCHAR(16)  NOT NULL DEFAULT 'continuation',  -- entry model: continuation / qmr
   entry       DOUBLE       NULL,
   stop        DOUBLE       NULL,
   tp1         DOUBLE       NULL,
@@ -72,3 +73,13 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('auto_trade', 'off'),
   ('risk_pct', '0.5'),
   ('stories', 'D,W,M');
+
+-- entries.model came later: add it to an existing table (MySQL 8 has no ADD COLUMN IF NOT EXISTS).
+-- Idempotent: the ALTER only runs when the column is missing, otherwise a no-op DO 0 runs.
+SET @slk_add_model = (SELECT IF(COUNT(*) = 0,
+  'ALTER TABLE entries ADD COLUMN model VARCHAR(16) NOT NULL DEFAULT ''continuation'' AFTER side',
+  'DO 0') FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'entries' AND COLUMN_NAME = 'model');
+PREPARE slk_add_model_stmt FROM @slk_add_model;
+EXECUTE slk_add_model_stmt;
+DEALLOCATE PREPARE slk_add_model_stmt;

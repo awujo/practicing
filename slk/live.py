@@ -273,7 +273,7 @@ def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None, keep_
         if e.get("status") not in ENTRY_LIVE:
             continue
         out.append({"bias_id": bias_ids.get((r["story"], r["tap_time"])), "pair": pair, "story": r["story"],
-                    "tf": e["tf"], "side": r["side"], "entry": float(e["entry"]), "stop": float(e["stop"]),
+                    "tf": e["tf"], "side": r["side"], "model": e.get("model", "continuation"), "entry": float(e["entry"]), "stop": float(e["stop"]),
                     "tp1": float(e["tp1"]), "tp2": float(e["tp2"]), "status": e["status"],
                     "stop_pips": e.get("stop_pips")})
         if keep_key:
@@ -303,15 +303,19 @@ def reconcile_entries(new, old):
     return writes, alerts
 
 
+MODEL_NAMES = {"continuation": "Continuation", "qmr": "QMR"}
+
+
 def format_entry_alert(event, e, auto_trade="off"):
     p = e["pair"]
+    model = e.get("model") or "continuation"
     fp = lambda x: fmt_price(p, x)  # noqa: E731
     head = {"ENTRY_PENDING": "NEW ENTRY (pending limit)", "ENTRY_TRIGGERED": "ENTRY TRIGGERED"}.get(
         event, event.replace("ENTRY_", "ENTRY "))
     sp = e.get("stop_pips")
     if sp is None:
         sp = round(abs(e["entry"] - e["stop"]) / pip(p), 1)
-    lines = [f"{p} | {e['tf']} | {e['side']} | {head}",
+    lines = [f"{p} | {e['tf']} | {e['side']} | {MODEL_NAMES.get(model, model)} | {head}",
              f"Entry {fp(e['entry'])}  Stop {fp(e['stop'])} ({sp} pips)",
              f"TP1 {fp(e['tp1'])}  TP2 {fp(e['tp2'])}"]
     if event == "ENTRY_PENDING" and str(auto_trade).lower() == "confirm":

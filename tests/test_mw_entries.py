@@ -78,7 +78,9 @@ def test_entry_alert_text():
     e = {"pair": "EURUSD", "tf": "H4", "side": "SELL", "entry": 1.08, "stop": 1.0815, "tp1": 1.0755,
          "tp2": 1.07, "stop_pips": 15.0}
     m = format_entry_alert("ENTRY_PENDING", e, "confirm")
-    assert m.splitlines()[0] == "EURUSD | H4 | SELL | NEW ENTRY (pending limit)"
+    assert m.splitlines()[0] == "EURUSD | H4 | SELL | Continuation | NEW ENTRY (pending limit)"
+    assert format_entry_alert("ENTRY_TRIGGERED", {**e, "model": "qmr"}).splitlines()[0] == \
+        "EURUSD | H4 | SELL | QMR | ENTRY TRIGGERED"
     assert "Entry 1.08000  Stop 1.08150 (15.0 pips)" in m and "TP1 1.07550  TP2 1.07000" in m
     assert "Confirm in Mini App" in m
     assert "Confirm" not in format_entry_alert("ENTRY_PENDING", e, "off")

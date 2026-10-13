@@ -159,3 +159,132 @@ def test_tf_fallback_and_random_walk():
                 assert r["R_tp1"] >= 1.5 - 1e-9 or r["tp1"] == r["tp2"]
             if r["status"] == "TRIGGERED":
                 assert r["tp1_R"] >= -1 and r["tp2_R"] >= -1
+
+
+# ------------------------------------------------------------------ continuation: breakout on candle 4 or later
+CFG = {"tap_tol_pips": 1.0, "impulse_mult": 1.0, "impulse_lookback": 10, "breakout_max_bars": 5}
+
+
+def base_c1_c3(at):
+    """c1 bull to the line, c2 bear, c3 wick 3 pips above the line and close below (the rejection)."""
+    return pattern_sell(at)[:3]
+
+
+def test_breakout_on_candle_4():
+    pats = patterns(_arrays(resample(mk(leg(0, 10, 10) + pattern_sell(15)), "H1")), True, CFG, P)
+    assert [(p["c1"], p["bo"]) for p in pats] == [(10, 13)]   # bo = c1 + 3 = 4th candle
+
+
+def test_breakout_on_candle_6():
+    rows = leg(0, 10, 10) + base_c1_c3(15)
+    rows += [(8, 14, 7, 9), (9, 12, 8, 10)]     # c4, c5: stay under the line (c4 wick 14 = another rejection)
+    rows += [(10, 10, -20, -19)]                # c6: impulsive bear close below the lows of c1..c5
+    B = _arrays(resample(mk(rows), "H1"))
+    pats = patterns(B, True, CFG, P)
+    assert [(p["c1"], p["bo"]) for p in pats] == [(10, 15)]
+    assert abs(pats[0]["c3x"] - (1.1 + 18 * P)) < 1e-9       # stop side = highest wick c3..c5
+    assert patterns(B, True, {**CFG, "breakout_max_bars": 2}, P) == []   # c6 is 3 bars after c3
+    assert patterns(B, True, {**CFG, "breakout_max_bars": 1}, P) == []   # old rule: 4th candle only
+
+
+def test_close_back_through_line_before_breakout_is_invalid():
+    rows = leg(0, 10, 10) + base_c1_c3(15)
+    rows += [(8, 17, 7, 16)]                    # c4 closes back ABOVE the line (16 > 15)
+    rows += [(16, 16, -20, -19)]                # c5 impulsive break: too late, level is dead
+    assert patterns(_arrays(resample(mk(rows), "H1")), True, CFG, P) == []
+
+
+def test_candle_6_entry_triggers_with_wider_stop():
+    rows = leg(40, 20, 4) + leg(20, 30, 3) + leg(30, 10, 4)      # breakout leg, first retracement, down
+    rows += base_c1_c3(15) + [(8, 16, 7, 9), (9, 12, 8, 10), (10, 10, -15, -14)]
+    rows += leg(-14, 14, 4) + [(14, 15.5, 13, 14)]               # retest touches the line
+    rows += leg(14, -130, 12) + leg(-130, -130, 30)
+    h1 = mk(rows)
+    e = find_entries("EURUSD", h1, [story_row(h1)], {**H1ONLY, "entry_models": ["continuation"]})[0]
+    assert e["status"] == "TRIGGERED" and e["model"] == "continuation" and e["bo_candle"] == 6
+    assert abs(e["entry"] - (1.1 + 15 * P)) < 1e-9 and abs(e["stop"] - (1.1 + 19 * P)) < 1e-9
+
+
+# ------------------------------------------------------------------ QMR (Quasimodo Reversal)
+def mirror(rows):
+    """Sell scenario -> buy scenario (prices negated, high and low swapped)."""
+    return [(-o, -l, -h, -c) for o, h, l, c in rows]
+
+
+def qmr_rows(extra_continuation=False):
+    rows = leg(0, 30, 6)              # 0-5: up to the SHOULDER (close 30, bar 5)
+    rows += leg(30, 15, 4)            # 6-9: NECK (close 15, bar 9)
+    rows += leg(15, 40, 5)            # 10-14: HEAD (close 40 > shoulder = sweep, bar 14)
+    rows += leg(40, 5, 5)             # 15-19: bar 18 closes 12 < neck = neck break
+    rows += leg(5, 14, 3)             # 20-22: back up towards the zone
+    rows += pattern_sell(20)          # 23-26: H1 level 20 inside the zone, c3 wick 23 rejects, c4 breaks
+    if extra_continuation:
+        rows += leg(-9, -10, 2) + pattern_sell(-5)    # 27-32: newer continuation level at -5 (QMR still pending)
+    else:
+        rows += leg(-9, -5, 2)
+    rows += leg(rows[-1][3], 19, 3) + [(19, 20.5, 18, 19)]    # retest of the QMR line (fill), stop 24 untouched
+    rows += leg(19, -130, 12) + leg(-130, -130, 30)
+    return rows
+
+
+def qmr_story(h1, side="SELL"):
+    sgn = 1 if side == "SELL" else -1
+    return story_row(h1, side=side, level=1.1 + sgn * 0.01, target=1.1 - sgn * 120 * P,
+                     breakout_time=str(h1.index[18])[:16], confirm_time=str(h1.index[19])[:16])
+
+
+QMR_ONLY = {**H1ONLY, "entry_models": ["qmr"]}
+
+
+def test_qm_structure_sell():
+    from slk.entry import qm_structures
+    from slk.structure import pivots
+    B = _arrays(resample(mk(qmr_rows()), "H1"))
+    qs = qm_structures(B, pivots(B["close"], 2), True, 30)
+    q = qs[0]
+    assert (q["shoulder_i"], q["neck_i"], q["head_i"], q["brk"]) == (5, 9, 14, 18)
+    assert abs(q["shoulder"] - (1.1 + 30 * P)) < 1e-9 and abs(q["neck"] - (1.1 + 15 * P)) < 1e-9
+    assert abs(q["head_x"] - (1.1 + 41 * P)) < 1e-9
+
+
+def test_qmr_sell():
+    h1 = mk(qmr_rows())
+    e = find_entries("EURUSD", h1, [qmr_story(h1)], QMR_ONLY)[0]
+    assert e["status"] == "TRIGGERED" and e["model"] == "qmr" and e["tf"] == "H1" and e["qm_tf"] == "H1"
+    assert abs(e["entry"] - (1.1 + 20 * P)) < 1e-9
+    # head stop (42) would be 22 pips > max 20 -> stop above the rejection wick (23 + 1)
+    assert e["stop_at"] == "rejection" and abs(e["stop"] - (1.1 + 24 * P)) < 1e-9
+    assert e["tp2_outcome"] == "win"
+    e = find_entries("EURUSD", h1, [qmr_story(h1)], {**QMR_ONLY, "max_stop_pips": 25})[0]
+    assert e["stop_at"] == "head" and abs(e["stop"] - (1.1 + 42 * P)) < 1e-9
+    # no tap before the neck break -> not this story's QM
+    late = {**qmr_story(h1), "tap_time": str(h1.index[19])[:16]}
+    assert find_entries("EURUSD", h1, [late], QMR_ONLY)[0]["status"] == "NO_SETUP"
+
+
+def test_qmr_buy():
+    h1 = mk(mirror(qmr_rows()))
+    e = find_entries("EURUSD", h1, [qmr_story(h1, "BUY")], QMR_ONLY)[0]
+    assert e["status"] == "TRIGGERED" and e["model"] == "qmr" and e["side"] == "BUY"
+    assert abs(e["entry"] - (1.1 - 20 * P)) < 1e-9 and abs(e["stop"] - (1.1 - 24 * P)) < 1e-9
+    assert e["tp2_outcome"] == "win"
+
+
+def test_qmr_needs_zone_reaction():
+    rows = qmr_rows()
+    for k in range(20, 23):                 # retrace stays far below the neck (15): no zone touch
+        rows[k] = tuple(x - 8 for x in rows[k])
+    rows[23:27] = pattern_sell(8)           # H1 level at 8, rejection wick 11 < neck 15 - tol
+    h1 = mk(rows)
+    assert find_entries("EURUSD", h1, [qmr_story(h1)], QMR_ONLY)[0]["status"] == "NO_SETUP"
+
+
+def test_qmr_ranks_above_newer_continuation():
+    h1 = mk(qmr_rows(extra_continuation=True))
+    st = qmr_story(h1)
+    both = find_entries("EURUSD", h1, [st], H1ONLY)[0]
+    assert both["candidates"] == 2 and both["status"] == "TRIGGERED" and both["model"] == "qmr"
+    assert abs(both["entry"] - (1.1 + 20 * P)) < 1e-9
+    cont = find_entries("EURUSD", h1, [st], {**H1ONLY, "entry_models": ["continuation"]})[0]
+    assert cont["status"] == "TRIGGERED" and cont["model"] == "continuation"
+    assert abs(cont["entry"] - (1.1 - 5 * P)) < 1e-9   # without QMR the newer level is used

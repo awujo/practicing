@@ -65,7 +65,7 @@
     const canApprove = settings.auto_trade === "confirm" && settings.kill_switch !== "on";
     $("#entries-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
-        <div class="top"><span class="title">${esc(r.pair)} ${esc(r.tf || "")} <span class="${esc(r.side)}">${esc(r.side)}</span></span>
+        <div class="top"><span class="title">${esc(r.pair)} ${esc(r.tf || "")} <span class="${esc(r.side)}">${esc(r.side)}</span> ${esc(r.model === "qmr" ? "QMR" : "Continuation")}</span>
           <span class="tag">${esc(r.status)}</span></div>
         <div class="grid">
           ${field("Entry", num(r.entry))}${field("Stop", num(r.stop))}
@@ -127,8 +127,8 @@
       input = `<input type="number" id="${id}" value="${esc(v)}" min="${s.min}" max="${s.max}" step="${step}" inputmode="decimal">`;
     } else if (s.type === "multi" || s.type === "pairs") {
       const on = new Set(csv(v));
-      const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(c) ? "checked" : ""}> ${esc(c)}</label>`).join("");
-      const extra = s.type === "pairs" ? `<input type="text" id="${id}-x" placeholder="other symbols, comma separated" autocapitalize="characters" value="${esc([...on].filter((x) => !s.choices.includes(x)).join(","))}">` : "";
+      const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(String(c).toUpperCase()) ? "checked" : ""}> ${esc(c)}</label>`).join("");
+      const extra = s.type === "pairs" ? `<input type="text" id="${id}-x" placeholder="other symbols, comma separated" autocapitalize="characters" value="${esc([...on].filter((x) => !s.choices.map((c) => String(c).toUpperCase()).includes(x)).join(","))}">` : "";
       return `<div class="col"><span>${esc(label)}</span><div class="chips">${chips}</div>${extra}</div><p class="hint">${esc(s.help)}</p>`;
     } else if (s.type === "ladder") {
       const l = ladder(v);

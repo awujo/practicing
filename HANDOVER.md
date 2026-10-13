@@ -11,7 +11,7 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 ## Architecture
 | Part | Where | Runs on |
 |---|---|---|
-| Strategy (the rules) | `STRATEGY.md` (v0.3) | — |
+| Strategy (the rules) | `STRATEGY.md` (v0.4) | — |
 | Course evidence | `knowledge-base/` (transcripts, frame sheets), `knowledge-base/study/*.md` notes | — |
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
@@ -53,6 +53,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       `slk/live.py` every run (fallback = code defaults). Schema: `slk/settings.py` (CONTRACT.md lists the keys).
       No setting changes what confirms the bias (external break beyond B only; `confirm_break` removed in
       Validation 3). Story dicts carry `break_kind` = breakout | sweep_break (label only).
+- [x] Entry models per user correction (2026-10-13): **continuation** breakout on the 4th OR any later candle
+      (`breakout_max_bars`, default 5, no close back through the line first) and **QMR** = Quasimodo Reversal
+      (was "QMRO" = Whisper). Setting `entry_models` (both on), `entries.model` column (guarded ALTER), alerts and
+      Mini App show the model, ENTRY_REPORT.md has "By entry model". Guessed rules = OUR CHOICE table in STRATEGY §3.
 - [ ] Top open review items: swing rule (fractal vs close-beyond), alternative story start.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner; "sweep previous day high/low" alternative story start.
@@ -96,3 +100,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   `tests/test_store.py`, `tests/test_efficiency.py`, `tests/test_speed.py`.
 
 - 2026-10-13: Default branch switched to claude-kevin-king. Mini App live on Render (opens in Telegram; DB 503 until DATABASE_PASSWORD set on Render). Backfill + backtest queued.
+- 2026-10-13: Entry models (user correction). `slk/entry.py`: continuation breakout = c4 or any later candle within
+  `breakout_max_bars` (5, OUR CHOICE), a close back through the line first kills the level, stop beyond the highest
+  rejection wick c3..breakout-1; new QMR model (shoulder -> neck -> higher-close head -> body close through the
+  neck on the entry TF; price back in the shoulder/neck zone + 1H continuation breakout there; entry on its retest;
+  stop beyond the head if <= max_stop_pips else the rejection wick); a pending QMR is not replaced by a newer
+  continuation level. Settings `entry_models`, `breakout_max_bars`; `entries.model` (schema.sql guarded ALTER via
+  PREPARE + `db.migrate`); alert line "PAIR | TF | SIDE | Continuation/QMR | ...". QMRO renamed QMR in docs/notes
+  (raw transcripts and frame indexes keep Whisper's "QMRO"). Bias confirmation untouched (slk/story.py unchanged).
+  Golden test pins the old entry output with `breakout_max_bars=1, entry_models=[continuation]`. STRATEGY v0.4.

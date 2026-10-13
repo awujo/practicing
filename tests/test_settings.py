@@ -24,6 +24,8 @@ def test_defaults_match_code_defaults():
     assert e["entry_tfs"] == entry.ENTRY_TFS
     assert e["max_stop_pips"] == entry.DEFAULT["max_stop_pips"] and e["tp1_min_rr"] == entry.DEFAULT["tp1_min_rr"]
     assert e["avoid_pairs"] == entry.DEFAULT["avoid_pairs"] and e["skip_first"] == entry.DEFAULT["skip_first"]
+    assert e["entry_models"] == entry.DEFAULT["entry_models"] == list(entry.MODELS)
+    assert e["breakout_max_bars"] == entry.DEFAULT["breakout_max_bars"]
     assert "confirm_break" not in vals and vals["continuation_entries"] is True
     assert {s["group"] for s in S.SCHEMA} == set(S.GROUPS) and all(s["help"] for s in S.SCHEMA)
 
@@ -100,3 +102,16 @@ def test_mw_check_runs_even_when_only_d_is_watched():
     assert state_stories(["D", "M"], {}) == ["D", "M", "W"]
     assert state_stories(["D"], {"mw_conflict_filter": False}) == ["D"]
     assert state_stories(["W"], {}) == ["W"]
+
+
+def test_entry_models_setting():
+    assert S.clean("entry_models", "QMR, continuation") == "continuation,qmr"
+    assert S.clean("entry_models", ["qmr"]) == "qmr"
+    assert S.load({"entry_models": "qmr"})["entry_models"] == ["qmr"]
+    assert S.entry_cfg(S.load({"breakout_max_bars": "3"}))["breakout_max_bars"] == 3
+    for bad in ("", "abc"):
+        with pytest.raises(ValueError):
+            S.clean("entry_models", bad)
+    with pytest.raises(ValueError):
+        S.clean("breakout_max_bars", "0")
+    assert S.clean("stories", "m,d") == "D,M"

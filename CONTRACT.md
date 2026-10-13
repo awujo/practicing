@@ -23,8 +23,9 @@ Never print secrets. Never commit them.
   `tap_time`, `confirm_time`, `no_trade` (0/1; 1 = do not trade, e.g. D story while M and W disagree),
   `no_trade_reason` (e.g. `M/W conflict`), `updated_at`; UNIQUE(pair, story, tap_time). Columns added later are
   created on existing tables by `slk/db.py` `migrate()` (run by `apply_schema()`).
-- `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `entry`, `stop`, `tp1`, `tp2`, `status`
-  (PENDING/TRIGGERED/MISSED/CANCELLED), `created_at`, `alerted_at`.
+- `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `model` (`continuation` | `qmr`, default
+  `continuation`; added to existing tables by a guarded ALTER at the end of `db/schema.sql` and by `migrate()`),
+  `entry`, `stop`, `tp1`, `tp2`, `status` (PENDING/TRIGGERED/MISSED/CANCELLED), `created_at`, `alerted_at`.
 - `orders` — `id`, `entry_id`, `client_order_id` UNIQUE (idempotency), `ctrader_position_id`, `volume`, `status`,
   `opened_at`, `closed_at`, `pnl`.
 - `settings` — `k` PK, `v` TEXT (numbers/bools as strings, bools `on`/`off`). Strategy keys are defined ONCE in
@@ -35,7 +36,8 @@ Never print secrets. Never commit them.
   - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
     point B; internal breaks = entries only): `trend_filter`, `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20),
     `max_retaps` (0-10), `tap_tol_pips` (0-5)
-  - Entry rules: `continuation_entries`, `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
+  - Entry rules: `continuation_entries` (on/off = all entry alerts), `entry_models` (`continuation,qmr`; at least one),
+    `breakout_max_bars` (1-12, default 5), `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)
   - Risk & trading: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.1-2)
   - Alerts: `alert_tapped`, `alert_confirmed`, `alert_ended`, `alert_entry`, `daily_summary` (on/off),

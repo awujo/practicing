@@ -39,8 +39,18 @@ SCHEMA = [
     _s("entry_tfs", "ladder", "D=H4,H2,H1;W=D,H4;M=W,D", "Entry rules",
        "Entry timeframes per story, tried in this order (lower than the story TF)."),
     _s("continuation_entries", "bool", "on", "Entry rules",
-       "Entries on an internal break (4-candle continuation) after the story is confirmed. "
+       "Entry alerts on/off (all entry models), taken only after the story is confirmed. "
        "External break = confirms direction (bias). Internal break = continuation entries only."),
+    _s("entry_models", "multi", "continuation,qmr", "Entry rules",
+       "Entry models. continuation = 2 candles make an A/V line, the 3rd rejects it with a wick, a later "
+       "candle breaks out, entry on the retest. qmr = Quasimodo Reversal: shoulder, head sweeps beyond it, "
+       "neck broken; wait for price back in the shoulder/neck zone, a 1H breakout, then the retest. "
+       "A pending QMR is not replaced by a newer continuation level.",
+       choices=["continuation", "qmr"]),
+    _s("breakout_max_bars", "int", "5", "Entry rules",
+       "Continuation: the breakout may come on the 4th candle or up to this many candles after the "
+       "rejection candle (1 = 4th candle only). A close back through the line before it cancels the level.",
+       min=1, max=12),
     _s("skip_first_retracement", "bool", "on", "Entry rules",
        "Ignore patterns formed before the top of the first retracement after the breakout."),
     _s("max_stop_pips", "float", "20", "Entry rules", "Wider stop = the pattern does not qualify.",
@@ -131,13 +141,15 @@ def clean(name, value):
                 raise ValueError("must be one of " + "/".join(s["choices"]))
             return v
         if t == "multi":
+            canon = {x.upper(): x for x in s["choices"]}  # choices keep their own case (D / qmr)
             v = _csv(value)
-            bad = [x for x in v if x not in s["choices"]]
+            bad = [x for x in v if x not in canon]
             if bad:
                 raise ValueError("must be from " + ",".join(s["choices"]))
+            v = [canon[x] for x in v]
+            if not v:
+                raise ValueError("pick at least one")
             if name == "stories":  # canonical order D,W,M (as before); none = nothing to watch
-                if not v:
-                    raise ValueError("pick at least one story")
                 return ",".join(x for x in ("D", "W", "M") if x in v)
             return ",".join(x for x in s["choices"] if x in v)
         if t == "pairs":
@@ -175,7 +187,9 @@ def parse(name, text):
         return int(v)
     if t == "float":
         return float(v)
-    if t in ("multi", "pairs"):
+    if t == "multi":
+        return [x for x in v.split(",") if x]
+    if t == "pairs":
         return _csv(v)
     if t == "ladder":
         return _ladder(v)
@@ -211,7 +225,8 @@ def entry_cfg(vals):
     """Overrides of slk.entry.DEFAULT from load() output."""
     return {"entry_tfs": {k: tuple(v) for k, v in vals["entry_tfs"].items()},
             "max_stop_pips": vals["max_stop_pips"], "tp1_min_rr": vals["tp1_rr"],
-            "avoid_pairs": list(vals["avoid_pairs"]), "skip_first": vals["skip_first_retracement"]}
+            "avoid_pairs": list(vals["avoid_pairs"]), "skip_first": vals["skip_first_retracement"],
+            "entry_models": list(vals["entry_models"]), "breakout_max_bars": vals["breakout_max_bars"]}
 
 
 def schema_json():

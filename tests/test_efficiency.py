@@ -174,7 +174,8 @@ def test_migrate_adds_missing_columns(monkeypatch):
     monkeypatch.setattr(db, "query", lambda sql, args: [{"n": int(args[1] in have)}])
     monkeypatch.setattr(db, "execute", lambda sql, args=None: ddl.append(sql))
     db.migrate()
-    assert ddl == ["ALTER TABLE bias ADD COLUMN no_trade_reason VARCHAR(64) NULL AFTER no_trade"]
+    assert ddl == ["ALTER TABLE bias ADD COLUMN no_trade_reason VARCHAR(64) NULL AFTER no_trade",
+                   "ALTER TABLE entries ADD COLUMN model VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"]
     schema = (ROOT / "db" / "schema.sql").read_text()
     assert "no_trade      TINYINT(1)" in schema and "no_trade_reason VARCHAR(64)" in schema
 

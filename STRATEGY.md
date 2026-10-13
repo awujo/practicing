@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.3, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.4, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -120,18 +120,46 @@ target price, invalidation price, status
 
 Entry boxes are allowed (a small grey rectangle ~10–20 pips around the entry zone). Key levels stay thin lines [F cadjpy-bd, eurgbp-bd].
 
-**Entry model (Kevin's "continuation"):** [T introduction-to-entry, entry-2/3, F entry-2/entry3]
-1. On the entry TF, two candles form an A/V level (thin line at the shared body price, extended right 5–12 candles).
-2. The **3rd candle rejects** the level with a wick.
-3. The **4th candle breaks out impulsively** (internal BOS).
+Two entry models (`entry_models` setting, both on by default; each entry row carries `model`). Both need:
+bias already confirmed (external break only; entries never change the bias), a 3rd-candle rejection,
+break and retest, the most recent level.
+
+**Model A — continuation ("A series"):** [T introduction-to-entry, entry-2/3, F entry-2/sheet_005-009, entry3]
+1. On the entry TF, two candles (c1, c2) form an A/V level (thin line at the shared body price, extended right 5–12 candles).
+2. The **3rd candle rejects** the level with a wick (wick to the line, body closes back). More rejecting candles after it are fine.
+3. The **breakout = the 4th candle OR ANY LATER candle** ("4th+ candle BREAKS out", frames_E): an impulsive body close
+   beyond the c1..(breakout−1) extreme (internal BOS). No candle may **close back through the line** before the
+   breakout (that kills the level). The breakout must come within `breakout_max_bars` candles after c3.
 4. **Entry = retest of that line.** Skip the first retracement after the external breakout. If price never retests → missed, do not chase.
+
+**Model B — QMR = Quasimodo Reversal ("B series"; Whisper transcribed it "QMRO"):** [T entry-4@830-1905, cadjpy@117-260,
+F entry-4/sheet_011-023, introduction-to-entry/sheet_017-021, cadjpy-bd/sheet_024]
+1. On the entry TF close line, in the bias direction (sell shown): **shoulder** (swing high) → **neck** (the swing low
+   between) → **head** (a higher close than the shoulder = liquidity sweep beyond it) → a **body close below the neck**.
+   QMR zone = the shoulder and neck lines (thin lines; the entry *area* may be boxed).
+2. No blind limit order: wait for price to come **back into the shoulder/neck zone and react**, then a **lower-TF (1H)
+   breakout** in the bias direction there (= a Model-A pattern on the trigger TF whose rejection reached the zone).
+3. **Entry = retest of that 1H line** (continuation). Stop beyond the **head**; if that is wider than `max_stop_pips`,
+   beyond the rejecting candle (notes_entry §3: big zone → stop on the rejection candle). TP1/TP2 as Model A.
+4. **Rank:** QMR level with rejection > breakout level with rejection > plain level. A newer level replaces an older
+   pending one, except that a pending QMR is not replaced by a newer continuation level [T q1@840-1065, e4@1420-1440].
 
 **Which timeframe:** H4 internal breaks first, most recent first, pick one with a 3rd-candle rejection; none → 2H → 1H → otherwise no trade.
 A level that is rejected on H4 and 2H at the same price is stronger; D/H4/2H levels at *different* prices = "no overlap".
 Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59; 4H 6.6 pips R 4.95) [F eurgbp-bd].
-A newer qualifying level replaces an older one [F all-in-1].
 
-**QMRO (reversal entry):** retrace into the shoulder/neck zone, small 1H break, then trade the continuation [F cadjpy-bd, entry-4].
+**OUR CHOICE (entry rules Kevin does not state; defaults, tuned by backtest):**
+| Point | Default |
+|---|---|
+| Latest breakout candle | `breakout_max_bars` = 5 → breakout on c4…c8 (his lines run 5–12 candles right; he never gives a number). |
+| Breakout candle | first candle with an impulsive body (≥ 1× average body of the last 10) closing beyond c1..(breakout−1); a non-impulsive close beyond just widens the base. |
+| Stop (Model A) | beyond the highest wick (sell) / lowest wick (buy) of c3..(breakout−1) + 1 pip. |
+| QM swings | close-line pivots (order 2), consecutive shoulder → neck → head; head must be a higher close (sell) / lower close (buy). |
+| QM validity | neck broken within `qmr_max_bars` = 30 QM-TF candles of the head, before any close beyond the head; the neck break must close after the story tap; a close beyond the head later kills the QM. |
+| "Back in the zone and react" | the trigger-TF pattern's rejection wick reaches the neck line (± tap tolerance); first such pattern per QM, within 30 QM-TF candles of the neck break. |
+| Trigger TF | H4/H2/H1 QM → 1H (his H4 → 1H); D QM → H4; W QM → D; never below the story's lowest entry TF (W story: H4 QM triggers on H4). |
+| QMR stop | beyond the head wick + 1 pip if ≤ `max_stop_pips`, else beyond the trigger rejection wick + 1 pip. |
+| QMR vs. continuation close together | no merged "stop covers both" zone; the rank rule above decides. |
 
 **Stop loss:** just beyond the rejecting candle / small zone. Seen: 8–21 pips; 15–20 pip max is stated, 38 pips called "valid but unwanted"; skip if spread is wide (AUDNZD, NZDCHF avoided) [T wr@1590-1630].
 **Take profit:** TP1 = next key level / R 1.4–2, TP2 = point B / target, R up to ~5 [F weekly-recap, all-in-1].
