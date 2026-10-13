@@ -51,7 +51,16 @@ jobs:
           restore-keys: dukascopy-months-
       - name: Apply db/schema.sql
         if: steps.s.outputs.ok == 'true'
-        run: python -c "from slk import db; db.apply_schema(); print('schema ok')"
+        run: |
+          python - <<'PY'
+          import os, re, sys
+          from slk import db
+          try:
+              db.apply_schema(); print("schema ok")
+          except Exception as e:
+              msg = re.sub(r"://[^@]*@", "://***@", f"{type(e).__name__}: {e}").replace(os.environ.get("DATABASE_URL", "") or "\0", "***")
+              print(f"::error title=Database::{msg}"); sys.exit(1)
+          PY
       - name: Run live bias
         if: steps.s.outputs.ok == 'true'
         env:
