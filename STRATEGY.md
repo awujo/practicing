@@ -1,8 +1,7 @@
-# Kevin King SLK — Bias Strategy (v0.2, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.3, Claude branch)
 
-Built from the `kevin_King` course only. All 29 transcripts plus a frame-by-frame pass over the
-theory videos (structure, liquidity, key levels, story line: ~400 sheets).
-Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures).
+Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
+Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
 Tags: `[T video@sec]` transcript, `[F video/sheet_NNN]` frame. **OUR CHOICE** = Kevin does not say;
 default picked so it can be coded, then tuned by backtest.
 
@@ -86,6 +85,8 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
    tapped the level**. Not the low made by the rejection itself [T story-line-pt3@1690-1790, F story-line-pt2].
 5. **Breakout (confirm TF, candles).** A candle **body closes below B** → story **confirmed**, bias **BEARISH**.
    He labels it `bms` / `EXT`. Any later breaks are internal BOS and are for entries only.
+   The confirm TF may also show a **sweep + break (QM)** instead of a plain break; either confirms [T story-line-pt2@330-436].
+   Point B is read with the tap candle hidden (he uses TradingView Replay) so the swing is found as it was before the tap [F qns-pt1/pt2].
 6. **Hold until:**
    - target reached → `TARGET_HIT`;
    - a body close back above the origin level → `INVALIDATED`;
@@ -107,15 +108,34 @@ target price, invalidation price, status
 - Monthly and weekly stories point opposite ways → **NO_TRADE** [T class-wrok@1236-1312].
 - Never against the higher-timeframe trend [T liquidity-pt3@712-723].
 - Trend unclear (range, takes effort to read) → skip [T story-line-pt4@1195-1217].
+- After an H4 breakout in a **daily** story, the daily candle must also close beyond B the same day, otherwise cancel [F qns-pt2].
+- **Overlap:** a weekly KL that is also a daily KL counts as "daily rejects daily"; the weekly target becomes the TP. A weekly tap is judged only after the weekly candle closes [F all-in-1, T class-wrok@480-620].
+- **Alignment (continuation):** a weekly close beyond the last weekly swing first, then Daily and H4 must break the same way. No alignment, no trade [F weekly-recap].
+- **Swing ladder (bot helper):** on the daily close line, keep a line at every unbroken close-swing high/low extended right; these are the candidates for point B and for targets [F weekly-recap].
+- Exception seen on CADJPY: weekly bullish + daily sweeps the previous-day low into a daily OC level and closes back above it → daily bias confirmed **without** an H4 breakout; target = previous high [F cadjpy-bd].
 
 ---
 
-## 3. Entry (stage 2, summary only; see `knowledge-base/study/notes_entry.md`)
+## 3. Entry (after bias is confirmed)
 
-- Entry TF = the confirm TF (D story → H4, then 2H/1H).
-- Advanced structure order seen on every chart: **sweep (wick) → BOS (body) → inducement → return to KL** [F advance-market-sturcture-pt2/pt3].
-- Continuation model: A/V level, rejection, breakout, **retest = entry**. QMRO: entry at the shoulder level.
-- SL beyond the invalidation; max ~10–15 pips (USD pairs), 15–20 (JPY). TP = story target. Max daily loss 0.5%.
+Entry boxes are allowed (a small grey rectangle ~10–20 pips around the entry zone). Key levels stay thin lines [F cadjpy-bd, eurgbp-bd].
+
+**Entry model (Kevin's "continuation"):** [T introduction-to-entry, entry-2/3, F entry-2/entry3]
+1. On the entry TF, two candles form an A/V level (thin line at the shared body price, extended right 5–12 candles).
+2. The **3rd candle rejects** the level with a wick.
+3. The **4th candle breaks out impulsively** (internal BOS).
+4. **Entry = retest of that line.** Skip the first retracement after the external breakout. If price never retests → missed, do not chase.
+
+**Which timeframe:** H4 internal breaks first, most recent first, pick one with a 3rd-candle rejection; none → 2H → 1H → otherwise no trade.
+A level that is rejected on H4 and 2H at the same price is stronger; D/H4/2H levels at *different* prices = "no overlap".
+Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59; 4H 6.6 pips R 4.95) [F eurgbp-bd].
+A newer qualifying level replaces an older one [F all-in-1].
+
+**QMRO (reversal entry):** retrace into the shoulder/neck zone, small 1H break, then trade the continuation [F cadjpy-bd, entry-4].
+
+**Stop loss:** just beyond the rejecting candle / small zone. Seen: 8–21 pips; 15–20 pip max is stated, 38 pips called "valid but unwanted"; skip if spread is wide (AUDNZD, NZDCHF avoided) [T wr@1590-1630].
+**Take profit:** TP1 = next key level / R 1.4–2, TP2 = point B / target, R up to ~5 [F weekly-recap, all-in-1].
+**Risk:** max daily loss 0.5% [T structuring@836-880]. Take ~1–2 clean setups per week; no session or news rules exist.
 
 ---
 
