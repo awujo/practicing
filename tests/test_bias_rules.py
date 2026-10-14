@@ -179,7 +179,11 @@ def test_cadjpy_exception_conditions():
     # Validation 4: the daily must already have flipped bullish ("after the bullish close above this guy, price
     # did a sweep of previous day low", cadjpy-bd@440-560): a D body close above a sell level shortly before
     assert not X.cadjpy(oc[0], 5, "up")                                       # no D flip yet: H4 breakout needed
-    X.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))     # day 3 closes above a D sell level
+    X.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))     # a D seller broken, but 35 pips away
+    X._flips = None
+    assert not X.cadjpy(oc[0], 5, "up")  # examples diagnosis: the flipped zone must be THE swept level's spot
+    # ("daily has flipped the zone ... sweep of previous day low into the daily open close level", cadjpy-bd@693-739)
+    X.levels.append(Level(1.0042, "sell", "A", 1, [(3, "break", False)]))     # day 3 closes above the seller there
     X._flips = None
     assert X.cadjpy(oc[0], 5, "up")
     X.cfg = {**X.cfg, "max_wait": 1}
@@ -187,12 +191,13 @@ def test_cadjpy_exception_conditions():
     X.cfg = {**X.cfg, "max_wait": S.DEFAULT["max_wait"]}
     assert not X.cadjpy(oc[0], 5, "down") and not X.cadjpy(oc[0], 5, "range")  # needs the weekly trend
     v = Level(oc[0].price, "buy", "V", oc[0].born)
-    assert not X.cadjpy(v, 5, "up")                                            # open-close / flipped zone only
+    assert not X.cadjpy(v, 5, "up")                                            # open-close level only
+    assert not X.cadjpy(Level(oc[0].price, "buy", "flip", oc[0].born), 5, "up")
     Z = ctx(cad_days(), cadjpy_exception=False)
-    Z.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))
+    Z.levels.append(Level(1.0042, "sell", "A", 1, [(3, "break", False)]))
     assert not Z.cadjpy(oc[0], 5, "up")
     Y = ctx(cad_days(sweep=False))                                             # previous low already lower: no sweep
-    Y.levels.append(Level(1.0075, "sell", "A", 1, [(3, "break", False)]))
+    Y.levels.append(Level(1.0042, "sell", "A", 1, [(3, "break", False)]))
     assert not Y.cadjpy(Level(1.004, "buy", "OC", 4), 5, "up")
 
 
@@ -207,7 +212,7 @@ def test_cadjpy_stories_on_walk():
                 continue
             n += 1
             j = st.index(r["tap_time"])
-            assert r["level_kind"] in ("OC", "flip") and r["break_kind"] == "none"
+            assert r["level_kind"] == "OC" and r["break_kind"] == "none"
             assert r["htf_trend"] == ("up" if r["side"] == "BUY" else "down")
             if r["side"] == "BUY":  # swept the previous day's low, closed back above it and the level
                 assert ob["low"].iat[j] < ob["low"].iat[j - 1] < ob["close"].iat[j] and ob["close"].iat[j] > r["level"]
@@ -301,8 +306,8 @@ def test_alignment_stories_on_walk():
 def test_rules_off_equal_v05_engine():
     """With the v0.6 rules switched off the engine gives the v0.5 output (frozen golden), so every change in
     tests/golden/engine_golden.json comes from these rules."""
-    off = {"most_recent_level": False, "flip_end": False, "htf_targets": False, "overlap_rule": False,
-           "alignment_start": False, "cadjpy_exception": False}
+    off = {**G.PRE_EXAMPLES, "most_recent_level": False, "flip_end": False, "htf_targets": False,
+           "overlap_rule": False, "alignment_start": False, "cadjpy_exception": False}
     gold = json.load(open(G.PATH_V05))
     new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time")
     for i in (0, 2, 3):

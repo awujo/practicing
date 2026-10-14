@@ -29,12 +29,17 @@ SCHEMA = [
        choices=["M", "W", "D"]),
     _s("trend_filter", "bool", "on", "Bias rules", "Only levels that agree with the origin-TF trend."),
     _s("htf_filter", "bool", "on", "Bias rules", "Never trade against the higher-TF trend."),
+    _s("pullback_levels", "bool", "on", "Bias rules",
+       "When the origin TF (daily) trend points against the higher-TF (weekly) trend, the daily is only "
+       "retracing: levels on the weekly side start the story (Kevin's CADJPY, EURGBP and USDCAD daily stories: "
+       "story-line-pt2@1420-1580, all-in-1@1357-1388, story-line-pt4@1465-1496). Off = only levels of the daily "
+       "trend (then no daily story can start while daily and weekly disagree)."),
     _s("mw_conflict_filter", "bool", "on", "Bias rules", "M and W disagree -> Daily stories are NO_TRADE."),
     _s("max_wait", "int", "5", "Bias rules", "Origin bars from tap to breakout before the story is dropped.",
        min=1, max=20),
     _s("max_retaps", "int", "3", "Bias rules", "More re-taps before the breakout = messy level, skip.",
        min=0, max=10),
-    _s("tap_tol_pips", "float", "1", "Bias rules", "A wick this close to the line (pips) counts as a tap.",
+    _s("tap_tol_pips", "float", "0", "Bias rules", "A wick this close to the line (pips) counts as a tap (0 = the wick must reach the line).",
        min=0, max=5),
     _s("level_tol_pips", "float", "0", "Bias rules",
        "Broker tolerance (pips, our choice): a wick this much further from the line still counts as a tap / touch "
@@ -65,9 +70,9 @@ SCHEMA = [
        "the last daily swing and an H4 break the same way = daily continuation story. Without that alignment no "
        "continuation story (weekly-recap@151-282, 626-670, 2098-2160). Kevin uses it: on."),
     _s("cadjpy_exception", "bool", "on", "Bias rules",
-       "Exception (c) CADJPY: weekly trend in the story direction + the daily already flipped that way (a daily "
-       "close through an opposite key level in the last max_wait days) + the daily candle sweeps the previous day "
-       "low (high) into a daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
+       "Exception (c) CADJPY: weekly trend in the story direction + the daily already flipped THAT zone (a daily "
+       "close through an opposite key level at the same spot, within overlap_tol_pips, in the last max_wait days) + "
+       "the daily candle sweeps the previous day low (high) into that daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
        "H4 breakout, target the previous high (low) (cadjpy-bd@400-995). Kevin uses it: on. Off = H4 breakout "
        "always required."),
     _s("next_day_rule", "choice", "flag", "Bias rules",
@@ -281,7 +286,7 @@ def as_strings(stored=None):
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
-                                 "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "most_recent_level", "flip_end",
+                                 "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
                                  "cadjpy_exception", "next_day_rule")}
 

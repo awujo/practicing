@@ -88,6 +88,8 @@ VARIANTS = [
     ("next_day_rule", "require", "story", {"next_day_rule": "require"}),
     ("cadjpy_exception", "on", "story", {"cadjpy_exception": True}),
     ("cadjpy_exception", "off", "story", {"cadjpy_exception": False}),
+    ("pullback_levels", "on", "story", {"pullback_levels": True}),
+    ("pullback_levels", "off", "story", {"pullback_levels": False}),
     ("entry_alignment", "d_h4", "entry", {"alignment": "d_h4"}),
     ("entry_alignment", "w_d_h4", "entry", {"alignment": "w_d_h4"}),
     ("entry_alignment", "off", "entry", {"alignment": "off"}),

@@ -30,7 +30,7 @@ DEFAULT = {
     "b_pivot": 1,           # point B = last close-line V/A turn of this order on the confirm TF before the tap
     "use_oc": True,
     "trend_filter": True,   # only levels that agree with the origin-TF trend
-    "tap_tol_pips": 1.0,    # wick within this distance of the line counts as a touch
+    "tap_tol_pips": 0.0,    # wick must reach the line (Kevin: a wick just short "did not enter it", story-line-pt4@1315-1335)
     "level_tol_pips": 0.0,  # OUR CHOICE: extra wick tolerance for broker feed differences (IC vs FOREX.com vs
                             # OANDA, 1-2 pips); added to tap_tol_pips for wick touches only, never for closes
     "max_wait": 5,          # origin bars from tap to breakout
@@ -48,7 +48,14 @@ DEFAULT = {
     "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
     "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL
     "overlap_tol_pips": 3.0,  # OUR CHOICE: two TF levels within this distance are "the same spot"
+    "align_retap_ends": True,  # examples diagnosis: a wick back to the protected D swing before the H4 break
+                               # ends the alignment chain (GBPJPY Jan 19 2026, story-line-pt4@622-765)
     "alignment_start": True,  # #31b W BOS -> D BOS -> H4 BOS the same way = a D continuation story
+    "pullback_levels": True,  # origin TF retracing against the higher-TF trend: levels of the HIGHER-TF side
+                              # count (Kevin's CADJPY/EURGBP/USDCAD daily stories) [T story-line-pt2@1420-1580,
+                              # all-in-1@1357-1388; STRATEGY §2 step 1]; off = origin-TF trend side only
+    "cadjpy_zone": True,    # examples diagnosis: the swept level must be a D open-close level at the spot of the
+                            # opposite level the daily just flipped (False = v0.6: any OC/flip level, any flip)
     "cadjpy_exception": True,  # #31c W trend + D sweep of the previous day low/high into a D OC level, close back
     # Next Day Rule [T story-line-pt3@1358-1401 "you go to four hours after the close of this day, you just see a
     # clean breakout"; qns-pt2@1946-1962 "the next day ... not that particular day"]: the confirm-TF breakout should
@@ -267,11 +274,23 @@ class _Ctx:
         if cfg["trend_filter"]:
             if tr == "range":
                 return None
-            cands = [lv for lv in self.taps[bar] if lv.side == ("sell" if tr == "down" else "buy")]
+            want = "sell" if tr == "down" else "buy"
+            if cfg["pullback_levels"] and self.htf:
+                h_tr = self.htf_trend(self.o_start[bar])
+                if h_tr in ("up", "down") and h_tr != tr:
+                    want = "sell" if h_tr == "down" else "buy"  # origin TF retracing against the higher TF
+            cands = [lv for lv in self.taps[bar] if lv.side == want]
         else:
             cands = self.taps[bar]
         if not cands:
             return None
+        if cfg["cadjpy_exception"] and cfg["cadjpy_zone"] and self.story == "D" and self.htf:
+            # #31c: the sweep went INTO the daily open-close level of the flipped zone; that level starts the story
+            # even when a newer level was also hit by the sweep wick [T cadjpy-bd@629-639, 732-739]
+            h_tr = self.htf_trend(self.o_start[bar])
+            cj = [x for x in cands if self.cadjpy(x, bar, h_tr)]
+            if cj:
+                return max(cj, key=lambda x: x.born)
         lv = _pick(cands)
         if cfg["most_recent_level"] and not self.most_recent_ok(lv, bar):
             sw = [x for x in cands if x.kind == "sweep"]  # a stale level is no key level: the sweep start may apply
@@ -284,32 +303,42 @@ class _Ctx:
         not need to be waiting for this breakout again"); F cadjpy-bd/sheet_008-009 (short line ~113.2 on the open-
         close level, next candle wicks below the previous day low and closes above, line "target" 114.466 drawn at
         once)]: D story, higher-TF (W) trend in the story direction, the tap candle's wick sweeps the previous day's
-        low (high for a sell) INTO a D open-close level (or the flipped zone, as in his example) and the candle
-        closes back above the previous low and the level. Confirmed at that D close, no H4 breakout needed.
-        Precondition (Validation 4): the daily has ALREADY flipped the story's way: "after the bullish close above
-        this guy, price did a sweep of previous day low" / "weekly is bullish and now daily has flipped the zone"
-        [T cadjpy-bd@440-560, 680-720; F cadjpy-bd/sheet_008: the big bull D candle closes above the D sell zone,
-        the sweep comes 1-2 candles later] = a D body close through an OPPOSITE key level within `max_wait` D bars
-        before the sweep. Without it this is an ordinary tap and the H4 breakout is required."""
-        if not self.cfg["cadjpy_exception"] or self.story != "D" or lv.kind not in ("OC", "flip") or bar < 1:
-            return False
-        if not self.flipped_before(lv.side, bar):
+        low (high for a sell) INTO a D open-close level and the candle closes back above the previous low and the
+        level. Confirmed at that D close, no H4 breakout needed.
+        Precondition (Validation 4, tightened in the examples diagnosis): the daily has ALREADY flipped THAT zone:
+        "daily closed above the daily seller ... weekly is bullish and now daily has flipped the zone. Now when daily
+        flipped the zone, price did a sweep of previous day low into the daily open close level" / "price did a close
+        above it back into the zone ... retest this key level and then continue the buy" [T cadjpy-bd@599-639,
+        693-739; F cadjpy-bd/sheet_008: the big bull D candle closes above the D sell zone, the sweep comes 1-2
+        candles later] = a D body close through an OPPOSITE key level at the same spot (within overlap_tol_pips)
+        within `max_wait` D bars before the sweep. Only an open-close level (his words, every time). Without it this
+        is an ordinary tap and the H4 breakout is required."""
+        zone = self.cfg["cadjpy_zone"]
+        if not self.cfg["cadjpy_exception"] or self.story != "D" or bar < 1 or \
+                lv.kind not in (("OC",) if zone else ("OC", "flip")):
             return False
         O = self.O
         if lv.side == "buy":
-            return h_tr == "up" and O["low"][bar] < O["low"][bar - 1] and O["close"][bar] > O["low"][bar - 1]
-        return h_tr == "down" and O["high"][bar] > O["high"][bar - 1] and O["close"][bar] < O["high"][bar - 1]
+            ok = h_tr == "up" and O["low"][bar] < O["low"][bar - 1] and O["close"][bar] > O["low"][bar - 1]
+        else:
+            ok = h_tr == "down" and O["high"][bar] > O["high"][bar - 1] and O["close"][bar] < O["high"][bar - 1]
+        return ok and self.flipped_before(lv.side, bar, lv.price if zone else None)
 
-    def flipped_before(self, side, bar):
-        """True when an opposite key level (sell levels for a buy) was broken by an origin body close in the
-        `max_wait` bars before `bar` (the daily flipped that way)."""
+    def flipped_before(self, side, bar, price):
+        """True when an opposite key level (sell levels for a buy) at the same spot as `price` (within
+        overlap_tol_pips; any price when `price` is None = the v0.6 rule) was broken by an origin body close in the
+        `max_wait` bars before `bar` (the daily flipped that zone)."""
         if self._flips is None:
-            self._flips = {k: np.array(sorted(b for lv in self.levels if lv.side != k and lv.kind != "sweep"
-                                              for b, kind, _ in lv.events if kind == "break"), dtype=np.int64)
-                           for k in ("buy", "sell")}
-        b = self._flips[side]
-        i = int(np.searchsorted(b, bar, "left"))  # breaks strictly before the tap bar
-        return i > 0 and b[i - 1] >= bar - self.cfg["max_wait"]
+            self._flips = {}
+            for k in ("buy", "sell"):
+                ev = sorted((b, lv.price) for lv in self.levels if lv.side != k and lv.kind != "sweep"
+                            for b, kind, _ in lv.events if kind == "break")
+                self._flips[k] = (np.array([e[0] for e in ev], dtype=np.int64), np.array([e[1] for e in ev]))
+        b, p = self._flips[side]
+        i, j = np.searchsorted(b, bar - self.cfg["max_wait"], "left"), np.searchsorted(b, bar, "left")
+        if price is None:
+            return bool(j > i)  # breaks strictly before the tap bar, within max_wait
+        return bool((np.abs(p[i:j] - price) <= self.cfg["overlap_tol_pips"] * self.P + 1e-9).any())
 
     def overlap(self, lv, bar, t_conf):
         """#31a [T all-in-1@1424-1620 ("two timeframes overlap ... weekly and daily are using exactly this key level
@@ -574,7 +603,10 @@ class _Ctx:
         W: the last W structural break (a W close beyond the last W swing) closed before D bar d starts.
         D: bar d closes beyond the last D swing the same way (structural_swings fix at d).
         H4: after D bar d closes, a close beyond the last H4 close turn made since d started (same day close rule),
-        within max_wait D bars; a D close back through the protected D swing first cancels it."""
+        within max_wait D bars; a D close back through the protected D swing first cancels it, and so does an H4 wick
+        back to it (`align_retap_ends`): Kevin then reads a new "daily reject daily" at that level whose breakout is the
+        last A/V before THAT tap [T story-line-pt4@622-765: GBPJPY V 210.809 tapped Mon Jan 19 2026, "can we conclude
+        that the daily is bullish? No ... this breakout has not been confirmed"; F story-line-pt4/sheet_009]."""
         cfg, O, C, c2o = self.cfg, self.O, self.C, self.c2o
         if self.hb is None:
             return {}
@@ -594,6 +626,9 @@ class _Ctx:
                 if k == self.first_k[oi] and oi - 1 > d and \
                         ((O["close"][oi - 1] < prot) if up else (O["close"][oi - 1] > prot)):
                     break  # D close back through the protected swing: no alignment
+                if cfg["align_retap_ends"] and ((C["low"][k] <= prot + self.tol) if up else (C["high"][k] >= prot - self.tol)):
+                    break  # price came back and TAPPED the protected D swing: that tap is a new daily story start
+                    # (point B = the last A/V before THAT tap), not the old alignment [T story-line-pt4@622-765]
                 pts = [s for s in self.csw.at(k - 1) if s[1] == ("H" if up else "L") and s[0] >= self.first_k[d]]
                 if pts and ((C["close"][k] > pts[-1][2]) if up else (C["close"][k] < pts[-1][2])):
                     ok = (O["close"][oi] > pts[-1][2]) if up else (O["close"][oi] < pts[-1][2])

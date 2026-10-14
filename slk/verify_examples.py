@@ -12,6 +12,7 @@ Each example is a story Kevin drew in class, with the date/price read from the t
   NO_TRADE  at `now` (the class time) no tradable confirmed story with a tap in the window ("no H4 breakout ->
             no trade"); a TAPPED row is fine and is shown;
   SIDE      every tradable confirmed story of `stories` confirmed in the window is on the expected side (>= 1).
+Offline: `--data data/examples` reads the exported H1 CSVs (IC Markets cTrader bid, UTC) instead of the store.
 Always exits 0 (examples that fail are marked FAIL in the report); a crash of one example is marked ERROR.
 cTrader and Dukascopy are blocked in Claude's sandbox, so this runs on GitHub Actions
 (.github/workflows/verify-examples.yml).
@@ -37,7 +38,11 @@ EXAMPLES = [
                  "2026), sheet_015-021 (4H replay, last small close peak ~113.2 = B, 'bms'), sheet_025-028 "
                  "(target 114.65 hit)"},
     {"id": "cadjpy-d-buy-no-h4-exception", "pair": "CADJPY", "kind": "BIAS", "story": "D", "side": "BUY",
-     "tap": ("2026-01-28", "2026-02-02"), "origin": 113.2, "tol": 0.30, "target": 114.466, "rule": "cadjpy",
+     "tap": ("2026-01-28", "2026-02-02"), "origin": 113.2, "tol": 0.30, "target": 114.466,
+     # Kevin: "if you decide to wait for four hours break out, it's not really bad" / "eventually there was a four
+     # hours breakout here" [cadjpy-bd@777-787, 940-944]: the same BUY from the flipped zone via the H4 breakout
+     # (a standard story) agrees with him too; the rule itself is unit-tested on these candles (tests/test_examples.py)
+     "rule": ("cadjpy", "standard"),
      "now": "2026-02-03 00:00",
      "evidence": "REVIEW #31c. cadjpy-bd@400-995 ('price did a sweep of previous day low into the daily open close "
                  "level, when we are already bullish on the weekly ... direction is confirmed ... you really do not "
@@ -65,9 +70,12 @@ EXAMPLES = [
                  "'daily reject daily', close below the last V before the tap = bearish, TP1/TP2 hit); "
                  "F story-line-pt4/sheet_018-019 (KL 1.39201, V ~1.3890, 4H break Mon Jan 19 2026)"},
     {"id": "euraud-sells", "pair": "EURAUD", "kind": "SIDE", "stories": ["W", "D"], "side": "SELL",
-     "window": ("2026-01-15", "2026-02-21"), "now": "2026-02-21 00:00",
+     # window starts after the weekly BOS: the first W close below Kevin's weekly V 1.71717 is the week ending
+     # Fri Jan 23 2026 (IC W close 1.7144) [weekly-recap@343-376, F weekly-recap/sheet_005 t=360]; before it the
+     # weekly was not bearish yet, so "only sells" cannot be expected from Jan 15 (spec fix, examples diagnosis)
+     "window": ("2026-01-24", "2026-02-21"), "now": "2026-02-21 00:00",
      "evidence": "weekly-recap@151-1000 ('weekly BOS down plus daily BOS down means only sells'); F weekly-recap/"
-                 "sheet_005-017 (weekly close below 1.7172, daily swing-low ladder, H4 sell 1.6800 -> B 1.6620, "
+                 "sheet_005-017 (weekly close below 1.7172 = week ending Jan 23 2026, daily swing-low ladder, H4 sell 1.6800 -> B 1.6620, "
                  "chart up to Fri Feb 20 2026)"},
     {"id": "gbpaud-sells", "pair": "GBPAUD", "kind": "SIDE", "stories": ["W", "D"], "side": "SELL",
      "window": ("2026-01-15", "2026-02-21"), "now": "2026-02-21 00:00",
@@ -105,6 +113,14 @@ def _desc(pair, r):
             + (f" ended: {r['end_reason']}" if r.get("end_reason") else ""))
 
 
+def load_csv(pair, data_dir):
+    """Offline H1 candles: `<data_dir>/<PAIR>_H1.csv.gz` (columns t, open, high, low, close; UTC), as exported by
+    the verify-examples workflow into data/examples/. Plain CSV read with pandas (no pickles, no store files)."""
+    df = pd.read_csv(os.path.join(data_dir, f"{pair}_H1.csv.gz"))
+    df.index = pd.DatetimeIndex(pd.to_datetime(df.pop("t"), utc=True))
+    return df[["open", "high", "low", "close"]].astype(float).sort_index()
+
+
 def load(pair, now):
     from . import store
     end = pd.Timestamp(now)
@@ -128,13 +144,25 @@ def check(ex, h1, cfg=None):
         return ("PASS" if ok else "FAIL"), ("; ".join(_desc(p, r) for r in got) or "no confirmed W/D story in window")
     win = [r for r in rows if r["story"] == ex["story"] and _in(_day(r["tap_time"], STORIES[ex["story"]][0]), ex["tap"])]
     conf = [r for r in win if r["status"] in CONFIRMED and not r.get("no_trade")]
-    text = "; ".join(_desc(p, r) for r in win) or "no tap of a fresh trend level in the window"
     if ex["kind"] == "NO_TRADE":
-        return ("PASS" if not conf else "FAIL"), text
+        # Kevin's "no breakout, no storyline, no trade" also fails when a story with an EARLIER tap (alignment, a
+        # longer wait) got confirmed inside the window: the bot would show a confirmed bias where Kevin has none
+        late = [r for r in rows if r["story"] == ex["story"] and r not in win and r["status"] in CONFIRMED
+                and not r.get("no_trade") and r.get("confirm_time")
+                and _in(_day(pd.Timestamp(r["confirm_time"]) - pd.Timedelta(hours=1), "D"), ex["tap"])]
+        text = "; ".join(_desc(p, r) for r in win + late) or "no tap of a fresh trend level in the window"
+        return ("PASS" if not conf and not late else "FAIL"), text
+    text = "; ".join(_desc(p, r) for r in win) or "no tap of a fresh trend level in the window"
     good = [r for r in conf if r["side"] == ex["side"]
             and (ex.get("origin") is None or abs(r["level"] - ex["origin"]) <= ex["tol"])
-            and (not ex.get("rule") or str(r.get("rule") or "").startswith(ex["rule"]))]
+            and (not ex.get("rule") or str(r.get("rule") or "").startswith(_rules(ex)))]
     return ("PASS" if good else "FAIL"), text
+
+
+def _rules(ex):
+    """Accepted rule prefixes of an example (str or tuple)."""
+    r = ex.get("rule")
+    return (r,) if isinstance(r, str) else tuple(r or ())
 
 
 def expected(ex):
@@ -146,7 +174,7 @@ def expected(ex):
         return s + (f", level ~{_fmt(p, ex['origin'])}" if ex.get("origin") else "")
     s = f"{ex['story']} {ex['side']}, tap {ex['tap'][0]}..{ex['tap'][1]}, origin {_fmt(p, ex['origin'])} ± {ex['tol']}"
     if ex.get("rule"):
-        s += f", rule {ex['rule']}"
+        s += f", rule {' or '.join(_rules(ex))}"
     return s + (f", target ~{_fmt(p, ex['target'])}" if ex.get("target") else "")
 
 
@@ -154,7 +182,7 @@ def report(results):
     n = sum(1 for r in results if r["result"] == "PASS")
     lines = ["# Kevin's worked examples: replay check", "",
              f"Generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC by `python -m slk.verify_examples` "
-             "(live bias engine `slk.live.pair_state`, code defaults, H1 from the candle store: IC Markets cTrader, "
+             "(live bias engine `slk.live.pair_state`, code defaults, H1 from the candle store or `--data` CSVs: IC Markets cTrader, "
              "Dukascopy fallback).", "",
              f"**{n}/{len(results)} PASS.** A FAIL is a story the bot reads differently from Kevin; it does not stop "
              "the workflow. Evidence = transcript [video@sec] and frame sheets (knowledge-base/frames).", "",
@@ -170,6 +198,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="reports")
     ap.add_argument("--only", default="", help="comma list of pairs or example ids")
+    ap.add_argument("--data", default="", help="offline: read <PAIR>_H1.csv.gz from this folder (e.g. data/examples) "
+                                               "instead of the candle store")
     a = ap.parse_args(argv)
     only = {x.strip() for x in a.only.split(",") if x.strip()}
     results = []
@@ -178,14 +208,16 @@ def main(argv=None):
             continue
         row = {"id": ex["id"], "pair": ex["pair"], "expected": expected(ex), "evidence": ex["evidence"]}
         try:
-            row["result"], row["found"] = check(ex, load(ex["pair"], ex["now"]))
+            h1 = load_csv(ex["pair"], a.data) if a.data else load(ex["pair"], ex["now"])
+            row["result"], row["found"] = check(ex, h1)
         except Exception as e:  # one broken example must not hide the others
             row["result"], row["found"] = "ERROR", f"{type(e).__name__}: {e}"
             traceback.print_exc()
         print(f"{row['result']:5} {ex['id']}: {row['found']}", flush=True)
         results.append(row)
-    from . import store
-    store.close_feed()
+    if not a.data:
+        from . import store
+        store.close_feed()
     os.makedirs(a.out, exist_ok=True)
     with open(os.path.join(a.out, "EXAMPLES.md"), "w") as f:
         f.write(report(results))

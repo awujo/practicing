@@ -283,3 +283,50 @@ the bot's mechanical A/V + 3rd-candle filter finds many more, weaker lines (any 
 alerts; (2) run the full 28-pair backtest again (ENTRY_REPORT.md now shows `stop_at` and `fillbar_stop%`), and set
 `spread_pips` ~1 for realistic numbers; (3) if the entry layer is kept, test Kevin's tighter scope first: D story
 entries only on H4/2H (no unconditional H1), QMR only — on years not used here.
+## Examples diagnosis (cTrader data) — 2026-10-14
+
+Kevin's worked examples (`slk/verify_examples.py`) replayed on the offline IC Markets cTrader H1 bid candles in
+`data/examples/` (`python -m slk.verify_examples --data data/examples`, plain CSV read with pandas). Each FAIL was
+traced through `levels.py` / `story.py` (levels near Kevin's price, born / first touch, trend at the tap, point B,
+timing), and Kevin's evidence re-read (transcript at the cited seconds) and re-checked on the frame sheets (opened).
+Cause: **(a)** data (Kevin's TradingView feed vs IC bid), **(b)** engine rule, **(c)** wrong example spec.
+Score: **3/9 before → 6/9 after** (the old engine scores 2/9 under the corrected specs/check: the GBPJPY pass was an
+accident, see below). Tests: `tests/test_examples.py` (each rule on the real candles, and each change switched back
+reproduces the pre-diagnosis golden `tests/golden/engine_golden_v07.json`; `engine_golden.json` regenerated for these
+four rule changes only).
+
+| Example | Before → after | Cause | Finding | Fix |
+|---|---|---|---|---|
+| cadjpy-d-buy | FAIL → **PASS** | **b** + a | D trend was "down" at the Thu Jan 8 2026 tap: the Jan 5 close 113.554 broke the minor structural HL 113.899 (Dec 24), while W was up. Buy levels were removed by the D trend filter and sells by the HTF filter, so **no D story can start while D and W disagree**. Kevin: "daily time frame is in the uptrend ... these are just retracement" [T story-line-pt2@1420-1580]. (a) Kevin's OC 112.903 = IC close Dec 17 112.919 / open Dec 18 112.895; on IC it is used on Dec 19 by the 22:00 UTC rollover-spike low 112.676 (IC low without the rollover hour 112.859 = Kevin's ~112.86 wick; on Kevin's chart Dec 18 is a small bear, on IC a 1.6-pip bull) [F story-line-pt2/sheet_012-013, zoomed]. The bot now takes the flip level 112.983 (Kevin drew a line at 112.982 at t=860 too), B 113.201 ≈ his ~113.2, H4 break, target hit. | `pullback_levels` |
+| cadjpy-d-buy-no-h4-exception | FAIL → **PASS** | **b** + **c** | The exception fired on the newest flip level 113.597 (the sweep wick went through it) instead of Kevin's OC ~113.2 [F cadjpy-bd/sheet_008-009: Mon Feb 2 sweep of the Jan 30 low into the line drawn at the close of the big bull candle that broke the sell zone]. Now the bot gets a standard BUY from the same zone (flip 113.318, tap Fri Jan 30, H4 break, confirmed Jan 30 close) one day earlier, so it is busy on Feb 2; the cadjpy rule itself fires on Feb 2 at the OC 113.138 (unit test). Spec (c): rule `cadjpy` only was too strict; Kevin: "if you decide to wait for four hours break out, it's not really bad ... eventually there was a four hours breakout here" [T cadjpy-bd@777-787, 940-944], so a standard story from the same zone agrees with him. | `cadjpy_zone`; spec accepts rule cadjpy or standard |
+| eurgbp-d-buy-overlap | FAIL → **PASS** | **b** | Same dead zone as CADJPY: D down, W up; Kevin's daily was down too ("price has to break this place on daily to confirm that ... the weekly is ready", [T all-in-1@1357-1388]). Now BUY from OC 0.86563 (W=D V ~0.8657) on Tue Jan 13. Note: it confirms through the CADJPY rule (W up, PDL sweep into the OC, the daily closed through sell levels at the same spot on Jan 6); Kevin waited for the H4 break. Same side, same level. | `pullback_levels` |
+| gbpjpy-d-no-h4-breakout | PASS → **FAIL** | **a** (+b fixed) | The old pass was an accident: the bot had a BUY CONFIRMED at the Mon Jan 19 close from an alignment chain started Jan 12, which the old check (taps in the window only) did not see; the check now also fails a story confirmed inside the window. (b) fixed: price came back to the protected D swing 210.815 (= Kevin's V 210.809) on Jan 19, which Kevin reads as a new "daily reject daily" needing its own H4 break [T story-line-pt4@622-765]; and `tap_tol_pips` 1 made the Jan 16 wick 0.2 pip short of 211.386 a tap. Now the bot has Kevin's story exactly (V 210.815, tap Jan 19, B 212.251 = his H4 line 212.272 on the same candle [F story-line-pt4/sheet_010]), but on IC the H4 Jan 19 14:00 closes 212.258 and the D closes 212.275, i.e. 0.7 / 2.4 pips above B; on Kevin's feed the closes sit just under his 212.272 ("16 hours ... series of rejections"). A 2-pip feed difference on a close: (a). Closes stay exact by design (#25), so no fix. | `align_retap_ends`, `tap_tol_pips` 0, stricter NO_TRADE check |
+| usdjpy-d-no-h4-breakout | FAIL → **PASS** | **b** | The CADJPY exception fired a BUY on the Jan 19 tap of flip 157.460 (no D flip at that spot, not an OC). Fixed by `cadjpy_zone`. The Jan 19 tap of 157.46 (Kevin's 157.477) is seen but no story starts because the bot still holds the Jan 13 BUY (157.987, not invalidated: no D close below); Kevin re-reads the bias at the new week. Open question (one story at a time), not changed. | `cadjpy_zone` |
+| usdcad-d-sell-friday-sweep | FAIL → **PASS** | **b** + a | Dead zone again (D up, W down). Now SELL from the A 1.39156 tapped Thu Jan 15 (B 1.38783, 4H break Mon Jan 19, target hit). (a) Kevin's KL 1.39201 = IC flip sell 1.39194 (the Oct 1 OC broken in Dec: "this guy made it unfresh but it became fresh again" [T story-line-pt4@1299-1303]); IC's Jan 9 high is exactly 1.39194 so the level is used on IC, while on Kevin's chart the wicks stop at 1.39199 "close to ... but did not enter it" [T story-line-pt4@1315-1335, F sheet_017 t=1320]. Same zone (4.5 pips), passes within the tolerance. | `pullback_levels`, `tap_tol_pips` 0 |
+| euraud-sells | FAIL → FAIL | **b** (+c fixed) | (c) The window started Jan 15, but the weekly BOS Kevin marks (W close below his weekly V 1.71717 [T weekly-recap@343-376; F weekly-recap/sheet_005 t=360]) is the week ending Fri Jan 23 2026 (IC W close 1.7144); window now Jan 24-Feb 21. (b) open: the bot's W trend stays "up" because its protected structural low is 1.6026 (Nov 2024, fixed when 1.6975 broke in Mar 2025); Kevin's weekly BOS uses the last V-shape of the leg (1.7172 = IC 1.7169 close of the Mar 2 2025 breakout week). With W "up" and D down, `pullback_levels` now gives D BUYs (Feb 5, Feb 11). Not fixed: a W trend definition change (protected low = base of the last impulse leg) affects every story and needs the owner + full backtest; Kevin's GBPAUD choice (below) does not follow one simple rule either. | spec window |
+| gbpaud-sells | PASS → FAIL | **b** | Same W trend issue: Kevin's weekly BOS is a close below the weekly V 2.0362 (Sep 15 2025) [F weekly-recap/sheet_008 t=560], i.e. W bearish since late Oct 2025; the bot's W turns down only at the Jan 30 2026 close (protected low 1.9649). Before, the D/W dead zone hid the D BUYs of Jan 22-Feb 2; with `pullback_levels` they appear. | open (W trend) |
+| usdchf-d-reject-no-h4 | PASS → PASS | agrees, not on Kevin's level | Kevin's range-low KL 0.7890 (Jan 20 sweep + reject, no H4) is used on IC (0.78897 / 0.78882 touched Dec 23-29) and a buy is against the D and W downtrend, so no story starts. No trade either way. | - |
+
+### CADJPY exception over-firing
+
+The backtest's 1536 of 8414 D stories (-99 R) matches the offline sample: 273 of 1214 D stories (22%, -34.9 R) on the
+8 example pairs 2022-2026. Kevin showed one case (cadjpy-bd@400-995, sheets 008-009): weekly bullish, the daily CLOSED
+THROUGH the daily seller (flipped the zone), then a sweep of the previous day low INTO the daily open-close level of
+that zone. The code took any OC or flip level and any opposite break within 5 days anywhere on the chart. Now
+(`cadjpy_zone`): OC level only, at the spot (within `overlap_tol_pips`) of the opposite level the daily closed
+through within `max_wait` bars; the OC level of the flipped zone is chosen even when the sweep wick also hit newer
+levels. Result: 40 of 1582 D stories (2.5%, -3.0 R).
+
+### Rule changes (STRATEGY v0.8), offline 8 pairs 2022-2026, D stories (trade R)
+
+| Change | Default | Evidence | Effect (switch alone back to v0.7) |
+|---|---|---|---|
+| `pullback_levels`: D against W = retracement, take W-side levels | on (setting) | T story-line-pt2@1420-1580, all-in-1@1357-1388, story-line-pt4@1465-1496 | 1101 → 1582 stories, -31.9 → -76.4 R. Adds stories at about -0.09 R each. Kevin does it in 3 examples; the owner may switch it off (backtest variant added). |
+| `cadjpy_zone`: OC at the flipped spot | on (code) | T cadjpy-bd@599-739; F cadjpy-bd/sheet_008-009 | cadjpy 448 → 40 stories |
+| `tap_tol_pips` 1 → 0 | 0 (setting) | T story-line-pt4@1315-1335; F story-line-pt4/sheet_017 | 1570 → 1582 stories, -88.8 → -76.4 R |
+| `align_retap_ends` | on (code) | T story-line-pt4@622-765; F story-line-pt4/sheet_009-010 | 1584 → 1582 stories |
+
+Data notes for (a): IC's 22:00 UTC rollover hour can spike the D low/high by 20+ pips (CADJPY Dec 19 2025: 112.676 vs
+112.859 without that hour), and IC prices differ from Kevin's feed by 0.5-2 pips. `level_tol_pips` (default 0) would
+widen wick tests only; none of the remaining FAILs is a wick miss, so it stays 0. A rollover-spike filter is a data
+choice for the owner (not built).

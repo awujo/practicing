@@ -11,7 +11,7 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 ## Architecture
 | Part | Where | Runs on |
 |---|---|---|
-| Strategy (the rules) | `STRATEGY.md` (v0.6) | — |
+| Strategy (the rules) | `STRATEGY.md` (v0.8) | — |
 | Course evidence | `knowledge-base/` (transcripts, frame sheets), `knowledge-base/study/*.md` notes | — |
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
@@ -73,10 +73,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       next_day_rule flag/require, cadjpy on/off, entry_alignment d_h4/w_d_h4/off: pick defaults from it.
 - [ ] **User, once (for /terms):** Render env `TELEGRAM_WEBHOOK_SECRET` + `setWebhook` (steps in `webapp/README.md`
       "Bot command /terms"). Until then /terms gets no answer; everything else works.
-- [ ] Read `reports/EXAMPLES.md` after the verify-examples workflow ran (Kevin's own examples PASS/FAIL).
 - [x] **Entry diagnosis (cTrader data)** (REVIEW.md): 3 entry bugs fixed (stop inside the level zone, entries after a
       flip-ended story, QMR head look-ahead) + `spread_pips` option. After the fixes the entry model is ~random
       (8 offline pairs: TP1 29% / −0.21R vs random entries 32% / −0.15R): **no edge, do not trade entries live yet**.
+- [x] Kevin's examples diagnosed on offline cTrader candles (`python -m slk.verify_examples --data data/examples`):
+      6/9 PASS (was 3/9); open: EURAUD/GBPAUD weekly trend definition (owner decision), GBPJPY = 2-pip feed difference.
+      REVIEW.md "Examples diagnosis (cTrader data)". Owner: check `pullback_levels` in the backtest Variants.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
 
@@ -204,3 +206,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   −0.42R → 29.4% / −0.21R; random-entry baseline 32.4% / −0.15R → model has no edge (losses = the fill bar, 39% of
   fills stopped within the filling H1 bar). Golden entry test pinned with `stop_at=rejection, story_end=False`
   (golden JSON unchanged). Tests in tests/test_entry.py.
+- 2026-10-14: Examples diagnosis (STRATEGY v0.8, REVIEW "Examples diagnosis (cTrader data)"): verify_examples `--data`
+  (offline CSVs in data/examples); 3/9 -> 6/9 PASS. Rule changes: `pullback_levels` (D against W = retracement, W-side
+  levels; setting + backtest variant), `cadjpy_zone` (exception only for the OC level of the zone the daily just
+  flipped: 22% -> 2.5% of D stories), `tap_tol_pips` 1 -> 0 (wick must reach the line), `align_retap_ends`. Specs:
+  EURAUD window after the W BOS (Jan 24), CADJPY exception example accepts the H4 path, NO_TRADE check also fails a
+  story confirmed inside the window. Golden regenerated for these four only (`engine_golden_v07.json` = before,
+  reproduced with `PRE_EXAMPLES`). Tests `tests/test_examples.py`; 207 pass. entry files untouched.

@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.7, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.8, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -56,6 +56,8 @@ the shared **body/close price**, wicks ignored, extended right. No boxes [F key-
   A full-body close through it makes it fresh again with the **opposite role** (broken A → buy level on retest,
   broken V → sell level). [T key-levels-pt3@296-420, key-levels-pt4@441-805]
 - Only levels that agree with the trend count: in an uptrend, V/bull-OC; in a downtrend, A/bear-OC [T key-levels-pt3@985-1160].
+  When the origin TF points against the higher TF, the origin TF is only **retracing**: the levels of the higher-TF side
+  count (v0.8, `pullback_levels`, §2 step 1).
 - Freshness is judged on the level's own timeframe (W/D), not on H1/H4 [F key-levels-pt4].
 
 **Liquidity** [T liquidity@269-1560]:
@@ -81,6 +83,16 @@ Runs on three ladders. Each starts on one timeframe and is confirmed one timefra
 ### Step by step (sell example; a buy is the mirror image)
 
 1. **Trend (origin TF, line chart).** Down or up? A range means stop, no bias.
+   **Pullback (v0.8, `pullback_levels`, default on):** when the origin-TF trend points against the higher-TF trend
+   (D down while W up), the daily is retracing and the story is taken in the **higher-TF direction**, from the levels
+   of that side. Kevin: CADJPY "daily time frame is in the uptrend ... I say bullish again because normally we are
+   already bullish. So these are just retracement" [T story-line-pt2@1420-1580; F story-line-pt2/sheet_010-013: the
+   Jan 5-8 2026 drop to 112.903 inside the uptrend]; EURGBP "price has to break this place on daily to confirm that
+   ... the weekly is ready to go back" (weekly reject weekly at the W V 0.8657 while the daily was down)
+   [T all-in-1@1357-1388, 1570-1590]; USDCAD "the moment price closes below this ... daily time frame is now bearish"
+   (W bearish, daily up into the KL) [T story-line-pt4@1465-1496]. Before v0.8 the D trend filter took only D-trend
+   levels and the HTF filter removed every D-trend level against W, so **no D story could start while D and W
+   disagreed** — exactly the state of all three examples. A range on either TF keeps the old rule.
 2. **Pick the level.** Take the most recent **fresh** key level that agrees with the trend
    (A-shape or bearish OC for a sell), formed **before** the tap; older levels are ignored ("you place your mark at
    the most recent one ... we just remove everything and mark that last one") [T story-line-pt2@897-1000;
@@ -162,7 +174,10 @@ target price, invalidation price, status
   sheet_003-008]. Bot: last W structural break closed before the D bar, that D bar closes beyond the last D
   structural swing the same way (origin = the protected D swing, invalidation = a D close back through it), then
   within `max_wait` D bars an H4 close beyond the last H4 close turn made since that D bar started (same-day D
-  close rule). Continuation stories exist only through this chain.
+  close rule). Continuation stories exist only through this chain. v0.8 (`align_retap_ends`, code default on): an
+  H4 wick back to the protected D swing before the H4 break ends the chain; that tap is a new "daily reject daily"
+  whose point B is the last A/V before THAT tap [T story-line-pt4@622-765: GBPJPY V 210.809 tapped Mon Jan 19 2026,
+  Kevin builds the story from that tap and waits for its own H4 breakout; F story-line-pt4/sheet_009-010].
 - **Swing ladder (bot helper):** on the daily close line, keep a line at every unbroken close-swing high/low extended right; these are the candidates for point B and for targets [F weekly-recap].
 - **CADJPY exception (c, built `cadjpy_exception`, rule `cadjpy`):** weekly bullish + daily sweeps the previous-day
   low into a daily OC level and closes back above it → daily bias confirmed **without** an H4 breakout (at that D
@@ -172,6 +187,15 @@ target price, invalidation price, status
   of previous day low", "weekly is bullish and now daily has flipped the zone" [T cadjpy-bd@440-560, 680-720;
   F cadjpy-bd/sheet_008: the big bull D candle closes above the D sell zone, the sweep comes 1-2 candles later].
   Bot: a D body close through an opposite key level within `max_wait` D bars before the sweep (Validation 4).
+  v0.8 (`cadjpy_zone`, code default on): that flipped opposite level must be at **the same spot** as the swept level
+  (within `overlap_tol_pips`), and the swept level must be a daily **open-close** level: "daily closed above the
+  daily seller ... now daily has flipped the zone. Now when daily flipped the zone, price did a sweep of previous day
+  low into the daily open close level", "price did a close above it back into the zone ... retest this key level and
+  then continue the buy" [T cadjpy-bd@599-639, 693-739; F cadjpy-bd/sheet_008-009: the short line ~113.2 is the
+  close of the big bull candle that broke the sell zone; the Mon Feb 2 2026 sweep goes into it]. When several levels
+  are hit by the sweep wick, the OC level of the flipped zone starts the story (his line ~113.2, not the newer
+  113.6 flip). Before v0.8 any OC/flip level and any opposite break anywhere counted: 22% of all D stories on the
+  offline pairs (273 of 1214, -34.9 R) and it fired a wrong BUY in the USDJPY no-trade example; now 40 of 1582.
   Mirror for sells. The only place where the external break is not required.
 
 ---
@@ -255,7 +279,7 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 3 | Zone height | None: a thin line. Tap = wick touches/crosses the line, rejection = close back on the original side. |
 | 4 | Daily close | 17:00 New York (TradingView forex and IC Markets cTrader use the same close). |
 | 5 | Several fresh KLs | Most recent fresh KL that agrees with the trend (Kevin: "most recent") [T story-line-pt2@897-1000]. |
-| 6 | Tap tolerance | OUR CHOICE: a wick within 1 pip of the line counts as a touch. |
+| 6 | Tap tolerance | v0.8: 0 (`tap_tol_pips`, was 1 pip): the wick must reach the line. Kevin: USDCAD "this very candle traded close to the open close key level but did not enter it ... acting as an inducement" [T story-line-pt4@1315-1335; F story-line-pt4/sheet_017 t=1320: line 1.39201, wick 1.39199 = 0.2 pip short, not a tap]. With 1 pip the bot took the GBPJPY Fri Jan 16 2026 wick 0.2 pip short of 211.386 as a tap and built a story Kevin never had. Broker differences are `level_tol_pips` (#25), off by default. |
 | 7 | Max wait tap → breakout | OUR CHOICE: 5 origin-TF candles. |
 | 8 | Pairs / sessions | All pairs, no session filter. |
 | 9 | Structural swing candidates | OUR CHOICE: the high/low that must be broken is a close-line turning point of order `swing_pivot` = 2 (2 closes each side); Kevin gives no size for "main leg". |
@@ -269,9 +293,10 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 17 | Targets (#30) | OUR CHOICE: nearest of (fresh opposite KLs of origin + all higher TFs as of their last closed candle, origin-TF structural swings = ERL); previous-candle highs/lows are not targets. |
 | 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation (its nominal Friday 17:00 New York close, also in live where the last W bar is still forming), else the normal target; overlap TP = next KL, ERL only without a KL. |
 | 19 | Alignment (#31b) | OUR CHOICE: W/D breaks = `structural_swings` fixes (§1); H4 break = close beyond the last order-`b_pivot` H4 close turn made since the D break bar started, within `max_wait` D bars, same-day D close; stop beyond the D break bar's wick; D story only. |
-| 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close or flipped (his "daily open close level" was a flipped zone); W trend (structural) in the story direction; the daily flipped that way first = a D body close through an opposite key level within `max_wait` (5) D bars before the sweep (Kevin: "after the bullish close above this guy"; the window is ours); tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
+| 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close (v0.8; v0.6 also took flipped levels) at the spot of the opposite level the daily closed through (v0.8, `overlap_tol_pips`); W trend (structural) in the story direction; the daily flipped that way first = a D body close through an opposite key level within `max_wait` (5) D bars before the sweep (Kevin: "after the bullish close above this guy"; the window is ours); tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
 | 21 | Next Day Rule | OUR CHOICE `next_day_rule` = `flag` (default): every story is kept and marked `next_day` = the confirm-TF breakout candle opens at/after the origin (tap/rejection) candle's close; alerts say "✅ Next Day Rule" or "⚠ same-day breakout". `require`: a story whose first valid breakout is inside the rejection candle is dropped (not moved to the next day); also in `current_tap` and flips, same for M→W, W→D, D→H4. Alignment stories always break the next day; CADJPY has no breakout (`next_day` n/a, kept). Kevin calls multi-day waits "also valid" and the clean next-day case "the best" [T pt3@1331-1401]: a quality flag until the backtest variants say otherwise. |
 | 22 | Retrace warning | OUR CHOICE: `retrace` = a later confirm-TF candle of the origin bar holding the breakout closes back at/beyond B (known at that origin close = the confirmation, no look-ahead). Shown as a warning line (follow-up `RETRACE` alert if it ever appears after the CONFIRMED alert); never invalidates. |
 | 23 | Early breakout alert | OUR CHOICE `early_breakout_alert` off by default: "H4 breakout — waiting for the daily close" when a closed confirm-TF candle inside the still-open origin candle closed beyond B of a TAPPED story. The row stays TAPPED; sent once per story (settings key `early_alerts_sent`). |
 | 24 | Alert times | OUR CHOICE: alert times in `display_tz` (default Africa/Lagos), each labelled candle open or close; the rejection candle is named by its trading day (17:00 New York close: the D candle opening Wed 17:00 NY is Thursday's); "formed" = the origin candle at whose close the level existed. |
 | 25 | Broker tolerance (`level_tol_pips`) | OUR CHOICE, default 0 (= exactly the behaviour before it existed, golden-tested): a wick that stops up to N pips (max 5) further from the line still counts as a touch. Added to `tap_tol_pips` (#6) and used for every WICK test: the tap, the fresh / untouched check of a level (and of target levels), the first touching confirm-TF candle (point B is the last turn before it) and re-taps. Never used for closes: a body close through a level (break / flip / invalidation) and the confirm-TF close beyond point B must be real closes beyond the price. Why: the bot's candles are IC Markets cTrader bid prices (Dukascopy fallback) while Kevin marks FOREX.com / OANDA charts; feeds differ by 1-2 pips, so a level Kevin sees tapped can miss by a pip on IC. |
+| 26 | Pullback levels (v0.8) | OUR CHOICE details of §2 step 1: the higher-TF trend is the structural trend of its last CLOSED bar (as the HTF filter); only when both trends are up/down and differ; the story then needs the higher-TF side level, its own point B and external break as usual. Switch `pullback_levels` (Mini App, Bias rules); backtest variant `pullback_levels` on/off. On the 8 offline pairs (2022-2026) it adds ~480 D stories at -0.09 R each (all D stories -0.05 R): kept on because it is what Kevin does in all three examples, the owner may switch it off. |

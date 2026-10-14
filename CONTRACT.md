@@ -40,7 +40,7 @@ Never print secrets. Never commit them.
   - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M; at least one)
   - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
     point B; internal breaks = entries only, except Kevin's CADJPY exception `cadjpy_exception`): `trend_filter`,
-    `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
+    `htf_filter`, `pullback_levels`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
     (0-5), `level_tol_pips` (0-5, default 0: broker tolerance in pips added to `tap_tol_pips` for wick touches only
     (tap, fresh check, first touch, re-taps); never for closes, a break of point B is a real close; STRATEGY §5 #25),
     `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
