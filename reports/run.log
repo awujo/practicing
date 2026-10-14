@@ -12,8 +12,8 @@ EURCAD: 393 stories, 3060 variant rows
 EURCHF: 408 stories, 3387 variant rows
 EURNZD: 431 stories, 3595 variant rows
 GBPJPY: 366 stories, 2799 variant rows
-GBPCAD: 409 stories, 3059 variant rows
 GBPAUD: 427 stories, 3360 variant rows
+GBPCAD: 409 stories, 3059 variant rows
 GBPCHF: 422 stories, 3475 variant rows
 GBPNZD: 418 stories, 3380 variant rows
 AUDJPY: 398 stories, 3287 variant rows
@@ -21,10 +21,10 @@ AUDCAD: 445 stories, 3537 variant rows
 AUDNZD: 480 stories, 3775 variant rows
 AUDCHF: 424 stories, 3302 variant rows
 NZDJPY: 398 stories, 3128 variant rows
-NZDCHF: 352 stories, 2932 variant rows
 NZDCAD: 459 stories, 3729 variant rows
-CADJPY: 395 stories, 3115 variant rows
+NZDCHF: 352 stories, 2932 variant rows
 CADCHF: 394 stories, 2860 variant rows
+CADJPY: 395 stories, 3115 variant rows
 CHFJPY: 371 stories, 3050 variant rows
 # SLK story-line backtest
 
