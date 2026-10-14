@@ -83,6 +83,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       the backtest Variants.
 - [x] Owner decisions 2026-10-14: `next_day_rule` = require, D-story entry TFs = H4,H2 (no H1, alert-only),
       `trend_mode` = leg (Kevin's weekly BOS = close beyond the last V/A of the leg, all TFs).
+- [x] **Paper results of entries** (2026-10-14): the live job tracks every filled entry on closed H1 candles with the
+      entry backtest's rules (`slk.entry.paper_track` = `simulate` code) -> `entries` TP1_HIT / TP2_HIT / SL_HIT /
+      EXPIRED + `filled_at`, `result_r` (TP1 exit), `result_r_tp2` (hold for TP2), `hit_price`, `closed_at`
+      (`db.migrate`); Telegram "✅ TP1 hit · EURUSD H4 BUY · +1.6R" / "❌ Stop hit · … · -1R" once each; Mini App
+      Entries "Paper results (signals)" summary (`/api/entries/summary`). Signals only, not broker trades (`orders`).
+      **Owner:** Render redeploy (Manual Deploy) to get the new Entries tab; the columns appear on the next live run.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
 
@@ -233,3 +239,14 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Dukascopy XAGUSD/indices scale + names; `python -m slk.debug_pair` (debug-pair.yml: cTrader, else Dukascopy +
   point B explanation). B 4171.50 = Dukascopy feed × "last A before the FIRST touch" (rule unchanged); target =
   nearest rule. Dispatch: ctrader-smoke symbol XAUUSD, debug-pair XAUUSD.
+- 2026-10-14: Paper results for entries. `slk/entry.py`: `simulate` split into `_horizon` / `_leg` / `_close_r`
+  (identical output, golden tests) + `paper_track` (live outcome of one filled entry, same rules: closed H1 bars
+  from the fill bar, same-bar stop+TP = loss, fill bar stop-only, no breakeven, `max_trade_bars` entry-TF bars).
+  `slk/live.py`: entry rows carry `filled_at` (engine `fill_time`; old TRIGGERED rows get it on the next run),
+  `cancel_entries` (PENDING of an ended story -> CANCELLED, entry `story_end` rule), `track_entries` (TRIGGERED /
+  open TP1_HIT rows only, events already implied by the stored status dropped), `format_result_alert`; main writes
+  each outcome with `db.update_entry_result` (guarded `WHERE status=old AND closed_at IS NULL`) BEFORE sending, so
+  an alert is never repeated. Schema: 5 `entries` columns (db/schema.sql = webapp/schema.sql, `db.migrate`).
+  Mini App: `/api/entries/summary` (owner auth; SELECT * so it works before the migration), status filter with the
+  new statuses + `closed`, outcome tags, R, filled/closed times, "Paper results (signals)" card. Win = TP1 reached,
+  so win% and total R match the backtest's TP1 row; TP2 R shown separately. Tests `tests/test_paper_results.py`.

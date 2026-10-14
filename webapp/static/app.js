@@ -60,20 +60,49 @@
         </div>${Number(r.retrace) ? `<div class="muted">⚠ Retrace: closed back beyond point B on the breakout day</div>` : ""}${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}</div>`).join("") : empty("No stories");
   }
 
-  // ---------------- Entries
+  // ---------------- Entries (+ paper results of filled signals: slk.entry.paper_track, not broker trades)
+  const OUTCOME = { TP1_HIT: "win", TP2_HIT: "win", SL_HIT: "loss", EXPIRED: "exp", TRIGGERED: "open", CANCELLED: "off", MISSED: "off" };
+  const rr = (v) => (v === null || v === undefined || v === "" ? "–" : `${Number(v) > 0 ? "+" : ""}${Number(Number(v).toFixed(2))}R`);
+  const rcls = (v) => (v === null || v === undefined ? "" : Number(v) > 0 ? "good" : Number(v) < 0 ? "bad" : "");
+  const pct = (v) => (v === null || v === undefined ? "–" : `${v}%`);
+
+  function renderSummary(s) {
+    const m = (k, n) => { const x = (s.by_model || {})[k] || {}; return `${n}: ${x.closed || 0} closed · ${x.wins || 0}W/${x.losses || 0}L · ${rr(x.total_r)}`; };
+    $("#entries-summary").innerHTML = `
+      <div class="card summary">
+        <div class="top"><span class="title">${esc(s.label || "Paper results (signals)")}</span><span class="tag">${esc(s.open || 0)} open</span></div>
+        <div class="stats">
+          <div><b>${esc(s.closed)}</b><span>closed</span></div>
+          <div><b class="good">${esc(s.wins)}</b><span>wins</span></div>
+          <div><b class="bad">${esc(s.losses)}</b><span>losses</span></div>
+          <div><b>${esc(pct(s.win_pct))}</b><span>win%</span></div>
+          <div><b class="${rcls(s.total_r)}">${esc(rr(s.total_r))}</b><span>total R</span></div>
+        </div>
+        <div class="muted">${esc(m("continuation", "Continuation"))}<br>${esc(m("qmr", "QMR"))}</div>
+        <div class="muted">Bot signals tracked on closed H1 candles, not broker trades (those are under Orders). Win = TP1 reached, loss = stop before TP1${s.expired ? `, ${esc(s.expired)} expired` : ""}. R = exit at TP1; holding for TP2: ${esc(rr(s.total_r_tp2))} over ${esc(s.closed_tp2 || 0)} trades.</div>
+      </div>`;
+  }
+
   async function loadEntries() {
     const q = new URLSearchParams({ status: $("#f-estatus").value });
-    const rows = await api(`/api/entries?${q}`);
+    const [rows, summary] = await Promise.all([api(`/api/entries?${q}`), api("/api/entries/summary").catch(() => null)]);
+    if (summary) renderSummary(summary); else $("#entries-summary").innerHTML = "";
     const canApprove = settings.auto_trade === "confirm" && settings.kill_switch !== "on";
     $("#entries-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
         <div class="top"><span class="title">${esc(r.pair)} ${esc(r.tf || "")} <span class="${esc(r.side)}">${esc(r.side)}</span> ${esc(r.model === "qmr" ? "QMR" : "Continuation")}</span>
-          <span class="tag">${esc(r.status)}</span></div>
+          <span class="tag ${esc(OUTCOME[r.status] || "")}">${esc(r.status)}</span></div>
         <div class="grid">
           ${field("Entry", num(r.entry))}${field("Stop", num(r.stop))}
           ${field("TP1", num(r.tp1))}${field("TP2", num(r.tp2))}
           ${field("Bias #", r.bias_id)}${field("Created", dt(r.created_at))}${field("Alerted", dt(r.alerted_at))}
+          ${r.filled_at ? field("Filled", dt(r.filled_at)) : ""}
+          ${r.result_r !== null && r.result_r !== undefined ? `<div><span>R (TP1 exit)</span><b class="${rcls(r.result_r)}">${esc(rr(r.result_r))}</b></div>` : ""}
+          ${r.result_r_tp2 !== null && r.result_r_tp2 !== undefined ? `<div><span>R (TP2 hold)</span><b class="${rcls(r.result_r_tp2)}">${esc(rr(r.result_r_tp2))}</b></div>` : ""}
+          ${r.hit_price !== null && r.hit_price !== undefined ? field("Hit price", num(r.hit_price)) : ""}
+          ${r.closed_at ? field("Closed", dt(r.closed_at)) : ""}
         </div>
+        ${OUTCOME[r.status] && r.filled_at ? `<div class="muted">Paper result (signal), not a broker trade</div>` : ""}
         ${r.status === "PENDING" && canApprove ? `<button class="approve" data-id="${esc(r.id)}">Confirm trade</button>` : ""}
       </div>`).join("") : empty("No entries");
   }

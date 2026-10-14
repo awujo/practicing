@@ -29,6 +29,7 @@ first entry TF of the ladder that has any qualifying setup (D story: H4 -> H2 ->
 Public:
   find_entries(pair, h1, stories, cfg)    -> one entry dict per story (status TRIGGERED/PENDING/MISSED/NO_SETUP/SKIPPED)
   simulate(entry, h1_bars, cfg)           -> TP1 / TP2 results in R on H1 bars (backtest)
+  paper_track(row, closed_h1, cfg)        -> live paper outcome of a filled entry (same rules as simulate)
 """
 import numpy as np
 import pandas as pd
@@ -446,6 +447,34 @@ def find_entry(px, story):
     return {**base, "status": "NO_SETUP", "note": "; ".join(notes)}
 
 
+def _horizon(H, f, tf, cfg):
+    """(last H1 index of the holding time, still_open) for a fill on H1 bar f: the trade is held
+    max_trade_bars bars of its entry TF; still_open = the data ends before that time (no timeout yet)."""
+    t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * TF_HOURS[tf]), "h")
+    j = int(np.searchsorted(H["start"], t_cap, "left"))  # first H1 bar past the holding time
+    last = min(j, len(H["close"])) - 1
+    return last, bool(j >= len(H["close"]) and H["end"][last] < t_cap)
+
+
+def _leg(H, f, last, sell, e, s, tp, sp):
+    """One take-profit variant on H1 bars f..last: (R, "win" / "loss", exit index), or (None, "timeout", last).
+    Same bar stop+TP = loss; the fill bar can only stop out. sp = spread added to a SELL's bid (stop/TP on ASK)."""
+    risk = abs(s - e)
+    for k in range(f, last + 1):
+        stop_hit = H["high"][k] + sp >= s if sell else H["low"][k] <= s
+        tp_hit = (H["low"][k] + sp <= tp if sell else H["high"][k] >= tp) and k > f
+        if stop_hit:
+            return -1.0, "loss", k
+        if tp_hit:
+            return abs(tp - e) / risk, "win", k
+    return None, "timeout", last
+
+
+def _close_r(H, last, sell, e, s, sp):
+    """R of a market close at the close of H1 bar `last` (timeout)."""
+    return ((e - H["close"][last] - sp) if sell else (H["close"][last] - e)) / abs(s - e)
+
+
 def simulate(row, px):
     """TP1 and TP2 variants on H1 bars from the fill. Same bar stop+TP = loss; fill bar can only stop out.
     Bars are BID: a SELL's stop and TP trigger on the ASK = bid + spread_pips (a BUY's on the bid)."""
@@ -456,29 +485,64 @@ def simulate(row, px):
     f = row.pop("_fill")
     e, s = row["entry"], row["stop"]
     sp = cfg.get("spread_pips", 0.0) * px.P if sell else 0.0
-    risk = abs(s - e)
-    t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * TF_HOURS[row["tf"]]), "h")
-    j = int(np.searchsorted(H["start"], t_cap, "left"))  # first H1 bar past the holding time
-    last = min(j, len(H["close"])) - 1
+    last, still_open = _horizon(H, f, row["tf"], cfg)
     for v in ("tp1", "tp2"):
-        tp = row[v]
-        res, out, k_exit = None, "timeout", last
-        for k in range(f, last + 1):
-            stop_hit = H["high"][k] + sp >= s if sell else H["low"][k] <= s
-            tp_hit = (H["low"][k] + sp <= tp if sell else H["high"][k] >= tp) and k > f
-            if stop_hit:
-                res, out, k_exit = -1.0, "loss", k
-                break
-            if tp_hit:
-                res, out, k_exit = abs(tp - e) / risk, "win", k
-                break
+        res, out, k_exit = _leg(H, f, last, sell, e, s, row[v], sp)
         if res is None:
-            res = ((e - H["close"][last] - sp) if sell else (H["close"][last] - e)) / risk
-            if j >= len(H["close"]) and H["end"][last] < t_cap:  # data ends before the holding time
+            res = _close_r(H, last, sell, e, s, sp)
+            if still_open:  # data ends before the holding time
                 out = "open"
         row[f"{v}_outcome"], row[f"{v}_R"] = out, round(float(res), 2)
         row[f"{v}_exit_time"] = _s(H["start"][k_exit])
     return row
+
+
+def paper_track(row, h1, cfg=None):
+    """Paper outcome of one filled entry (live tracking of bot signals; no broker). Same rules as `simulate`:
+    two take-profit variants on H1 bars from the fill bar, same-bar stop+TP = loss, the fill bar can only stop out,
+    held max_trade_bars entry-TF bars, no breakeven (the backtest has none).
+
+    row: side, tf, entry, stop, tp1, tp2, filled_at (start of the H1 bar that filled; UTC), pair (for spread).
+    h1: CLOSED H1 bars only (the caller cuts the forming hour: no look-ahead); bars before filled_at are ignored.
+    Returns None while nothing is known (no fill bar yet), else a dict:
+      status       TRIGGERED (open) | SL_HIT (stop before TP1) | TP1_HIT (TP1 reached, TP2 not) | TP2_HIT | EXPIRED
+      result_r     TP1 variant R (exit at TP1 / stop / timeout close) - final once status != TRIGGERED
+      result_r_tp2 TP2 variant R (hold for TP2), None until that leg is resolved
+      hit_price    price of the level the status names (stop, TP1, TP2, or the timeout close)
+      tp1_at, closed_at  H1 bar starts (closed_at None while the TP2 leg is still open)
+      events       subset of TP1, TP2, SL (stop before TP1), SL_AFTER_TP1, in order
+    """
+    cfg = {**DEFAULT, **(cfg or {})}
+    if row.get("filled_at") is None or h1 is None or len(h1) == 0:
+        return None
+    H = _arrays(resample(h1, "H1"))
+    f = int(np.searchsorted(H["start"], _t(row["filled_at"]), "left"))
+    if f >= len(H["close"]):
+        return None
+    sell = row["side"] == "SELL"
+    e, s = float(row["entry"]), float(row["stop"])
+    sp = cfg.get("spread_pips", 0.0) * pip(row["pair"]) if sell and row.get("pair") else 0.0
+    last, still_open = _horizon(H, f, row["tf"], cfg)
+    r1, o1, k1 = _leg(H, f, last, sell, e, s, float(row["tp1"]), sp)
+    r2, o2, k2 = _leg(H, f, last, sell, e, s, float(row["tp2"]), sp)
+    t = lambda k: pd.Timestamp(H["start"][k]).to_pydatetime()  # noqa: E731
+    out = {"status": "TRIGGERED", "result_r": None, "result_r_tp2": None, "hit_price": None, "tp1_at": None,
+           "closed_at": None, "events": []}
+    if o1 == "loss":  # stop before (or in the same bar as) TP1: TP2 is further away, so that leg lost too
+        out.update(status="SL_HIT", result_r=-1.0, result_r_tp2=-1.0, hit_price=s, closed_at=t(k1), events=["SL"])
+    elif o1 == "win":
+        out.update(status="TP1_HIT", result_r=round(r1, 2), hit_price=float(row["tp1"]), tp1_at=t(k1), events=["TP1"])
+        if o2 == "win":
+            out.update(status="TP2_HIT", result_r_tp2=round(r2, 2), hit_price=float(row["tp2"]), closed_at=t(k2),
+                       events=["TP1", "TP2"])
+        elif o2 == "loss":  # the TP2 leg came back to the stop after TP1
+            out.update(result_r_tp2=-1.0, closed_at=t(k2), events=["TP1", "SL_AFTER_TP1"])
+        elif not still_open:  # TP2 leg closed at the end of the holding time
+            out.update(result_r_tp2=round(_close_r(H, last, sell, e, s, sp), 2), closed_at=t(last))
+    elif not still_open:  # nothing hit within max_trade_bars: closed at market (TP2 leg identical)
+        r = round(_close_r(H, last, sell, e, s, sp), 2)
+        out.update(status="EXPIRED", result_r=r, result_r_tp2=r, hit_price=float(H["close"][last]), closed_at=t(last))
+    return out
 
 
 def find_entries(pair, h1, stories, cfg=None, story_cfg=None, sim=True):

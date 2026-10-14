@@ -21,7 +21,13 @@ MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_
               ("bias", "breakout_time", "DATETIME NULL AFTER end_reason"),
               ("bias", "next_day", "TINYINT(1) NULL AFTER breakout_time"),
               ("bias", "retrace", "TINYINT(1) NULL AFTER next_day"),
-              ("entries", "model", "VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"))
+              ("entries", "model", "VARCHAR(16) NOT NULL DEFAULT 'continuation' AFTER side"),
+              # paper outcome of bot signals (slk.entry.paper_track); not broker trades (those are in `orders`)
+              ("entries", "filled_at", "DATETIME NULL AFTER alerted_at"),
+              ("entries", "result_r", "DOUBLE NULL AFTER filled_at"),
+              ("entries", "result_r_tp2", "DOUBLE NULL AFTER result_r"),
+              ("entries", "hit_price", "DOUBLE NULL AFTER result_r_tp2"),
+              ("entries", "closed_at", "DATETIME NULL AFTER hit_price"))
 
 
 def parse_url(url):
@@ -160,7 +166,8 @@ def last_run(job, ok=True):
     return rows[0] if rows else None
 
 
-ENTRY_COLS = ("bias_id", "pair", "tf", "side", "model", "entry", "stop", "tp1", "tp2", "status")
+ENTRY_COLS = ("bias_id", "pair", "tf", "side", "model", "entry", "stop", "tp1", "tp2", "status", "filled_at")
+RESULT_COLS = ("status", "filled_at", "result_r", "result_r_tp2", "hit_price", "closed_at")
 
 
 def get_entries(pair):
@@ -182,3 +189,14 @@ def upsert_entry(row):
                        vals)
     execute(f"UPDATE entries SET {', '.join(f'{c}=%s' for c in ENTRY_COLS)} WHERE id=%s", vals + [eid])
     return eid
+
+
+def update_entry_result(eid, old_status, fields):
+    """Paper outcome of one entry (slk.live.track_entries). Guarded: only a row still in `old_status` and not yet
+    closed is changed, so a repeated or overlapping run cannot apply (and alert) the same outcome twice.
+    Returns the number of rows changed (0 or 1)."""
+    cols = [c for c in RESULT_COLS if c in fields]
+    with _c().cursor() as cur:
+        return cur.execute(f"UPDATE entries SET {', '.join(f'{c}=%s' for c in cols)} "
+                           "WHERE id=%s AND status=%s AND closed_at IS NULL",
+                           [fields[c] for c in cols] + [eid, old_status])

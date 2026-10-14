@@ -35,9 +35,14 @@ CREATE TABLE IF NOT EXISTS entries (
   stop        DOUBLE       NULL,
   tp1         DOUBLE       NULL,
   tp2         DOUBLE       NULL,
-  status      VARCHAR(16)  NOT NULL DEFAULT 'PENDING',  -- PENDING / TRIGGERED / MISSED / CANCELLED
+  status      VARCHAR(16)  NOT NULL DEFAULT 'PENDING',  -- PENDING / APPROVED / TRIGGERED / MISSED / CANCELLED, then paper outcome TP1_HIT / TP2_HIT / SL_HIT / EXPIRED
   created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   alerted_at  DATETIME     NULL,
+  filled_at   DATETIME     NULL,                  -- UTC start of the H1 bar that filled the limit (paper)
+  result_r    DOUBLE       NULL,                  -- paper R, TP1 variant (exit at TP1 / stop / timeout)
+  result_r_tp2 DOUBLE      NULL,                  -- paper R, TP2 variant (hold for TP2), NULL until resolved
+  hit_price   DOUBLE       NULL,                  -- level the status names (stop / TP1 / TP2 / timeout close)
+  closed_at   DATETIME     NULL,                  -- UTC start of the H1 bar where tracking ended
   KEY ix_entries_bias (bias_id),
   CONSTRAINT fk_entries_bias FOREIGN KEY (bias_id) REFERENCES bias(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

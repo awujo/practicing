@@ -148,11 +148,49 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
     return _db(db.query, sql, args + [_clamp(limit)])
 
 
+PAPER_CLOSED = ("TP1_HIT", "TP2_HIT", "SL_HIT", "EXPIRED")  # paper outcome known (slk.entry.paper_track)
+PAPER_LABEL = "Paper results (signals)"
+
+
+def _stats(rows):
+    closed = [r for r in rows if r.get("status") in PAPER_CLOSED and r.get("result_r") is not None]
+    wins = sum(r["status"] in ("TP1_HIT", "TP2_HIT") for r in closed)
+    losses = sum(r["status"] == "SL_HIT" for r in closed)
+    tp2 = [r for r in closed if r.get("result_r_tp2") is not None]
+    return {"closed": len(closed), "wins": wins, "losses": losses,
+            "expired": sum(r["status"] == "EXPIRED" for r in closed),
+            "tp2_hits": sum(r["status"] == "TP2_HIT" for r in closed),
+            "win_pct": round(100.0 * wins / len(closed), 1) if closed else None,
+            "total_r": round(sum(float(r["result_r"]) for r in closed), 2),
+            "total_r_tp2": round(sum(float(r["result_r_tp2"]) for r in tp2), 2), "closed_tp2": len(tp2)}
+
+
+def entries_summary_of(rows):
+    """Paper-result summary of entry rows: closed = TP1_HIT / TP2_HIT / SL_HIT / EXPIRED (TP1-variant R final),
+    win = TP1 reached, loss = stop before TP1; total_r = TP1 variant, total_r_tp2 = TP2 variant (resolved rows);
+    by_model continuation / qmr. Bot signals tracked on closed H1 candles, not broker trades (table orders)."""
+    out = {"label": PAPER_LABEL, **_stats(rows), "open": sum(r.get("status") == "TRIGGERED" for r in rows),
+           "by_model": {}}
+    for m in ("continuation", "qmr"):
+        out["by_model"][m] = _stats([r for r in rows if (r.get("model") or "continuation") == m])
+    return out
+
+
+@app.get("/api/entries/summary")
+def entries_summary(user=Depends(require_user)):
+    # SELECT * (not the result columns by name): works before the live job's db.migrate() added them
+    rows = _db(db.query, "SELECT * FROM entries WHERE status IN (%s, %s, %s, %s, %s)", ["TRIGGERED", *PAPER_CLOSED])
+    return entries_summary_of(rows)
+
+
 @app.get("/api/entries")
 def entries(status: str = "", limit: int = 100, user=Depends(require_user)):
     sql = "SELECT * FROM entries"
     args = []
-    if status:
+    if status.lower() == "closed":
+        sql += " WHERE status IN (%s, %s, %s, %s)"
+        args += list(PAPER_CLOSED)
+    elif status:
         sql += " WHERE status = %s"
         args.append(status.upper())
     sql += " ORDER BY created_at DESC LIMIT %s"

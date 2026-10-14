@@ -62,3 +62,8 @@ fieldset legend { font-weight: 700; padding: 0; margin-bottom: 4px; float: left;
 .chips label { white-space: nowrap; font-size: 14px; }
 .tag.notrade { background: #b42318; color: #fff; }
 .muted { font-size: 12px; opacity: .75; margin: 4px 0; }
+.tag.win { background: var(--buy); color: #fff; } .tag.loss { background: var(--sell); color: #fff; }
+.tag.exp { background: var(--warn); color: #fff; } .tag.open { color: var(--link); } .tag.off { color: var(--hint); }
+.summary { margin-bottom: 10px; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align: center; margin: 4px 0 6px; }
+.stats b { display: block; font-size: 17px; } .stats span { color: var(--hint); font-size: 12px; }

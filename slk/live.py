@@ -2,8 +2,9 @@
 
 For every pair: download recent H1 candles, drop still-forming bars, run the story line for D/W/M,
 add the current TAPPED (not yet confirmed) story, sync table `bias`, and send Telegram alerts when a story is
-newly TAPPED / CONFIRMED or ends (TARGET_HIT / INVALIDATED). Once a day (first run after 17:05 New York) a
-summary with one line per pair.
+newly TAPPED / CONFIRMED or ends (TARGET_HIT / INVALIDATED). Entries of CONFIRMED stories go to table `entries`;
+filled ones are paper-tracked on closed H1 bars (TP1_HIT / TP2_HIT / SL_HIT / EXPIRED, alert once). Once a day
+(first run after 17:05 New York) a summary with one line per pair.
 
 python -m slk.live              # needs DATABASE_URL (+ TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
 python -m slk.live --dry-run --pairs EURUSD   # no DB, no Telegram: print what it would store/send
@@ -354,7 +355,8 @@ def entry_rows(pair, h1, rows, bias_ids, cfg=None, finder=None, ecfg=None, keep_
         out.append({"bias_id": bias_ids.get((r["story"], r["tap_time"])), "pair": pair, "story": r["story"],
                     "tf": e["tf"], "side": r["side"], "model": e.get("model", "continuation"), "entry": float(e["entry"]), "stop": float(e["stop"]),
                     "tp1": float(e["tp1"]), "tp2": float(e["tp2"]), "status": e["status"],
-                    "stop_pips": e.get("stop_pips")})
+                    "stop_pips": e.get("stop_pips"),
+                    "filled_at": _dt(e.get("fill_time")) if e["status"] == "TRIGGERED" else None})
         if keep_key:
             out[-1]["_key"] = (r["story"], r["tap_time"])
     return out
@@ -379,7 +381,63 @@ def reconcile_entries(new, old):
             writes.append({**e, "id": o.get("id")})
             if e["status"] == "TRIGGERED":
                 alerts.append(("ENTRY_TRIGGERED", e))
+        elif o["status"] == e["status"] == "TRIGGERED" and o.get("filled_at") is None and e.get("filled_at"):
+            writes.append({**e, "id": o.get("id")})  # filled before fill times were stored: add it for tracking
     return writes, alerts
+
+
+# ------------------------------------------------------------------ paper outcome of filled entries
+BIAS_ENDED = ("TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "CANCELLED")
+
+
+def cancel_entries(stored, bias_status):
+    """PENDING entries whose story has ended (bias row TARGET_HIT / INVALIDATED / ENDED_FLIP / CANCELLED) before
+    the fill -> CANCELLED. Same rule as slk.entry (`story_end`: no fill after the story's end); the engine no longer
+    computes entries for ended stories, so without this they would stay PENDING. APPROVED rows are left alone."""
+    return [(e, {"status": "CANCELLED"}) for e in stored
+            if e.get("status") == "PENDING" and bias_status.get(e.get("bias_id")) in BIAS_ENDED]
+
+
+def track_entries(stored, h1, ecfg=None):
+    """Paper tracking (bot signals, no broker) of stored filled entries on CLOSED H1 bars `h1` (the caller drops the
+    forming hour). Only rows still open are tracked: TRIGGERED with filled_at, and TP1_HIT not yet closed. Returns
+    [(row, fields, events)]: fields for db.update_entry_result, events = new TP1 / TP2 / SL / SL_AFTER_TP1 alerts
+    (events already implied by the stored status are dropped, so nothing is announced twice)."""
+    from .entry import paper_track
+    out = []
+    for e in stored:
+        if e.get("closed_at") is not None or e.get("status") not in ("TRIGGERED", "TP1_HIT") or not e.get("filled_at"):
+            continue
+        t = paper_track(e, h1, ecfg)
+        if t is None or t["status"] == "TRIGGERED":
+            continue
+        if t["status"] == e["status"] and t["closed_at"] is None:
+            continue  # TP1_HIT, TP2 leg still open: nothing new
+        done = {"TP1"} if e["status"] == "TP1_HIT" else set()
+        fields = {k: t[k] for k in ("status", "result_r", "result_r_tp2", "hit_price", "closed_at")}
+        out.append((e, fields, [ev for ev in t["events"] if ev not in done]))
+    return out
+
+
+RESULT_HEAD = {"TP1": "\u2705 TP1 hit", "TP2": "\u2705 TP2 hit", "SL": "\u274c Stop hit",
+               "SL_AFTER_TP1": "\u274c Stop hit after TP1"}
+
+
+def fmt_r(r):
+    """+1.6R / -1R / +0.25R."""
+    return f"{float(r):+.2f}".rstrip("0").rstrip(".") + "R"
+
+
+def format_result_alert(event, e, fields):
+    """'✅ TP1 hit · EURUSD H4 BUY · +1.6R' (+ model and a paper-result line)."""
+    r = {"TP1": fields.get("result_r"), "TP2": fields.get("result_r_tp2"), "SL": -1.0,
+         "SL_AFTER_TP1": -1.0}[event]
+    tail = fmt_r(r)
+    if event == "SL_AFTER_TP1":
+        tail = f"{fmt_r(-1)} on the TP2 leg (TP1 {fmt_r(fields.get('result_r') or e.get('result_r') or 0)} kept)"
+    model = MODEL_NAMES.get(e.get("model") or "continuation", e.get("model"))
+    return "\n".join([f"{RESULT_HEAD[event]} \u00b7 {e['pair']} {e.get('tf') or ''} {e.get('side') or ''} \u00b7 {tail}",
+                      f"{model} \u00b7 entry {fmt_price(e['pair'], e['entry'])} \u00b7 paper result (signal), not a broker trade"])
 
 
 MODEL_NAMES = {"continuation": "Continuation", "qmr": "QMR"}
@@ -856,6 +914,15 @@ def main(argv=None):
                     db.upsert_entry(e)
                 for ev, e in ea if vals["alert_entry"] else []:
                     sent += send_telegram(format_entry_alert(ev, e, auto))
+                stored = db.get_entries(p)  # after the writes above
+                bstat = {r.get("id"): r["status"] for r in by_pair[p]}
+                for e, f in cancel_entries(stored, bstat):
+                    db.update_entry_result(e["id"], e["status"], f)
+                closed = drop_forming(h1, "H1", now)  # closed H1 bars only (no look-ahead)
+                for e, f, evs in track_entries(stored, closed, ecfg):
+                    if db.update_entry_result(e["id"], e["status"], f) and vals["alert_entry"]:  # write first, then
+                        for ev in evs:                                                           # alert once
+                            sent += send_telegram(format_result_alert(ev, e, f))
                 print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts, "
                       f"{len(ew)} entries written", flush=True)
             except Exception as e:  # one bad pair must not stop the others

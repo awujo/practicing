@@ -30,8 +30,20 @@ Never print secrets. Never commit them.
   created on existing tables by `slk/db.py` `migrate()` (run by `apply_schema()`).
 - `entries` — entry alerts: `id`, `bias_id` FK, `pair`, `tf`, `side`, `model` (`continuation` | `qmr`, default
   `continuation`; added to existing tables by a guarded ALTER at the end of `db/schema.sql` and by `migrate()`),
-  `entry`, `stop`, `tp1`, `tp2`, `status` (PENDING/TRIGGERED/MISSED/CANCELLED), `created_at`, `alerted_at`.
-- `orders` — `id`, `entry_id`, `client_order_id` UNIQUE (idempotency), `ctrader_position_id`, `volume`, `status`,
+  `entry`, `stop`, `tp1`, `tp2`, `status` (PENDING/APPROVED/TRIGGERED/MISSED/CANCELLED, then the paper outcome
+  TP1_HIT/TP2_HIT/SL_HIT/EXPIRED), `created_at`, `alerted_at`, and the **paper result** of the bot signal (not a
+  broker trade; real cTrader trades stay in `orders`): `filled_at` (UTC start of the H1 bar that filled the limit),
+  `result_r` (R of the TP1 variant: exit at TP1 / stop / timeout close), `result_r_tp2` (R of the TP2 variant, NULL
+  until that leg is resolved), `hit_price` (stop / TP1 / TP2 / timeout close), `closed_at` (UTC start of the H1 bar
+  where tracking ended; NULL while open). These five columns are added to existing tables by `migrate()`.
+  Rules = the entry backtest (`slk.entry.paper_track` shares `simulate`'s code): closed H1 bars after the fill only,
+  same bar stop + target = loss, the fill bar can only stop out, no breakeven, held `max_trade_bars` entry-TF bars.
+  SL_HIT = stop before TP1 (−1R both legs); TP1_HIT = TP1 reached (TP2 leg still open, or stopped / timed out
+  after TP1); TP2_HIT = both; EXPIRED = nothing hit in the holding time (closed at market). A PENDING entry whose
+  bias row has ended (TARGET_HIT/INVALIDATED/ENDED_FLIP/CANCELLED) becomes CANCELLED (entry `story_end` rule).
+  Outcome updates are guarded (`WHERE status = old AND closed_at IS NULL`) and written before the Telegram alert
+  (TP1 / TP2 / stop / stop after TP1, toggle `alert_entry`), so each is sent once.
+- `orders` (real broker trades only) — `id`, `entry_id`, `client_order_id` UNIQUE (idempotency), `ctrader_position_id`, `volume`, `status`,
   `opened_at`, `closed_at`, `pnl`.
 - `settings` — `k` PK, `v` TEXT (numbers/bools as strings, bools `on`/`off`). Strategy keys are defined ONCE in
   `slk/settings.py` (`SCHEMA`: name, type, default, min/max/choices, help; stdlib only), used by `slk/live.py`

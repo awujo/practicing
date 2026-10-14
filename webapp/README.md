@@ -2,7 +2,11 @@
 
 FastAPI + uvicorn backend, plain HTML/JS frontend (Telegram WebApp SDK, no build step).
 Tabs: **Bias** (stories from `bias`, filter by pair / story / status), **Entries** (with a *Confirm trade*
-button on `PENDING` entries when `auto_trade=confirm`: sets `entries.status='APPROVED'`, the trader job places it),
+button on `PENDING` entries when `auto_trade=confirm`: sets `entries.status='APPROVED'`, the trader job places it;
+a **Paper results (signals)** card on top from `GET /api/entries/summary`: closed trades, wins (TP1 reached),
+losses (stop before TP1), win%, total R at TP1 exit and holding for TP2, per model; each card shows the outcome tag
+TP1_HIT / TP2_HIT / SL_HIT / EXPIRED with R, filled and closed times; filter `closed` or any status. These are the
+bot's signals tracked by the live job on closed H1 candles, not broker trades),
 **Orders**, **Settings** (kill switch, auto_trade, risk_pct, pairs, stories → table `settings`),
 **Status** (last `runs`, planned vs started delay).
 
