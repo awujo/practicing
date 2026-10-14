@@ -191,6 +191,14 @@ break and retest, the most recent level.
    beyond the c1..(breakout−1) extreme (internal BOS). No candle may **close back through the line** before the
    breakout (that kills the level). There is no limit on how many candles later the breakout comes (Kevin gives none); `breakout_max_bars` (0 = no limit, default) can set one.
 4. **Entry = retest of that line.** Skip the first retracement after the external breakout. If price never retests → missed, do not chase.
+5. **Stop = beyond the invalidation zone** = the level's whole zone, all wicks from c1 up to the breakout (the two
+   candles of the A/V shape and the rejection); only when that zone is too big (> `max_stop_pips`) beyond the
+   rejecting candle [T entry3@247-385 "if the zone is too big you use this candle that got rejected ... if the zone is
+   not big then you use this one, because this is the invalidation point", qns-pt1@1497-1660 "the safest is placing
+   them at the invalidation zone ... no need to be selfish with your stop loss"; F entry-2/sheet_005-009 (stop beyond
+   the rejection-candle zone), qns-pt1/sheet_021 (stop under the small zone, 14.9 pips), entry3/sheet_010-013 (37 →
+   22 pips: big zone → rejection candle)].
+6. **No entry after the story ended** (target reached, origin close back through the level, or a flip #29).
 
 **Model B — QMR = Quasimodo Reversal ("B series"; Whisper transcribed it "QMRO"):** [T entry-4@830-1905, cadjpy@117-260,
 F entry-4/sheet_011-023, introduction-to-entry/sheet_017-021, cadjpy-bd/sheet_024]
@@ -213,12 +221,15 @@ Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59;
 |---|---|
 | Latest breakout candle | No limit by default (`breakout_max_bars` = 0); the user can set one in the Mini App. Kevin never gives a number. |
 | Breakout candle | first candle with an impulsive body (≥ 1× average body of the last 10) closing beyond c1..(breakout−1); a non-impulsive close beyond just widens the base. |
-| Stop (Model A) | beyond the highest wick (sell) / lowest wick (buy) of c3..(breakout−1) + 1 pip. |
+| Stop (Model A) | `stop_at` = zone (default, 2026-10-14): beyond the highest wick (sell) / lowest wick (buy) of **c1**..(breakout−1) + 1 pip (Kevin's invalidation zone); if that is wider than `max_stop_pips`, beyond the c3..(breakout−1) rejection wick + 1 pip. Before 2026-10-14 the stop was always the c3.. wick: it ignored the c1/c2 wicks of the level, so the stop could sit *inside* the A/V shape (median 5.9 pips, a quarter under 3 pips, down to 0.2; REVIEW "Entry diagnosis"). `stop_at` = rejection keeps the old rule (golden test only). |
 | QM swings | close-line pivots (order 2), consecutive shoulder → neck → head; head must be a higher close (sell) / lower close (buy). |
 | QM validity | neck broken within `qmr_max_bars` = 30 QM-TF candles of the head, before any close beyond the head; the neck break must close after the story tap; a close beyond the head later kills the QM. |
 | "Back in the zone and react" | the trigger-TF pattern's rejection wick reaches the neck line (± tap tolerance); first such pattern per QM, within 30 QM-TF candles of the neck break. |
 | Trigger TF | H4/H2/H1 QM → 1H (his H4 → 1H); D QM → H4; W QM → D; never below the story's lowest entry TF (W story: H4 QM triggers on H4). |
-| QMR stop | beyond the head wick + 1 pip if ≤ `max_stop_pips`, else beyond the trigger rejection wick + 1 pip. |
+| QMR stop | beyond the head wick + 1 pip if ≤ `max_stop_pips`, else the trigger line's own Model A stop (its zone, else its rejection wick). |
+| Story end | no new entry after the story's own `end_time` (slk.story: target, origin close through the level, flip #29), besides the H1 target touch / origin close / `max_hold` checks. Before 2026-10-14 a flip did not stop entries (14% of the fills on the offline pairs came after the flip). |
+| QM known | at the close of the later of the neck-break bar and the head pivot's confirmation (head + `pivot` bars); before 2026-10-14 the neck break alone (a break right after the head was used before the head was known). |
+| Backtest costs | candles are bid; `spread_pips` (default 0 = none) puts a BUY fill and a SELL stop/TP on the ask. Same H1 bar stop + target = loss; the fill bar can only stop out. |
 | QMR vs. continuation close together | no merged "stop covers both" zone; the rank rule above decides. |
 | Alignment for continuation entries (`entry_alignment`, owner decision) | `d_h4` (default): model A only when D and H4 are in line = the CONFIRMED origin-TF story ("daily reject daily") AND the last H4 structural break (close beyond the last H4 close-line swing, §1) in the trade direction, checked at the pattern's breakout close [T entry-4@1670-1690 "I only like to trade continuation ... daily reject daily, 4 hours break, which means daily and 4 hours they are in line"; T entry3@696-818: W story, daily breakout, then a recent 4H breakout = "4 hours are aligned with daily ... that is our alignment"]. `w_d_h4`: also the last W structural break the same way [T weekly-recap@151-282, story-line@304-322]. `off`: no check. QMR not affected. Backtest compares all three (REPORT.md "Variants"). |
 

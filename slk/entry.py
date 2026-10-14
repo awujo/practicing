@@ -7,7 +7,9 @@ story's external breakout:
   breakout           -> c4 OR ANY LATER candle, at most `breakout_max_bars` candles after c3: the first
                         impulsive bear candle closing below the lows of c1..(breakout-1) (internal BOS).
                         A candle closing back above the line before that kills the pattern.
-  entry              -> sell limit at the line (retest); stop above the highest wick c3..(breakout-1) + buffer
+  entry              -> sell limit at the line (retest); stop above the level zone = highest wick c1..(breakout-1)
+                        + buffer ("cover the invalidation zone"); if that is wider than max_stop_pips, above the
+                        rejection wick c3..(breakout-1) + buffer ("zone too big: stop on the rejecting candle")
   TP1                -> nearest unbroken entry-TF swing low between tp1_min_rr and tp1_max_rr R (else tp1_min_rr R)
   TP2                -> the story target
 
@@ -41,7 +43,11 @@ DEFAULT = {
     "tap_tol_pips": 1.0,       # c3 wick within this distance of the line counts as a touch (same as story)
     "impulse_mult": 1.0,       # breakout body >= this x average body of the previous `impulse_lookback` bars
     "impulse_lookback": 10,
-    "stop_buffer_pips": 1.0,   # stop = rejection extreme (c3 .. breakout-1) + buffer
+    "stop_buffer_pips": 1.0,   # stop = zone extreme (c1 .. breakout-1) + buffer, else rejection extreme (c3 ..)
+    "stop_at": "zone",         # zone: Kevin's default stop beyond the invalidation zone, rejection candle only when
+                               # the zone is wider than max_stop_pips [T e3@247-385, q1@1497-1660];
+                               # rejection: the pre-2026-10-14 rule (always the c3.. wick; golden tests only)
+    "story_end": True,         # no new entry after the story's own end_time (flip #29 / invalidation / target)
     "breakout_max_bars": 0,    # 0 = no limit (Kevin gives none): any later candle, until a close back through the line
     "max_stop_pips": 20.0,     # wider stop = pattern does not qualify (JPY pairs: same number of pips)
     "avoid_pairs": ["AUDNZD", "NZDCHF"],  # wide spread
@@ -52,7 +58,9 @@ DEFAULT = {
     "tp1_max_rr": 3.0,         # a swing level further than this is not TP1; TP1 falls back to tp1_min_rr R
     "min_rr_tp2": 1.0,         # story target must give at least this R from the entry
     "max_story_bars": None,    # origin bars after confirmation to look for entries (None = story max_hold)
-    "max_trade_bars": 60,      # entry-TF bars a trade is held before it is closed at market
+    "max_trade_bars": 60,
+    "spread_pips": 0.0,        # backtest cost: candles are BID; a BUY fills / a SELL stops or takes profit at ASK =
+                               # bid + spread. 0 = bid-only simulation (optimistic); REVIEW "Entry diagnosis" uses 1.0      # entry-TF bars a trade is held before it is closed at market
     "entry_models": ["continuation", "qmr"],
     "qmr_max_bars": 30,        # OUR CHOICE: QM-TF bars after the neck break for the zone reaction + trigger
     "alignment": "d_h4",       # setting entry_alignment: continuation entries only when D and H4 are in line (the
@@ -85,7 +93,8 @@ def _arrays(bars):
 
 def patterns(B, sell, cfg, P):
     """All continuation patterns on bar arrays B. List of dicts: c1 index, line, c3x (rejection extreme
-    c3..breakout-1, for the stop), bo (breakout bar index, c4 or later)."""
+    c3..breakout-1), zx (level-zone extreme c1..breakout-1; both for the stop), bo (breakout bar index, c4 or
+    later)."""
     o, h, l, c = B["open"], B["high"], B["low"], B["close"]
     n = len(c)
     if n < 4:
@@ -110,11 +119,13 @@ def patterns(B, sell, cfg, P):
     for k in np.flatnonzero(ok):
         line, c3 = float(c[k]), int(k) + 2
         ext = h[c3] if sell else l[c3]
+        zx = h[k:c3 + 1].max() if sell else l[k:c3 + 1].min()
         inner = l[k:c3 + 1].min() if sell else h[k:c3 + 1].max()
         for j in range(c3 + 1, min(c3 + maxb, n - 1) + 1):
             brk = (c[j] < o[j] and c[j] < inner) if sell else (c[j] > o[j] and c[j] > inner)
             if brk and imp[j]:
-                out.append({"c1": int(k), "line": line, "c3x": float(ext), "bo": j})
+                out.append({"c1": int(k), "line": line, "c3x": float(ext), "zx": float(max(zx, ext) if sell else min(zx, ext)),
+                            "bo": j})
                 break
             if (c[j] > line) if sell else (c[j] < line):
                 break  # closed back through the line before the breakout: not a rejection level
@@ -151,6 +162,13 @@ def qm_structures(B, piv, sell, max_bars):
         out.append({"shoulder_i": a[0], "neck_i": b[0], "head_i": d[0], "brk": brk, "shoulder": float(sh),
                     "neck": float(nk), "head": float(hd), "head_x": float(hx)})
     return out
+
+
+def qm_known(q, pivot):
+    """QM-TF bar index at whose close the QM exists: the neck break has closed AND the head pivot is confirmed
+    (close-line pivots of order `pivot` are known `pivot` bars after the head). Before 2026-10-14 the break bar
+    alone was used: a break right after the head let trigger patterns form before the head was known."""
+    return max(q["brk"], q["head_i"] + pivot)
 
 
 class _Pair:
@@ -209,8 +227,24 @@ class _Pair:
         return self._qm[(tf, sell)]
 
 
+def _stop(p, sell, cfg, P):
+    """Continuation stop for pattern p: beyond the level zone (c1..breakout-1 wicks) + buffer; if that is wider than
+    max_stop_pips from the line, beyond the rejection wick (c3..breakout-1) + buffer [T e3@247-385 "if the zone is
+    too big you use this candle ... as a rejection; if the zone is not big then you use this one, because this is
+    the invalidation point"; q1@1497-1660 "the safest is placing them at the invalidation zone"]."""
+    buf = (1 if sell else -1) * cfg["stop_buffer_pips"] * P
+    rej = p["c3x"] + buf
+    if cfg.get("stop_at", "zone") == "rejection":
+        return rej, "rejection"
+    zone = p["zx"] + buf
+    if abs(zone - p["line"]) / P <= cfg["max_stop_pips"] + 1e-9:
+        return zone, "zone"
+    return rej, "rejection"
+
+
 def _story_end(px, story, sell, t_conf, scfg, cfg):
-    """Time after which no new entry is taken: target touched, origin close back through the level, or max bars."""
+    """Time after which no new entry is taken: target touched, origin close back through the level, max bars, or
+    the story's own end_time (slk.story: flip #29 / invalidation / target, known when it happened)."""
     otf = STORIES[story["story"]][0]
     O = px.bars(otf)
     k0 = int(np.searchsorted(O["end"], t_conf, "right"))  # first origin bar still open at confirmation
@@ -229,6 +263,8 @@ def _story_end(px, story, sell, t_conf, scfg, cfg):
     hit = np.flatnonzero(H["low"][a:b] <= story["target"] if sell else H["high"][a:b] >= story["target"])
     if len(hit):
         end = min(end, H["start"][a + hit[0]])
+    if cfg.get("story_end", True) and story.get("end_time"):
+        end = min(end, _t(story["end_time"]))
     return end
 
 
@@ -290,10 +326,10 @@ def _candidates(px, tf, story, sell, t_bo, t_conf, t_end):
             continue
         if max(B["end"][p["bo"]], t_conf) >= t_end:
             break
-        stop = p["c3x"] + (1 if sell else -1) * cfg["stop_buffer_pips"] * P
+        stop, at = _stop(p, sell, cfg, P)
         c = _setup(px, tf, story, sell, p["line"], stop, p["bo"], t_conf, why,
                    {"model": "continuation", "c1_time": _s(B["start"][p["c1"]]),
-                    "bo_candle": p["bo"] - p["c1"] + 1})
+                    "bo_candle": p["bo"] - p["c1"] + 1, "stop_at": at})
         if c:
             out.append(c)
     return out, why
@@ -316,7 +352,7 @@ def _qmr_candidates(px, tf, story, sell, t_conf, t_end):
     pats = px.pats(ttf, sell)
     c1s = np.array([p["c1"] for p in pats], dtype=int)
     for q in px.qms(tf, sell):
-        t_brk = B["end"][q["brk"]]
+        t_brk = B["end"][min(qm_known(q, cfg["pivot"]), len(B["end"]) - 1)]
         if t_brk <= t_tap or t_brk >= t_end:
             continue
         lim = q["brk"] + cfg["qmr_max_bars"]
@@ -332,12 +368,12 @@ def _qmr_candidates(px, tf, story, sell, t_conf, t_end):
                 continue  # this trigger-TF level did not react inside the QMR zone
             entry = p["line"]
             head_stop = q["head_x"] + buf if sell else q["head_x"] - buf
-            pat_stop = p["c3x"] + buf if sell else p["c3x"] - buf
+            pat_stop, pat_at = _stop(p, sell, cfg, P)  # the trigger line's own continuation stop (zone, else rejection)
             stop = head_stop if abs(head_stop - entry) / P <= cfg["max_stop_pips"] + 1e-9 else pat_stop
             c = _setup(px, ttf, story, sell, entry, stop, p["bo"], t_conf, why,
                        {"model": "qmr", "c1_time": _s(T["start"][p["c1"]]), "bo_candle": p["bo"] - p["c1"] + 1,
                         "qm_tf": tf, "qm_shoulder": q["shoulder"], "qm_neck": q["neck"], "qm_head": q["head"],
-                        "stop_at": "head" if stop == head_stop else "rejection"})
+                        "stop_at": "head" if stop == head_stop else pat_at})
             if c:
                 out.append(c)
             break
@@ -352,7 +388,8 @@ def _walk(px, cands, sell, t_end):
     def fill(c, upto):
         a = int(np.searchsorted(H["start"], c["active"], "left"))
         b = int(np.searchsorted(H["start"], min(upto, c["expires"], t_end), "left"))
-        hit = np.flatnonzero(H["high"][a:b] >= c["entry"] if sell else H["low"][a:b] <= c["entry"])
+        sp = px.cfg.get("spread_pips", 0.0) * px.P  # BUY limit fills when the ASK (bid + spread) reaches it
+        hit = np.flatnonzero(H["high"][a:b] >= c["entry"] if sell else H["low"][a:b] + sp <= c["entry"])
         return a + int(hit[0]) if len(hit) else None
 
     cur = None
@@ -410,13 +447,15 @@ def find_entry(px, story):
 
 
 def simulate(row, px):
-    """TP1 and TP2 variants on H1 bars from the fill. Same bar stop+TP = loss; fill bar can only stop out."""
+    """TP1 and TP2 variants on H1 bars from the fill. Same bar stop+TP = loss; fill bar can only stop out.
+    Bars are BID: a SELL's stop and TP trigger on the ASK = bid + spread_pips (a BUY's on the bid)."""
     if row.get("status") != "TRIGGERED":
         return row
     cfg, H = px.cfg, px.h1
     sell = row["side"] == "SELL"
     f = row.pop("_fill")
     e, s = row["entry"], row["stop"]
+    sp = cfg.get("spread_pips", 0.0) * px.P if sell else 0.0
     risk = abs(s - e)
     t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * TF_HOURS[row["tf"]]), "h")
     j = int(np.searchsorted(H["start"], t_cap, "left"))  # first H1 bar past the holding time
@@ -425,8 +464,8 @@ def simulate(row, px):
         tp = row[v]
         res, out, k_exit = None, "timeout", last
         for k in range(f, last + 1):
-            stop_hit = H["high"][k] >= s if sell else H["low"][k] <= s
-            tp_hit = (H["low"][k] <= tp if sell else H["high"][k] >= tp) and k > f
+            stop_hit = H["high"][k] + sp >= s if sell else H["low"][k] <= s
+            tp_hit = (H["low"][k] + sp <= tp if sell else H["high"][k] >= tp) and k > f
             if stop_hit:
                 res, out, k_exit = -1.0, "loss", k
                 break
@@ -434,7 +473,7 @@ def simulate(row, px):
                 res, out, k_exit = abs(tp - e) / risk, "win", k
                 break
         if res is None:
-            res = ((e - H["close"][last]) if sell else (H["close"][last] - e)) / risk
+            res = ((e - H["close"][last] - sp) if sell else (H["close"][last] - e)) / risk
             if j >= len(H["close"]) and H["end"][last] < t_cap:  # data ends before the holding time
                 out = "open"
         row[f"{v}_outcome"], row[f"{v}_R"] = out, round(float(res), 2)

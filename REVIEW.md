@@ -217,3 +217,69 @@ notes_entry.md (D reject D + H4 BO, same-day cancel, entries from the next day).
 
 Tests: 180 passed (179 + new `test_entry_alignment_ignores_forming_h4`; breakout_time asserts added to
 `test_retrace_followup_and_row_compare`).
+
+## Entry diagnosis (cTrader data) — 2026-10-14
+
+Question: ENTRY_REPORT.md (IC Markets cTrader H1, 2018–2026, 28 pairs) shows TP1 (next swing, ≥ 1.5R) winning ~23%
+at −0.39R and TP2 (story target) ~7% at ~0R. Bug or weak model? Reproduced offline on the 8 pairs in
+`data/examples/` (IC bid, 2022→2026-10, D + W stories, entry DEFAULT, story engine of HEAD 48e7f2e): **234 fills, TP1 21.4%,
+−0.42R** = the same picture. 17 trades were printed bar by bar (entry-TF c1..breakout, H1 bars from the setup to the
+exit) and checked against §3.
+
+**Checked and correct:** direction (A-shape for sells, V for buys, stop above/below), pip size (JPY 0.01, e.g. USDJPY
+13.0 pips = 0.130), fill order (a sell limit fills when the bid high reaches the line; the fill bar can only stop
+out, which is right because the entry must be touched before a stop beyond it; a bar opening beyond the entry fills
+at the line, 8 of 234 cases), TP1 measured from the entry line (R_tp1 = |entry − tp1| / risk, 1.5R fallback),
+retest window (12 entry-TF bars), no look-ahead in the pattern / first-retracement / TP1 swings.
+
+**Bugs found and fixed (slk/entry.py, tests in tests/test_entry.py):**
+| # | Bug | Effect | Fix (Kevin) | Test |
+|---|---|---|---|---|
+| E1 | **Stop inside the level.** Stop = c3..(breakout−1) wick + 1 pip only; the c1/c2 wicks of the A/V shape were ignored. With the 1-pip touch tolerance c3's wick can even stay *under* the line, so stops of 0.2–0.5 pips appeared (EURGBP 2022-03-17: c2 wick +4.3 pips above the line, stop +0.5; USDCHF 2026-09-25: stop 0.4 pips; USDJPY 2025-01-13: c2 wick 16 pips below the line, stop 12). | Median stop 5.9 pips, 26% under 3 pips; 53% of fills stopped out on the very H1 bar that filled them. | Stop beyond the **invalidation zone** = all wicks c1..(breakout−1) + 1 pip; only if that is wider than `max_stop_pips` the rejection candle (the old rule) [T entry3@247-385, qns-pt1@1497-1660; F entry-2/sheet_005-009, qns-pt1/sheet_021, entry3/sheet_010-013]. QMR: head, else the trigger line's own zone/rejection stop. Row key `stop_at` (zone / rejection / head). | `test_stop_covers_level_zone`, `test_stop_never_inside_the_pattern_random_walk` |
+| E2 | **Entries after the story ended.** `_story_end` knew the target touch, the origin close back through the level and `max_hold`, but not the flip end (#29): the story was over, the entry model kept taking setups. | 33 of 234 fills (14%) came after a flip, 24 of them lost. | Also stop at the story's own `end_time` (`story_end`, default on). | `test_no_entry_after_story_end` |
+| E3 | **QMR look-ahead (one QM-TF bar).** A QM counted from the neck-break close even when the break came on the bar right after the head, before the head pivot (order 2) was confirmed; an H4 QM could then trigger H1 entries 1–2 hours early. | None measurable on the 8 pairs (identical rows), fixed for correctness. | QM known at max(neck break, head + `pivot`) (`qm_known`). | `test_qm_known_waits_for_head_pivot` |
+| E4 | **No spread on bid candles** (not a cause of the losses: it makes results *better* than real). | — | `spread_pips` (default 0 = unchanged): BUY fills and SELL stops/TPs on the ask. | `test_spread_on_bid_candles` |
+
+The golden test (`tests/test_speed.py`, `tests/engine_golden.py`) pins the old entry output with
+`stop_at=rejection, story_end=False`; `tests/golden/engine_golden.json` is unchanged.
+
+**Before / after on the 8 offline pairs** (D + W stories, DEFAULT entry cfg):
+| run | filled | TP1 win% | TP1 avg R | TP2 win% | TP2 avg R | median stop | stops < 3 pips | stopped on the fill bar |
+|---|---|---|---|---|---|---|---|---|
+| before (HEAD) | 234 | 21.4 | −0.42 | 6.4 | +0.21 | 5.9 | 26% | 53% |
+| after (E1–E3) | 221 | 29.4 | −0.21 | 8.1 | −0.20 | 9.1 | 7% | 39% |
+| after, `spread_pips` 1.0 | 214 | 25.2 | −0.31 | 7.9 | −0.43 | 9.5 | 6% | 45% |
+Per pair TP1 avg R after: CADJPY +0.16, USDJPY / USDCHF / USDCAD / EURAUD / GBPJPY −0.21..−0.22, EURGBP −0.42,
+GBPAUD −0.58 (19–36 fills each: noise-level samples). TP2 (story target, median 9R / mean 13R away after the fix)
+wins 8%, about what chance gives at that distance; its +0.21R before the fix came from four 23–63R "wins" on 0.5–4
+pip stops (USDCHF 1.0 pip → +63R, EURGBP 0.5 pip → +23R).
+
+**Verdict: after the fixes the logic matches §3, and the model has no edge. It is not worse than random any more;
+it is about random.** Baselines with the same simulator (same-bar stop+TP = loss):
+- random market entries at random H1 bars, same side, same stop and TP1 distances as each filled trade (20 per
+  trade): TP1 **32.4%, −0.15R** (with the old tiny stops: 28.6%, −0.26R). The "40% at 1.5R" coin-flip figure does not
+  hold at H1 resolution with 5–10 pip stops: one H1 bar often spans both stop and target.
+- after the fill bar, the trade's own side vs the mirrored side (same distances from the fill-bar close): 34.8% vs
+  31.9% TP1 wins. So no direction edge after the fill.
+- TP1 at fixed 1R / 1.5R / 2R / 3R: −0.30 / −0.23 / −0.13 / −0.08R. A loss that shrinks as the target grows = a fixed
+  cost per trade with no edge behind it; the cost is the fill bar (39% of fills are stopped on it: the retest that
+  fills a limit at the line usually comes with momentum and runs through a 5–10 pip stop within the hour).
+
+**Which part loses** (8 pairs, after the fixes; one variant at a time, small samples, not used to tune anything):
+| part | variants (TP1 win%, avg R) | reading |
+|---|---|---|
+| model | continuation 27.1%, −0.30 · QMR 32.0%, −0.10 | QMR is the less bad half (Kevin ranks it higher, [T entry-4@1420-1440]); neither is positive. |
+| entry TF | H1 148 fills, −0.23 · H2 29, −0.12 · H4 43, −0.17 · D ladder H4+H2 only: 32.4%, −0.18 · H4 only: 35.7%, −0.09 (28 fills) | Two thirds of the fills come from the H1 fallback. Kevin goes H4 → 2H and "if you don't find it in 2 hours ... price is not giving you any entry" [T entry-2@668-713], "90% of my entries are from four hours or two hours" [T entry3@2011-2016]; he shows a 1H level only after H4/2H had none and price had already reacted [T entry-2@1258-1326]. Our unconditional H1 rung is wider than Kevin; dropping it does not make the model positive. |
+| stop size | rejection-only stop (old) −0.38 · zone stop −0.21 · `max_stop_pips` 15: −0.23 · 30: −0.16 | The old tiny stop was the main bug; beyond that, wider stops help a little, none is positive. |
+| TP1 definition | swing TP1 −0.20, 1.5R fallback −0.21; fixed 1R/2R/3R above | Not the cause: the result follows the R multiple, as a no-edge entry does. |
+| retest window | `retest_bars` 3: −0.20 · 12 (default): −0.21 · 48: −0.24 | No effect. |
+| alignment / skip-first / breakout | `alignment` off −0.22, w_d_h4 −0.19; `skip_first` off −0.14; `breakout_max_bars` 1: −0.18 | No effect beyond noise. |
+
+**What this means:** the bias part decides direction; this entry layer (limit at an H1/H2/H4 line, stop just beyond
+a small zone, 1.5R) does not add an edge on IC data and loses its costs. Kevin's own claim is 40–50% winners at
+good R:R [T entry-4@171-199] with entries picked by eye (fresh, impulsive breakouts, overlap, "very clear" levels);
+the bot's mechanical A/V + 3rd-candle filter finds many more, weaker lines (any two opposite candles, bodies down to
+0.7 pip). Recommendations (owner decisions, not applied): (1) do not trade entries live on this model; keep the bias
+alerts; (2) run the full 28-pair backtest again (ENTRY_REPORT.md now shows `stop_at` and `fillbar_stop%`), and set
+`spread_pips` ~1 for realistic numbers; (3) if the entry layer is kept, test Kevin's tighter scope first: D story
+entries only on H4/2H (no unconditional H1), QMR only — on years not used here.

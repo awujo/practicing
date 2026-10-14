@@ -31,6 +31,9 @@ def summarize(df, by):
         out[f"{v}_expR"] = t[f"{v}_R"].mean().round(3)
         out[f"{v}_totalR"] = t[f"{v}_R"].sum().round(1)
     out["median_stop_pips"] = t["stop_pips"].median().round(1)
+    if "tp1_exit_time" in trig:  # stopped out on the very H1 bar that filled the limit (the retest overshoots)
+        fb = trig.assign(_fb=(trig["tp1_outcome"] == "loss") & (trig["tp1_exit_time"] == trig["fill_time"]))
+        out["fillbar_stop%"] = (fb.groupby(by)["_fb"].mean() * 100).round(1)
     out[["setups", "filled", "missed"]] = out[["setups", "filled", "missed"]].fillna(0).astype(int)
     return out
 
@@ -48,7 +51,11 @@ def report(df, cfg, path):
              "A pending QMR is not replaced by a newer continuation level. Stories without a setup show model `-`.",
              "Fills and exits are simulated on H1 bars (same bar stop+target = loss).",
              "`setups` = stories with a qualifying pattern, `filled` = retest happened, `missed` = no retest in time.",
-             "`tpN_expR` = average result in R per filled trade (TP1 = next swing / 1.5R min, TP2 = story target).", "",
+             "`tpN_expR` = average result in R per filled trade (TP1 = next swing / 1.5R min, TP2 = story target).",
+             "`fillbar_stop%` = filled trades stopped out on the same H1 bar that filled the limit.",
+             "Stop (`stop_at`): `zone` = beyond the c1..breakout-1 wicks (Kevin's invalidation zone), `rejection` = beyond",
+             "the c3.. rejection wick when the zone is wider than `max_stop_pips`, `head` = QMR head. Candles are bid;",
+             "`spread_pips` adds the ask side (0 = none). No entry after the story's own end (flip / invalidation).", "",
              f"Settings: `{json.dumps({k: v for k, v in cfg.items() if k != 'story_cfg'})}`", ""]
     if df.empty:
         lines.append("No stories found.")
@@ -58,9 +65,11 @@ def report(df, cfg, path):
     df["year"] = df["tap_time"].str[:4]
     df["tf"] = df.get("tf", pd.Series(index=df.index, dtype=object)).fillna("-")
     df["model"] = df.get("model", pd.Series(index=df.index, dtype=object)).fillna("-")
+    df["stop_at"] = df.get("stop_at", pd.Series(index=df.index, dtype=object)).fillna("-")
     lines += ["## Status count", "", df.groupby(["story", "status"]).size().unstack(fill_value=0).to_markdown(), ""]
     sections = [("By story", ["story"]), ("By entry model", ["model"]), ("By story and entry model", ["story", "model"]),
                 ("By story and entry TF", ["story", "tf"]),
+                ("By entry model and stop placement", ["model", "stop_at"]),
                 ("By story and side", ["story", "side"]), ("By year (D story)", ["year"]),
                 ("By pair (D story)", ["pair"]), ("By year (all stories)", ["story", "year"])]
     for title, by in sections:

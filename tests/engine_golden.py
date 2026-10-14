@@ -78,8 +78,9 @@ def compute():
             s = find_stories(pair, h1, st, cfg)
             case["stories"][st] = _clean(strip_labels(s))
             # entries pinned with the old entry model (continuation only, breakout on c4), as tests/test_speed.py checks
-            old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off"}, cfg, sim=True)
-            case["entries"][st] = _clean([{k: v for k, v in r.items() if k not in ("model", "bo_candle")} for r in old])
+            old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off",
+                                         "stop_at": "rejection", "story_end": False}, cfg, sim=True)
+            case["entries"][st] = _clean([{k: v for k, v in r.items() if k not in ("model", "bo_candle", "stop_at")} for r in old])
             cuts = range(len(h1) // 2, len(h1), max(1, len(h1) // 25))
             case["taps"][st] = [_clean(strip_labels(current_tap(pair, h1.iloc[:n], st, cfg))) for n in cuts]
         out.append(case)

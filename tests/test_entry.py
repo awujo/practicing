@@ -253,8 +253,9 @@ def test_qmr_sell():
     e = find_entries("EURUSD", h1, [qmr_story(h1)], QMR_ONLY)[0]
     assert e["status"] == "TRIGGERED" and e["model"] == "qmr" and e["tf"] == "H1" and e["qm_tf"] == "H1"
     assert abs(e["entry"] - (1.1 + 20 * P)) < 1e-9
-    # head stop (42) would be 22 pips > max 20 -> stop above the rejection wick (23 + 1)
-    assert e["stop_at"] == "rejection" and abs(e["stop"] - (1.1 + 24 * P)) < 1e-9
+    # head stop (42) would be 22 pips > max 20 -> the trigger line's own stop: its zone (c1..c3 wicks, top = the
+    # c3 rejection wick 23) + 1
+    assert e["stop_at"] == "zone" and abs(e["stop"] - (1.1 + 24 * P)) < 1e-9
     assert e["tp2_outcome"] == "win"
     e = find_entries("EURUSD", h1, [qmr_story(h1)], {**QMR_ONLY, "max_stop_pips": 25})[0]
     assert e["stop_at"] == "head" and abs(e["stop"] - (1.1 + 42 * P)) < 1e-9
@@ -289,3 +290,86 @@ def test_qmr_ranks_above_newer_continuation():
     cont = find_entries("EURUSD", h1, [st], {**H1ONLY, "entry_models": ["continuation"]})[0]
     assert cont["status"] == "TRIGGERED" and cont["model"] == "continuation"
     assert abs(cont["entry"] - (1.1 - 5 * P)) < 1e-9   # without QMR the newer level is used
+
+
+# ------------------------------------------------------------------ entry diagnosis 2026-10-14 (REVIEW.md)
+def zone_rows():
+    """scenario() with c2's wick 8 pips above the line (c3 rejects at +3): the level zone is wider than c3."""
+    rows = scenario().pipe(lambda d: ((d - 1.1) / P).round(6).to_numpy().tolist())
+    rows[12] = [15, 23, 9, 10]                # c2 bear, wick to +23 (line +15)
+    return mk(rows)
+
+
+def test_stop_covers_level_zone():
+    """Kevin's default stop is beyond the whole invalidation zone (c1..breakout-1 wicks), not only c3's wick
+    [T e3@247-385, q1@1497-1660]. Before the fix the stop sat at c3 + 1 = +19, inside c2's wick (+23)."""
+    h1 = zone_rows()
+    B = _arrays(resample(h1, "H1"))
+    p = [q for q in patterns(B, True, {**CFG, "breakout_max_bars": 0}, P) if q["c1"] == 11][0]
+    assert abs(p["zx"] - (1.1 + 23 * P)) < 1e-9 and abs(p["c3x"] - (1.1 + 18 * P)) < 1e-9
+    cont = {**H1ONLY, "entry_models": ["continuation"]}
+    e = find_entries("EURUSD", h1, [story_row(h1)], cont)[0]
+    assert e["status"] == "TRIGGERED" and e["stop_at"] == "zone"
+    assert abs(e["stop"] - (1.1 + 24 * P)) < 1e-9 and e["stop_pips"] == 9.0
+    # zone wider than max_stop_pips -> stop on the rejecting candle ("if the zone is too big")
+    e = find_entries("EURUSD", h1, [story_row(h1)], {**cont, "max_stop_pips": 6})[0]
+    assert e["stop_at"] == "rejection" and abs(e["stop"] - (1.1 + 19 * P)) < 1e-9
+    # old rule kept only for the golden test
+    e = find_entries("EURUSD", h1, [story_row(h1)], {**cont, "stop_at": "rejection"})[0]
+    assert e["stop_at"] == "rejection" and e["stop_pips"] == 4.0
+
+
+def test_stop_never_inside_the_pattern_random_walk():
+    """Every zone stop lies beyond all wicks c1..breakout-1 of its pattern (+ the 1-pip buffer)."""
+    h1 = walk()
+    n = 0
+    for r in find_entries("EURUSD", h1, find_stories("EURUSD", h1, "D"), {"alignment": "off"}):
+        if r.get("model") != "continuation" or r.get("stop_at") != "zone":
+            continue
+        B = resample(h1, r["tf"])
+        k = list(pd.to_datetime(B["start"]).dt.strftime("%Y-%m-%d %H:%M")).index(r["c1_time"])
+        seg = B.iloc[k:k + r["bo_candle"] - 1]
+        if r["side"] == "SELL":
+            assert r["stop"] >= seg["high"].max() + P - 1e-9
+        else:
+            assert r["stop"] <= seg["low"].min() - P + 1e-9
+        n += 1
+    assert n > 0
+
+
+def test_no_entry_after_story_end():
+    """A story that ended (flip #29 / invalidation / target, slk.story end_time) takes no new entry: before the fix
+    14% of the fills on the offline pairs came after a flip had ended the story."""
+    h1 = scenario()
+    st = story_row(h1)
+    assert find_entries("EURUSD", h1, [st], H1ONLY)[0]["status"] == "TRIGGERED"
+    ended = {**st, "end_time": str(h1.index[16])[:16], "kevin_outcome": "ended_flip"}   # before the retest (~bar 20)
+    e = find_entries("EURUSD", h1, [ended], H1ONLY)[0]
+    assert e["status"] in ("MISSED", "NO_SETUP")
+    assert find_entries("EURUSD", h1, [ended], {**H1ONLY, "story_end": False})[0]["status"] == "TRIGGERED"
+
+
+def test_qm_known_waits_for_head_pivot():
+    """A neck break on the bar right after the head: the QM exists only once the head pivot is confirmed."""
+    from slk.entry import qm_known
+    assert qm_known({"brk": 15, "head_i": 14}, 2) == 16
+    assert qm_known({"brk": 18, "head_i": 14}, 2) == 18
+
+
+def test_spread_on_bid_candles():
+    """Candles are BID. spread_pips: a SELL stops at ask = bid + spread; a BUY limit fills at ask."""
+    h1 = scenario()
+    e = find_entries("EURUSD", h1, [story_row(h1)], H1ONLY)[0]
+    assert e["status"] == "TRIGGERED" and e["tp1_outcome"] == "win"
+    rows = h1.pipe(lambda d: ((d - 1.1) / P).round(6).to_numpy().tolist())
+    f = list(h1.index.strftime("%Y-%m-%d %H:%M")).index(e["fill_time"])
+    rows[f + 1] = [14, 18.5, 13, 14]          # bid high 18.5: 0.5 pip under the stop (19)
+    h1 = mk(rows)
+    assert find_entries("EURUSD", h1, [story_row(h1)], H1ONLY)[0]["tp1_outcome"] == "win"
+    assert find_entries("EURUSD", h1, [story_row(h1)], {**H1ONLY, "spread_pips": 1.0})[0]["tp1_outcome"] == "loss"
+    hb = mk(mirror(scenario().pipe(lambda d: ((d - 1.1) / P).round(6).to_numpy().tolist())))
+    sb = story_row(hb, side="BUY", target=1.1 + 120 * P)
+    assert find_entries("EURUSD", hb, [sb], H1ONLY)[0]["status"] == "TRIGGERED"
+    # the buy retest's bid low goes 0.5 pip through the line: the ask (bid + spread) reaches it only if spread < 0.5
+    assert find_entries("EURUSD", hb, [sb], {**H1ONLY, "spread_pips": 0.4})[0]["status"] == "TRIGGERED"
+    assert find_entries("EURUSD", hb, [sb], {**H1ONLY, "spread_pips": 1.0})[0]["status"] == "MISSED"

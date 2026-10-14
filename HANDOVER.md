@@ -74,6 +74,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] **User, once (for /terms):** Render env `TELEGRAM_WEBHOOK_SECRET` + `setWebhook` (steps in `webapp/README.md`
       "Bot command /terms"). Until then /terms gets no answer; everything else works.
 - [ ] Read `reports/EXAMPLES.md` after the verify-examples workflow ran (Kevin's own examples PASS/FAIL).
+- [x] **Entry diagnosis (cTrader data)** (REVIEW.md): 3 entry bugs fixed (stop inside the level zone, entries after a
+      flip-ended story, QMR head look-ahead) + `spread_pips` option. After the fixes the entry model is ~random
+      (8 offline pairs: TP1 29% / −0.21R vs random entries 32% / −0.15R): **no edge, do not trade entries live yet**.
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
 
@@ -192,3 +195,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   `level_tol_pips` (0-5, default 0 = unchanged, golden-tested): extra wick tolerance for broker differences (IC vs
   FOREX.com vs OANDA), wick tests only, never closes / B breaks (STRATEGY §5 #25). Tests `tests/test_ctrader_store.py`,
   `tests/test_level_tol.py`, `tests/conftest.py` (no network: Dukascopy fakes, cTrader connections blocked).
+- 2026-10-14: Entry diagnosis (REVIEW.md "Entry diagnosis (cTrader data)", STRATEGY §3 steps 5-6 + OUR CHOICE rows).
+  Reproduced ENTRY_REPORT's 21-23% TP1 on the 8 offline pairs, inspected 17 trades bar by bar. Fixed in slk/entry.py:
+  E1 stop beyond the whole invalidation zone c1..breakout-1 (was c3.. only: stops inside the A/V shape, median 5.9 pips,
+  down to 0.2), rejection candle only when the zone > max_stop_pips (`stop_at`); E2 no entry after the story's
+  `end_time` (flip #29 was ignored: 14% of fills); E3 QMR known only once the head pivot is confirmed (`qm_known`);
+  E4 `spread_pips` (default 0). ENTRY_REPORT gets `fillbar_stop%` and a stop-placement section. 8 pairs: TP1 21.4% /
+  −0.42R → 29.4% / −0.21R; random-entry baseline 32.4% / −0.15R → model has no edge (losses = the fill bar, 39% of
+  fills stopped within the filling H1 bar). Golden entry test pinned with `stop_at=rejection, story_end=False`
+  (golden JSON unchanged). Tests in tests/test_entry.py.
