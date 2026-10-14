@@ -212,7 +212,8 @@ class CTraderClient:
             acc = accounts[0]
         if acc is None:
             raise RuntimeError(f"CTRADER_ACCOUNT_ID {want or '(unset)'} not among the token's accounts "
-                               f"(logins: {[a['login'] for a in accounts]})")
+                               f"(accounts: {[(a['login'], 'live' if a['is_live'] else 'demo') for a in accounts]}; "
+                               f"the secret has {len(want)} characters, digits only: {want.isdigit()})")
         if acc["is_live"] != (self.env == "live"):
             raise RuntimeError(f"account {acc['login']} is {'live' if acc['is_live'] else 'demo'} "
                                f"but CTRADER_ENV={self.env}")
