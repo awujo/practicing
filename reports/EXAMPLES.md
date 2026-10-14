@@ -1,6 +1,6 @@
 # Kevin's worked examples: replay check
 
-Generated 2026-10-14 11:40 UTC by `python -m slk.verify_examples` (live bias engine `slk.live.pair_state`, code defaults, H1 from the candle store or `--data` CSVs: IC Markets cTrader, Dukascopy fallback).
+Generated 2026-10-14 16:08 UTC by `python -m slk.verify_examples` (live bias engine `slk.live.pair_state`, code defaults, H1 from the candle store or `--data` CSVs: IC Markets cTrader, Dukascopy fallback).
 
 **8/9 PASS.** A FAIL is a story the bot reads differently from Kevin; it does not stop the workflow. Evidence = transcript [video@sec] and frame sheets (knowledge-base/frames).
 
