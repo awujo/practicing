@@ -148,7 +148,7 @@ def test_settings_get_defaults_and_post_validation(client):
     client.store["max_wait"] = "junk"
     r = client.get("/api/settings", headers=hdr(make_init_data())).json()
     assert r["max_wait"] == "5" and "confirm_break" not in r and r["alert_entry"] == "on"
-    assert r["auto_trade"] == "confirm" and r["entry_tfs"] == "D=H4,H2,H1;W=D,H4;M=W,D"
+    assert r["auto_trade"] == "confirm" and r["entry_tfs"] == "D=H4,H2;W=D,H4;M=W,D"  # owner 2026-10-14: no H1
     body = {"max_wait": 8, "trend_filter": False, "risk_pct": 1.5,
             "entry_tfs": "D=H1", "continuation_entries": "off", "daily_summary": "off"}
     r = client.post("/api/settings", json=body, headers=hdr(make_init_data()))
@@ -190,12 +190,13 @@ def test_terms_webhook_owner_only(client, monkeypatch):
 
 def test_new_settings_in_schema(client):
     s = {x["name"]: x for x in client.get("/api/settings/schema", headers=hdr(make_init_data())).json()["settings"]}
-    assert s["next_day_rule"]["choices"] == ["flag", "require"] and s["next_day_rule"]["default"] == "flag"
+    assert s["next_day_rule"]["choices"] == ["flag", "require"] and s["next_day_rule"]["default"] == "require"
+    assert s["trend_mode"]["choices"] == ["leg", "protected"] and s["trend_mode"]["default"] == "leg"
     assert s["display_tz"]["type"] == "tz" and s["display_tz"]["default"] == "Africa/Lagos"
     assert s["early_breakout_alert"]["default"] == "off"
     assert s["entry_alignment"]["choices"] == ["d_h4", "w_d_h4", "off"] and s["entry_alignment"]["default"] == "d_h4"
     r = client.post("/api/settings", json={"display_tz": "Mars/Base"}, headers=hdr(make_init_data()))
     assert r.status_code == 422 and "display_tz" in r.text
-    r = client.post("/api/settings", json={"display_tz": "Europe/London", "next_day_rule": "require"},
+    r = client.post("/api/settings", json={"display_tz": "Europe/London", "next_day_rule": "flag"},
                     headers=hdr(make_init_data()))
-    assert r.status_code == 200 and r.json()["display_tz"] == "Europe/London" and r.json()["next_day_rule"] == "require"
+    assert r.status_code == 200 and r.json()["display_tz"] == "Europe/London" and r.json()["next_day_rule"] == "flag"

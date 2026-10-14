@@ -84,8 +84,10 @@ def pair_rows(pair, start, end, stories, cfg):
 # (setting, value, kind, overrides): kind "story" = slk.story cfg (bias trades), "entry" = slk.entry cfg (entry
 # trades on the base stories). The first value of each setting is the current default.
 VARIANTS = [
-    ("next_day_rule", "flag", "story", {"next_day_rule": "flag"}),
     ("next_day_rule", "require", "story", {"next_day_rule": "require"}),
+    ("next_day_rule", "flag", "story", {"next_day_rule": "flag"}),
+    ("trend_mode", "leg", "story", {"trend_mode": "leg"}),
+    ("trend_mode", "protected", "story", {"trend_mode": "protected"}),
     ("cadjpy_exception", "on", "story", {"cadjpy_exception": True}),
     ("cadjpy_exception", "off", "story", {"cadjpy_exception": False}),
     ("pullback_levels", "on", "story", {"pullback_levels": True}),
@@ -93,6 +95,8 @@ VARIANTS = [
     ("entry_alignment", "d_h4", "entry", {"alignment": "d_h4"}),
     ("entry_alignment", "w_d_h4", "entry", {"alignment": "w_d_h4"}),
     ("entry_alignment", "off", "entry", {"alignment": "off"}),
+    ("entry_tfs", "D=H4,H2", "entry", {"entry_tfs": {"D": ("H4", "H2"), "W": ("D", "H4"), "M": ("W", "D")}}),
+    ("entry_tfs", "D=H4,H2,H1", "entry", {"entry_tfs": {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}}),
 ]
 
 

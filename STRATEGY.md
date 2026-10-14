@@ -1,4 +1,4 @@
-# Kevin King SLK — Bias Strategy (v0.8, Claude branch)
+# Kevin King SLK — Bias Strategy (v0.9, Claude branch)
 
 Built from the `kevin_King` course only. All 29 transcripts plus every contact sheet (~700) of all videos.
 Evidence with timestamps: `knowledge-base/study/notes_*.md` (transcripts) and `frames_*.md` (pictures, A–H).
@@ -37,6 +37,20 @@ point since the last fix, so a lower high inside an uptrend pullback (higher low
 Swings are known only at the breaking close (no look-ahead).
 
 **Trend.** HH + HL = up, LH + LL = down, otherwise **range → no bias** [T basic-ms-pt2@1590].
+**Which swing flips it (v0.9, `trend_mode`, owner decision 2026-10-14): the LAST V-shape (A-shape) of the current
+leg** (`leg`, default). Kevin's weekly BOS: "there is already a weekly BOS here, the downside ... this was the last
+V-shaped key level ... mark this guy as the BOS, like the external breakout on weekly timeframe" [T weekly-recap@343-376;
+F weekly-recap/sheet_005 t=360: EURAUD W line 1.71717 at the base of the March-2025 rally, the last V before the top;
+sheet_008 t=560: GBPAUD W line 2.0362 at the Sep-2025 V]; the reversal is the close beyond the most recent LH/HL,
+"some people want to see the second break as extra confirmation, but me personally I use this first one"
+[T basic-ms-pt3@875-1211]; on D he marks every close-line valley of the leg and "the most recent one" is the BOS
+level [T weekly-recap@420-490, 976-1000; F weekly-recap/sheet_005-008]. Bot: the structural-swing rule above, but the
+candidate swings are V/A-shape turns (close-line turning points of order `level_pivot` = 1, the same two-candle turn
+as a key level) instead of order `swing_pivot` = 2, on every timeframe (M, W, D; H4 for the entry alignment): Kevin
+teaches one structure for all timeframes and shows the last-V rule on W and D. `protected` = the v0.8 reading
+(order 2): in a strong leg the order-2 rule found no pullback, so the protected low stayed at the leg's origin
+(EURAUD W 1.6026 from Nov 2024 while Kevin's weekly BOS was the Jan 2026 close below 1.7172). ERL targets keep the
+order-2 swings.
 
 **Break vs sweep** [T liquidity@647-800, F advance-market-sturcture-pt3]:
 - **Break (BOS)** = a candle **body closes** beyond a swing.
@@ -236,13 +250,18 @@ F entry-4/sheet_011-023, introduction-to-entry/sheet_017-021, cadjpy-bd/sheet_02
 4. **Rank:** QMR level with rejection > breakout level with rejection > plain level. A newer level replaces an older
    pending one, except that a pending QMR is not replaced by a newer continuation level [T q1@840-1065, e4@1420-1440].
 
-**Which timeframe:** H4 internal breaks first, most recent first, pick one with a 3rd-candle rejection; none → 2H → 1H → otherwise no trade.
+**Which timeframe:** H4 internal breaks first, most recent first, pick one with a 3rd-candle rejection; none → 2H → otherwise no trade.
+D story: **H4 and 2H only, no 1H fallback** (owner decision 2026-10-14, `entry_tfs` `D=H4,H2;W=D,H4;M=W,D`): "if you
+don't find it in 2 hours ... price is not giving you any entry" [T entry-2@668-713], "90% of my entries are from four
+hours or two hours" [T entry3@2011-2016]. Backtest TP1 by entry TF: H4 −0.01 R, H2 −0.15 R, H1 −0.24 R. Entries stay
+alert-only (no live trading on this model, REVIEW "Entry diagnosis").
 A level that is rejected on H4 and 2H at the same price is stronger; D/H4/2H levels at *different* prices = "no overlap".
 Choose the TF that gives the better risk/reward (EURGBP: daily 15.3 pips R 2.59; 4H 6.6 pips R 4.95) [F eurgbp-bd].
 
 **OUR CHOICE (entry rules Kevin does not state; defaults, tuned by backtest):**
 | Point | Default |
 |---|---|
+| Entry timeframes (`entry_tfs`) | Owner decision 2026-10-14: D story H4 → H2 (no H1), W story D → H4, M story W → D. H1 only as an experiment (backtest variant `entry_tfs` D=H4,H2,H1). TP1 avg R by TF (28 pairs): H4 −0.01, H2 −0.15, H1 −0.24. Alert-only. |
 | Latest breakout candle | No limit by default (`breakout_max_bars` = 0); the user can set one in the Mini App. Kevin never gives a number. |
 | Breakout candle | first candle with an impulsive body (≥ 1× average body of the last 10) closing beyond c1..(breakout−1); a non-impulsive close beyond just widens the base. |
 | Stop (Model A) | `stop_at` = zone (default, 2026-10-14): beyond the highest wick (sell) / lowest wick (buy) of **c1**..(breakout−1) + 1 pip (Kevin's invalidation zone); if that is wider than `max_stop_pips`, beyond the c3..(breakout−1) rejection wick + 1 pip. Before 2026-10-14 the stop was always the c3.. wick: it ignored the c1/c2 wicks of the level, so the stop could sit *inside* the A/V shape (median 5.9 pips, a quarter under 3 pips, down to 0.2; REVIEW "Entry diagnosis"). `stop_at` = rejection keeps the old rule (golden test only). |
@@ -282,7 +301,7 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 6 | Tap tolerance | v0.8: 0 (`tap_tol_pips`, was 1 pip): the wick must reach the line. Kevin: USDCAD "this very candle traded close to the open close key level but did not enter it ... acting as an inducement" [T story-line-pt4@1315-1335; F story-line-pt4/sheet_017 t=1320: line 1.39201, wick 1.39199 = 0.2 pip short, not a tap]. With 1 pip the bot took the GBPJPY Fri Jan 16 2026 wick 0.2 pip short of 211.386 as a tap and built a story Kevin never had. Broker differences are `level_tol_pips` (#25), off by default. |
 | 7 | Max wait tap → breakout | OUR CHOICE: 5 origin-TF candles. |
 | 8 | Pairs / sessions | All pairs, no session filter. |
-| 9 | Structural swing candidates | OUR CHOICE: the high/low that must be broken is a close-line turning point of order `swing_pivot` = 2 (2 closes each side); Kevin gives no size for "main leg". |
+| 9 | Structural swing candidates | Trend (v0.9, `trend_mode` leg): the high/low that must be broken is a V/A-shape turn of the close line (order `level_pivot` = 1), Kevin's "last V-shaped key level" (#27). Targets (ERL) and `trend_mode` protected: OUR CHOICE order `swing_pivot` = 2 (2 closes each side). |
 | 10 | Point B turn | OUR CHOICE grounded in the V/A-shape definition (two candles turning) and the CADJPY replay: order `b_pivot` = 1 on the confirm-TF close line. |
 | 11 | Sweep start on M | OUR CHOICE: Kevin shows previous day / previous week; the bot also allows previous month for the M story. Trend and HTF filters apply as for a key level. |
 | 12 | Sweep start vs key level | OUR CHOICE: a key-level tap on the same origin bar wins; the sweep start is used only when no fresh trend level was tapped. |
@@ -294,9 +313,10 @@ For each CONFIRMED story: did price reach the **target before the invalidation**
 | 18 | Overlap (#31a) | OUR CHOICE: `overlap_tol_pips` = 3 ("same spot"); only the next higher TF; the W candle must have closed by the confirmation (its nominal Friday 17:00 New York close, also in live where the last W bar is still forming), else the normal target; overlap TP = next KL, ERL only without a KL. |
 | 19 | Alignment (#31b) | OUR CHOICE: W/D breaks = `structural_swings` fixes (§1); H4 break = close beyond the last order-`b_pivot` H4 close turn made since the D break bar started, within `max_wait` D bars, same-day D close; stop beyond the D break bar's wick; D story only. |
 | 20 | CADJPY (#31c) | OUR CHOICE: D story only; level kind open-close (v0.8; v0.6 also took flipped levels) at the spot of the opposite level the daily closed through (v0.8, `overlap_tol_pips`); W trend (structural) in the story direction; the daily flipped that way first = a D body close through an opposite key level within `max_wait` (5) D bars before the sweep (Kevin: "after the bullish close above this guy"; the window is ours); tap candle wick beyond the previous D candle's low/high and close back beyond it; target = nearest D structural swing (ERL, "previous high"), else the normal target; point B shown as the level. |
-| 21 | Next Day Rule | OUR CHOICE `next_day_rule` = `flag` (default): every story is kept and marked `next_day` = the confirm-TF breakout candle opens at/after the origin (tap/rejection) candle's close; alerts say "✅ Next Day Rule" or "⚠ same-day breakout". `require`: a story whose first valid breakout is inside the rejection candle is dropped (not moved to the next day); also in `current_tap` and flips, same for M→W, W→D, D→H4. Alignment stories always break the next day; CADJPY has no breakout (`next_day` n/a, kept). Kevin calls multi-day waits "also valid" and the clean next-day case "the best" [T pt3@1331-1401]: a quality flag until the backtest variants say otherwise. |
+| 21 | Next Day Rule | **Owner decision 2026-10-14: `next_day_rule` = `require` (default).** A story whose first valid breakout is inside the rejection candle is dropped (not moved to the next day); also in `current_tap` and flips, same for M→W, W→D, D→H4. `flag` (the default before) keeps every story and only marks `next_day`; alerts still say "✅ Next Day Rule". Alignment stories always break the next day; CADJPY has no breakout (`next_day` n/a, kept). Kevin: the trade comes "the next day ... not that particular day" [T qns-pt2@1946-1962], "you go to four hours after the close of this day, you just see a clean breakout" [T story-line-pt3@1358-1401]. Backtest (IC cTrader, 28 pairs 2018-2025, REPORT.md Variants): under `flag` next-day breakouts 5312 stories, 79.2% target, **+43.6 R**; same-day 4867 stories, 74.1%, **−188.3 R**; whole variant `require` −33.2 R vs `flag` −160.4 R. |
 | 22 | Retrace warning | OUR CHOICE: `retrace` = a later confirm-TF candle of the origin bar holding the breakout closes back at/beyond B (known at that origin close = the confirmation, no look-ahead). Shown as a warning line (follow-up `RETRACE` alert if it ever appears after the CONFIRMED alert); never invalidates. |
 | 23 | Early breakout alert | OUR CHOICE `early_breakout_alert` off by default: "H4 breakout — waiting for the daily close" when a closed confirm-TF candle inside the still-open origin candle closed beyond B of a TAPPED story. The row stays TAPPED; sent once per story (settings key `early_alerts_sent`). |
 | 24 | Alert times | OUR CHOICE: alert times in `display_tz` (default Africa/Lagos), each labelled candle open or close; the rejection candle is named by its trading day (17:00 New York close: the D candle opening Wed 17:00 NY is Thursday's); "formed" = the origin candle at whose close the level existed. |
 | 25 | Broker tolerance (`level_tol_pips`) | OUR CHOICE, default 0 (= exactly the behaviour before it existed, golden-tested): a wick that stops up to N pips (max 5) further from the line still counts as a touch. Added to `tap_tol_pips` (#6) and used for every WICK test: the tap, the fresh / untouched check of a level (and of target levels), the first touching confirm-TF candle (point B is the last turn before it) and re-taps. Never used for closes: a body close through a level (break / flip / invalidation) and the confirm-TF close beyond point B must be real closes beyond the price. Why: the bot's candles are IC Markets cTrader bid prices (Dukascopy fallback) while Kevin marks FOREX.com / OANDA charts; feeds differ by 1-2 pips, so a level Kevin sees tapped can miss by a pip on IC. |
 | 26 | Pullback levels (v0.8) | OUR CHOICE details of §2 step 1: the higher-TF trend is the structural trend of its last CLOSED bar (as the HTF filter); only when both trends are up/down and differ; the story then needs the higher-TF side level, its own point B and external break as usual. Switch `pullback_levels` (Mini App, Bias rules); backtest variant `pullback_levels` on/off. On the 8 offline pairs (2022-2026) it adds ~480 D stories at -0.09 R each (all D stories -0.05 R): kept on because it is what Kevin does in all three examples, the owner may switch it off. |
+| 27 | Trend definition (v0.9) | **Owner decision 2026-10-14: `trend_mode` = `leg` (default)**, Mini App setting (Bias rules), backtest variant `trend_mode` leg/protected. See §1 "Which swing flips it". Applies to every TF where the trend is read (origin trend, HTF trend/filter, pullback rule, M/W/D alignment breaks, CADJPY W trend, entry alignment H4/W breaks). OUR CHOICE: "V-shape" = close-line turning point of order `level_pivot` (1); ERL targets stay on order-2 swings. Offline 8 example pairs 2022-2026 (require): leg 1013 tradable stories, −10.6 R vs protected 1031, −40.4 R; Kevin's examples 7/9 → 8/9 (EURAUD and GBPAUD sells pass; USDCAD fails: on IC the W closed above its last A-shape 1.3798 on Jan 9 2026, REVIEW "Weekly trend definition"). |

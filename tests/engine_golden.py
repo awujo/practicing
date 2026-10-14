@@ -37,8 +37,22 @@ CASES = [  # (pair, seed, hours, cfg)
 ]
 
 
+# Defaults changed by the owner on 2026-10-14 after the golden files were made: next_day_rule flag -> require,
+# trend_mode protected -> leg, D-story entry TFs H4,H2,H1 -> H4,H2. Every frozen golden (engine_golden.json, _v07,
+# _v05) was made with the old values, so the tests pin them here (the files are unchanged).
+PIN = {"next_day_rule": "flag", "trend_mode": "protected"}
+OLD_ENTRY_TFS = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
+# entry cfg of the old entry model the golden entries were made with (continuation only, breakout on c4)
+OLD_ENTRY = {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off", "stop_at": "rejection",
+             "story_end": False, "entry_tfs": OLD_ENTRY_TFS}
+
 # the four examples-diagnosis changes switched back = the v0.7 engine (tests/golden/engine_golden_v07.json)
-PRE_EXAMPLES = {"pullback_levels": False, "align_retap_ends": False, "cadjpy_zone": False, "tap_tol_pips": 1.0}
+PRE_EXAMPLES = {**PIN, "pullback_levels": False, "align_retap_ends": False, "cadjpy_zone": False, "tap_tol_pips": 1.0}
+
+
+def pinned(cfg):
+    """Golden-case cfg with the pre-2026-10-14 defaults pinned (the case's own keys win)."""
+    return {**PIN, **cfg}
 
 LABELS = ("next_day", "retrace", "level_time")  # story labels added later (Next Day Rule etc.): no effect on outcomes
 
@@ -80,15 +94,15 @@ def compute():
     for pair, seed, hours, cfg in CASES:
         h1 = data(pair, seed, hours)
         case = {"pair": pair, "seed": seed, "hours": hours, "cfg": cfg, "stories": {}, "taps": {}, "entries": {}}
+        pc = pinned(cfg)
         for st in ("D", "W", "M"):
-            s = find_stories(pair, h1, st, cfg)
+            s = find_stories(pair, h1, st, pc)
             case["stories"][st] = _clean(strip_labels(s))
             # entries pinned with the old entry model (continuation only, breakout on c4), as tests/test_speed.py checks
-            old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off",
-                                         "stop_at": "rejection", "story_end": False}, cfg, sim=True)
+            old = find_entries(pair, h1, s, OLD_ENTRY, pc, sim=True)
             case["entries"][st] = _clean([{k: v for k, v in r.items() if k not in ("model", "bo_candle", "stop_at")} for r in old])
             cuts = range(len(h1) // 2, len(h1), max(1, len(h1) // 25))
-            case["taps"][st] = [_clean(strip_labels(current_tap(pair, h1.iloc[:n], st, cfg))) for n in cuts]
+            case["taps"][st] = [_clean(strip_labels(current_tap(pair, h1.iloc[:n], st, pc))) for n in cuts]
         out.append(case)
     return out
 

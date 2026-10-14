@@ -11,7 +11,7 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 ## Architecture
 | Part | Where | Runs on |
 |---|---|---|
-| Strategy (the rules) | `STRATEGY.md` (v0.8) | — |
+| Strategy (the rules) | `STRATEGY.md` (v0.9) | — |
 | Course evidence | `knowledge-base/` (transcripts, frame sheets), `knowledge-base/study/*.md` notes | — |
 | Bias engine | `slk/structure.py`, `levels.py`, `story.py`, `candles.py`, `data.py` | — |
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
@@ -77,8 +77,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       flip-ended story, QMR head look-ahead) + `spread_pips` option. After the fixes the entry model is ~random
       (8 offline pairs: TP1 29% / −0.21R vs random entries 32% / −0.15R): **no edge, do not trade entries live yet**.
 - [x] Kevin's examples diagnosed on offline cTrader candles (`python -m slk.verify_examples --data data/examples`):
-      6/9 PASS (was 3/9); open: EURAUD/GBPAUD weekly trend definition (owner decision), GBPJPY = 2-pip feed difference.
-      REVIEW.md "Examples diagnosis (cTrader data)". Owner: check `pullback_levels` in the backtest Variants.
+      6/9 -> **8/9 PASS** after the owner decisions of 2026-10-14 (next_day_rule require, trend_mode leg); open:
+      USDCAD (on IC the W closed above its last A-shape, so W is up under the leg rule). REVIEW.md "Examples
+      diagnosis (cTrader data)" + "Owner decisions 2026-10-14". Owner: check `pullback_levels` and `trend_mode` in
+      the backtest Variants.
+- [x] Owner decisions 2026-10-14: `next_day_rule` = require, D-story entry TFs = H4,H2 (no H1, alert-only),
+      `trend_mode` = leg (Kevin's weekly BOS = close beyond the last V/A of the leg, all TFs).
 - [ ] Ideas not built: Mini App page to paste cTrader tokens into DB;
       HTF-agreement filter in live runner.
 
@@ -213,3 +217,11 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   EURAUD window after the W BOS (Jan 24), CADJPY exception example accepts the H4 path, NO_TRADE check also fails a
   story confirmed inside the window. Golden regenerated for these four only (`engine_golden_v07.json` = before,
   reproduced with `PRE_EXAMPLES`). Tests `tests/test_examples.py`; 207 pass. entry files untouched.
+- 2026-10-14: Owner decisions (STRATEGY v0.9, REVIEW "Owner decisions 2026-10-14"): (1) `next_day_rule` default
+  require (backtest: next-day breakouts +43.6 R vs same-day −188.3 R; require −33.2 R vs flag −160.4 R); (2) D-story
+  entry TFs H4, H2 only, no H1 (entry-2@668-713, entry3@2011-2016; TP1 H4 −0.01 / H2 −0.15 / H1 −0.24 R), alert-only;
+  (3) new setting `trend_mode` (default leg): structural swings from V/A-shape turns (order level_pivot 1) instead of
+  order 2, on all TFs, ERL targets unchanged (weekly-recap@343-376, F sheet_005/008; basic-ms-pt3@875-1211). Examples
+  offline 6/9 -> 7/9 (require) -> 8/9 (leg: EURAUD/GBPAUD sells pass, USDCAD fails). 8 offline pairs (require):
+  leg −10.6 R vs protected −40.4 R. Backtest variants + `trend_mode`, `entry_tfs`. Goldens pinned via config
+  (tests/engine_golden.py PIN / OLD_ENTRY), no golden regenerated. 213 tests pass.

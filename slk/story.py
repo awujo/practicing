@@ -26,7 +26,17 @@ HIGHER_ALL = {"D": ("W", "M"), "W": ("M",), "M": ()}
 
 DEFAULT = {
     "level_pivot": 1,       # A/V must be a close-line turning point of this order
-    "swing_pivot": 2,       # close-line turning points that can become structural swings (trend, targets)
+    "swing_pivot": 2,       # close-line turning points that can become structural swings (targets; trend in
+                            # trend_mode "protected")
+    # Trend definition (owner decision 2026-10-14, REVIEW "Weekly trend definition"): "leg" = Kevin's weekly BOS:
+    # a close beyond the LAST V-shape (A-shape) of the current leg [T weekly-recap@343-376 "this was the last
+    # V-shaped key level ... mark this guy as the BOS, the external breakout on weekly"; F weekly-recap/sheet_005
+    # (EURAUD 1.71717), sheet_008 (GBPAUD 2.0362); T basic-ms-pt3@875-1211: the flip is the close beyond the most
+    # recent LH/HL, "I use the first one"]: structural swings built from V/A-shape turns (order level_pivot, the
+    # key-level turn) instead of order swing_pivot. "protected" = before 2026-10-14 (order swing_pivot): the
+    # protected low could stay years old (EURAUD 1.6026 from Nov 2024). Trend, HTF trend, alignment breaks and
+    # entry alignment use it; ERL targets keep the swing_pivot swings.
+    "trend_mode": "leg",
     "b_pivot": 1,           # point B = last close-line V/A turn of this order on the confirm TF before the tap
     "use_oc": True,
     "trend_filter": True,   # only levels that agree with the origin-TF trend
@@ -61,7 +71,7 @@ DEFAULT = {
     # clean breakout"; qns-pt2@1946-1962 "the next day ... not that particular day"]: the confirm-TF breakout should
     # come from a candle that opens after the origin (tap/rejection) candle closed. "flag" = every story carries
     # next_day True/False (label only); "require" = a story whose breakout is inside the rejection candle is dropped.
-    "next_day_rule": "flag",
+    "next_day_rule": "require",  # owner decision 2026-10-14: backtest next-day +43.6R vs same-day -188R
 }
 # Point B is broken only by an EXTERNAL break: a confirm-TF body close beyond B, the last opposite swing before
 # the first tap (+ same_bar_close). Kevin's two confirmations, "sweep and break" (advanced structure: sweep of
@@ -134,10 +144,23 @@ def find_stories(pair, h1, story, cfg=None):
     return rows
 
 
-def _structure(bars, cfg):
-    """Structural swings of the close line (trend, targets): STRATEGY §1, slk/structure.structural_swings."""
-    c = bars["close"].to_numpy()
-    return structural_swings(c, pivots(c, cfg["swing_pivot"]))
+TREND_MODES = ("protected", "leg")
+LEG_TFS = ("M", "W", "D", "H4", "H2", "H1")  # timeframes on which trend_mode "leg" applies
+
+
+def trend_order(cfg, tf=None):
+    """Order of the close-line turning points that can become TREND swings: level_pivot (a V/A-shape, the last
+    swing of the leg) in trend_mode 'leg', swing_pivot in 'protected'."""
+    if cfg.get("trend_mode", "protected") == "leg" and (tf is None or tf in LEG_TFS):
+        return cfg["level_pivot"]
+    return cfg["swing_pivot"]
+
+
+def _structure(bars, cfg, tf=None, trend=True):
+    """Structural swings of the close line: STRATEGY §1, slk/structure.structural_swings. trend=True: the swings
+    that give the trend / BOS (trend_mode); trend=False: the swing_pivot swings (ERL targets)."""
+    c = np.asarray(bars["close"], dtype=float)
+    return structural_swings(c, pivots(c, trend_order(cfg, tf) if trend else cfg["swing_pivot"]))
 
 
 def _taps(levels, ob, cfg):
@@ -226,7 +249,9 @@ class _Ctx:
         self.tol = touch_tol(cfg, self.P)  # wick tests only (tap, fresh, first touch, re-taps); closes are exact
         self.levels = run_levels(ob, find_levels(ob, cfg), self.tol)
         self.lv = _LevelSet(ob, self.levels)
-        self.osw, self.csw = SwingBook(_structure(ob, cfg)), SwingBook(pivots(cb["close"], cfg["b_pivot"]))
+        self.osw, self.csw = SwingBook(_structure(ob, cfg, otf)), SwingBook(pivots(cb["close"], cfg["b_pivot"]))
+        # ERL targets: the swing_pivot swings (unchanged by trend_mode)
+        self.tsw = self.osw if trend_order(cfg, otf) == cfg["swing_pivot"] else SwingBook(_structure(ob, cfg, otf, False))
         self.O = {k: ob[k].to_numpy() for k in ("open", "high", "low", "close")}
         self.C = {k: cb[k].to_numpy() for k in ("open", "high", "low", "close")}
         self.o_start, self.o_end = ob["start"].to_numpy(), ob["end"].to_numpy()
@@ -238,7 +263,7 @@ class _Ctx:
         self.hb = resample(h1, self.htf) if self.htf else None
         if self.htf:
             self.h_start, self.h_close = self.hb["start"].to_numpy(), self.hb["close"].to_numpy()
-            self.hsw = SwingBook(_structure(self.hb, cfg))
+            self.hsw = SwingBook(_structure(self.hb, cfg, self.htf))
         self.higher = []  # [(tf, _LevelSet)] next higher TF first
         if cfg["htf_targets"] or cfg["overlap_rule"]:
             for tf in HIGHER_ALL[story]:
@@ -435,7 +460,7 @@ class _Ctx:
         if self.cfg["htf_targets"]:
             for _, H in self.higher:
                 kls += H.fresh_prices(sell, H.closed_upto(t))
-        erl = [s[2] for s in self.osw.at(closed_o) if s[1] == ("L" if sell else "H")]
+        erl = [s[2] for s in self.tsw.at(closed_o) if s[1] == ("L" if sell else "H")]
         beyond = lambda xs: [x for x in xs if (x < ref if sell else x > ref)]  # noqa: E731
         near = lambda xs: (max(xs) if sell else min(xs)) if xs else None  # noqa: E731
         kls, erl = beyond(kls), beyond(erl)
@@ -611,10 +636,10 @@ class _Ctx:
         if self.hb is None:
             return {}
         w_end = self.hb["end"].to_numpy()
-        wbr = _breaks(_structure(self.hb, cfg))  # [(known_at, dir, protected)]
+        wbr = _breaks(_structure(self.hb, cfg, self.htf))  # [(known_at, dir, protected)]
         w_t = np.array([w_end[i] for i, _, _ in wbr]) if wbr else np.array([], dtype=w_end.dtype)
         out = {}
-        for d, up, prot in _breaks(_structure(pd.DataFrame({"close": O["close"]}), cfg)):
+        for d, up, prot in _breaks(_structure(pd.DataFrame({"close": O["close"]}), cfg, self.otf)):
             j = int(np.searchsorted(w_t, self.o_start[d], "right")) - 1  # last W break closed before d
             if j < 0 or wbr[j][1] != up or d + 1 >= len(self.first_k):
                 continue

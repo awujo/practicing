@@ -19,14 +19,14 @@ def test_engine_outputs_identical_to_golden(i):
     pair, seed, hours, cfg = G.CASES[i]
     assert (want["pair"], want["seed"], want["hours"], want["cfg"]) == (pair, seed, hours, cfg)
     h1 = G.data(pair, seed, hours)
+    cfg = G.pinned(cfg)  # pre-2026-10-14 defaults (next_day_rule flag, trend_mode protected, D entries H4,H2,H1)
     from slk.entry import find_entries
     from slk.story import current_tap, find_stories
     for st in ("D", "W", "M"):
         s = find_stories(pair, h1, st, cfg)
         assert G._clean(_strip(s)) == want["stories"][st], st
         # golden = the old engine: continuation only, breakout on c4 only; new row keys removed
-        old = find_entries(pair, h1, s, {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off",
-                                         "stop_at": "rejection", "story_end": False}, cfg, sim=True)
+        old = find_entries(pair, h1, s, G.OLD_ENTRY, cfg, sim=True)
         old = [{k: v for k, v in r.items() if k not in ("model", "bo_candle", "stop_at")} for r in old]
         assert G._clean(old) == want["entries"][st], st
         find_entries(pair, h1, s, None, cfg, sim=True)  # default models run without errors

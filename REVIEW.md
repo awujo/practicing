@@ -330,3 +330,83 @@ Data notes for (a): IC's 22:00 UTC rollover hour can spike the D low/high by 20+
 112.859 without that hour), and IC prices differ from Kevin's feed by 0.5-2 pips. `level_tol_pips` (default 0) would
 widen wick tests only; none of the remaining FAILs is a wick miss, so it stays 0. A rollover-spike filter is a data
 choice for the owner (not built).
+
+## Owner decisions 2026-10-14: Next Day Rule, D entry TFs, weekly trend definition
+
+**1. `next_day_rule` default = `require`** (slk/story.py DEFAULT, slk/settings.py, CONTRACT.md, STRATEGY §5 #21).
+Backtest (IC cTrader, 28 pairs 2018-2025, REPORT.md Variants): under `flag`, next-day breakouts 5312 stories, 79.2%
+target, +43.6 R; same-day 4867 stories, 74.1%, −188.3 R; the whole variant `require` −33.2 R vs `flag` −160.4 R.
+Kevin: "the next day ... not that particular day" [T qns-pt2@1946-1962], story-line-pt3@1358-1401.
+
+**2. D-story entry TFs = H4, H2 only, no H1 fallback** (`ENTRY_TFS`, setting `entry_tfs` `D=H4,H2;W=D,H4;M=W,D`,
+`settings.DEFAULT_LADDER`). Kevin [T entry-2@668-713, entry3@2011-2016]; backtest TP1 avg R by entry TF: H4 −0.01,
+H2 −0.15, H1 −0.24. Entries stay alert-only. Backtest variant `entry_tfs` (D=H4,H2 vs D=H4,H2,H1) added.
+
+**3. Weekly trend definition (`trend_mode`, the open issue of "Examples diagnosis")** — new setting, default `leg`.
+
+How the trend was computed: `structure.structural_swings(close, pivots(close, swing_pivot=2))` → `trend()` (HH+HL /
+LH+LL, a close beyond the last opposite swing flips it) for the origin trend (`find_stories`, `current_tap`), the
+higher-TF trend (`_Ctx.htf_trend`: HTF filter, pullback rule, CADJPY W trend), the W and D breaks of the alignment
+start (`_breaks`) and the entry alignment (`entry._Pair.last_break`, H4/W). A swing is fixed when a close goes beyond
+the opposite candidate, and the candidate is an order-2 close turning point. In a strong leg there is no order-2
+pullback, so nothing moves the protected low: EURAUD W stayed "up" on the 1.6026 low of Nov 2024 (fixed Mar 2025)
+through the whole 2025 range and the Jan-Feb 2026 drop; GBPAUD W turned down only at the Jan 30 2026 close.
+
+Kevin's teaching:
+- weekly-recap@343-376: "there is already a weekly BOS here, the downside ... let me use this one. This was the last
+  V-shaped key level ... mark this guy as the BOS, like the external breakout on weekly timeframe". Frames (opened):
+  sheet_005 t=340 he first puts the line on the May-2025 pullback low 1.72482, then moves it to **1.71717** at the
+  base of the March-2025 rally = the last V before the top (t=360); sheet_008 t=560: GBPAUD W line **2.0362** from the
+  Sep 15 2025 V to Mar 2026 (the last V before the Oct 2025 drop).
+- basic-ms-pt3@875-1211: the change of character is the close above "this last lower high"; "some people want to see
+  the second break as extra confirmation, but me personally I use this first one" = the most recent swing, not an
+  older protected one. Taught as plain structure, on no particular timeframe.
+- weekly-recap@420-490, 976-1000 (sheet_005-008): on the D line chart he marks every valley of the leg and "the most
+  recent one ... the daily is still breaking structure to the downside" — the same last-swing rule on D.
+
+**Definition built (`trend_mode` = `leg`):** the same structural-swing algorithm, but the candidate swings are V/A-shape
+turns (close-line turning points of order `level_pivot` = 1, the two-candle turn a key level is) instead of order 2.
+In a leg each minor high that price closes above fixes the V before it as the new protected low ("the low that
+pushed price to take out the high", basic-ms@456-620), so the protected low is the last V of the leg; once the leg
+tops out it stays there until a close below it = BMS. **All timeframes** (M/W/D origin and HTF trend, alignment
+breaks, entry-alignment H4/W breaks), because Kevin teaches one structure rule for every TF and shows the last-V rule
+on W and on D; a W-only variant was measured and is not better (below). ERL targets keep the order-2 swings
+(`_Ctx.tsw`), so the change is the trend only. On IC: EURAUD leg V = 1.72229 (Mar 24 2025 week; Kevin 1.71717 on his
+feed), first W close below = week of Jan 19 2026 (1.7144), the exact BOS week of the example spec; GBPAUD leg V =
+2.03864 (week of Sep 8 2025; Kevin 2.0362), close below in the week of Oct 27 2025 (the W is already down from the
+Oct 20 week after a close below the July V 2.04527). No per-example code; nothing was tuned (order 1 is the existing
+`level_pivot`).
+
+**Kevin's examples, offline** (`python -m slk.verify_examples --data data/examples`):
+| engine | PASS | changes |
+|---|---|---|
+| HEAD before (flag, protected) | 6/9 | open: euraud-sells, gbpaud-sells, gbpjpy |
+| decision 1 (require, protected) | 7/9 | gbpjpy-d-no-h4-breakout PASS: the Jan 19 H4 breakout was inside the tap day, so no story (Kevin at the Jan 20 class: "breakout has not been confirmed") |
+| decisions 1+3 (require, leg) = new default | **8/9** | euraud-sells PASS (D SELLs Jan 26 / Feb 2 after the W BOS), gbpaud-sells PASS; **usdcad-d-sell-friday-sweep FAIL** |
+| require, leg on W/M only | 8/9 | same as all TFs |
+
+USDCAD under `leg`: on IC the W closed 1.39156 on Fri Jan 9 2026, above its last A-shape 1.3798 (week of Dec 15) →
+by Kevin's own last-swing rule the W turned up, so at the Thu Jan 15 tap D and W are both up and the D SELL is
+against the W (no pullback case). Kevin [T story-line-pt4@1229-1500] sells from a weekly sweep of the previous week
+high into a D key level and never states the weekly trend there; the 28-pip A on his feed may not exist. Not hacked;
+`test_examples_on_offline_data` asserts it passes under `protected` and fails under `leg`.
+
+**Offline mini-backtest** (8 example pairs, IC H1 2022-2026, D+W+M stories, trade view, tradable = not M/W NO_TRADE):
+| next_day_rule | trend_mode | stories | win% | avg R | total R | D: stories / R | W: stories / R | M: stories / R |
+|---|---|---|---|---|---|---|---|---|
+| require | protected | 1031 | 75.4 | −0.039 | −40.4 | 880 / −40.5 | 138 / −1.0 | 13 / +1.1 |
+| require | **leg** | 1013 | 77.5 | −0.010 | **−10.6** | 867 / −16.0 | 131 / +2.1 | 15 / +3.3 |
+| require | leg (W/M only) | 976 | 77.0 | −0.014 | −13.3 | 830 / −18.7 | 131 / +2.1 | 15 / +3.3 |
+| flag | protected | 1713 | 72.9 | −0.037 | −62.8 | 1459 / −65.3 | 230 / +3.8 | 24 / −1.2 |
+| flag | leg | 1698 | 73.3 | −0.031 | −53.4 | 1449 / −52.8 | 221 / −0.9 | 28 / +0.2 |
+D total R per pair (require, protected → leg): CADJPY −7.0 → −4.4, EURAUD −5.4 → +7.7, EURGBP −4.0 → −4.1, GBPAUD
+−4.9 → −5.6, GBPJPY −13.4 → −9.4, USDCAD −0.6 → +4.0, USDCHF −0.7 → +0.2, USDJPY −4.6 → −4.3. More D stories become
+M/W NO_TRADE under leg (109 vs 51): the W stories turn earlier. Small sample, near zero either way: not a tuning
+argument; the default follows Kevin. The full 28-pair comparison is the backtest variant `trend_mode` leg/protected
+(REPORT.md "Variants", CI on push).
+
+Tests: frozen goldens (engine_golden.json, _v07, _v05) pin the old values through config (`tests/engine_golden.py`
+`PIN` = next_day_rule flag + trend_mode protected, `OLD_ENTRY` with the H4,H2,H1 ladder); no golden file was
+regenerated. New/changed: `test_weekly_leg_trend_euraud_gbpaud`, `test_examples_on_offline_data` (8/9 defaults, old
+passes under protected), GBPJPY retap test (flag pinned + require has no story from Jan 12), Next Day Rule tests
+(flag pinned where they test flag), settings/webapp defaults.

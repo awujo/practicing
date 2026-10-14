@@ -13,7 +13,7 @@ PAIRS = ("EURUSD GBPUSD AUDUSD NZDUSD USDJPY USDCAD USDCHF EURGBP EURJPY EURAUD 
 STORY_KEYS = ("D", "W", "M")
 TF_ORDER = ("H1", "H2", "H4", "D", "W", "M")
 ORIGIN = {"D": "D", "W": "W", "M": "M"}
-DEFAULT_LADDER = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
+DEFAULT_LADDER = {"D": ("H4", "H2"), "W": ("D", "H4"), "M": ("W", "D")}
 GROUPS = ("Markets", "Bias rules", "Entry rules", "Risk & trading", "Alerts")
 
 
@@ -22,7 +22,7 @@ def _s(name, type_, default, group, help_, **kw):
 
 
 # type: bool ("on"/"off"), int, float, choice (one of choices), multi (subset of choices, CSV),
-# pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2,H1;W=D,H4;M=W,D"), tz (IANA time zone name)
+# pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2;W=D,H4;M=W,D"), tz (IANA time zone name)
 SCHEMA = [
     _s("pairs", "pairs", "", "Markets", "Pairs the bot watches. Empty = all 28.", choices=PAIRS),
     _s("stories", "multi", "D,W,M", "Markets", "Story timeframes: Monthly, Weekly, Daily.",
@@ -75,14 +75,20 @@ SCHEMA = [
        "the daily candle sweeps the previous day low (high) into that daily open-close level and closes back -> daily bias confirmed at that close WITHOUT an "
        "H4 breakout, target the previous high (low) (cadjpy-bd@400-995). Kevin uses it: on. Off = H4 breakout "
        "always required."),
-    _s("next_day_rule", "choice", "flag", "Bias rules",
+    _s("trend_mode", "choice", "leg", "Bias rules",
+       "How the trend (M/W/D, and H4 for entry alignment) is read on the line chart. leg = Kevin: a close beyond "
+       "the LAST V-shape (A-shape) of the current leg flips it (weekly-recap@343-376 'this was the last V-shaped "
+       "key level ... the BOS'; basic-ms-pt3@875-1211 'I use this first one'). protected = before 2026-10-14: only "
+       "a close beyond the older protected swing (order 2) flips it, which can stay years old.",
+       choices=["leg", "protected"]),
+    _s("next_day_rule", "choice", "require", "Bias rules",
        "Next Day Rule: the lower-TF breakout should come AFTER the rejection candle (e.g. the D tap candle) has "
        "closed (story-line-pt3@1358-1401 'go to four hours after the close of this day'; qns-pt2@1946-1962). "
        "flag = keep every story and mark it (alert shows Next Day Rule or same-day breakout); require = drop "
        "stories whose breakout is inside the rejection candle. Same for M->W, W->D, D->H4.",
        choices=["flag", "require"]),
-    _s("entry_tfs", "ladder", "D=H4,H2,H1;W=D,H4;M=W,D", "Entry rules",
-       "Entry timeframes per story, tried in this order (lower than the story TF)."),
+    _s("entry_tfs", "ladder", "D=H4,H2;W=D,H4;M=W,D", "Entry rules",
+       "Entry timeframes per story, tried in this order (lower than the story TF). D story: H4, H2 only (entry-2@668-713 no entry below 2H; entry3@2011-2016 \"90% of my entries are from four hours or two hours\"). Add H1 only to experiment."),
     _s("continuation_entries", "bool", "on", "Entry rules",
        "Entry alerts on/off (all entry models), taken only after the story is confirmed. "
        "External break = confirms direction (bias). Internal break = continuation entries only."),
@@ -288,7 +294,7 @@ def story_cfg(vals):
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
                                  "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
-                                 "cadjpy_exception", "next_day_rule")}
+                                 "cadjpy_exception", "next_day_rule", "trend_mode")}
 
 
 def entry_cfg(vals):

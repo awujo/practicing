@@ -35,9 +35,9 @@ import pandas as pd
 
 from .candles import nominal_end, resample
 from .story import DEFAULT as STORY_DEFAULT, STORIES, pip
-from .structure import pivots, structural_swings
+from .structure import pivots
 
-ENTRY_TFS = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
+ENTRY_TFS = {"D": ("H4", "H2"), "W": ("D", "H4"), "M": ("W", "D")}
 
 DEFAULT = {
     "tap_tol_pips": 1.0,       # c3 wick within this distance of the line counts as a touch (same as story)
@@ -199,7 +199,7 @@ class _Pair:
         """Direction ('up' / 'down' / None) of the last structural break (STRATEGY §1: a close beyond the last
         close-line swing, story swing_pivot) on tf known at time t (that bar closed by t)."""
         if tf not in self._brk:
-            from .story import _breaks  # noqa: PLC0415 (story imports nothing from entry)
+            from .story import _breaks, _structure  # noqa: PLC0415 (story imports nothing from entry)
             B = self.bars(tf)
             end = B["end"].copy()
             if tf in ("D", "W", "M") and len(end):  # a still-forming last bar is not closed (live data)
@@ -208,7 +208,7 @@ class _Pair:
             elif len(end):  # H4/H2 too: live h1 ends inside a forming H4 (only the H1 hour is closed)
                 end[-1] = max(end[-1], B["start"][-1] + np.timedelta64(int(tf[1:]), "h"))
             c = B["close"]
-            br = _breaks(structural_swings(c, pivots(c, self.cfg["story_cfg"]["swing_pivot"])))
+            br = _breaks(_structure({"close": c}, self.cfg["story_cfg"], tf))  # trend swings (trend_mode)
             self._brk[tf] = (np.array([end[i] for i, _, _ in br], dtype="datetime64[ns]"), [u for _, u, _ in br])
         when, ups = self._brk[tf]
         j = int(np.searchsorted(when, t, "right")) - 1

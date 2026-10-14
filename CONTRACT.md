@@ -44,11 +44,13 @@ Never print secrets. Never commit them.
     (0-5), `level_tol_pips` (0-5, default 0: broker tolerance in pips added to `tap_tol_pips` for wick touches only
     (tap, fresh check, first touch, re-taps); never for closes, a break of point B is a real close; STRATEGY §5 #25),
     `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
-    (on/off, all on by default), `overlap_tol_pips` (0-20, default 3), `next_day_rule` (`flag` (default) | `require`)
+    (on/off, all on by default), `overlap_tol_pips` (0-20, default 3), `next_day_rule` (`require` (default since 2026-10-14) | `flag`),
+    `trend_mode` (`leg` (default since 2026-10-14: a close beyond the last V/A-shape of the current leg flips the
+    trend) | `protected` (the older protected order-2 swing; before 2026-10-14))
   - Entry rules: `continuation_entries` (on/off = all entry alerts), `entry_models` (`continuation,qmr`; at least one),
     `entry_alignment` (`d_h4` (default) | `w_d_h4` | `off`: continuation entries only when D story + last H4 break
     (+ last W break) agree; entry cfg key `alignment`),
-    `breakout_max_bars` (1-12, default 5), `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2,H1;W=D,H4;M=W,D`),
+    `breakout_max_bars` (1-12, default 5), `skip_first_retracement` (on/off), `entry_tfs` (`D=H4,H2;W=D,H4;M=W,D` since 2026-10-14: D story H4/2H only, no 1H),
     `max_stop_pips` (5-50), `tp1_rr` (0.5-5), `avoid_pairs` (CSV)
   - Risk & trading: `kill_switch` (on/off), `auto_trade` (off/confirm/auto), `risk_pct` (0.1-2)
   - Alerts: `alert_tapped`, `alert_confirmed` (also the RETRACE follow-up), `alert_ended`, `alert_entry`,

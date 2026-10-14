@@ -81,15 +81,59 @@ def test_alignment_ends_at_retap_gbpjpy():
     the alignment chain from Jan 12."""
     h1 = V.load_csv("GBPJPY", DATA)
     h1 = h1[h1.index < pd.Timestamp("2026-01-20 04:00", tz="UTC")]
-    last = S.find_stories("GBPJPY", h1, "D")[-1]
+    # next_day_rule flag (the default when this was written): the Jan 19 story breaks out inside the tap day, so
+    # "require" (default since 2026-10-14) drops it, which is checked below
+    flag = {"next_day_rule": "flag"}
+    last = S.find_stories("GBPJPY", h1, "D", flag)[-1]
     assert last["rule"] == "standard" and abs(last["level"] - 210.809) < 0.02 and last["tap_time"] == "2026-01-18 22:00"
-    old = S.find_stories("GBPJPY", h1, "D", {"align_retap_ends": False})[-1]
+    assert last["next_day"] is False
+    old = S.find_stories("GBPJPY", h1, "D", {**flag, "align_retap_ends": False})[-1]
     assert old["rule"] == "alignment"
+    # require: no D story at all from Jan 12 on (Kevin at the Jan 20 class: "breakout has not been confirmed")
+    assert all(r["tap_time"] < "2026-01-12" for r in S.find_stories("GBPJPY", h1, "D"))
+
+
+PASS_BEFORE = ("cadjpy-d-buy", "cadjpy-d-buy-no-h4-exception", "eurgbp-d-buy-overlap", "usdcad-d-sell-friday-sweep",
+               "usdjpy-d-no-h4-breakout", "usdchf-d-reject-no-h4")
 
 
 def test_examples_on_offline_data():
+    """Defaults (2026-10-14: next_day_rule require, trend_mode leg): 8/9. The examples-diagnosis passes still pass
+    with the old trend definition; with `leg` USDCAD is the one known difference (REVIEW "Weekly trend definition":
+    on IC the weekly closed above its last A-shape 1.3798 on Jan 9 2026, so W is up and the D SELL is against it)."""
     cfg = build_cfg()[0]
+    assert cfg["trend_mode"] == "leg" and cfg["next_day_rule"] == "require"
     res = {ex["id"]: V.check(ex, V.load_csv(ex["pair"], DATA), cfg)[0] for ex in V.EXAMPLES}
-    for i in ("cadjpy-d-buy", "cadjpy-d-buy-no-h4-exception", "eurgbp-d-buy-overlap", "usdcad-d-sell-friday-sweep",
-              "usdjpy-d-no-h4-breakout", "usdchf-d-reject-no-h4"):
-        assert res[i] == "PASS", i
+    for i in PASS_BEFORE + ("euraud-sells", "gbpaud-sells", "gbpjpy-d-no-h4-breakout"):
+        if i != "usdcad-d-sell-friday-sweep":
+            assert res[i] == "PASS", i
+    assert res["usdcad-d-sell-friday-sweep"] == "FAIL"
+    old = {**cfg, "trend_mode": "protected"}
+    for i in PASS_BEFORE + ("gbpjpy-d-no-h4-breakout",):
+        ex = next(e for e in V.EXAMPLES if e["id"] == i)
+        assert V.check(ex, V.load_csv(ex["pair"], DATA), old)[0] == "PASS", i
+
+
+def test_weekly_leg_trend_euraud_gbpaud():
+    """weekly-recap@343-376 + F sheet_005/008: the weekly BOS is a W close below the LAST V-shape of the leg.
+    EURAUD: V 1.72229 (IC; Kevin 1.71717, base of the Mar 2025 rally), first W close below = week of Jan 19 2026
+    (1.7144). GBPAUD: last V 2.03864 (Sep 2025; Kevin 2.0362), close below in the week of Oct 27 2025. The old
+    `protected` reading kept both W trends up (EURAUD protected low 1.6026 from Nov 2024)."""
+    from slk.candles import resample
+    from slk.structure import swings, trend
+    for pair, after, prot in (("EURAUD", "2026-01-18", 1.72229), ("GBPAUD", "2025-10-26", 2.03864)):
+        w = resample(V.load_csv(pair, DATA), "W")
+        st = pd.to_datetime(w["start"]).astype(str).str[:10].tolist()  # week start (Sunday UTC)
+        i1, end = st.index(after), st.index("2026-02-15")
+        c = w["close"].to_numpy()
+        leg = S._structure(w, {**S.DEFAULT, "trend_mode": "leg"}, "W")
+        # the V is a leg swing, broken by a close at that week (= the swing after it is fixed there)
+        assert any(s[1] == "L" and abs(s[2] - prot) < 1e-5 for s in leg), pair
+        assert c[i1] < prot and min(c[:i1][-20:]) >= prot, pair
+        assert all(trend(swings(leg, i), c[i]) == "down" for i in range(i1, end + 1)), pair
+        old = S._structure(w, {**S.DEFAULT, "trend_mode": "protected"}, "W")
+        assert trend(swings(old, i1), c[i1]) == "up", pair
+    w = resample(V.load_csv("EURAUD", DATA), "W")  # EURAUD: up the week before (no whipsaw in the 2025 range)
+    i0 = pd.to_datetime(w["start"]).astype(str).str[:10].tolist().index("2026-01-11")
+    leg = S._structure(w, {**S.DEFAULT, "trend_mode": "leg"}, "W")
+    assert all(trend(swings(leg, i), w["close"].iat[i]) == "up" for i in range(i0 - 35, i0 + 1))

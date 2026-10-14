@@ -20,7 +20,7 @@ def test_zero_tolerance_equals_golden(i):
     pair, seed, hours, cfg = G.CASES[i]
     want = GOLDEN[i]
     h1 = G.data(pair, seed, hours)
-    cfg0 = {**cfg, "level_tol_pips": 0.0}
+    cfg0 = {**G.pinned(cfg), "level_tol_pips": 0.0}
     for st in ("D", "W", "M"):
         assert G._clean(G.strip_labels(find_stories(pair, h1, st, cfg0))) == want["stories"][st], st
         cuts = range(len(h1) // 2, len(h1), max(1, len(h1) // 25))
@@ -32,7 +32,7 @@ def test_level_tol_adds_to_tap_tolerance():
     pair, seed, hours, cfg = G.CASES[5]
     assert cfg["tap_tol_pips"] == 3.0
     h1 = G.data(pair, seed, hours)
-    cfg2 = {**cfg, "tap_tol_pips": 1.0, "level_tol_pips": 2.0}
+    cfg2 = {**G.pinned(cfg), "tap_tol_pips": 1.0, "level_tol_pips": 2.0}
     for st in ("D", "W"):
         assert G._clean(G.strip_labels(find_stories(pair, h1, st, cfg2))) == GOLDEN[5]["stories"][st], st
 

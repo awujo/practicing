@@ -46,11 +46,12 @@ def test_next_day_rule_flag_and_require():
     r = started(NEXT)
     assert r["next_day"] is True and r["breakout_time"] == "2023-01-10 02:00" and r["retrace"] is False
     assert started(NEXT, next_day_rule="require")["breakout_time"] == r["breakout_time"]
-    s = started(SAME)
+    s = started(SAME, next_day_rule="flag")
     assert s["next_day"] is False and s["breakout_time"] == "2023-01-09 14:00"     # inside the tap day
     assert s["confirm_time"] == "2023-01-09 22:00"                                 # flag: kept, only marked
     assert started(SAME, next_day_rule="require") is None                         # require: rejected
-    assert S.DEFAULT["next_day_rule"] == "flag"
+    assert started(SAME) is None                                                  # default since 2026-10-14
+    assert S.DEFAULT["next_day_rule"] == "require"  # owner decision 2026-10-14 (backtest: same-day -188 R)
     # level "formed" = the D candle at whose close the A-shape existed (bear day 3, opens Wed 22:00 UTC)
     assert r["level_time"] == "2023-01-04 22:00"
 
@@ -60,7 +61,7 @@ def test_next_day_rule_on_walk_all_story_tfs(st):
     """Same rule on M->W, W->D, D->H4: next_day == the breakout candle opens at/after the origin candle's close."""
     h1 = walk(24 * 1500, 3)
     otf = S.STORIES[st][0]
-    rows = S.find_stories("EURUSD", h1, st)
+    rows = S.find_stories("EURUSD", h1, st, {"next_day_rule": "flag"})
     for r in rows:
         if r["rule"].startswith("cadjpy"):
             assert r["next_day"] is None and r["retrace"] is None
@@ -71,6 +72,7 @@ def test_next_day_rule_on_walk_all_story_tfs(st):
         assert r["next_day"] == (r["breakout_time"] >= tap_end), r
     req = S.find_stories("EURUSD", h1, st, {"next_day_rule": "require"})
     assert all(r["next_day"] is not False for r in req)
+    assert S.find_stories("EURUSD", h1, st) == req  # require is the default
     if st == "D":
         assert any(r["next_day"] is False for r in rows) and len(req) < len(rows)
 
@@ -84,16 +86,16 @@ def test_require_applies_to_current_tap_and_flip():
         assert S.current_tap("EURUSD", cut, "D", {**OFF, "next_day_rule": rule}) is None
     X = ctx(days(SAME), next_day_rule="require")
     lv = [l for l in X.levels if l.kind == "A" and np.isclose(l.price, 1.010)][0]
-    assert X.break_search(lv, 5) is None and ctx(days(SAME)).break_search(lv, 5) is not None
+    assert X.break_search(lv, 5) is None and ctx(days(SAME), next_day_rule="flag").break_search(lv, 5) is not None
 
 
 # ------------------------------------------------------------------ 4. retrace warning
 def test_retrace_flag_only():
     """qns-pt2@1946-2030: the breakout day "should not trade back into the breakout zone" -> flagged, not cancelled
     (the D close back through B is the cancel rule, same_bar_close)."""
-    r = started(RETRACE)
+    r = started(RETRACE, next_day_rule="flag")  # a retrace needs a same-day breakout: only kept under flag
     assert r["retrace"] is True and r["confirm_time"] == "2023-01-09 22:00" and r["kevin_outcome"] != "invalidated"
-    assert started(SAME)["retrace"] is False
+    assert started(SAME, next_day_rule="flag")["retrace"] is False
 
 
 # ------------------------------------------------------------------ 2/5. alerts
@@ -107,7 +109,8 @@ def test_alert_lines_from_engine_story():
     assert "Rejection candle: D1 Mon 9 Jan (open Sun 8 Jan 23:00 WAT, close Mon 9 Jan 23:00 WAT)" in m
     assert "H4 candle open Tue 10 Jan 03:00 WAT, close Tue 10 Jan 07:00 WAT" in m
     assert "✅ Next Day Rule" in m and "Not an entry signal" in m
-    t = live.format_alert("CONFIRMED", live.to_row({**started(RETRACE), "pair": "EURUSD"}, "CONFIRMED"), "UTC")
+    t = live.format_alert("CONFIRMED", live.to_row({**started(RETRACE, next_day_rule="flag"), "pair": "EURUSD"},
+                                                   "CONFIRMED"), "UTC")
     assert "⚠ same-day breakout" in t and "⚠ Retrace" in t and "Mon 9 Jan 10:00 UTC" in t
 
 
@@ -160,7 +163,8 @@ def test_early_breakout_alert_once_never_confirmed():
 # ------------------------------------------------------------------ settings
 def test_new_settings():
     v = SET.load({})
-    assert v["next_day_rule"] == "flag" and v["display_tz"] == "Africa/Lagos"
+    assert v["next_day_rule"] == "require" and v["display_tz"] == "Africa/Lagos" and v["trend_mode"] == "leg"
+    assert SET.story_cfg(v)["trend_mode"] == S.DEFAULT["trend_mode"] == "leg"
     assert v["early_breakout_alert"] is False and v["entry_alignment"] == "d_h4"
     assert SET.story_cfg(v)["next_day_rule"] == S.DEFAULT["next_day_rule"]
     from slk import entry
@@ -171,8 +175,10 @@ def test_new_settings():
         with pytest.raises(ValueError):
             SET.clean(k, bad)
     assert SET.load({"display_tz": "Nowhere/Land"})["display_tz"] == "Africa/Lagos"
-    cfg, ecfg, vals = live.build_cfg({"next_day_rule": "require", "entry_alignment": "off"})
-    assert cfg["next_day_rule"] == "require" and ecfg["alignment"] == "off"
+    cfg, ecfg, vals = live.build_cfg({"next_day_rule": "flag", "entry_alignment": "off", "trend_mode": "protected"})
+    assert cfg["next_day_rule"] == "flag" and ecfg["alignment"] == "off" and cfg["trend_mode"] == "protected"
+    with pytest.raises(ValueError):
+        SET.clean("trend_mode", "swing")
 
 
 # ------------------------------------------------------------------ entry alignment
@@ -194,7 +200,7 @@ def test_entry_alignment_d_h4_and_w_d_h4():
             assert all(px.last_break(tf, t) == want for tf in ALIGN_TFS[mode]), r
     # last_break = direction of the last structural break closed by t (story._breaks on the close line)
     H4 = px.bars("H4")
-    br = S._breaks(S.structural_swings(H4["close"], S.pivots(H4["close"], S.DEFAULT["swing_pivot"])))
+    br = S._breaks(S._structure(H4, S.DEFAULT, "H4"))  # the trend swings (trend_mode)
     i, up, _ = br[len(br) // 2]
     assert px.last_break("H4", H4["end"][i]) == ("up" if up else "down")
     assert px.last_break("H4", H4["start"][0]) is None
@@ -214,7 +220,7 @@ def test_entry_alignment_ignores_forming_h4():
     for n in range(200, 1200):
         cut = h1[h1.index < H4["start"].iloc[n] + pd.Timedelta(hours=1)]  # first hour of H4 bar n only
         c = resample(cut, "H4")["close"].to_numpy()
-        br = S._breaks(S.structural_swings(c, S.pivots(c, S.DEFAULT["swing_pivot"])))
+        br = S._breaks(S._structure({"close": c}, S.DEFAULT, "H4"))  # the trend swings (trend_mode)
         if not br or br[-1][0] != len(c) - 1:
             continue
         px = _Pair("EURUSD", cut, {**EDEF, "story_cfg": S.DEFAULT, "entry_tfs": {}})
