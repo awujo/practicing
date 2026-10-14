@@ -1,0 +1,11 @@
+FAIL  cadjpy-d-buy: no tap of a fresh trend level in the window
+FAIL  cadjpy-d-buy-no-h4-exception: D BUY CONFIRMED [cadjpy] level 113.597 (flip) B 113.597 target 114.291 tap 2026-02-02 confirmed 2026-02-02 22:00
+FAIL  eurgbp-d-buy-overlap: no tap of a fresh trend level in the window
+PASS  gbpjpy-d-no-h4-breakout: no tap of a fresh trend level in the window
+FAIL  usdjpy-d-no-h4-breakout: D BUY CONFIRMED [cadjpy] level 157.460 (flip) B 157.460 target 158.296 tap 2026-01-19 confirmed 2026-01-19 22:00
+FAIL  usdcad-d-sell-friday-sweep: no tap of a fresh trend level in the window
+FAIL  euraud-sells: D BUY INVALIDATED [standard] level 1.73276 (V) B 1.73561 target 1.74886 tap 2026-01-19 confirmed 2026-01-20 22:00 ended: D close back through the origin level 1.73276
+PASS  gbpaud-sells: D SELL TARGET_HIT [cadjpy] level 1.97321 (flip) B 1.97321 target 1.96301 tap 2026-02-02 confirmed 2026-02-02 22:00 ended: target 1.96301 reached; D SELL TARGET_HIT [standard] level 1.95289 (flip) B 1.95026 target 1.93688 tap 2026-02-04 confirmed 2026-02-06 22:00 ended: target 1.93688 reached; D SELL TARGET_HIT [standard] level 1.93215 (flip) B 1.92886 target 1.92775 tap 2026-02-10 confirmed 2026-02-10 22:00 ended: target 1.92775 reached; D SELL TARGET_HIT [standard] level 1.93021 (flip) B 1.92090 target 1.91374 tap 2026-02-13 confirmed 2026-02-17 22:00 ended: target 1.91374 reached; D SELL CONFIRMED [alignment] level 1.92943 (align) B 1.90790 target 1.90031 tap 2026-02-19 confirmed 2026-02-20 22:00
+PASS  usdchf-d-reject-no-h4: no tap of a fresh trend level in the window
+3/9 PASS -> reports/EXAMPLES.md
+exit=0
