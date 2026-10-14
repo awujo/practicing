@@ -37,7 +37,9 @@ Never print secrets. Never commit them.
   `slk/settings.py` (`SCHEMA`: name, type, default, min/max/choices, help; stdlib only), used by `slk/live.py`
   (`build_cfg`, re-read every run; missing/invalid -> code default = Kevin's rules) and by the Mini App
   (`GET /api/settings/schema`, `GET/POST /api/settings`, server-side validation):
-  - Markets: `pairs` (CSV, empty = all 28), `stories` (D,W,M; at least one)
+  - Markets: `pairs` (CSV, empty = all 28; metals XAUUSD/XAGUSD and IC index names allowed), `stories` (D,W,M; at least one)
+  - Every `*_pips` key is in the symbol's pips (STRATEGY §5 #28: XAUUSD 0.1, XAGUSD 0.01, indices 1.0, or the cTrader
+    `pipPosition`)
   - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
     point B; internal breaks = entries only, except Kevin's CADJPY exception `cadjpy_exception`): `trend_filter`,
     `htf_filter`, `pullback_levels`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
@@ -80,6 +82,11 @@ backfill restores it). A store is saved only when `python -m slk.store --check -
 passes. Old `candles-v2-` / `candles-partial-` (Dukascopy) caches are never restored. API:
 `store.update(pair, now, days=..)`, `store.update_all(pairs, now, days)`, `store.recent(pair, days)`,
 `store.hourly(pair, y0, y1)` (final months only), `python -m slk.store --start 2018 [--notice]` (backfill).
+A cTrader file's meta also carries `"sym": {symbol_id, name, digits, pip_position}`; loading it registers the pip
+size / decimals in `slk/instruments.py` (pip = 10^-pipPosition; else the static table: FX 0.0001, JPY 0.01, XAUUSD
+0.1, XAGUSD 0.01, indices 1.0). Non-FX Dukascopy names / scale: `slk/instruments.DUKASCOPY` (XAUUSD, XAGUSD 1e3;
+US500 -> USA500IDXUSD ...). Debug: `python -m slk.debug_pair --pair XAUUSD` (workflow `debug-pair.yml`) writes
+`data/debug/<PAIR>_H1_<source>.csv.gz` + `<PAIR>_explain.txt`.
 
 Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_setting(k, default)`,
 `get_settings()`, `set_setting(k, v)`), using PyMySQL.

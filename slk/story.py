@@ -16,6 +16,7 @@ Rules built here (each story dict carries `rule`, and `end_reason` once it is ov
 import numpy as np
 import pandas as pd
 
+from . import instruments
 from .candles import nominal_end, resample
 from .levels import Level, find_levels, run_levels, sweep_taps, touch_tol
 from .structure import SwingBook, pivots, structural_swings, swings, trend
@@ -113,7 +114,9 @@ def apply_mw_filter(d_stories, m_stories, w_stories, cfg=None):
 
 
 def pip(pair):
-    return 0.01 if pair.endswith("JPY") else 0.0001
+    """Pip size of the symbol: cTrader pipPosition when known, else FX 0.0001 / JPY 0.01 / XAUUSD 0.1 / XAGUSD 0.01 /
+    indices 1.0 (slk/instruments.py)."""
+    return instruments.pip(pair)
 
 
 def find_stories(pair, h1, story, cfg=None):

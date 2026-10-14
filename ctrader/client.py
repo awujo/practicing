@@ -16,10 +16,11 @@ import ssl
 import threading
 import time
 import uuid
+from collections import deque
 from datetime import datetime, timedelta, timezone
 
 from ctrader import sizing, tokens
-from ctrader.framing import common, decode_body, encode, model, oa, read_frame
+from ctrader.framing import REGISTRY, common, decode_body, encode, model, oa, read_frame
 
 HOSTS = {"demo": "demo.ctraderapi.com", "live": "live.ctraderapi.com"}
 PORT = 5035
@@ -44,6 +45,51 @@ class CTraderError(Exception):
     def __init__(self, code, description=""):
         super().__init__(f"{code}: {description}")
         self.code, self.description = code, description
+
+
+# Replies that answer (or kill) a pending request even when they do not carry its clientMsgId: an error without
+# clientMsgId, or the server dropping the account / the app / the token. Before 2026-10-14 `request` waited only for
+# its own clientMsgId, so such a reply made it time out ("no response from cTrader") instead of raising the error.
+_ERRORS = (oa.ProtoOAErrorRes, common.ProtoErrorRes, oa.ProtoOAOrderErrorEvent)
+_FATAL = (oa.ProtoOAAccountDisconnectEvent, oa.ProtoOAClientDisconnectEvent, oa.ProtoOAAccountsTokenInvalidatedEvent)
+_NAMES = {k: v.__name__ for k, v in REGISTRY.items()}
+
+
+def _describe(msg, ptype, cid):
+    """'ProtoOAErrorRes cid=ab12 CH_SYMBOL_NOT_FOUND: text' for diagnostics (no secrets: ids and codes only)."""
+    s = _NAMES.get(ptype, f"payloadType {ptype}") + (f" cid={cid}" if cid else " (no cid)")
+    if msg is not None and hasattr(msg, "errorCode") and msg.HasField("errorCode"):
+        s += f" {msg.errorCode}"
+        if hasattr(msg, "description") and msg.description:
+            s += f": {msg.description[:120]}"
+    if isinstance(msg, oa.ProtoOAClientDisconnectEvent) or isinstance(msg, oa.ProtoOAAccountsTokenInvalidatedEvent):
+        s += f" reason={msg.reason[:120]}"
+    return s
+
+
+def _fields(msg):
+    """' (symbolId 41, H1, 2026-10-07T12:00..2026-10-14T12:00)' for the request fields that matter in a trendbar /
+    symbol request (diagnostics)."""
+    out = []
+    names = msg.DESCRIPTOR.fields_by_name
+    if "symbolId" in names:
+        v = msg.symbolId
+        out.append(f"symbolId {list(v) if not isinstance(v, int) else v}")
+    if "period" in names and msg.HasField("period"):
+        out.append(model.ProtoOATrendbarPeriod.Name(msg.period))
+    if "fromTimestamp" in names and msg.HasField("fromTimestamp"):
+        iso = lambda ms: datetime.fromtimestamp(ms / 1000, timezone.utc).strftime("%Y-%m-%dT%H:%M")  # noqa: E731
+        out.append(f"{iso(msg.fromTimestamp)}..{iso(msg.toTimestamp)}")
+    return f" ({', '.join(out)})" if out else ""
+
+
+def _fatal_error(msg):
+    """CTraderError for a server event that ends every pending request (account/app disconnected, token gone)."""
+    if isinstance(msg, oa.ProtoOAAccountDisconnectEvent):
+        return CTraderError("ACCOUNT_DISCONNECTED", "server disconnected the trading account (re-auth needed)")
+    if isinstance(msg, oa.ProtoOAClientDisconnectEvent):
+        return CTraderError("CLIENT_DISCONNECTED", msg.reason)
+    return CTraderError("ACCESS_TOKEN_INVALIDATED", msg.reason)
 
 
 class TradingRefused(Exception):
@@ -88,6 +134,9 @@ class CTraderClient:
         self._hist_last = 0.0
         self._symbols = {}       # normalized name -> info dict
         self._symbol_names = {}  # symbolId -> name
+        self._pending = set()    # clientMsgIds of requests still waiting for their reply
+        self._abandoned = deque(maxlen=200)  # clientMsgIds of requests that timed out (late replies are ignored)
+        self._recent = deque(maxlen=80)  # (monotonic time, description) of every non-heartbeat message: diagnostics
 
     # ---------------------------------------------------------------- transport
     def connect(self):
@@ -135,6 +184,7 @@ class CTraderClient:
                 msg, ptype, cid = decode_body(read_frame(self._sock))
                 if ptype == common.ProtoHeartbeatEvent().payloadType:
                     continue
+                self._recent.append((time.monotonic(), _describe(msg, ptype, cid)))
                 with self._cond:
                     self._inbox.append((msg, ptype, cid))
                     if len(self._inbox) > 2000:
@@ -174,13 +224,49 @@ class CTraderClient:
         if isinstance(msg, oa.ProtoOAOrderErrorEvent):
             raise CTraderError(msg.errorCode, msg.description)
 
+    def _orphan(self, m, c):
+        """An error / disconnect event that belongs to no other pending request: it answers the waiting one."""
+        if isinstance(m, _FATAL):
+            return True
+        return isinstance(m, _ERRORS) and (c is None or (c not in self._pending and c not in self._abandoned))
+
     def request(self, msg, timeout=None, pred=None):
-        """Send msg and return the first reply carrying our clientMsgId (or matching pred)."""
+        """Send msg and return the first reply carrying our clientMsgId (or matching pred). An error reply without
+        a clientMsgId (or with one no pending request owns) and an account/app/token disconnect event are raised as
+        CTraderError instead of waiting for the timeout; a timeout says what the server did send meanwhile."""
         cid = uuid.uuid4().hex[:16]
-        self._send(msg, cid)
-        reply = self._wait(pred(cid) if pred else (lambda m, t, c: c == cid), timeout)
+        base = pred(cid) if pred else (lambda m, t, c: c == cid)
+        t0 = time.monotonic()
+        with self._cond:
+            self._pending.add(cid)
+        try:
+            self._send(msg, cid)
+            reply = self._wait(lambda m, t, c: base(m, t, c) or self._orphan(m, c), timeout)
+        except TimeoutError:
+            self._abandoned.append(cid)
+            raise TimeoutError(f"no response from cTrader to {type(msg).__name__}{_fields(msg)} within "
+                               f"{timeout or self.timeout:.0f}s; {self._since(t0)}") from None
+        finally:
+            with self._cond:
+                self._pending.discard(cid)
+        if isinstance(reply, _FATAL):
+            raise _fatal_error(reply)
         self._raise_if_error(reply)
         return reply
+
+    def _since(self, t0):
+        seen = [d for t, d in list(self._recent) if t >= t0]
+        if not seen:
+            return "nothing else received meanwhile"
+        return f"received meanwhile ({len(seen)}): " + "; ".join(seen[-8:])
+
+    def ping(self, timeout=10):
+        """True when the connection still answers (ProtoOAVersionReq): tells a dead link from an ignored request."""
+        try:
+            self.request(oa.ProtoOAVersionReq(), timeout=timeout)
+            return True
+        except Exception:
+            return False
 
     # ---------------------------------------------------------------- auth
     def app_auth(self):
@@ -239,15 +325,18 @@ class CTraderClient:
                 "leverage": t.leverageInCents / 100, "deposit_asset_id": t.depositAssetId, "money_digits": digits}
 
     def get_symbols(self, names=None):
-        """name -> {symbol_id, name, digits, pip_position, lot_size, min_volume, max_volume, step_volume}.
-        `names` limits the detail request to those symbols (faster)."""
+        """name -> {symbol_id, name, digits, pip_position, lot_size, min_volume, max_volume, step_volume,
+        candidates}. `names` limits the detail request to those symbols (faster).
+        Several broker symbols can normalise to one name (e.g. 'XAUUSD' and 'XAU/USD' or 'XAUUSD.'): the one whose
+        name is exactly the requested one wins, else the lowest id; `candidates` lists all their ids (exact name
+        first), tried in turn by trendbar_rows when the server ignores a trendbar request for one of them."""
         light = self.request(oa.ProtoOASymbolsListReq(ctidTraderAccountId=self.account_id)).symbol
         by_id = {s.symbolId: s.symbolName for s in light if s.enabled}
         if names:
             wanted = {_norm(n) for n in names}
             by_id = {i: n for i, n in by_id.items() if _norm(n) in wanted}
         ids = list(by_id)
-        out = {}
+        out, groups = {}, {}
         for k in range(0, len(ids), 100):
             r = self.request(oa.ProtoOASymbolByIdReq(ctidTraderAccountId=self.account_id, symbolId=ids[k:k + 100]))
             for s in r.symbol:
@@ -256,8 +345,13 @@ class CTraderClient:
                         "lot_size": s.lotSize, "min_volume": s.minVolume, "max_volume": s.maxVolume,
                         "step_volume": s.stepVolume}
                 out[name] = info
-                self._symbols[_norm(name)] = info
+                groups.setdefault(_norm(name), []).append(info)
                 self._symbol_names[s.symbolId] = name
+        for key, infos in groups.items():
+            infos.sort(key=lambda i: (i["name"].upper() != key, i["symbol_id"]))
+            best = infos[0]
+            best["candidates"] = [i["symbol_id"] for i in infos]
+            self._symbols[key] = best
         return out
 
     def symbol(self, name):
@@ -299,6 +393,7 @@ class CTraderClient:
         Uses the largest window per request the API allows (_CHUNK); a reply that leaves a hole of more than
         4 days at either end of its window (a server-side bar cap) is completed by more requests."""
         info = self.symbol(symbol)
+        ids = list(info.get("candidates") or [info["symbol_id"]])
         lo_all = _ms(start) // 1000
         hi_all = _ms(end or datetime.now(timezone.utc)) // 1000
         span = self.max_span(period)
@@ -319,8 +414,23 @@ class CTraderClient:
                 raise RuntimeError("trendbar_rows: too many requests")
             try:
                 r = self._hist_request(oa.ProtoOAGetTrendbarsReq(
-                    ctidTraderAccountId=self.account_id, symbolId=info["symbol_id"], period=pe,
+                    ctidTraderAccountId=self.account_id, symbolId=ids[0], period=pe,
                     fromTimestamp=a * 1000, toTimestamp=b * 1000))
+            except TimeoutError as e:
+                # The server ignored the request. A dead link -> ConnectionError (the store reconnects once); a live
+                # link -> try the next broker symbol of that name, else raise with what we know.
+                alive = self.ping()
+                if not alive:
+                    raise ConnectionError(f"{e}; connection dead after it") from None
+                if len(ids) > 1:
+                    print(f"{symbol}: no trendbars for symbolId {ids[0]}, trying {ids[1]}", flush=True)
+                    ids.pop(0)
+                    todo.append((a, b))
+                    continue
+                raise CTraderError("NO_TRENDBARS_REPLY",
+                                   f"{e}; connection still alive (ping ok): the server ignores trendbar requests for "
+                                   f"{info['name']} id {info['symbol_id']} digits {info['digits']} pipPosition "
+                                   f"{info['pip_position']}, candidates {info.get('candidates')}") from None
             except CTraderError as e:
                 if str(e.code) == "INCORRECT_BOUNDARIES" and b - a > 86400:
                     mid = a + (b - a) // 2  # window still too wide for the server: halve it

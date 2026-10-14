@@ -10,7 +10,8 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from ctrader import sizing, tokens
-from ctrader.client import CTraderClient, CTraderError
+from ctrader.client import CTraderClient, CTraderError, _norm
+from ctrader.framing import oa
 
 REQUIRED = ("CTRADER_CLIENT_ID", "CTRADER_CLIENT_SECRET")
 
@@ -48,9 +49,18 @@ def run(args, env, settings):
               f"balance {t['balance']:.2f}, leverage 1:{t['leverage']:.0f}")
         info = c.symbol(args.symbol)
         print(f"{info['name']}: id {info['symbol_id']}, digits {info['digits']}, pipPosition {info['pip_position']}, "
-              f"lotSize {info['lot_size']}, minVolume {info['min_volume']}, step {info['step_volume']}")
+              f"lotSize {info['lot_size']}, minVolume {info['min_volume']}, step {info['step_volume']}, "
+              f"candidates {info.get('candidates')}")
+        print(similar_symbols(c, args.symbol))
+        print(pip_check(args.symbol, info))
         now = datetime.now(timezone.utc)
-        df = c.get_trendbars(args.symbol, "H1", now - timedelta(days=7), now)
+        try:
+            df = c.get_trendbars(args.symbol, "H1", now - timedelta(days=7), now)
+        except Exception as e:
+            print(f"H1 trendbars FAILED: {type(e).__name__}: {e}")
+            for line in probe(c, args.symbol, now):
+                print(line)
+            return 1
         print(f"last 5 H1 bars ({len(df)} in 7 days):")
         print(df.tail(5).to_string())
 
@@ -79,6 +89,36 @@ def run(args, env, settings):
             if r.get("position_id"):
                 print(f"close: {c.close_position(r['position_id'])}")
     return 0
+
+
+def similar_symbols(c, symbol):
+    """Every enabled broker symbol whose name contains the requested one (e.g. XAUUSD, XAUUSD.r, XAU/USD)."""
+    want = _norm(symbol)
+    light = c.request(oa.ProtoOASymbolsListReq(ctidTraderAccountId=c.account_id, includeArchivedSymbols=False)).symbol
+    hits = [(s.symbolId, s.symbolName, s.enabled) for s in light if want in _norm(s.symbolName)]
+    return f"symbols like {want}: " + (", ".join(f"{n} id {i}{'' if e else ' (disabled)'}" for i, n, e in hits)
+                                       or "none")
+
+
+def pip_check(symbol, info):
+    try:
+        from slk import instruments
+    except Exception:  # slk needs pandas/numpy only; the smoke job installs them
+        return "pip table not available"
+    m = instruments.mismatch(symbol, info["pip_position"])
+    return m or f"pip {10.0 ** -info['pip_position']:g} = table {instruments.static(symbol)[0]:g}"
+
+
+def probe(c, symbol, now):
+    """After a failed H1 request: is the link alive, and does any other period / a short window answer?"""
+    out = [f"ping after the failure: {'ok' if c.ping() else 'NO ANSWER (connection dead)'}"]
+    for period, span in (("H1", timedelta(hours=6)), ("D1", timedelta(days=30)), ("M1", timedelta(hours=2))):
+        try:
+            rows = c.trendbar_rows(symbol, period, now - span, now)
+            out.append(f"{period} {span}: {len(rows)} bars" + (f", last {rows[-1][:5]}" if rows else ""))
+        except Exception as e:
+            out.append(f"{period} {span}: {type(e).__name__}: {e}")
+    return out
 
 
 if __name__ == "__main__":

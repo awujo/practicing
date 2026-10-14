@@ -226,3 +226,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   leg −10.6 R vs protected −40.4 R. Backtest variants + `trend_mode`, `entry_tfs`. Goldens pinned via config
   (tests/engine_golden.py PIN / OLD_ENTRY), no golden regenerated. 213 tests pass.
 - 2026-10-14: Owner decisions live (3e78108): CI backtest D 5186 stories 80.1% win, kevin_target 82.5%; examples 8/9 on CI (USDCAD fails under trend_mode leg). verify-examples now reruns when the bias engine changes.
+- 2026-10-14: Gold alert check (REVIEW "Gold alert check" G1-G4): cTrader client raises error replies without our
+  clientMsgId / disconnect events instead of timing out, timeout text lists what arrived, exact symbol name +
+  candidate ids, NO_TRENDBARS_REPLY on a live link; smoke prints symbol ids/pip and probes; per-symbol pip and
+  decimals `slk/instruments.py` (cTrader pipPosition, else XAUUSD 0.1, XAGUSD 0.01, indices 1.0; STRATEGY §5 #28);
+  Dukascopy XAGUSD/indices scale + names; `python -m slk.debug_pair` (debug-pair.yml: cTrader, else Dukascopy +
+  point B explanation). B 4171.50 = Dukascopy feed × "last A before the FIRST touch" (rule unchanged); target =
+  nearest rule. Dispatch: ctrader-smoke symbol XAUUSD, debug-pair XAUUSD.

@@ -16,12 +16,20 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from . import instruments
+
 URL = "https://datafeed.dukascopy.com/datafeed/{pair}/{y}/{m:02d}/BID_candles_hour_1.bi5"
 CACHE = os.environ.get("SLK_CACHE", "data")
 
 
 def point(pair):
-    return 1e3 if pair.endswith("JPY") or pair.startswith("XAU") else 1e5
+    """Dukascopy price scale: FX 1e5, JPY quote 1e3, metals (XAUUSD, XAGUSD) and indices 1e3 (slk/instruments)."""
+    return instruments.dukascopy(pair)[1]
+
+
+def _name(pair):
+    """Dukascopy datafeed symbol (US500 -> USA500IDXUSD; FX and metals unchanged)."""
+    return instruments.dukascopy(pair)[0]
 
 
 _GAP = float(os.environ.get("SLK_MIN_GAP", "0"))  # seconds between requests per thread (backfill: be gentle)
@@ -46,7 +54,7 @@ def _get(url, tries=7):
 
 
 def _month(pair, y, m):
-    raw = _get(URL.format(pair=pair, y=y, m=m - 1))
+    raw = _get(URL.format(pair=_name(pair), y=y, m=m - 1))
     if not raw:
         return []
     data = lzma.decompress(raw)
@@ -88,7 +96,7 @@ def hourly(pair, start_year, end_year):
             got[i] = _month(pair, *ym)
     rows = [r for chunk in got for r in chunk]
     if not rows:
-        raise RuntimeError(f"no data for {pair}; first URL: {URL.format(pair=pair, y=start_year, m=0)}")
+        raise RuntimeError(f"no data for {pair}; first URL: {URL.format(pair=_name(pair), y=start_year, m=0)}")
     df = pd.DataFrame(rows, columns=["t", "open", "high", "low", "close"])
     df.index = pd.to_datetime(df.pop("t"), unit="s", utc=True)
     df = df[~df.index.duplicated()].sort_index()
@@ -135,7 +143,7 @@ def _ticks(raw, start, p):
 
 
 def _day(pair, y, m, d):
-    raw = _get(DAY_URL.format(pair=pair, y=y, m=m - 1, d=d))
+    raw = _get(DAY_URL.format(pair=_name(pair), y=y, m=m - 1, d=d))
     if not raw:
         return []
     start = datetime(y, m, d, tzinfo=timezone.utc).timestamp()
@@ -143,7 +151,7 @@ def _day(pair, y, m, d):
 
 
 def _hour(pair, y, m, d, h):
-    raw = _get(TICK_URL.format(pair=pair, y=y, m=m - 1, d=d, h=h))
+    raw = _get(TICK_URL.format(pair=_name(pair), y=y, m=m - 1, d=d, h=h))
     if not raw:
         return []
     start = datetime(y, m, d, h, tzinfo=timezone.utc).timestamp()

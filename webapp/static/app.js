@@ -6,7 +6,7 @@
 
   const $ = (s) => document.querySelector(s);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const num = (v) => (v === null || v === undefined || v === "" ? "–" : Number(v).toFixed(Number(v) > 50 ? 3 : 5));
+  const num = (v) => (v === null || v === undefined || v === "" ? "–" : Number(v).toFixed(Number(v) > 500 ? 2 : Number(v) > 20 ? 3 : 5));  // gold/indices 2, JPY/silver 3, FX 5
   const dt = (v) => (v ? String(v).replace("T", " ").slice(0, 16) : "–");
   const dur = (s) => {
     if (s === null || s === undefined) return "–";

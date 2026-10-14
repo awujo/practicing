@@ -34,7 +34,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
 
-from . import data
+from . import data, instruments
 
 DIR = os.environ.get("SLK_STORE", os.path.join(os.environ.get("SLK_CACHE", "data"), "store"))
 COLS = ("open", "high", "low", "close")
@@ -80,14 +80,14 @@ def default_source():
     return "ctrader" if ok else "dukascopy"
 
 
-def _safe(e):
+def _safe(e, limit=300):
     """Error text without secrets: values of CTRADER_* / DATABASE_* / TELEGRAM_* env vars and long digit runs
-    (account numbers) are masked."""
+    (account numbers) are masked; cut at `limit` characters."""
     text = f"{type(e).__name__}: {e}"
     for k, v in os.environ.items():
         if k.startswith(("CTRADER_", "DATABASE_", "TELEGRAM_")) and v and len(v.strip()) >= 8:
             text = text.replace(v.strip(), "***")
-    return re.sub(r"\d{6,}", "#", text)[:300]
+    return re.sub(r"\d{6,}", "#", text)[:limit]
 
 
 def warn(msg):
@@ -131,6 +131,14 @@ class CTraderFeed:
     def prefetch(self, pairs):
         """One symbol-list request for all pairs instead of two per pair."""
         self.c.get_symbols(list(pairs))
+
+    def info(self, pair):
+        """cTrader symbol info of the pair kept in the file meta: {symbol_id, name, digits, pip_position} (pip size
+        and price decimals for slk/instruments)."""
+        if not hasattr(self.c, "symbol"):
+            return None
+        i = self.c.symbol(pair)
+        return {k: i.get(k) for k in ("symbol_id", "name", "digits", "pip_position")}
 
     def bars(self, pair, lo, hi):
         """Clean H1 rows (t, o, h, l, c) with open time in [lo, hi) (UTC seconds)."""
@@ -210,6 +218,7 @@ class Pair:
         self.path = os.path.join(self.root, f"{pair}.npz")
         self._empty()
         self.src = None
+        self.sym = None  # cTrader symbol info (meta "sym"): pip_position / digits -> slk.instruments.register
         self.changed = False
         self.failed = []  # month files that could not be downloaded this run (retried next run)
         if os.path.exists(self.path):
@@ -219,6 +228,9 @@ class Pair:
                 meta = json.loads(str(z["meta"]))
                 self.done_m, self.done_d = set(meta.get("m", [])), set(meta.get("d", []))
                 self.src = meta.get("src") or ("dukascopy" if len(self.df) else None)  # v2 files: Dukascopy
+                self.sym = meta.get("sym") if self.src == "ctrader" else None
+                if self.sym:
+                    instruments.register(pair, self.sym.get("pip_position"), self.sym.get("digits"))
             except Exception as e:  # broken file: start again
                 print(f"store {pair}: unreadable ({type(e).__name__}), rebuilding", flush=True)
                 self._empty()
@@ -232,6 +244,7 @@ class Pair:
         if self.src not in (None, source):
             print(f"store {self.pair}: file source {self.src} != {source}, rebuilding", flush=True)
             self._empty()
+            self.sym = None
             self.changed = True
         self.src = source
         return self
@@ -269,7 +282,8 @@ class Pair:
         tmp = self.path + ".tmp.npz"
         d = self.df
         np.savez_compressed(tmp, t=d.index.to_numpy(np.int64), q=d["q"].to_numpy(np.int8),
-                            meta=json.dumps({"m": sorted(self.done_m), "d": sorted(self.done_d), "src": self.src}),
+                            meta=json.dumps({"m": sorted(self.done_m), "d": sorted(self.done_d), "src": self.src,
+                                             **({"sym": self.sym} if self.sym else {})}),
                             **{c: d[c].to_numpy(float) for c in COLS})
         os.replace(tmp, self.path)
         self.changed = False
@@ -402,6 +416,16 @@ class Pair:
     def update_ctrader(self, feed, now, since):
         """cTrader: completed months from `since` that are not final yet, then the current month's new bars."""
         now, since = _utc(now), _utc(since)
+        info = getattr(feed, "info", None)
+        if info is not None:
+            try:
+                sym = info(self.pair)
+            except Exception as e:  # symbol info is a nice-to-have (pip size); the bars are what matters
+                print(f"{self.pair}: cTrader symbol info failed ({_safe(e)})", flush=True)
+                sym = None
+            if sym and sym != self.sym:
+                self.sym, self.changed = sym, True
+                instruments.register(self.pair, sym.get("pip_position"), sym.get("digits"))
         months = [(p.year, p.month) for p in pd.period_range(pd.Period(year=since.year, month=since.month, freq="M"),
                                                              pd.Period(year=now.year, month=now.month, freq="M"),
                                                              freq="M")
@@ -483,7 +507,7 @@ def _ctrader_each(pairs, fn):
         try:
             fn(p, feed)
         except Exception as e:
-            failed[p] = f"cTrader: {_safe(e)}"
+            failed[p] = f"cTrader: {_safe(e, 700)}"
             print(f"{p}: {failed[p]}", flush=True)
     return failed
 

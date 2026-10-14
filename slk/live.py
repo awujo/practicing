@@ -24,6 +24,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
 
+from . import instruments
 from . import settings as S
 from . import store as candles_store
 from .backtest import PAIRS
@@ -136,12 +137,15 @@ def resolve(row, h1, now, cfg):
 
 _SRC = os.path.dirname(os.path.abspath(__file__))
 ENGINE_VERSION = hashlib.sha1(b"".join(open(os.path.join(_SRC, f), "rb").read() for f in
-                                       ("story.py", "levels.py", "structure.py", "candles.py"))).hexdigest()
+                                       ("story.py", "levels.py", "structure.py", "candles.py",
+                                        "instruments.py"))).hexdigest()
 
 
-def _digest(h, story, cfg):
-    """Fingerprint of everything find_stories/current_tap see: engine code, story, cfg and the closed bars."""
-    m = hashlib.sha1(f"{ENGINE_VERSION}|{story}|{json.dumps(cfg, sort_keys=True, default=str)}".encode())
+def _digest(h, story, cfg, pair=""):
+    """Fingerprint of everything find_stories/current_tap see: engine code, story, the pair's pip size, cfg and the
+    closed bars."""
+    m = hashlib.sha1(f"{ENGINE_VERSION}|{story}|{instruments.pip(pair) if pair else ''}|"
+                     f"{json.dumps(cfg, sort_keys=True, default=str)}".encode())
     m.update(h.index.asi8.tobytes())
     m.update(str(h.index.dtype).encode())
     m.update(np.ascontiguousarray(h[["open", "high", "low", "close"]].to_numpy(float)).tobytes())
@@ -152,7 +156,7 @@ def engine_rows(pair, h, st, cfg, memo=None):
     """(find_stories, current_tap) on bars cut at the last closed origin bar. With a memo dict the result is
     reused while no new origin bar has closed (same bars -> same digest -> same output), so W/M (and D within
     the day) are not recomputed every hour."""
-    key = _digest(h, st, cfg) if memo is not None else None
+    key = _digest(h, st, cfg, pair) if memo is not None else None
     hit = memo.get(st) if memo is not None else None
     if hit and hit["key"] == key:
         return copy.deepcopy(hit["stories"]), copy.deepcopy(hit["tap"])
@@ -400,9 +404,8 @@ def format_entry_alert(event, e, auto_trade="off"):
 
 # ------------------------------------------------------------------ messages
 def fmt_price(pair, x):
-    if x is None:
-        return "-"
-    return f"{x:.3f}" if pip(pair) == 0.01 else f"{x:.5f}"
+    """Price with the symbol's decimals: FX 5, JPY 3, XAUUSD 2, XAGUSD 3, indices 2 (cTrader digits when known)."""
+    return instruments.fmt(pair, x)
 
 
 def fmt_time(t, tz=None):

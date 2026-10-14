@@ -1,5 +1,6 @@
 name: SLK debug pair
-# Exports one pair's H1 candles (IC Markets cTrader) to data/debug/ so a bias alert can be checked offline.
+# Exports one pair's H1 candles (IC Markets cTrader, Dukascopy if cTrader fails) to data/debug/ and explains its
+# current bias story (slk/debug_pair.py), so a bias alert can be checked offline.
 on:
   workflow_dispatch:
     inputs:
@@ -30,26 +31,13 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install -r requirements-dev.txt
-      - name: Export
-        run: |
-          python - <<'PY'
-          import os, re, pandas as pd
-          from slk import store
-          pair = re.sub(r"[^A-Z0-9]", "", os.environ["IN_PAIR"].upper())[:12]
-          days = int(os.environ["IN_DAYS"])
-          try:
-              store.update(pair, days=days)
-          except Exception as e:
-              import traceback; tb = traceback.format_exc().replace("\n", " | ")[-1500:]
-              print(f"::error::{type(e).__name__}: {store._safe(e)} || {store._safe(Exception(tb))}"); raise
-          df = store.Pair(pair).frame()
-          os.makedirs("data/debug", exist_ok=True)
-          df.to_csv(f"data/debug/{pair}_H1.csv.gz", float_format="%.6g")
-          print(f"::notice::{pair} {len(df)} bars {df.index[0]}..{df.index[-1]}")
-          PY
+      - name: Export and explain
+        # cTrader first; on failure the error (with the client's diagnostics) is a ::warning:: and the Dukascopy
+        # fallback (what live then uses) is exported. data/debug/<PAIR>_explain.txt = point B / first touch / target.
+        run: python -m slk.debug_pair --pair "$IN_PAIR" --days "$IN_DAYS" --out data/debug
       - name: Commit
         run: |
           git config user.name "slk-debug"; git config user.email "actions@github.com"
-          git add -f data/debug/*.csv.gz
+          git add -f data/debug/*.csv.gz data/debug/*_explain.txt
           git commit -m "debug export ${IN_PAIR}" || exit 0
           git pull --rebase -X theirs origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
