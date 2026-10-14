@@ -50,10 +50,24 @@ jobs:
           [ -f reports/EXAMPLES.md ] && cat reports/EXAMPLES.md >> "$GITHUB_STEP_SUMMARY"
           grep -q "| \*\*FAIL\*\*\|| \*\*ERROR\*\*" reports/EXAMPLES.md 2>/dev/null && echo "::warning::some Kevin examples FAIL, see reports/EXAMPLES.md"
           exit $rc
+      - name: Export example candles (so the examples can be debugged offline)
+        if: always()
+        run: |
+          python - <<'PY'
+          import os, pandas as pd
+          from slk import store
+          os.makedirs("data/examples", exist_ok=True)
+          for p in ["CADJPY", "EURGBP", "GBPJPY", "USDJPY", "USDCAD", "EURAUD", "GBPAUD", "USDCHF"]:
+              df = store.Pair(p).frame()
+              df = df[df.index >= pd.Timestamp("2022-01-01", tz="UTC")]
+              df.to_csv(f"data/examples/{p}_H1.csv.gz", float_format="%.6g")
+              print(p, len(df))
+          PY
       - name: Commit report
         if: always()
         run: |
           git config user.name "slk-verify"; git config user.email "actions@github.com"
+          git add -f data/examples/*.csv.gz 2>/dev/null || true
           git add reports/EXAMPLES.md reports/examples_run.log 2>/dev/null || true
           git commit -m "Kevin examples replay ($(date -u +%F))" || exit 0
           git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
