@@ -1,0 +1,51 @@
+name: SLK debug pair
+# Exports one pair's H1 candles (IC Markets cTrader) to data/debug/ so a bias alert can be checked offline.
+on:
+  workflow_dispatch:
+    inputs:
+      pair: {description: "Symbol, e.g. XAUUSD", default: "XAUUSD"}
+      days: {description: "Days of history", default: "1500"}
+permissions:
+  contents: write
+concurrency: {group: slk-debug-pair, cancel-in-progress: false}
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      IN_PAIR: ${{ inputs.pair }}
+      IN_DAYS: ${{ inputs.days }}
+      SLK_STORE: data/dbgstore
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements-dev.txt
+      - name: Export
+        run: |
+          python - <<'PY'
+          import os, re, pandas as pd
+          from slk import store
+          pair = re.sub(r"[^A-Z0-9]", "", os.environ["IN_PAIR"].upper())[:12]
+          days = int(os.environ["IN_DAYS"])
+          store.update(pair, days=days)
+          df = store.Pair(pair).frame()
+          os.makedirs("data/debug", exist_ok=True)
+          df.to_csv(f"data/debug/{pair}_H1.csv.gz", float_format="%.6g")
+          print(f"::notice::{pair} {len(df)} bars {df.index[0]}..{df.index[-1]}")
+          PY
+      - name: Commit
+        run: |
+          git config user.name "slk-debug"; git config user.email "actions@github.com"
+          git add -f data/debug/*.csv.gz
+          git commit -m "debug export ${IN_PAIR}" || exit 0
+          git pull --rebase -X theirs origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
