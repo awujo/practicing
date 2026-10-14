@@ -37,7 +37,11 @@ jobs:
           from slk import store
           pair = re.sub(r"[^A-Z0-9]", "", os.environ["IN_PAIR"].upper())[:12]
           days = int(os.environ["IN_DAYS"])
-          store.update(pair, days=days)
+          try:
+              store.update(pair, days=days)
+          except Exception as e:
+              import traceback; tb = traceback.format_exc().replace("\n", " | ")[-1500:]
+              print(f"::error::{type(e).__name__}: {store._safe(e)} || {store._safe(Exception(tb))}"); raise
           df = store.Pair(pair).frame()
           os.makedirs("data/debug", exist_ok=True)
           df.to_csv(f"data/debug/{pair}_H1.csv.gz", float_format="%.6g")
