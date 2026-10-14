@@ -1,0 +1,170 @@
+# SLK story-line backtest
+
+Each row = a confirmed story (tap-reject-close + breakout of point B). Trade view: entry at the
+confirmation close, stop beyond the tap wick, target = nearest opposite level/swing.
+`win%` = target before stop. `expectancy_R` = average result in R (>0 = profitable before costs).
+`kevin_target%` = target reached before an origin close back through the level (Kevin's invalidation).
+
+Settings: `{"level_pivot": 1, "swing_pivot": 2, "b_pivot": 1, "use_oc": true, "trend_filter": true, "tap_tol_pips": 1.0, "level_tol_pips": 0.0, "max_wait": 5, "max_retaps": 3, "same_bar_close": true, "htf_filter": true, "stop_buffer_pips": 2.0, "max_hold": 20, "mw_conflict_filter": true, "sweep_start": true, "most_recent_level": true, "flip_end": true, "htf_targets": true, "overlap_rule": true, "overlap_tol_pips": 3.0, "alignment_start": true, "cadjpy_exception": true, "next_day_rule": "flag"}`
+
+## By story
+
+| story   |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:--------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| D       |      7117 |   72.5 |           0.59 |         -0.022 |    -157   |            76.8 |               63.7 |
+| M       |       202 |   61.4 |           0.73 |         -0.05  |     -10.1 |            66.8 |              307   |
+| W       |      1095 |   69.3 |           0.46 |         -0.041 |     -44.6 |            73.3 |              159.1 |
+
+## By story and side
+
+|               |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:--------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| ('D', 'BUY')  |      3555 |   71.8 |           0.59 |         -0.03  |    -105.3 |            76.4 |               67.4 |
+| ('D', 'SELL') |      3562 |   73.3 |           0.59 |         -0.015 |     -51.7 |            77.2 |               60.5 |
+| ('M', 'BUY')  |        87 |   66.7 |           0.82 |          0.002 |       0.2 |            67.8 |              351.3 |
+| ('M', 'SELL') |       115 |   57.4 |           0.67 |         -0.09  |     -10.3 |            66.1 |              277.2 |
+| ('W', 'BUY')  |       518 |   69.9 |           0.45 |         -0.039 |     -20.4 |            73.4 |              179.4 |
+| ('W', 'SELL') |       577 |   68.8 |           0.47 |         -0.042 |     -24.2 |            73.3 |              139.4 |
+
+## By story and higher-TF agreement
+
+|                    |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:-------------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| ('D', 'agree')     |      5940 |   71.8 |           0.63 |         -0.024 |    -140.4 |            76.3 |               62.6 |
+| ('D', 'not agree') |      1177 |   76.3 |           0.36 |         -0.014 |     -16.7 |            79.5 |               68.5 |
+| ('M', 'no HTF')    |       202 |   61.4 |           0.73 |         -0.05  |     -10.1 |            66.8 |              307   |
+| ('W', 'agree')     |       732 |   69.5 |           0.46 |         -0.039 |     -28.9 |            73.6 |              160   |
+| ('W', 'not agree') |       363 |   68.9 |           0.45 |         -0.043 |     -15.7 |            72.7 |              152.3 |
+
+## By story and level type
+
+|                |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:---------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| ('D', 'A')     |       415 |   77.1 |           0.37 |          0.001 |       0.3 |            79.8 |               74.3 |
+| ('D', 'OC')    |       609 |   69.6 |           0.69 |         -0.054 |     -32.9 |            73.7 |               60.9 |
+| ('D', 'V')     |       386 |   75.4 |           0.35 |         -0.031 |     -11.9 |            79   |               77.2 |
+| ('D', 'align') |       510 |   79.8 |           0.49 |         -0.005 |      -2.5 |            85.1 |               92.2 |
+| ('D', 'flip')  |      4228 |   71.1 |           0.67 |         -0.021 |     -86.9 |            75.8 |               58.2 |
+| ('D', 'sweep') |       969 |   73.7 |           0.41 |         -0.024 |     -23   |            76.6 |               70.9 |
+| ('M', 'A')     |        22 |   50   |           0.48 |         -0.37  |      -8.1 |            54.5 |              377.4 |
+| ('M', 'OC')    |         7 |  100   |           0.44 |          0.437 |       3.1 |           100   |              247   |
+| ('M', 'V')     |        27 |   63   |           0.72 |         -0.129 |      -3.5 |            66.7 |              418.4 |
+| ('M', 'flip')  |       107 |   55.1 |           0.88 |         -0.036 |      -3.9 |            60.7 |              274.9 |
+| ('M', 'sweep') |        39 |   76.9 |           0.54 |          0.059 |       2.3 |            84.6 |              315.1 |
+| ('W', 'A')     |        79 |   65.8 |           0.47 |         -0.082 |      -6.5 |            69.6 |              144.2 |
+| ('W', 'OC')    |        95 |   76.8 |           0.39 |          0.02  |       1.9 |            80   |              170.8 |
+| ('W', 'V')     |        79 |   69.6 |           0.46 |         -0.055 |      -4.4 |            69.6 |              240.8 |
+| ('W', 'flip')  |       643 |   70   |           0.46 |         -0.031 |     -20.2 |            74.8 |              152.7 |
+| ('W', 'sweep') |       199 |   64.8 |           0.51 |         -0.078 |     -15.6 |            68.3 |              157.4 |
+
+## By story and rule
+
+|                           |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:--------------------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| ('D', 'alignment')        |       510 |   79.8 |           0.49 |         -0.005 |      -2.5 |            85.1 |               92.2 |
+| ('D', 'cadjpy')           |      1482 |   59   |           1.32 |         -0.061 |     -90.2 |            67.1 |               41.6 |
+| ('D', 'cadjpy+overlap')   |        54 |   46.3 |           1.4  |         -0.162 |      -8.7 |            48.1 |               33.1 |
+| ('D', 'flip')             |        73 |   72.6 |           0.59 |          0.104 |       7.6 |            79.5 |               49.3 |
+| ('D', 'flip+overlap')     |         1 |  100   |           1.02 |          1.02  |       1   |           100   |               37.4 |
+| ('D', 'standard')         |      3840 |   77.2 |           0.36 |         -0.01  |     -39   |            80.3 |               69.2 |
+| ('D', 'standard+overlap') |       188 |   66.5 |           0.5  |         -0.011 |      -2.1 |            68.1 |               82   |
+| ('D', 'sweep_start')      |       969 |   73.7 |           0.41 |         -0.024 |     -23   |            76.6 |               70.9 |
+| ('M', 'flip')             |        12 |   41.7 |           0.87 |         -0.298 |      -3.6 |            58.3 |              254   |
+| ('M', 'standard')         |       151 |   58.9 |           0.77 |         -0.059 |      -8.9 |            62.9 |              336   |
+| ('M', 'sweep_start')      |        39 |   76.9 |           0.54 |          0.059 |       2.3 |            84.6 |              315.1 |
+| ('W', 'flip')             |        17 |   76.5 |           0.65 |          0.187 |       3.2 |            82.4 |              115.1 |
+| ('W', 'flip+overlap')     |         1 |    0   |           1.18 |         -1     |      -1   |             0   |              128.3 |
+| ('W', 'standard')         |       842 |   70.9 |           0.44 |         -0.031 |     -26   |            75.2 |              159.9 |
+| ('W', 'standard+overlap') |        36 |   55.6 |           0.56 |         -0.146 |      -5.3 |            55.6 |              160.6 |
+| ('W', 'sweep_start')      |       199 |   64.8 |           0.51 |         -0.078 |     -15.6 |            68.3 |              157.4 |
+
+## By year (D story)
+
+|   year |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|-------:|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+|   2018 |       905 |   67.2 |           0.66 |         -0.04  |     -36.3 |            71.5 |               67.9 |
+|   2019 |       952 |   70.1 |           0.56 |         -0.025 |     -23.5 |            75   |               54   |
+|   2020 |       957 |   73.6 |           0.46 |         -0.029 |     -27.9 |            77.2 |               68.2 |
+|   2021 |       844 |   74.2 |           0.44 |         -0.027 |     -22.9 |            78.9 |               55.2 |
+|   2022 |       823 |   75.6 |           0.5  |         -0.008 |      -6.9 |            79.8 |               77   |
+|   2023 |       892 |   73.4 |           0.8  |         -0.036 |     -31.7 |            77.6 |               71.6 |
+|   2024 |       821 |   72.8 |           0.53 |         -0.017 |     -13.7 |            78.6 |               60   |
+|   2025 |       923 |   74   |           0.74 |          0.006 |       5.9 |            76.6 |               63.8 |
+
+## By pair (D story)
+
+| pair   |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:-------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| AUDCAD |       301 |   73.4 |           0.4  |         -0.05  |     -15.1 |            79.4 |               53.3 |
+| AUDCHF |       228 |   63.6 |           0.67 |         -0.06  |     -13.6 |            67.5 |               41.6 |
+| AUDJPY |       317 |   70.7 |           0.5  |         -0.023 |      -7.2 |            76.3 |               72.3 |
+| AUDNZD |       257 |   81.7 |           0.35 |          0.055 |      14.1 |            86.4 |               41.6 |
+| AUDUSD |       266 |   74.8 |           0.38 |         -0.03  |      -7.9 |            79.7 |               52   |
+| CADCHF |       133 |   80.5 |           0.33 |         -0.001 |      -0.2 |            82.7 |               47.5 |
+| CADJPY |       211 |   72.5 |           0.51 |         -0.018 |      -3.9 |            75.4 |               75.1 |
+| CHFJPY |       245 |   68.6 |           0.71 |         -0.019 |      -4.7 |            73.9 |               68.6 |
+| EURAUD |       211 |   68.7 |           1.24 |         -0.089 |     -18.8 |            71.6 |               97.7 |
+| EURCAD |       215 |   73.5 |           0.53 |          0.002 |       0.4 |            78.1 |               77.9 |
+| EURCHF |       315 |   67   |           0.76 |         -0.016 |      -4.9 |            70.2 |               39.4 |
+| EURGBP |       302 |   74.8 |           0.37 |         -0.04  |     -12.2 |            77.5 |               38.8 |
+| EURJPY |       254 |   66.5 |           0.86 |         -0.061 |     -15.4 |            71.7 |               75.8 |
+| EURNZD |       268 |   70.9 |           0.42 |         -0.065 |     -17.4 |            76.1 |              108.3 |
+| EURUSD |       254 |   72.4 |           0.45 |         -0.001 |      -0.2 |            77.6 |               66.4 |
+| GBPAUD |       246 |   82.1 |           0.45 |          0.038 |       9.3 |            84.1 |              121.4 |
+| GBPCAD |       249 |   75.1 |           0.64 |         -0.045 |     -11.2 |            77.9 |               86.4 |
+| GBPCHF |       246 |   66.3 |           1.73 |         -0.016 |      -3.9 |            68.7 |               71.2 |
+| GBPJPY |       210 |   68.1 |           0.78 |         -0.001 |      -0.2 |            74.3 |              112.6 |
+| GBPNZD |       252 |   71.8 |           0.46 |         -0.057 |     -14.4 |            77   |              124.3 |
+| GBPUSD |       306 |   77.5 |           0.46 |         -0.011 |      -3.4 |            80.7 |               85.9 |
+| NZDCAD |       271 |   81.2 |           0.4  |          0.064 |      17.3 |            86.7 |               48.4 |
+| NZDCHF |       227 |   72.7 |           0.61 |          0.035 |       7.8 |            78.4 |               39.9 |
+| NZDJPY |       269 |   72.1 |           0.57 |         -0.04  |     -10.8 |            78.4 |               65.5 |
+| NZDUSD |       276 |   73.9 |           0.46 |         -0.042 |     -11.5 |            76.8 |               50.2 |
+| USDCAD |       226 |   71.2 |           0.6  |         -0.02  |      -4.5 |            74.3 |               75   |
+| USDCHF |       266 |   74.4 |           0.45 |         -0.014 |      -3.6 |            76.7 |               51.2 |
+| USDJPY |       296 |   66.9 |           0.6  |         -0.07  |     -20.8 |            73   |               63   |
+
+## M/W conflict filter (D story)
+
+Filter is on. Tables above score tradable stories only; here all D stories vs the ones the
+filter keeps vs the ones it removes (latest confirmed M and W stories pointed opposite ways).
+
+| view                       |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:---------------------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| all D stories (filter off) |      8263 |   73.4 |           0.56 |         -0.02  |    -168.7 |            77.5 |               64.3 |
+| tradable (filter on)       |      7117 |   72.5 |           0.59 |         -0.022 |    -157   |            76.8 |               63.7 |
+| NO_TRADE: M/W conflict     |      1146 |   78.5 |           0.39 |         -0.01  |     -11.6 |            81.8 |               68.2 |
+
+## By story and Next Day Rule (label)
+
+|                   |   stories |   win% |   avg_R_target |   expectancy_R |   total_R |   kevin_target% |   median_stop_pips |
+|:------------------|----------:|-------:|---------------:|---------------:|----------:|----------------:|-------------------:|
+| ('D', 'next day') |      2940 |   79.3 |           0.35 |          0.011 |      33.4 |            81.4 |               87.2 |
+| ('D', 'same day') |      2641 |   73.2 |           0.43 |         -0.035 |     -91.4 |            77.8 |               56.7 |
+| ('M', 'next day') |       107 |   70.1 |           0.53 |          0.058 |       6.2 |            71   |              409.1 |
+| ('M', 'same day') |        95 |   51.6 |           0.97 |         -0.172 |     -16.3 |            62.1 |              251.4 |
+| ('W', 'next day') |       579 |   72.5 |           0.39 |         -0.009 |      -5   |            74.4 |              187.9 |
+| ('W', 'same day') |       516 |   65.7 |           0.54 |         -0.077 |     -39.6 |            72.1 |              132.2 |
+
+## Variants (side by side, to choose defaults)
+
+Same pairs and years for every line. Bias variants: tradable stories, trade view (entry at the
+confirmation close, stop beyond the tap wick + buffer, target), `win%` = target before stop, `avg_R` /
+`total_R` = result in R. Entry variants: filled entries on the default-rule stories, TP1 and TP2.
+First value of each setting = current default.
+
+| variant                         |   trades |   win% |   avg_R |   total_R |
+|:--------------------------------|---------:|-------:|--------:|----------:|
+| next_day_rule=flag              |     8414 |   71.9 |  -0.025 |    -211.8 |
+| flag: next-day breakouts only   |     3626 |   77.9 |   0.01  |      34.6 |
+| flag: same-day breakouts only   |     3252 |   71.4 |  -0.045 |    -147.4 |
+| flag: no breakout (cadjpy, n/a) |     1536 |   58.5 |  -0.064 |     -99   |
+| next_day_rule=require           |     5491 |   73.6 |  -0.027 |    -148.6 |
+| cadjpy_exception=on             |     8414 |   71.9 |  -0.025 |    -211.8 |
+| cadjpy_exception=off            |     7617 |   75   |  -0.019 |    -147.6 |
+| entry_alignment=d_h4 (TP1)      |     1110 |   23.3 |  -0.393 |    -436.1 |
+| entry_alignment=d_h4 (TP2)      |     1110 |    7   |  -0.021 |     -22.9 |
+| entry_alignment=w_d_h4 (TP1)    |     1018 |   23.8 |  -0.381 |    -388.2 |
+| entry_alignment=w_d_h4 (TP2)    |     1018 |    7.2 |   0.01  |      10   |
+| entry_alignment=off (TP1)       |     1306 |   22.5 |  -0.413 |    -539.3 |
+| entry_alignment=off (TP2)       |     1306 |    6.7 |   0.002 |       2.2 |
