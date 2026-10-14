@@ -40,9 +40,18 @@ def find_levels(bars, cfg):
     return lv
 
 
+def touch_tol(cfg, pip):
+    """Price distance within which a WICK touches a line: tap_tol_pips + level_tol_pips (broker tolerance, absorbs
+    the 1-2 pip difference between IC Markets, FOREX.com and OANDA feeds; default 0 = unchanged). Used for every
+    wick test (tap, fresh/untouched check, first touch, re-taps). Never used for closes: a body close through a
+    level or beyond point B must be a real close beyond the price."""
+    return (cfg.get("tap_tol_pips", 0.0) + cfg.get("level_tol_pips", 0.0)) * pip
+
+
 def run_levels(bars, levels, tol):
-    """Walk each level forward. First wick touch = the tap (level used); a body close through = break,
-    which creates a fresh flipped level on the other side (STRATEGY §1). Returns all levels incl. flips.
+    """Walk each level forward. First wick touch (within `tol`, see touch_tol) = the tap (level used); a body close
+    through (exact, no tolerance) = break, which creates a fresh flipped level on the other side (STRATEGY §1).
+    Returns all levels incl. flips.
     (Vectorised per level; same events and order as the bar-by-bar walk: the tap is the first touch before the
     first break bar, the break bar itself never counts as a tap.)"""
     h, l, c = bars["high"].to_numpy(), bars["low"].to_numpy(), bars["close"].to_numpy()

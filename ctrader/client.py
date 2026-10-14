@@ -25,10 +25,19 @@ HOSTS = {"demo": "demo.ctraderapi.com", "live": "live.ctraderapi.com"}
 PORT = 5035
 HEARTBEAT_S = 10
 
-# Max request window per trendbar period (server limits are larger; we stay well inside them).
-_CHUNK = {"M1": timedelta(days=3), "M5": timedelta(days=10), "M15": timedelta(days=20),
-          "M30": timedelta(days=30), "H1": timedelta(days=30), "H4": timedelta(days=120),
-          "D1": timedelta(days=360), "W1": timedelta(days=1500), "MN1": timedelta(days=3000)}
+# Largest request window per trendbar period that Spotware accepts (ProtoOAGetTrendbarsReq docs: M1-M5 5 weeks,
+# M10-H1 35 weeks, H4-D1 1 year, W1/MN1 5 years). get_trendbars / trendbar_rows split longer ranges into such chunks
+# and halve a chunk if the server still answers INCORRECT_BOUNDARIES.
+_WEEK = timedelta(weeks=1)
+_CHUNK = {"M1": 5 * _WEEK, "M2": 5 * _WEEK, "M3": 5 * _WEEK, "M4": 5 * _WEEK, "M5": 5 * _WEEK,
+          "M10": 35 * _WEEK, "M15": 35 * _WEEK, "M30": 35 * _WEEK, "H1": 35 * _WEEK,
+          "H4": timedelta(days=366), "H12": timedelta(days=366), "D1": timedelta(days=366),
+          "W1": timedelta(days=1830), "MN1": timedelta(days=1830)}
+# Historical-data requests (trendbars, ticks) are limited to 5 per second per connection: keep a gap between them
+# and retry with backoff when the server answers REQUEST_FREQUENCY_EXCEEDED.
+HIST_MIN_GAP_S = 0.25
+HIST_RETRIES = 6
+_GAP_S = 4 * 86400  # a hole longer than this inside a reply (FX weekend + holiday < 4 days) = truncated reply
 
 
 class CTraderError(Exception):
@@ -75,6 +84,8 @@ class CTraderClient:
         self._dead = None
         self._stop = threading.Event()
         self._threads = []
+        self._hist_lock = threading.Lock()
+        self._hist_last = 0.0
         self._symbols = {}       # normalized name -> info dict
         self._symbol_names = {}  # symbolId -> name
 
@@ -259,20 +270,74 @@ class CTraderClient:
 
     def get_trendbars(self, symbol, period="H1", start=None, end=None):
         """OHLC DataFrame (UTC index 't', columns open/high/low/close, bid prices) like slk.data.hourly."""
+        end = end or datetime.now(timezone.utc)
+        start = start or (datetime.now(timezone.utc) - timedelta(days=7))
+        return rows_to_frame([r[:5] for r in self.trendbar_rows(symbol, period, start, end)])
+
+    def max_span(self, period="H1"):
+        """Largest window (seconds) one trendbar request may cover."""
+        return int(_CHUNK.get(period, timedelta(days=30)).total_seconds())
+
+    def _hist_request(self, msg):
+        """A historical-data request under Spotware's limit (5/s): spaced HIST_MIN_GAP_S apart, retried with
+        backoff on REQUEST_FREQUENCY_EXCEEDED."""
+        for attempt in range(HIST_RETRIES):
+            with self._hist_lock:
+                wait = self._hist_last + HIST_MIN_GAP_S - time.monotonic()
+                if wait > 0:
+                    time.sleep(wait)
+                self._hist_last = time.monotonic()
+            try:
+                return self.request(msg)
+            except CTraderError as e:
+                if str(e.code) != "REQUEST_FREQUENCY_EXCEEDED" or attempt == HIST_RETRIES - 1:
+                    raise
+                time.sleep(min(2 ** attempt, 16))
+
+    def trendbar_rows(self, symbol, period="H1", start=None, end=None):
+        """Bars with open time in [start, end) as rows (t UTC seconds, open, high, low, close, volume), sorted.
+        Uses the largest window per request the API allows (_CHUNK); a reply that leaves a hole of more than
+        4 days at either end of its window (a server-side bar cap) is completed by more requests."""
         info = self.symbol(symbol)
-        end_ms = _ms(end or datetime.now(timezone.utc))
-        start_ms = _ms(start or (datetime.now(timezone.utc) - timedelta(days=7)))
-        step = int(_CHUNK.get(period, timedelta(days=30)).total_seconds() * 1000)
+        lo_all = _ms(start) // 1000
+        hi_all = _ms(end or datetime.now(timezone.utc)) // 1000
+        span = self.max_span(period)
         pe = model.ProtoOATrendbarPeriod.Value(period)
-        rows = []
-        a = start_ms
-        while a < end_ms:
-            b = min(a + step, end_ms)
-            r = self.request(oa.ProtoOAGetTrendbarsReq(ctidTraderAccountId=self.account_id, symbolId=info["symbol_id"],
-                                                       period=pe, fromTimestamp=a, toTimestamp=b))
-            rows += trendbars_to_rows(r.trendbar, info["digits"])
-            a = b
-        return rows_to_frame(rows)
+        got = {}
+        todo = []
+        b = hi_all
+        while b > lo_all:  # newest chunk first
+            a = max(lo_all, b - span)
+            todo.append((a, b))
+            b = a
+        todo.reverse()
+        n = 0
+        while todo:
+            a, b = todo.pop()
+            n += 1
+            if n > 20000:
+                raise RuntimeError("trendbar_rows: too many requests")
+            try:
+                r = self._hist_request(oa.ProtoOAGetTrendbarsReq(
+                    ctidTraderAccountId=self.account_id, symbolId=info["symbol_id"], period=pe,
+                    fromTimestamp=a * 1000, toTimestamp=b * 1000))
+            except CTraderError as e:
+                if str(e.code) == "INCORRECT_BOUNDARIES" and b - a > 86400:
+                    mid = a + (b - a) // 2  # window still too wide for the server: halve it
+                    todo += [(a, mid), (mid, b)]
+                    continue
+                raise
+            rows = [x for x in trendbars_to_rows(r.trendbar, info["digits"], volume=True) if a <= x[0] < b]
+            if not rows:
+                continue
+            for x in rows:
+                got[x[0]] = x
+            first, last = min(x[0] for x in rows), max(x[0] for x in rows)
+            if first - a > _GAP_S:
+                todo.append((a, first))
+            if b - (last + 60) > _GAP_S and last + 60 < b:
+                todo.append((last + 60, b))
+        return [got[t] for t in sorted(got)]
 
     def get_spot(self, symbol, timeout=None):
         """(bid, ask) via a brief spot subscription."""
@@ -486,13 +551,16 @@ def _check_sides(side, price, stop_loss, take_profit):
         raise ValueError(f"take_profit {take_profit} on wrong side of {price} for {side}")
 
 
-def trendbars_to_rows(bars, digits=5):
+def trendbars_to_rows(bars, digits=5, volume=False):
+    """ProtoOATrendbar list -> rows (t UTC seconds of the bar open, open, high, low, close[, volume]). Prices are
+    sent as integers in 1/100000 whatever the symbol's digits."""
     rows = []
     for tb in bars:
         lo = tb.low
-        rows.append((tb.utcTimestampInMinutes * 60,
-                     round((lo + tb.deltaOpen) / 100000, digits), round((lo + tb.deltaHigh) / 100000, digits),
-                     round(lo / 100000, digits), round((lo + tb.deltaClose) / 100000, digits)))
+        row = (tb.utcTimestampInMinutes * 60,
+               round((lo + tb.deltaOpen) / 100000, digits), round((lo + tb.deltaHigh) / 100000, digits),
+               round(lo / 100000, digits), round((lo + tb.deltaClose) / 100000, digits))
+        rows.append(row + (int(tb.volume),) if volume else row)
     return rows
 
 

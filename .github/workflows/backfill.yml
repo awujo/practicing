@@ -1,28 +1,37 @@
 name: SLK candle backfill
-# One-time (or after the candle cache was evicted): fill the H1 candle store (slk/store.py) for all pairs and save
-# it in the Actions cache that the hourly live job and the backtest restore. Run: Actions > SLK candle backfill.
+# Fills the H1 candle store (slk/store.py) for all pairs from IC Markets cTrader (one connection, ~8 months per
+# request, <= 4 requests/s: a few minutes for 28 pairs from 2018) and saves it in the Actions cache that the hourly
+# live job, the backtest and verify-examples restore (key prefix candles-v3-). Dukascopy only as the fallback when
+# the cTrader secrets are missing or cTrader fails (slow: Dukascopy throttles runners). Run: Actions > SLK candle
+# backfill > Run workflow. Manual only (no push trigger).
 on:
-  push:  # runs once when this file changes (manual runs need it on the default branch)
-    branches: [claude-kevin-king]
-    paths: [".github/workflows/backfill.yml"]
   workflow_dispatch:
     inputs:
       start: {description: "First year (2018 = enough for the backtest too)", default: "2018"}
       pairs: {description: "Comma list, empty = all 28", default: ""}
 permissions:
   contents: read
-concurrency: {group: slk-live, cancel-in-progress: false}  # never at the same time as the live job
+concurrency: {group: slk-live, cancel-in-progress: false}  # never at the same time as the live job (same cache)
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 300  # ~3,000 month files at 3 parallel downloads (Dukascopy throttles); progress is kept anyway
+    timeout-minutes: 60  # cTrader: minutes; progress is saved (partial key) even when it times out
     env:
       SLK_STORE: data/store
-      SLK_MIN_GAP: "1"  # 1 s between requests per thread: Dukascopy refuses bursts from runner IPs
+      SLK_MIN_GAP: "1"  # Dukascopy fallback only: 1 s between requests per thread
       IN_START: ${{ inputs.start || '2018' }}
       IN_PAIRS: ${{ inputs.pairs }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1410229777' }}
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,38 +39,40 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: .github/workflows/backfill.yml
-      - run: pip install -q pandas
-      - name: Restore candle store
+      - run: pip install -q pandas pymysql "protobuf>=3.20" requests
+      - name: Restore candle store (cTrader store or this workflow's unfinished progress; never the v2 Dukascopy caches)
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            candles-v2-
-            candles-partial-
-            candles-live-
+            candles-v3-
+            partial-candles-v3-
       - name: Backfill
         run: |
-          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" --threads 2 | tee -a "$GITHUB_STEP_SUMMARY" | grep -E "ERROR|^backfill" | sed 's/^/::warning::/' || true
+          [ -z "$CTRADER_CLIENT_ID" ] && echo "::warning::CTRADER_* secrets missing: Dukascopy fallback (slow, throttled)"
+          set -o pipefail
+          # per-pair bar counts come out as ::notice:: annotations (readable through the API; logs are not)
+          python -m slk.store --start "$IN_START" --pairs "$IN_PAIRS" --notice | tee -a "$GITHUB_STEP_SUMMARY"
           du -sh data/store | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Is the candle store complete?
         id: chk
         if: always()
         run: |
-          if out=$(python -m slk.store --check --start 2018); then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
-          echo "::notice::$out"  # annotations are readable through the API, logs are not
+          if out=$(python -m slk.store --check --start 2018 --source ctrader); then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          echo "::notice title=Store check::$out"
       - name: Save candle store
         if: always() && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save unfinished progress (only backfill restores this)
         if: always() && steps.chk.outputs.ok != 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-partial-${{ github.run_id }}-${{ github.run_attempt }}
+          key: partial-candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Telegram alert on failure
         if: failure()
         env:

@@ -1,6 +1,6 @@
 name: SLK verify Kevin examples
-# Replays Kevin King's own worked bias examples (slk/verify_examples.py) on real Dukascopy candles and commits
-# reports/EXAMPLES.md. Examples that fail are marked FAIL in the report; the job stays green unless the script crashes.
+# Replays Kevin King's own worked bias examples (slk/verify_examples.py) on real candles (IC Markets cTrader,
+# Dukascopy fallback) and commits reports/EXAMPLES.md. Examples that fail are marked FAIL in the report; the job stays green unless the script crashes.
 on:
   push:
     branches: [claude-kevin-king]
@@ -18,6 +18,16 @@ jobs:
     env:  # inputs reach the script only through env (no shell injection)
       IN_ONLY: ${{ inputs.only }}
       SLK_STORE: data/store
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,8 +37,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: candles-v2-
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v3-
       - name: Verify examples
         run: |
           mkdir -p reports

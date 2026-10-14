@@ -16,7 +16,7 @@ concurrency: {group: slk-backtest, cancel-in-progress: false}
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60   # cached candles + one process per CPU; a cold cache downloads ~3,000 month files first
+    timeout-minutes: 60   # cached candles + one process per CPU; a cold cache fetches 2018-2025 from cTrader (minutes)
     env:  # workflow inputs reach the scripts only through env (no shell injection)
       IN_START: ${{ inputs.start || '2018' }}
       IN_END: ${{ inputs.end || '2025' }}
@@ -30,15 +30,25 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q tests
-      - name: Restore candle store (same store as the live job / backfill)
+      - name: Restore candle store (same cTrader store as the live job / backfill)
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: candles-v2-
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v3-
       # a failing run turns the step red (the report is still committed below)
       - name: Backtest
         id: bt
+        env:  # missing months come from IC Markets cTrader (Dukascopy fallback); refreshed tokens persist in the DB
+          CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+          CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+          CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+          CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+          CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+          CTRADER_ENV: demo
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
         run: |
           ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
           [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
@@ -51,6 +61,16 @@ jobs:
           exit $rc
       - name: Entry backtest
         if: ${{ !cancelled() && steps.bt.outcome != 'skipped' }}  # also after a failed story backtest
+        env:  # missing months come from IC Markets cTrader (Dukascopy fallback); refreshed tokens persist in the DB
+          CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+          CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+          CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+          CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+          CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+          CTRADER_ENV: demo
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
         run: |
           ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
           [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
@@ -65,13 +85,13 @@ jobs:
         id: chk
         if: always()
         run: |
-          if python -m slk.store --check --start 2018; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          if python -m slk.store --check --start 2018 --source ctrader; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Save candle store
         if: always() && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Commit report
         if: always()
         run: |

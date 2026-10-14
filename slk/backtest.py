@@ -237,7 +237,8 @@ def main():
     cfg = {**DEFAULT, **json.loads(a.cfg)}
     os.makedirs(a.out, exist_ok=True)
     pairs, stories = a.pairs.split(","), a.stories.split(",")
-    store.months_all(pairs, a.start, a.end)  # candle store: only missing month files are downloaded
+    store.months_all(pairs, a.start, a.end)  # candle store: only missing months are downloaded (cTrader first)
+    store.close_feed()  # before the process pool forks
     vdf = None
     if a.variants:
         from .entry import DEFAULT as EDEF, ENTRY_TFS

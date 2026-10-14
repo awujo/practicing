@@ -48,8 +48,13 @@ def recent(pair, days):
 
 
 def prepare_candles(pairs, now):
-    """Download only the new bars of every pair into the store (threads). Returns {pair: error}."""
-    return candles_store.update_all(pairs, now, days=HISTORY_DAYS)
+    """Bring every pair's store up to the last closed hour: IC Markets cTrader over one connection (only the last
+    few days are fetched when the store is current), Dukascopy for pairs where cTrader fails (a ::warning::
+    annotation says so). The connection is closed before the engine's process pool forks. Returns {pair: error}."""
+    try:
+        return candles_store.update_all(pairs, now, days=HISTORY_DAYS)
+    finally:
+        candles_store.close_feed()
 
 
 def _ts(x):

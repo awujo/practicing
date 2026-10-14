@@ -17,19 +17,24 @@ ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 | Bias backtest | `slk/backtest.py` → `reports/REPORT.md` | GitHub Actions `backtest.yml` (on push to slk/**) |
 | Entry model + backtest | `slk/entry.py`, `slk/entry_backtest.py` → `reports/ENTRY_REPORT.md` | same workflow |
 | Live bias runner | `slk/live.py`, `slk/db.py`, `db/schema.sql` | Actions `live.yml`, hourly at :07 (not on the FX weekend) |
-| Candle store (H1, incremental) | `slk/store.py` → `data/store/*.npz` in the Actions cache | filled by `backfill.yml` (manual, once), kept by live + backtest |
+| Candle store (H1, incremental) | `slk/store.py` → `data/store/*.npz` in the Actions cache (key `candles-v3-`) | IC Markets cTrader; filled by `backfill.yml` (manual, minutes), kept by live + backtest |
 | cTrader client | `ctrader/` (README has OAuth steps) | Actions `ctrader-smoke.yml` |
 | Telegram Mini App | `webapp/` (FastAPI), `render.yaml` | Render, branch claude-kevin-king, root `webapp` |
 | Shared names (env vars, DB tables) | `CONTRACT.md` | — |
 | Code review findings | `REVIEW.md` (incl. "Bias audit") | — |
 | Kevin's worked examples replay | `slk/verify_examples.py` → `reports/EXAMPLES.md` | Actions `verify-examples.yml` (push on that file / manual) |
 
-Data: Dukascopy free hourly candles (works from Actions; blocked from Claude's sandbox). cTrader candles later.
+Data: **IC Markets cTrader H1 candles** (bid, UTC; demo account, one connection per job) since 2026-10-14;
+Dukascopy only as the fallback when cTrader secrets are missing or cTrader fails (both blocked from Claude's sandbox).
 Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (chat id defaults to owner).
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-13)
+## Status (2026-10-14)
+- [x] **Data source = IC Markets cTrader** (store, backfill, live, backtest, verify-examples); Dukascopy = fallback.
+- [ ] **User, once:** Actions → "SLK candle backfill" → Run workflow (start 2018, pairs empty). Expected a few minutes;
+      per-pair bar counts appear as `::notice::` annotations, the store check as "Store check". Old Dukascopy caches
+      (`candles-v2-`) are not used any more.
 - [x] Strategy studied: all 29 transcripts + all ~700 frame sheets. STRATEGY.md v0.3.
 - [x] Bias engine, entry model, live runner, cTrader client, Mini App — all built, tests pass (`pytest -q tests`).
 - [ ] **Backtest results on real data** — run in progress (28 pairs, 2018–2025). Read `reports/REPORT.md` when committed.
@@ -37,7 +42,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [x] Code review done (`REVIEW.md`): 9 fixed (incl. look-ahead in story backtest, HTF filter now applied), 30 open.
 - [x] Default branch is `claude-kevin-king` (set 2026-10-13): hourly cron + manual Run buttons work.
 - [ ] Render deploy of Mini App (user: set branch + root dir + 2 env vars).
-- [ ] cTrader: app "SLK" id 43716 is *Submitted* (not active). Get tokens per `ctrader/README.md`, then run cTrader smoke workflow.
+- [x] cTrader: IC Markets demo works (ctrader-smoke green; secrets CTRADER_*; tokens refresh into DB `settings`).
 - [x] M/W conflict enforced in live runner (D stories NO_TRADE, no TAPPED/CONFIRMED alerts) and stored in
       `bias.no_trade` / `no_trade_reason` (Mini App shows a NO_TRADE tag). Backtest applies `story.apply_mw_filter`:
       NO_TRADE D stories are not scored; REPORT.md section "M/W conflict filter" shows all vs kept vs removed.
@@ -45,8 +50,6 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       bars (~1 file per pair instead of ~26-35); engine output cached per story until a new origin bar closes;
       pairs computed in a process pool; engine hot spots removed (identical output, golden test). No scheduled
       runs on the FX weekend except the final one after Friday 17:00 NY. Hourly target 1-3 min.
-- [ ] **User, once:** Actions → "SLK candle backfill" → Run workflow (start 2018). Fills the candle cache for live +
-      backtest (~5-15 min). Without it the first live run builds the 3-year store itself (slower, still works).
 - [x] Telegram "bot alive" status (setting `status_updates` = each_run / every_4h (default) / off) + workflow
       failure alert (`if: failure()` step, curl, secrets never printed).
 - [x] Entry alerts wired into live runner: CONFIRMED tradable stories -> `slk.entry` (sim=False) -> table `entries` (PENDING/TRIGGERED/MISSED) + Telegram on new PENDING and on TRIGGERED ("confirm in Mini App" note when auto_trade=confirm).
@@ -75,7 +78,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
       HTF-agreement filter in live runner.
 
 ## Next steps (in order)
-0. Run "SLK candle backfill" once (see Status).
+0. Run "SLK candle backfill" once (see Status; cTrader now, minutes).
 1. Fix `DATABASE_URL` → rerun "SLK live bias" (Actions → Run workflow, or Claude dispatches it via API).
 2. Read backtest reports; tune `slk/story.py` DEFAULT / entry DEFAULT by results (out-of-sample years).
 3. Deploy Mini App on Render, set BotFather menu button to the Render URL.
@@ -173,3 +176,19 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   data._get honours SLK_MIN_GAP (backfill: 1 s, 2 threads), backoff capped at 60 s. Test tests/test_store_progress.py.
 - 2026-10-13: Commits 7cba861 (SLK Radar adopt: next_day_rule, alert format, display_tz, early alert, retrace, /terms,
   entry_alignment d_h4 default, backtest --variants) + 52102a7 (Validation 5 fixes). Backtests cancelled until the store is complete.
+- 2026-10-14: **cTrader = primary candle source.** Dukascopy throttled runners (a 4h45m backfill got 3/28 pairs); the
+  IC Markets cTrader demo works (smoke OK). `slk/store.py`: source per file (`meta.src`, a file of another source is
+  rebuilt, never mixed; v2 files = Dukascopy), one `CTraderClient` per job for all pairs (`get_feed`, symbols in one
+  request, worker processes never connect), completed months fetched in as few requests as possible (consecutive
+  missing months grouped up to the 35-week H1 window, saved after each request) and tagged final (MONTH), current
+  month refreshed (CUR, last 3 days re-fetched). Bars: hour-aligned, volume > 0, outside the FX weekend. Fallback:
+  cTrader failure (or no secrets) -> Dukascopy per pair with a `::warning::`; for a cTrader file only the gap after
+  its last bar, into `data/store-fallback/` (this run only, read by `store.recent`). `ctrader/client.py`:
+  `trendbar_rows` (API-max windows, INCORRECT_BOUNDARIES halving, truncated-reply completion, 0.25 s spacing +
+  backoff on REQUEST_FREQUENCY_EXCEEDED). Cache key `candles-v3-` everywhere, `--check --source ctrader`, backfill
+  progress `partial-candles-v3-`; v2/partial Dukascopy caches never restored. backfill.yml: manual only (push
+  trigger removed), 60 min, cTrader + DB secrets, per-pair `::notice::` (7 pairs per notice: GitHub shows 10 per
+  step). live/backtest/verify get the cTrader + DB secrets (refreshed tokens persist in DB). New setting
+  `level_tol_pips` (0-5, default 0 = unchanged, golden-tested): extra wick tolerance for broker differences (IC vs
+  FOREX.com vs OANDA), wick tests only, never closes / B breaks (STRATEGY §5 #25). Tests `tests/test_ctrader_store.py`,
+  `tests/test_level_tol.py`, `tests/conftest.py` (no network: Dukascopy fakes, cTrader connections blocked).

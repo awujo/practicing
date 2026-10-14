@@ -1,5 +1,6 @@
 """Replay checks: Kevin King's own worked bias examples run through the live bias engine (slk.live.pair_state, the
-same code the hourly runner uses) on real Dukascopy candles from the candle store. Writes reports/EXAMPLES.md.
+same code the hourly runner uses) on real candles from the candle store (IC Markets cTrader; Dukascopy fallback).
+Writes reports/EXAMPLES.md.
 
     python -m slk.verify_examples [--out reports] [--only CADJPY]
 
@@ -12,7 +13,8 @@ Each example is a story Kevin drew in class, with the date/price read from the t
             no trade"); a TAPPED row is fine and is shown;
   SIDE      every tradable confirmed story of `stories` confirmed in the window is on the expected side (>= 1).
 Always exits 0 (examples that fail are marked FAIL in the report); a crash of one example is marked ERROR.
-Dukascopy is blocked in Claude's sandbox, so this runs on GitHub Actions (.github/workflows/verify-examples.yml).
+cTrader and Dukascopy are blocked in Claude's sandbox, so this runs on GitHub Actions
+(.github/workflows/verify-examples.yml).
 """
 import argparse
 import os
@@ -152,7 +154,8 @@ def report(results):
     n = sum(1 for r in results if r["result"] == "PASS")
     lines = ["# Kevin's worked examples: replay check", "",
              f"Generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC by `python -m slk.verify_examples` "
-             "(live bias engine `slk.live.pair_state`, code defaults, Dukascopy H1 from the candle store).", "",
+             "(live bias engine `slk.live.pair_state`, code defaults, H1 from the candle store: IC Markets cTrader, "
+             "Dukascopy fallback).", "",
              f"**{n}/{len(results)} PASS.** A FAIL is a story the bot reads differently from Kevin; it does not stop "
              "the workflow. Evidence = transcript [video@sec] and frame sheets (knowledge-base/frames).", "",
              "| Result | Example | Expected (Kevin) | Bot found | Evidence |", "|---|---|---|---|---|"]
@@ -181,6 +184,8 @@ def main(argv=None):
             traceback.print_exc()
         print(f"{row['result']:5} {ex['id']}: {row['found']}", flush=True)
         results.append(row)
+    from . import store
+    store.close_feed()
     os.makedirs(a.out, exist_ok=True)
     with open(os.path.join(a.out, "EXAMPLES.md"), "w") as f:
         f.write(report(results))

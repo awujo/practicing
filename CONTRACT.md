@@ -15,6 +15,7 @@ functions without updating callers; `slk.story.find_stories(pair, h1_df, story, 
 | `CTRADER_CLIENT_ID`, `CTRADER_CLIENT_SECRET` | Open API app (app "SLK" id 43716) |
 | `CTRADER_ACCESS_TOKEN`, `CTRADER_REFRESH_TOKEN`, `CTRADER_ACCOUNT_ID` | first values; refreshed tokens are stored in DB table `settings` |
 | `CTRADER_ENV` | `demo` (default) or `live` |
+| `SLK_SOURCE` | optional: candle source `ctrader` / `dukascopy`; unset = `ctrader` when `CTRADER_CLIENT_ID`, `CTRADER_CLIENT_SECRET` and (`CTRADER_ACCESS_TOKEN` or `DATABASE_URL`) are set, else `dukascopy` |
 
 Never print secrets. Never commit them.
 
@@ -40,7 +41,9 @@ Never print secrets. Never commit them.
   - Bias rules (no key changes what confirms the bias: always the external break = confirm-TF body close beyond
     point B; internal breaks = entries only, except Kevin's CADJPY exception `cadjpy_exception`): `trend_filter`,
     `htf_filter`, `mw_conflict_filter`, `use_oc` (on/off), `max_wait` (1-20), `max_retaps` (0-10), `tap_tol_pips`
-    (0-5), `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
+    (0-5), `level_tol_pips` (0-5, default 0: broker tolerance in pips added to `tap_tol_pips` for wick touches only
+    (tap, fresh check, first touch, re-taps); never for closes, a break of point B is a real close; STRATEGY §5 #25),
+    `most_recent_level`, `flip_end`, `htf_targets`, `overlap_rule`, `alignment_start`, `cadjpy_exception`
     (on/off, all on by default), `overlap_tol_pips` (0-20, default 3), `next_day_rule` (`flag` (default) | `require`)
   - Entry rules: `continuation_entries` (on/off = all entry alerts), `entry_models` (`continuation,qmr`; at least one),
     `entry_alignment` (`d_h4` (default) | `w_d_h4` | `off`: continuation entries only when D story + last H4 break
@@ -60,14 +63,21 @@ Never print secrets. Never commit them.
 - `runs` — `id`, `job`, `planned_at`, `started_at`, `finished_at`, `ok`, `note`.
 
 ## Candles (no DB table)
-H1 candles are NOT stored in MySQL (decision: HANDOVER.md log). `slk/store.py` keeps one file per pair,
-`$SLK_STORE/<PAIR>.npz` (default `data/store`; arrays `t` UTC seconds of the bar start, `open`, `high`, `low`, `close`,
-`q` source 3=month file / 2=day file / 1=tick file, plus `meta` JSON of finished months/days), and
-`$SLK_STORE/memo/<PAIR>.pkl` (live engine output cache). The directory is kept between runs by actions/cache:
-key prefix `candles-live-` (live.yml, backfill.yml, same concurrency group `slk-live`) and `candles-full-`
-(backtest.yml, restores `candles-full-` then `candles-live-`). API: `store.update(pair, now, days=..)`,
-`store.recent(pair, days)` (= `data.recent`), `store.hourly(pair, y0, y1)` (= `data.hourly`, month files only),
-`python -m slk.store --start 2018` (backfill).
+H1 candles are NOT stored in MySQL (decision: HANDOVER.md log). Source: **IC Markets cTrader** Open API H1
+trendbars (bid, UTC, hour-aligned; zero-volume and FX-weekend bars dropped), Dukascopy only as the fallback when the
+cTrader secrets are missing or cTrader fails. `slk/store.py` keeps one file per pair, `$SLK_STORE/<PAIR>.npz`
+(default `data/store`; arrays `t` UTC seconds of the bar start, `open`, `high`, `low`, `close`, `q` quality
+3 = final month / 2 = current cTrader month (refreshed) or Dukascopy day file / 1 = Dukascopy tick file, plus `meta`
+JSON `{"m": final months, "d": Dukascopy days, "src": "ctrader" | "dukascopy"}`; one source per file, a file of
+another source is rebuilt), and `$SLK_STORE/memo/<PAIR>.pkl` (live engine output cache). Dukascopy fallback bars for
+a pair whose file is cTrader go to `$SLK_STORE-fallback/<PAIR>.npz` (this run only, not cached). One cTrader
+connection per job (`store.get_feed()`), <= 4 history requests/s, ~8 months per H1 request.
+The directory is kept between runs by actions/cache, key prefix **`candles-v3-`** (cTrader store) in live.yml,
+backfill.yml, backtest.yml, verify-examples.yml; backfill saves unfinished progress as `partial-candles-v3-` (only
+backfill restores it). A store is saved only when `python -m slk.store --check --start 2018 --source ctrader`
+passes. Old `candles-v2-` / `candles-partial-` (Dukascopy) caches are never restored. API:
+`store.update(pair, now, days=..)`, `store.update_all(pairs, now, days)`, `store.recent(pair, days)`,
+`store.hourly(pair, y0, y1)` (final months only), `python -m slk.store --start 2018 [--notice]` (backfill).
 
 Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_setting(k, default)`,
 `get_settings()`, `set_setting(k, v)`), using PyMySQL.

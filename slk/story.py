@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from .candles import nominal_end, resample
-from .levels import Level, find_levels, run_levels, sweep_taps
+from .levels import Level, find_levels, run_levels, sweep_taps, touch_tol
 from .structure import SwingBook, pivots, structural_swings, swings, trend
 
 STORIES = {"M": ("M", "W"), "W": ("W", "D"), "D": ("D", "H4")}
@@ -31,6 +31,8 @@ DEFAULT = {
     "use_oc": True,
     "trend_filter": True,   # only levels that agree with the origin-TF trend
     "tap_tol_pips": 1.0,    # wick within this distance of the line counts as a touch
+    "level_tol_pips": 0.0,  # OUR CHOICE: extra wick tolerance for broker feed differences (IC vs FOREX.com vs
+                            # OANDA, 1-2 pips); added to tap_tol_pips for wick touches only, never for closes
     "max_wait": 5,          # origin bars from tap to breakout
     "max_retaps": 3,        # more re-taps before breakout = messy, skip
     "same_bar_close": True, # origin bar holding the breakout must close beyond B too
@@ -214,7 +216,7 @@ class _Ctx:
         self.otf, self.ctf = otf, ctf
         ob, cb = resample(h1, otf), resample(h1, ctf)
         self.P = pip(pair)
-        self.tol = cfg["tap_tol_pips"] * self.P
+        self.tol = touch_tol(cfg, self.P)  # wick tests only (tap, fresh, first touch, re-taps); closes are exact
         self.levels = run_levels(ob, find_levels(ob, cfg), self.tol)
         self.lv = _LevelSet(ob, self.levels)
         self.osw, self.csw = SwingBook(_structure(ob, cfg)), SwingBook(pivots(cb["close"], cfg["b_pivot"]))

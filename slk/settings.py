@@ -36,6 +36,11 @@ SCHEMA = [
        min=0, max=10),
     _s("tap_tol_pips", "float", "1", "Bias rules", "A wick this close to the line (pips) counts as a tap.",
        min=0, max=5),
+    _s("level_tol_pips", "float", "0", "Bias rules",
+       "Broker tolerance (pips, our choice): a wick this much further from the line still counts as a tap / touch "
+       "and makes the level used (not fresh). Absorbs the 1-2 pip difference between IC Markets, FOREX.com and "
+       "OANDA candles. Added to tap_tol_pips. Never applied to closes: a break of point B (or of a level) is "
+       "still a real body close beyond it. 0 = off.", min=0, max=5),
     _s("use_oc", "bool", "on", "Bias rules", "Draw levels on open/close (line chart), not wicks."),
     _s("most_recent_level", "bool", "on", "Bias rules",
        "Only the most recent fresh key level (formed before the tap) can start a story; an older level tapped "
@@ -276,7 +281,7 @@ def as_strings(stored=None):
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
-                                 "max_retaps", "tap_tol_pips", "use_oc", "most_recent_level", "flip_end",
+                                 "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "most_recent_level", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
                                  "cadjpy_exception", "next_day_rule")}
 

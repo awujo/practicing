@@ -8,7 +8,7 @@ reactor client and pins old protobuf/requests versions. Dependencies: `protobuf>
 
 | File | What |
 |---|---|
-| `client.py` | `CTraderClient`: `app_auth`, `account_auth`, `get_trader`, `get_symbols`, `get_trendbars`, `get_spot`, `get_positions`, `get_orders`, `place_market_order`, `place_limit_order`, `amend_position_sltp`, `close_position`, `cancel_order` |
+| `client.py` | `CTraderClient`: `app_auth`, `account_auth`, `get_trader`, `get_symbols`, `get_trendbars`, `trendbar_rows`, `get_spot`, `get_positions`, `get_orders`, `place_market_order`, `place_limit_order`, `amend_position_sltp`, `close_position`, `cancel_order` |
 | `tokens.py` | `refresh_tokens()`, token storage in DB `settings`, one-time OAuth CLI |
 | `sizing.py` | `volume_for_risk`, `pip_value_per_lot`, `client_order_id(entry_id)` |
 | `smoke.py` | `python -m ctrader.smoke [--test-order]` |
@@ -39,7 +39,18 @@ Notes:
   allowed while the kill switch is on. When `DATABASE_URL` is set and `slk/db.py` cannot be used, the client raises
   an error and does not trade, so the kill switch is never skipped.
 - **Trendbars**: `get_trendbars(symbol, "H1", start, end)` returns the same frame as `slk.data.hourly`: UTC index `t`,
-  columns `open, high, low, close`, bid prices. Requests are split into 30-day chunks.
+  columns `open, high, low, close`, bid prices. `trendbar_rows(symbol, period, start, end)` returns rows
+  `(t, open, high, low, close, volume)`. Each request covers the largest window the API accepts (`_CHUNK`: M1-M5
+  5 weeks, M10-H1 35 weeks, H4-D1 1 year, W1/MN1 5 years; a window the server refuses with `INCORRECT_BOUNDARIES` is
+  halved). A reply that leaves a hole of more than 4 days at either end of its window (a server-side bar cap) is
+  completed by more requests. History requests are spaced `HIST_MIN_GAP_S` = 0.25 s apart (Spotware allows 5 per
+  second per connection) and retried with backoff on `REQUEST_FREQUENCY_EXCEEDED`.
+- **Candle source of the bot**: `slk/store.py` uses this client as the PRIMARY H1 source for the candle store (live,
+  backfill, backtest, verify-examples), ONE connection per job for all pairs (`store.get_feed()`); IC H1 bars are
+  hour-aligned UTC bid bars, zero-volume and FX-weekend bars are dropped, so the 17:00 New York D/W/M candles
+  (`slk/candles.py`) are built exactly as from Dukascopy, which remains the fallback. Those workflows need the same
+  `CTRADER_*` secrets as the smoke test, plus `DATABASE_URL` / `DATABASE_PASSWORD` / `DATABASE_CA`, so a token
+  refreshed by one job is stored in the DB for the next one. Errors are logged without tokens or account numbers.
 - **Tokens**: the client reads `ctrader_access_token`, `ctrader_refresh_token` and `ctrader_token_expiry` (unix
   seconds) from DB `settings`, and falls back to the env secrets. It refreshes the token when less than 3 days are
   left, or once when account auth fails with a token error, and stores the new pair in the DB. A refresh invalidates

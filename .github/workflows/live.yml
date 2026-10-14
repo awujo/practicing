@@ -1,6 +1,8 @@
 name: SLK live bias
 # Hourly bias runner (no VPS). Needs repo secrets DATABASE_URL, TELEGRAM_BOT_TOKEN (chat id defaults to the owner, 1410229777)
 # (optional DATABASE_CA = Aiven CA certificate, to verify the server). Without secrets it exits green.
+# Candles: IC Markets cTrader (CTRADER_* secrets, one connection, last few days per pair); Dukascopy when cTrader
+# fails or its secrets are missing (a ::warning:: annotation says so).
 on:
   schedule:
     - cron: "7 * * * 0-5"   # hourly, no Saturday (UTC) = FX closed; best effort: GitHub may start some minutes late
@@ -16,13 +18,19 @@ concurrency: {group: slk-live, cancel-in-progress: false}  # shared with backfil
 jobs:
   live:
     runs-on: ubuntu-latest
-    timeout-minutes: 20   # normal run 1-3 min; a run that must rebuild a lost candle cache (no backfill) needs more
+    timeout-minutes: 20   # normal run 1-3 min; a lost candle cache is rebuilt from cTrader in ~1 min
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_CA: ${{ secrets.DATABASE_CA }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1410229777' }}
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
       SLK_CACHE: data
       SLK_STORE: data/store
     steps:
@@ -57,14 +65,14 @@ jobs:
           cache: pip
           cache-dependency-path: .github/workflows/live.yml
       - if: steps.s.outputs.ok == 'true'
-        run: pip install -q pandas pymysql
+        run: pip install -q pandas pymysql "protobuf>=3.20" requests
       - name: Restore candle store
         if: steps.s.outputs.ok == 'true'
         uses: actions/cache/restore@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: candles-v2-
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: candles-v3-  # cTrader store only (v2 = Dukascopy, never restored)
       - name: Apply db/schema.sql
         if: steps.s.outputs.ok == 'true'
         run: |
@@ -94,13 +102,13 @@ jobs:
         id: chk
         if: always()
         run: |
-          if python -m slk.store --check --start 2018; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          if python -m slk.store --check --start 2018 --source ctrader; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Save candle store
         if: always() && steps.s.outputs.ok == 'true' && steps.chk.outputs.ok == 'true'
         uses: actions/cache/save@v4
         with:
           path: data/store
-          key: candles-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Telegram alert on failure
         if: failure()
         env:

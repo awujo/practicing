@@ -107,6 +107,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     pairs = a.pairs.split(",")
     store.months_all(pairs, a.start, a.end)
+    store.close_feed()
     jobs = [(p, a.start, a.end, a.stories.split(","), scfg, ecfg) for p in pairs]
     rows = [r for chunk in run_pairs(_pair_job, jobs) for r in chunk]
     df = pd.DataFrame(rows)
