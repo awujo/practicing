@@ -225,3 +225,4 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   offline 6/9 -> 7/9 (require) -> 8/9 (leg: EURAUD/GBPAUD sells pass, USDCAD fails). 8 offline pairs (require):
   leg −10.6 R vs protected −40.4 R. Backtest variants + `trend_mode`, `entry_tfs`. Goldens pinned via config
   (tests/engine_golden.py PIN / OLD_ENTRY), no golden regenerated. 213 tests pass.
+- 2026-10-14: Owner decisions live (3e78108): CI backtest D 5186 stories 80.1% win, kevin_target 82.5%; examples 8/9 on CI (USDCAD fails under trend_mode leg). verify-examples now reruns when the bias engine changes.

@@ -4,7 +4,7 @@ name: SLK verify Kevin examples
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/verify_examples.py", ".github/workflows/verify-examples.yml"]
+    paths: ["slk/verify_examples.py", "slk/story.py", "slk/levels.py", "slk/structure.py", "slk/candles.py", "slk/live.py", ".github/workflows/verify-examples.yml"]  # rerun when the bias engine changes
   workflow_dispatch:
     inputs:
       only: {description: "Comma list of pairs or example ids, empty = all", default: ""}
