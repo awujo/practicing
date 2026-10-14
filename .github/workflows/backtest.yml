@@ -93,9 +93,9 @@ jobs:
           path: data/store
           key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Commit report
-        if: always()
+        if: success() || failure()  # a cancelled run must not commit half a report
         run: |
           git config user.name "slk-backtest"; git config user.email "actions@github.com"
           git add reports
           git commit -m "Backtest report ($(date -u +%F))" || exit 0
-          git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
+          git pull --rebase -X theirs origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}
