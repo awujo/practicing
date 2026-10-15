@@ -19,5 +19,9 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         value: "1410229777"
+      - key: CRON_SECRET  # hourly tick: cron-job.org calls /cron/tick?key=<this>; see webapp/README.md
+        sync: false
+      - key: GH_DISPATCH_TOKEN  # fine-grained GitHub token, repo awujo/practicing only, Actions: read and write
+        sync: false
       - key: TELEGRAM_WEBHOOK_SECRET  # bot webhook /telegram/webhook (/terms); see webapp/README.md
         sync: false

@@ -279,4 +279,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-15: `entry.DEFAULT` qmr_entry (trigger | neck) + qmr_stop_pips 18 (Mini App "Entry rules"); entry
   variants "qmr neck". `slk/verify_trades.py` -> reports/KEVIN_TRADES.md (trigger 0/6) and reports/neck/ (1/6:
   EURAUD exact). REVIEW "Kevin's trades replay" lists why the other 5 fail. Test test_kevin_euraud_qmr_neck_trade.
+- 2026-10-15: Live check: (1) every live run since 14 Oct processes only XAUUSD ("pairs ok 1") = Mini App setting
+  Markets → Pairs is "XAUUSD"; owner to clear it (empty = all 28). (2) GitHub "hourly" cron fired only every 4-5 h
+  (13-15 Oct), up to 56 min late. Fix: Render endpoint `/cron/tick` (CRON_SECRET) dispatches live.yml with
+  GH_DISPATCH_TOKEN (fine-grained, Actions r/w on this repo); cron-job.org calls it hourly. Steps: webapp/README.md
+  "Hourly tick". live.yml input tick=1 obeys FX hours. Entry alerts stay on (alert_entry) + paper outcome tracking.
 

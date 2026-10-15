@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = settings 'pairs' or all 28", default: ""}
+      tick: {description: "1 = hourly tick from the Mini App server (/cron/tick): obeys FX hours like a scheduled run", default: "0"}
   push:
     branches: [claude-kevin-king]
     paths: ["slk/live.py"]
@@ -50,7 +51,9 @@ jobs:
           { [ "$dow" = 5 ] && [ "$hr" -ge 20 ]; } && closed=true
           [ "$dow" = 6 ] && closed=true
           { [ "$dow" = 7 ] && [ "$hr" -lt 17 ]; } && closed=true
-          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$closed" = true ]; then
+          sched=false
+          { [ "$GITHUB_EVENT_NAME" = "schedule" ] || [ "${{ inputs.tick }}" = "1" ]; } && sched=true
+          if [ "$sched" = true ] && [ "$closed" = true ]; then
             echo "FX market closed (New York $(TZ=America/New_York date '+%a %H:%M')): nothing to do."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else

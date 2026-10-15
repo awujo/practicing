@@ -78,3 +78,13 @@ pip install -r webapp/requirements.txt
 cd webapp && DATABASE_URL=... TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=... uvicorn app:app --reload
 ```
 API calls only work with real `initData`, so test the UI inside Telegram. Tests: `pytest tests/test_webapp.py`.
+
+## Hourly tick (reliable hourly live runs)
+GitHub's own schedule fires the "hourly" live workflow only every 4-5 hours. An outside timer fixes it:
+1. GitHub → Settings → Developer settings → Fine-grained tokens → Generate: repository access **only
+   awujo/practicing**, permission **Actions: Read and write** (nothing else), expiry 1 year.
+2. Render → slk-miniapp → Environment: `GH_DISPATCH_TOKEN` = that token, `CRON_SECRET` = any long random text.
+   Save (Render redeploys).
+3. cron-job.org (free) → Create cronjob: URL `https://<your-render-app>.onrender.com/cron/tick?key=<CRON_SECRET>`,
+   every hour at minute 2. The server starts `live.yml` (input tick=1: FX weekend hours are skipped like a
+   scheduled run). Ticks within 10 minutes of the last one start nothing.

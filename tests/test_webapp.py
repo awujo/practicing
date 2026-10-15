@@ -200,3 +200,39 @@ def test_new_settings_in_schema(client):
     r = client.post("/api/settings", json={"display_tz": "Europe/London", "next_day_rule": "flag"},
                     headers=hdr(make_init_data()))
     assert r.status_code == 200 and r.json()["display_tz"] == "Europe/London" and r.json()["next_day_rule"] == "flag"
+
+
+def test_cron_tick(client, monkeypatch):
+    """/cron/tick (hourly timer -> live workflow): refused without the secret or token; with both it dispatches
+    live.yml once (tick=1) and ignores repeats within 10 minutes; the token never appears in the answer."""
+    assert client.get("/cron/tick?key=x").status_code == 403  # nothing configured: off
+    monkeypatch.setenv("CRON_SECRET", "s3cret")
+    monkeypatch.setenv("GH_DISPATCH_TOKEN", "ghtoken")
+    sent = []
+    monkeypatch.setattr(webapp, "dispatch_live", lambda tok: sent.append(tok) or 204)
+    monkeypatch.setitem(webapp._last_tick, "t", 0.0)
+    assert client.get("/cron/tick?key=wrong").status_code == 403 and not sent
+    r = client.get("/cron/tick?key=s3cret")
+    assert r.status_code == 200 and r.json()["started"] is True and sent == ["ghtoken"]
+    r = client.post("/cron/tick", headers={"X-Cron-Secret": "s3cret"})
+    assert r.json()["started"] is False and len(sent) == 1 and "ghtoken" not in r.text
+
+
+def test_dispatch_live_request():
+    seen = {}
+
+    class R:
+        status = 204
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def opener(req, timeout):
+        seen.update(url=req.full_url, body=json.loads(req.data), auth=req.headers["Authorization"])
+        return R()
+    assert webapp.dispatch_live("tok", opener) == 204
+    assert seen["url"].endswith("/repos/awujo/practicing/actions/workflows/live.yml/dispatches")
+    assert seen["body"] == {"ref": "claude-kevin-king", "inputs": {"tick": "1"}} and seen["auth"] == "Bearer tok"

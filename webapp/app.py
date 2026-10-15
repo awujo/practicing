@@ -281,3 +281,49 @@ async def telegram_webhook(request: Request):
         return {"ok": True}
     reply = bot_reply(update if isinstance(update, dict) else {})
     return reply or {"ok": True}
+
+
+# ------------------------------------------------------------------ hourly tick (GitHub cron is unreliable)
+# GitHub's own "hourly" schedule fired only every 4-5 hours (Oct 2026). An outside timer (cron-job.org, free) calls
+# /cron/tick every hour with the CRON_SECRET; this server then starts the live workflow through the GitHub API with
+# GH_DISPATCH_TOKEN (fine-grained token: this one repo, Actions read/write only). Both live on Render only.
+GH_REPO = os.environ.get("GH_REPO", "awujo/practicing")
+GH_WORKFLOW = os.environ.get("GH_WORKFLOW", "live.yml")
+GH_REF = os.environ.get("GH_REF", "claude-kevin-king")
+TICK_MIN_GAP = 10 * 60  # seconds: repeated ticks inside this window start nothing
+_last_tick = {"t": 0.0}
+
+
+def dispatch_live(token, opener=None):
+    """POST workflow_dispatch for the live workflow (inputs tick=1 = obey FX hours like a scheduled run). Returns
+    the HTTP status (204 = started)."""
+    import urllib.request
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{GH_REPO}/actions/workflows/{GH_WORKFLOW}/dispatches",
+        data=json.dumps({"ref": GH_REF, "inputs": {"tick": "1"}}).encode(), method="POST",
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                 "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "slk-miniapp"})
+    with (opener or urllib.request.urlopen)(req, timeout=20) as r:
+        return r.status
+
+
+@app.api_route("/cron/tick", methods=["GET", "POST"])
+def cron_tick(request: Request):
+    """Start the live bias run. Needs ?key=<CRON_SECRET> (or header X-Cron-Secret); off when CRON_SECRET or
+    GH_DISPATCH_TOKEN is not set."""
+    secret, token = os.environ.get("CRON_SECRET", ""), os.environ.get("GH_DISPATCH_TOKEN", "")
+    got = request.headers.get("X-Cron-Secret") or request.query_params.get("key") or ""
+    if not secret or not token or not hmac.compare_digest(got.encode(), secret.encode()):
+        raise HTTPException(status_code=403, detail="forbidden")
+    now = time.time()
+    if now - _last_tick["t"] < TICK_MIN_GAP:
+        return {"ok": True, "started": False, "note": "already started in the last 10 minutes"}
+    try:
+        status = dispatch_live(token)
+    except Exception as e:  # noqa: BLE001 - never echo the token
+        log.warning("tick dispatch failed: %s", type(e).__name__)
+        raise HTTPException(status_code=502, detail=f"GitHub dispatch failed ({type(e).__name__})")
+    if status != 204:
+        raise HTTPException(status_code=502, detail=f"GitHub answered {status}")
+    _last_tick["t"] = now
+    return {"ok": True, "started": True}
