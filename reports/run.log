@@ -1,7 +1,7 @@
 EURUSD: 249 stories, 3053 variant rows
-GBPUSD: 283 stories, 3668 variant rows
 AUDUSD: 280 stories, 3285 variant rows
 NZDUSD: 289 stories, 3731 variant rows
+GBPUSD: 283 stories, 3668 variant rows
 USDJPY: 267 stories, 3244 variant rows
 USDCAD: 283 stories, 3470 variant rows
 USDCHF: 262 stories, 3355 variant rows
@@ -15,13 +15,13 @@ GBPJPY: 223 stories, 2950 variant rows
 GBPAUD: 269 stories, 3253 variant rows
 GBPCAD: 256 stories, 3202 variant rows
 GBPCHF: 243 stories, 3002 variant rows
-GBPNZD: 264 stories, 3374 variant rows
 AUDJPY: 243 stories, 2653 variant rows
-AUDCHF: 261 stories, 3276 variant rows
+GBPNZD: 264 stories, 3374 variant rows
 AUDCAD: 286 stories, 3525 variant rows
 AUDNZD: 274 stories, 3514 variant rows
-NZDJPY: 228 stories, 3090 variant rows
+AUDCHF: 261 stories, 3276 variant rows
 NZDCHF: 239 stories, 3170 variant rows
+NZDJPY: 228 stories, 3090 variant rows
 NZDCAD: 297 stories, 3805 variant rows
 CADJPY: 257 stories, 3242 variant rows
 CADCHF: 245 stories, 2861 variant rows
