@@ -299,3 +299,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   (continuation / BIAS CHANGE / "Bias stays BULLISH" on target / no bias after invalidation, `live.bias_notes`),
   daily summary lists it, Mini App Bias tab "Current bias" (`/api/bias/state`). M stays a setting (Markets →
   Stories). Not yet: entries during a standing bias after the story's target (needs a new level/target rule).
+- 2026-10-15: GBPJPY had W BUY + D SELL both CONFIRMED (owner). `htf_filter` only checks the W swing trend; new
+  `htf_bias_filter` (default on, Mini App Bias rules) = D against the standing W bias (W against M) -> NO_TRADE,
+  chain label from the standing bias (`live.mark_htf_bias`; `state_stories` adds the higher TF). Examples 7/9 same.
+  Stale CONFIRMED rows the engine stopped reporting (e.g. CADCHF flip after flip_max_age) -> CANCELLED quietly
+  (`standing.DROPPED`, no bias).

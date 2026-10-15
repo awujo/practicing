@@ -60,6 +60,9 @@ DEFAULT = {
     "flip_max_age": 100,    # bars (of the level's TF) from the candle that drew the line to the break; older -> no flip
                             # (0 = no limit, v0.7). Owner 2026-10-15: EURGBP D "tapped" 0.84614, a Jun-2024 OC level
                             # on its 7th flip; examples pass the same with 40..250 (7/9)
+    "htf_bias_filter": True,  # live: a story against the standing bias of the next higher story TF (W for D, M for W)
+                              # is NO_TRADE (owner 2026-10-15: GBPJPY W BUY + D SELL both "confirmed"; Kevin
+                              # weekly-recap@622-646 "4h structure to the upside ... does it make any sense? No")
     "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
     "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
     "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL

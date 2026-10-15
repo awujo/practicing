@@ -35,6 +35,9 @@ SCHEMA = [
        "retracing: levels on the weekly side start the story (Kevin's CADJPY, EURGBP and USDCAD daily stories: "
        "story-line-pt2@1420-1580, all-in-1@1357-1388, story-line-pt4@1465-1496). Off = only levels of the daily "
        "trend (then no daily story can start while daily and weekly disagree)."),
+    _s("htf_bias_filter", "bool", "on", "Bias rules",
+       "A Daily story against the standing Weekly bias (a Weekly story against the Monthly bias) is NO_TRADE: shown, "
+       "not alerted, no entries (Kevin weekly-recap: weekly and daily down, a 4h move up 'does it make any sense? No')."),
     _s("mw_conflict_filter", "bool", "on", "Bias rules", "M and W disagree -> Daily stories are NO_TRADE."),
     _s("max_wait", "int", "5", "Bias rules", "Origin bars from tap to breakout before the story is dropped.",
        min=1, max=20),
@@ -308,7 +311,7 @@ def as_strings(stored=None):
 
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
-    return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
+    return {k: vals[k] for k in ("trend_filter", "htf_filter", "htf_bias_filter", "mw_conflict_filter", "max_wait",
                                  "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_max_age", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
                                  "cadjpy_exception", "next_day_rule", "trend_mode", "target_mode")}

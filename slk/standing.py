@@ -20,6 +20,7 @@ from datetime import datetime
 KEEPS = ("CONFIRMED", "TARGET_HIT", "CANCELLED")   # the bias stands after these
 ENDS = ("INVALIDATED", "ENDED_FLIP")                # proven otherwise
 WORD = {"BUY": "BULLISH", "SELL": "BEARISH"}
+DROPPED = "no longer a story under the current rules/settings"  # end_reason of a story the engine stopped reporting
 
 
 def _t(x):
@@ -36,7 +37,7 @@ def standing(rows, story):
     state: 'story active' | 'target reached, bias continues' | 'no outcome yet, bias continues' |
     'invalidated' | 'ended by flip' | 'none' (never confirmed)."""
     conf = sorted((r for r in rows if r.get("story") == story and _t(r.get("confirm_time")) is not None
-                   and r.get("status") in KEEPS + ENDS), key=lambda r: _t(r["confirm_time"]))
+                   and r.get("status") in KEEPS + ENDS and r.get("end_reason") != DROPPED), key=lambda r: _t(r["confirm_time"]))
     if not conf:
         return {"story": story, "side": None, "since": None, "stories": 0, "last": None, "state": "none"}
     last = conf[-1]

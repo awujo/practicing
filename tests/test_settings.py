@@ -104,8 +104,10 @@ def test_mw_check_runs_even_when_only_d_is_watched():
     from slk.live import state_stories
     assert state_stories(["D"], {}) == ["D", "W", "M"]
     assert state_stories(["D", "M"], {}) == ["D", "M", "W"]
-    assert state_stories(["D"], {"mw_conflict_filter": False}) == ["D"]
-    assert state_stories(["W"], {}) == ["W"]
+    assert state_stories(["D"], {"mw_conflict_filter": False}) == ["D", "W"]  # W bias for htf_bias_filter
+    assert state_stories(["D"], {"mw_conflict_filter": False, "htf_bias_filter": False}) == ["D"]
+    assert state_stories(["W"], {}) == ["W", "M"]
+    assert state_stories(["W"], {"htf_bias_filter": False}) == ["W"]
 
 
 def test_entry_models_setting():

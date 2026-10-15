@@ -215,7 +215,7 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
                 r["_early"] = eb  # not stored; slk.live.early_alerts sends it once (setting early_breakout_alert)
             rows.append(r)
         out += rows
-    return mark_mw_conflict(out, cfg)
+    return mark_htf_bias(mark_mw_conflict(out, cfg), cfg)
 
 
 def early_breakout(r, h1, h, now):
@@ -278,12 +278,42 @@ def mark_mw_conflict(rows, cfg=None):
     return rows
 
 
+def _as_of(rows, t):
+    """Rows as they stood at time t: stories confirmed by then, status kept only if it was already known."""
+    return [r for r in rows if r.get("confirm_time") is not None and r["confirm_time"] <= t]
+
+
+def mark_htf_bias(rows, cfg=None):
+    """Owner 2026-10-15 + Kevin weekly-recap@622-646: a D story against the standing W bias (W story against M) is
+    NO_TRADE ('against W bias'). The chain label (W1->D1->H4) follows that standing bias when the higher story TF
+    has one, else the higher-TF swing trend (slk.standing). Bias as of the story's confirmation (tap if TAPPED)."""
+    cfg = {**DEFAULT, **(cfg or {})}
+    for r in rows:
+        h = HIGHER_TF.get(r["story"])
+        hr = [x for x in rows if x["story"] == h]
+        if not hr:
+            continue
+        t = r.get("confirm_time") or r["tap_time"]
+        b = standing.standing(_as_of(hr, t), h)
+        if not b["side"]:
+            continue
+        r["chain"] = chain(r["story"], r["side"], "down" if b["side"] == "SELL" else "up")
+        if cfg.get("htf_bias_filter", True) and b["side"] != r["side"] and not r.get("no_trade"):
+            r["no_trade"] = True
+            r["no_trade_reason"] = f"against {h} bias ({standing.WORD[b['side']]})"
+    return rows
+
+
 def state_stories(stories, cfg):
     """Stories the engine must compute: the M/W check for D stories needs M and W even when only D is
     watched (settings `stories`). Rows of the extra stories are used for the check, not stored."""
-    if "D" in stories and {**DEFAULT, **(cfg or {})}.get("mw_conflict_filter", True):
-        return list(stories) + [s for s in ("W", "M") if s not in stories]
-    return list(stories)
+    c = {**DEFAULT, **(cfg or {})}
+    need = set(stories)
+    if "D" in stories and c.get("mw_conflict_filter", True):
+        need |= {"W", "M"}
+    if c.get("htf_bias_filter", True):
+        need |= {HIGHER_TF[s] for s in stories if HIGHER_TF.get(s) in STORIES}
+    return list(stories) + [s for s in ("W", "M") if s in need and s not in stories]
 
 
 def filter_alerts(alerts):
@@ -336,8 +366,14 @@ def reconcile(new_rows, old_rows, now, h1=None, cfg=None):
         if key in seen or o["status"] not in ACTIVE or h1 is None:
             continue
         st = resolve(o, h1, now, cfg or DEFAULT)
-        if st != o["status"]:
+        r = None
+        if st == "CONFIRMED" and len(h1) and _ts(h1.index[0]) < _ts(o["tap_time"]) - timedelta(days=400):
+            # the engine sees this story's whole history and no longer reports it: the rules or settings changed
+            # (e.g. flip_max_age dropped its level). Close it quietly instead of leaving it CONFIRMED for ever.
+            r = {**o, "status": "CANCELLED", "end_reason": standing.DROPPED}
+        elif st != o["status"]:
             r = {**o, "status": st}
+        if r is not None:
             writes.append(r)
             if st in ("TARGET_HIT", "INVALIDATED"):
                 alerts.append((st, r))
