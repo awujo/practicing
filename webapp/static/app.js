@@ -102,9 +102,24 @@
   const empty = (t) => `<div class="empty">${esc(t)}</div>`;
 
   // ---------------- Bias
+  // Standing bias (slk/standing.py): stays after a target, ends on a confirmed opposite story or an invalidation
+  function renderState(st) {
+    const pf = $("#f-pair").value, sf = $("#f-story").value;
+    const rows = (st || []).filter((b) => (!pf || b.pair === pf) && (!sf || b.story === sf));
+    $("#bias-state").innerHTML = rows.length ? `
+      <div class="card summary">
+        <div class="top"><span class="title">Current bias</span><span class="tag">${esc(rows.filter((b) => b.side).length)} pairs/TFs</span></div>
+        ${rows.map((b) => `<div class="bias-row"><span><b>${esc(b.pair)}</b> · ${esc(b.chain || b.story)}</span>
+          <span class="${esc(b.side || "")}">${esc(b.bias)}</span>
+          <span class="muted">${b.side ? `since ${esc(candleDay(b.since, "D").replace(" (D1 candle)", ""))}${b.stories > 1 ? ` · ${esc(b.stories)} stories` : ""} · ${esc(b.state)}` : esc(b.state)}</span></div>`).join("")}
+        <div class="muted">A bias stays after its target is reached (Kevin: "we are still bearish ... price is not ready to buy yet"). It changes only when a story the other way confirms, or a close back through the level invalidates it.</div>
+      </div>` : "";
+  }
+
   async function loadBias() {
     const q = new URLSearchParams({ pair: $("#f-pair").value, story: $("#f-story").value, status: $("#f-status").value });
-    const rows = await api(`/api/bias?${q}`);
+    const [rows, st] = await Promise.all([api(`/api/bias?${q}`), api("/api/bias/state").catch(() => null)]);
+    renderState(st);
     const sel = $("#f-pair");
     const known = new Set([...sel.options].map((o) => o.value));
     const pairs = new Set([...(settings.pairs || "").split(",").filter(Boolean), ...rows.map((r) => r.pair)]);

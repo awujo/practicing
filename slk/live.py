@@ -31,6 +31,7 @@ from . import store as candles_store
 from .backtest import PAIRS
 from .candles import _key, nominal_end, resample
 from .entry import DEFAULT as ENTRY_DEFAULT
+from . import standing
 from .story import DEFAULT, STORIES, current_tap, find_stories, mw_conflict, pip
 
 JOB = "live"
@@ -343,6 +344,19 @@ def reconcile(new_rows, old_rows, now, h1=None, cfg=None):
     return writes, alerts
 
 
+def bias_notes(alerts, old, writes):
+    """Adds r['_bias_note'] (slk.standing.note) to each alert: continuation / BIAS CHANGE / bias stays after the
+    target / no bias after an invalidation. old = stored rows before this run, writes = rows written now."""
+    after = {(r["story"], r["tap_time"]): r for r in old}
+    after.update({(r["story"], r["tap_time"]): r for r in writes})
+    after = list(after.values())
+    for ev, r in alerts:
+        # bias before this event: every other story as it stands now (a continuation sees the earlier ones)
+        before = standing.standing([x for x in after if x["tap_time"] != r["tap_time"]], r["story"])
+        r["_bias_note"] = standing.note(ev, r, before, standing.standing(after, r["story"]))
+    return alerts
+
+
 def _bar(r):
     # a TAPPED story is stamped with the start of its origin candle: allow one candle more
     return {"D": timedelta(days=1), "W": timedelta(days=7), "M": timedelta(days=31)}[r["story"]] \
@@ -620,7 +634,7 @@ def format_alert(event, r, tz=DISPLAY_TZ):
                   event, f"Story over: {HEAD.get(event, event)}")
     lines = [f"{'SELL' if sell else 'BUY'} \u00b7 {p} \u00b7 {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}",
              f"BIAS \u00b7 {STORY_NAME[r['story']]} story \u00b7 {'BEARISH' if sell else 'BULLISH'}",
-             status, ""]
+             status] + ([r["_bias_note"]] if r.get("_bias_note") else []) + [""]
     if r.get("level_kind") == "sweep":
         lines.append(f"Rejected at the {level_name(r)} @ {fp(r['level'])}")
     else:
@@ -678,10 +692,10 @@ def format_alert(event, r, tz=DISPLAY_TZ):
 
 
 def summary_line(pair, rows):
+    """'EURUSD: W BUY tapped (...), D SELL B 1.08120 T 1.07600' + the standing bias of story TFs whose story is
+    over (target reached etc.), e.g. 'D BEARISH bias (target reached, bias continues)' (slk.standing)."""
     act = sorted((r for r in rows if r["status"] in ACTIVE), key=lambda r: "MWD".index(r["story"]))
-    if not act:
-        return f"{pair}: NO_TRADE (no story)"
-    conf = {r["story"]: r["side"] for r in act if r["status"] == "CONFIRMED"}
+    stand = {s: standing.standing(rows, s) for s in "MWD" if any(r["story"] == s for r in rows)}
     parts = []
     for r in act:
         s = f"{r['story']} {r['side']}"
@@ -693,8 +707,14 @@ def summary_line(pair, rows):
         else:
             s += f" B {fmt_price(pair, r['point_b'])} T {fmt_price(pair, r['target'])}"
         parts.append(s)
+    for st, b in stand.items():
+        if b["side"] and b["state"] != "story active":
+            parts.append(f"{st} {standing.WORD[b['side']]} bias ({b['state']})")
+    if not parts:
+        return f"{pair}: NO_TRADE (no story)"
     line = f"{pair}: " + ", ".join(parts)
-    if "M" in conf and "W" in conf and conf["M"] != conf["W"]:
+    m, w = (stand.get(x, {}).get("side") for x in ("M", "W"))
+    if m and w and m != w:
         line += " -> NO_TRADE (M/W disagree)"
     return line
 
@@ -956,6 +976,7 @@ def main(argv=None):
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
                     db.upsert_bias(r)
+                bias_notes(alerts, old, writes)
                 for ev, r in alerts_enabled(filter_alerts(alerts), vals):
                     sent += send_telegram(format_alert(ev, r, tz))
                 if vals["early_breakout_alert"]:

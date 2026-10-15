@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 import db  # also puts the repo root on sys.path
 from slk import settings as S  # stdlib only (no pandas)
+from slk import standing  # stdlib only
 from slk import terms as T  # stdlib only
 
 log = logging.getLogger("slk.webapp")
@@ -151,6 +152,31 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
         + " ORDER BY COALESCE(confirm_time, tap_time) DESC LIMIT %s"
     )
     return _db(db.query, sql, args + [_clamp(limit)])
+
+
+@app.get("/api/bias/state")
+def bias_state(user=Depends(require_user)):
+    """Standing bias per pair and watched story TF (slk.standing): the direction stays after a target is reached and
+    ends only on a confirmed opposite story or an invalidation. Strongest first: M, W, D."""
+    watched = [x for x in S.load(_db(db.get_settings))["stories"] if x in ("D", "W", "M")] or ["D", "W", "M"]
+    rows = _db(db.query, "SELECT * FROM bias WHERE confirm_time IS NOT NULL AND story IN ("
+               + ", ".join(["%s"] * len(watched)) + ")", watched)
+    by_pair = {}
+    for r in rows:
+        by_pair.setdefault(r["pair"], []).append(r)
+    out = []
+    for pair in sorted(by_pair):
+        for st in [x for x in ("M", "W", "D") if x in watched]:
+            b = standing.standing(by_pair[pair], st)
+            if b["state"] == "none":
+                continue
+            last = b["last"] or {}
+            out.append({"pair": pair, "story": st, "side": b["side"], "bias": standing.WORD.get(b["side"], "NONE"),
+                        "since": b["since"], "stories": b["stories"], "state": b["state"],
+                        "chain": last.get("chain"), "last_status": last.get("status"),
+                        "last_target": last.get("target"), "last_level": last.get("level"),
+                        "last_confirm": last.get("confirm_time")})
+    return out
 
 
 PAPER_CLOSED = ("TP1_HIT", "TP2_HIT", "SL_HIT", "EXPIRED")  # paper outcome known (slk.entry.paper_track)

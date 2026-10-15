@@ -82,6 +82,17 @@ def test_bias_shows_only_watched_stories(client):
     assert "story = %s" in sql and "story IN" not in sql and args[0] == "M"
 
 
+def test_bias_state_keeps_bias_after_target(client, monkeypatch):
+    rows = [{"pair": "EURCAD", "story": "D", "side": "BUY", "status": "TARGET_HIT", "tap_time": "2026-10-05 21:00:00",
+             "confirm_time": "2026-10-06 21:00:00", "chain": "W1\u2192D1\u2192H4", "target": 1.627, "level": 1.587},
+            {"pair": "EURGBP", "story": "D", "side": "SELL", "status": "INVALIDATED", "tap_time": "2026-10-05 21:00:00",
+             "confirm_time": "2026-10-06 21:00:00"}]
+    monkeypatch.setattr(webapp.db, "query", lambda sql, args=None: rows)
+    out = client.get("/api/bias/state", headers=hdr(make_init_data())).json()
+    assert [(b["pair"], b["bias"], b["state"]) for b in out] == [
+        ("EURCAD", "BULLISH", "target reached, bias continues"), ("EURGBP", "NONE", "invalidated")]
+
+
 def test_authorization_tma_header(client):
     r = client.get("/api/me", headers={"Authorization": "tma " + make_init_data()})
     assert r.status_code == 200 and r.json()["id"] == OWNER

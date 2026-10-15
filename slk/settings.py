@@ -25,7 +25,8 @@ def _s(name, type_, default, group, help_, **kw):
 # pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2;W=D,H4;M=W,D"), tz (IANA time zone name)
 SCHEMA = [
     _s("pairs", "pairs", "", "Markets", "Pairs the bot watches. Empty = all 28.", choices=PAIRS),
-    _s("stories", "multi", "D,W,M", "Markets", "Story timeframes: Monthly, Weekly, Daily.",
+    _s("stories", "multi", "D,W,M", "Markets", "Story timeframes shown and alerted: Monthly, Weekly, Daily. Untick M if you don't use monthly (it is still "
+       "computed quietly for the M/W conflict filter).",
        choices=["M", "W", "D"]),
     _s("trend_filter", "bool", "on", "Bias rules", "Only levels that agree with the origin-TF trend."),
     _s("htf_filter", "bool", "on", "Bias rules", "Never trade against the higher-TF trend."),

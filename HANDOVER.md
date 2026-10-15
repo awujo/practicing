@@ -293,3 +293,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   New stored labels (db MIGRATIONS + schema): `level_src` (A/V/OC, kept by flips; "V-shape KL (flipped)"),
   `level_candle`, `chain` ("W1→D1→H4" when the higher-TF trend agrees, used in the alert header and card title).
   `/api/bias` shows only the watched story TFs (Settings → Markets → Stories); old M rows stay in the table.
+- 2026-10-15: Standing bias (owner: "a bias remains a bias until proven otherwise", validated in Kevin's transcripts,
+  STRATEGY row 16c). `slk/standing.py` (stdlib): bias per pair + story TF from stored rows; TARGET_HIT / CANCELLED
+  keep it, an opposite confirmed story changes it, INVALIDATED / ENDED_FLIP end it. Alerts get a line
+  (continuation / BIAS CHANGE / "Bias stays BULLISH" on target / no bias after invalidation, `live.bias_notes`),
+  daily summary lists it, Mini App Bias tab "Current bias" (`/api/bias/state`). M stays a setting (Markets →
+  Stories). Not yet: entries during a standing bias after the story's target (needs a new level/target rule).

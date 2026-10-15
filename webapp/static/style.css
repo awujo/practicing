@@ -67,3 +67,6 @@ fieldset legend { font-weight: 700; padding: 0; margin-bottom: 4px; float: left;
 .summary { margin-bottom: 10px; }
 .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align: center; margin: 4px 0 6px; }
 .stats b { display: block; font-size: 17px; } .stats span { color: var(--hint); font-size: 12px; }
+
+.bias-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--line, rgba(127,127,127,.2)); }
+.bias-row .muted { grid-column: 1 / -1; font-size: 12px; }

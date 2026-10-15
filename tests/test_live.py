@@ -81,7 +81,9 @@ def test_alert_format(monkeypatch):
 
 def test_summary():
     assert summary_line("EURUSD", []) == "EURUSD: NO_TRADE (no story)"
-    assert summary_line("EURUSD", [row(status="TARGET_HIT")]) == "EURUSD: NO_TRADE (no story)"
+    assert summary_line("EURUSD", [row(status="TARGET_HIT")]) == \
+        "EURUSD: D BEARISH bias (target reached, bias continues)"
+    assert summary_line("EURUSD", [row(status="INVALIDATED")]) == "EURUSD: NO_TRADE (no story)"
     s = summary_line("EURUSD", [row(), row(story="W", status="TAPPED", side="BUY")])
     assert s.startswith("EURUSD: W BUY tapped (NO_TRADE until breakout), D SELL B 1.08120")
     c = summary_line("EURUSD", [row(story="M", side="BUY"), row(story="W")])
