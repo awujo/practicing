@@ -3,8 +3,8 @@ AUDUSD: 262 stories, 4214 variant rows
 NZDUSD: 247 stories, 4279 variant rows
 GBPUSD: 248 stories, 4253 variant rows
 USDJPY: 239 stories, 3928 variant rows
-USDCHF: 226 stories, 3884 variant rows
 USDCAD: 264 stories, 4302 variant rows
+USDCHF: 226 stories, 3884 variant rows
 EURGBP: 242 stories, 4224 variant rows
 EURJPY: 227 stories, 3823 variant rows
 EURAUD: 231 stories, 3899 variant rows
@@ -15,8 +15,8 @@ GBPJPY: 208 stories, 3642 variant rows
 GBPAUD: 249 stories, 4095 variant rows
 GBPCAD: 242 stories, 3917 variant rows
 GBPCHF: 209 stories, 3514 variant rows
-GBPNZD: 234 stories, 3992 variant rows
 AUDJPY: 223 stories, 3652 variant rows
+GBPNZD: 234 stories, 3992 variant rows
 AUDCAD: 245 stories, 4097 variant rows
 AUDCHF: 233 stories, 3915 variant rows
 AUDNZD: 248 stories, 4206 variant rows
@@ -33,7 +33,7 @@ confirmation close, stop beyond the tap wick, target = nearest opposite level/sw
 `win%` = target before stop. `expectancy_R` = average result in R (>0 = profitable before costs).
 `kevin_target%` = target reached before an origin close back through the level (Kevin's invalidation).
 
-Settings: `{"level_pivot": 1, "swing_pivot": 2, "trend_mode": "leg", "b_pivot": 1, "use_oc": true, "trend_filter": true, "tap_tol_pips": 0.0, "level_tol_pips": 0.0, "max_wait": 5, "max_retaps": 3, "same_bar_close": true, "htf_filter": true, "stop_buffer_pips": 2.0, "max_hold": 20, "mw_conflict_filter": true, "sweep_start": true, "most_recent_level": true, "max_flips": 0, "flip_max_age": 100, "flip_end": true, "htf_targets": true, "overlap_rule": true, "overlap_tol_pips": 3.0, "align_retap_ends": true, "alignment_start": true, "pullback_levels": true, "cadjpy_zone": true, "cadjpy_exception": true, "target_mode": "leg", "next_day_rule": "require"}`
+Settings: `{"level_pivot": 1, "swing_pivot": 2, "trend_mode": "leg", "b_pivot": 1, "use_oc": true, "trend_filter": true, "tap_tol_pips": 0.0, "level_tol_pips": 0.0, "max_wait": 5, "max_retaps": 3, "same_bar_close": true, "htf_filter": true, "stop_buffer_pips": 2.0, "max_hold": 20, "mw_conflict_filter": true, "sweep_start": true, "most_recent_level": true, "max_flips": 0, "flip_max_age": 100, "htf_bias_filter": true, "flip_end": true, "htf_targets": true, "overlap_rule": true, "overlap_tol_pips": 3.0, "align_retap_ends": true, "alignment_start": true, "pullback_levels": true, "cadjpy_zone": true, "cadjpy_exception": true, "target_mode": "leg", "next_day_rule": "require"}`
 
 ## By story
 
