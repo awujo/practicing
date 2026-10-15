@@ -262,7 +262,7 @@ def test_backtest_variants_side_by_side(monkeypatch, tmp_path):
         d = pd.DataFrame(backtest.story_rows("EURUSD", h1, ["D", "W"], {**cfg, **ov}, log=False))
         d = d[~d["no_trade"].fillna(False).astype(bool)]
         row = tab.loc[f"{setting}={value}"]
-        assert row["trades"] == len(d) and np.isclose(row["total_R"], round(d["result_R"].sum(), 1))
+        assert row["trades"] == len(d) and abs(row["total_R"] - d["result_R"].sum()) <= 0.051  # 1-decimal rounding
         assert np.isclose(row["win%"], round((d["outcome"] == "win").mean() * 100, 1))
     flag = tab.loc["next_day_rule=flag"]
     split = tab.loc[["  flag: next-day breakouts only", "  flag: same-day breakouts only",

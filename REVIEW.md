@@ -442,3 +442,15 @@ Owner challenged the entry results. From reports/entries.csv (606 fills, setting
 Change: `min_stop_pips` (default 0 = unchanged); `slk.entry_backtest --variants` runs min stop 8/10, max stop 25
 and spread 1 pip on the same stories -> reports/ENTRY_VARIANTS.md. Default chosen from that report.
 
+## Targets vs Kevin (2026-10-15)
+Kevin's trades replayed on IC data (tests/kevin_trades.json). The bias was right (EURAUD level 1.68095 = his
+1.6809, B 1.67396 broken 17 Feb) but the story target was the NEAREST opposite level/swing: EURAUD 1.67211, 5 pips
+past the breakout, hit 4 hours later -> story over -> no entry. That is also why bias "win%" was ~80% with only
+0.34 R per win. Kevin targets the external range liquidity of the leg. New `target_mode` leg (default):
+EURAUD 1.66234 (Kevin 1.6620), CADJPY 114.639 (114.65), GBPAUD 1.90805 (1.9029), EURGBP 0.86925 (0.8722: weekly
+overlap target, not matched). Bias examples 8/9 -> 7/9: the Jan 26 CADJPY D BUY now runs to Feb 5, so Kevin's
+Feb 2 sweep is not a new story (same BUY bias). Backtest variant target_mode leg/nearest in REPORT.md.
+Entries still miss Kevin's EURAUD trade: his entry is a limit at the H4 QM neck (shoulder 1.67799, neck 1.67495,
+head 1.67810, neck close-break 17 Feb 18:00, fill 18 Feb 02:00, stop 18.7 pips "15 to 20 pips plus"); the bot's
+QMR waits for an extra H1 Model-A pattern in the zone. Next: QMR direct limit at the neck, Kevin's stop rule.
+

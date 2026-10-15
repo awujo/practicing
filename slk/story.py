@@ -72,6 +72,11 @@ DEFAULT = {
     # clean breakout"; qns-pt2@1946-1962 "the next day ... not that particular day"]: the confirm-TF breakout should
     # come from a candle that opens after the origin (tap/rejection) candle closed. "flag" = every story carries
     # next_day True/False (label only); "require" = a story whose breakout is inside the rejection candle is dropped.
+    # Target (#30): "leg" = the leg's external range liquidity (extreme from the level candle to the tap, where the
+    # pullback started) [T liquidity@1444-1500, weekly-recap@1200; EURAUD 1.6620, CADJPY 114.65]; "nearest" = the
+    # nearest opposite fresh KL / structural swing (before 2026-10-15: often a few pips past the breakout, so the
+    # story "reached target" within hours and no entry came). Overlap (#31a) and CADJPY (#31c) keep their own rules.
+    "target_mode": "leg",
     "next_day_rule": "require",  # owner decision 2026-10-14: backtest next-day +43.6R vs same-day -188R
 }
 # Point B is broken only by an EXTERNAL break: a confirm-TF body close beyond B, the last opposite swing before
@@ -452,7 +457,23 @@ class _Ctx:
             k += 1
         return k
 
-    def target(self, sell, closed_o, t, ref, mode="nearest"):
+    def leg_extreme(self, lv, bar):
+        """ERL of the leg (target_mode 'leg'): the lowest low (sell) / highest high (buy) of the origin candles from
+        the one that formed the level to the tap candle = where the pullback into the level started. Kevin
+        [T liquidity@1444-1500 "whenever we take price from the internal range we always put our take profit at
+        the external range"; liquidity-pt2@1637-1658 "first target ... internal range, then external range next";
+        weekly-recap@1200 "my first target would be this low before I target the weekly key level" (EURAUD 1.6620);
+        F story-line-pt2/sheet_025-028 CADJPY 114.65]. None for a sweep start (no level candle)."""
+        if lv.kind == "sweep":
+            return None
+        i = min(max(int(lv.born) - 1, 0), bar)
+        if i >= bar:
+            return None
+        if lv.side == "sell":
+            return float(self.O["low"][i:bar + 1].min())
+        return float(self.O["high"][i:bar + 1].max())
+
+    def target(self, sell, closed_o, t, ref, mode="nearest", leg=None):
         """#30 [T story-line@648 (monthly story -> next monthly fresh level), story-line-pt2@1914-1968; F story-line-
         pt2/sheet_025-028 (CADJPY TP = previous D high 114.65); T class-wrok@480-620 (H4 story on a level shared
         with D: TP at the next H4 level, never swung past the stronger opposing daily zone)]: nearest of the
@@ -467,6 +488,9 @@ class _Ctx:
         beyond = lambda xs: [x for x in xs if (x < ref if sell else x > ref)]  # noqa: E731
         near = lambda xs: (max(xs) if sell else min(xs)) if xs else None  # noqa: E731
         kls, erl = beyond(kls), beyond(erl)
+        if mode == "leg":  # the leg's ERL; already passed at confirmation -> the next structural swing, then KLs
+            lg = beyond([leg] if leg is not None else [])
+            return near(lg) if lg else (near(erl) if erl else near(kls))
         if mode == "kl" and kls:
             return near(kls)
         if mode == "erl" and erl:
@@ -554,7 +578,8 @@ class _Ctx:
             rule += "+overlap"
             target = self.target(sell, closed_o, t_conf, ref, "kl")
         else:
-            target = self.target(sell, closed_o, t_conf, ref, "erl" if rule == "cadjpy" else "nearest")
+            mode = "erl" if rule == "cadjpy" else ("leg" if cfg["target_mode"] == "leg" else "nearest")
+            target = self.target(sell, closed_o, t_conf, ref, mode, self.leg_extreme(lv, bar))
         if target is None:
             return None
         stop = (O["high"][bar] + cfg["stop_buffer_pips"] * P) if sell else (O["low"][bar] - cfg["stop_buffer_pips"] * P)
@@ -753,7 +778,8 @@ def current_tap(pair, h1, story, cfg=None):
             continue
 
         ref = O["close"][last]
-        tg = X.target(sell, last, X.o_end[last], min(ref, B) if sell else max(ref, B))
+        tg = X.target(sell, last, X.o_end[last], min(ref, B) if sell else max(ref, B),
+                      "leg" if cfg["target_mode"] == "leg" else "nearest", X.leg_extreme(lv, bar))
         return {
             "pair": pair, "story": story, "side": "SELL" if sell else "BUY", "status": "TAPPED", "trend": tr,
             "level_kind": lv.kind, "level": lv.price, "B": B, "target": tg,

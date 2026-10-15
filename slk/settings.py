@@ -81,6 +81,12 @@ SCHEMA = [
        "key level ... the BOS'; basic-ms-pt3@875-1211 'I use this first one'). protected = before 2026-10-14: only "
        "a close beyond the older protected swing (order 2) flips it, which can stay years old.",
        choices=["leg", "protected"]),
+    _s("target_mode", "choice", "leg", "Bias rules",
+       "Story target. leg = Kevin: the external range liquidity of the leg, i.e. the low (sell) / high (buy) where "
+       "the pullback into the key level started ('my first target would be this low', weekly-recap@1200; "
+       "liquidity@1444-1500 'we always put our take profit at the external range'). nearest = before 2026-10-15: "
+       "the nearest opposite key level or swing, often a few pips past the breakout.",
+       choices=["leg", "nearest"]),
     _s("next_day_rule", "choice", "require", "Bias rules",
        "Next Day Rule: the lower-TF breakout should come AFTER the rejection candle (e.g. the D tap candle) has "
        "closed (story-line-pt3@1358-1401 'go to four hours after the close of this day'; qns-pt2@1946-1962). "
@@ -294,7 +300,7 @@ def story_cfg(vals):
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
                                  "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
-                                 "cadjpy_exception", "next_day_rule", "trend_mode")}
+                                 "cadjpy_exception", "next_day_rule", "trend_mode", "target_mode")}
 
 
 def entry_cfg(vals):

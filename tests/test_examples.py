@@ -98,17 +98,23 @@ PASS_BEFORE = ("cadjpy-d-buy", "cadjpy-d-buy-no-h4-exception", "eurgbp-d-buy-ove
 
 
 def test_examples_on_offline_data():
-    """Defaults (2026-10-14: next_day_rule require, trend_mode leg): 8/9. The examples-diagnosis passes still pass
+    """Defaults (2026-10-14: next_day_rule require, trend_mode leg; 2026-10-15 target_mode leg): 7/9. The examples-diagnosis passes still pass
     with the old trend definition; with `leg` USDCAD is the one known difference (REVIEW "Weekly trend definition":
     on IC the weekly closed above its last A-shape 1.3798 on Jan 9 2026, so W is up and the D SELL is against it)."""
     cfg = build_cfg()[0]
     assert cfg["trend_mode"] == "leg" and cfg["next_day_rule"] == "require"
     res = {ex["id"]: V.check(ex, V.load_csv(ex["pair"], DATA), cfg)[0] for ex in V.EXAMPLES}
+    # target_mode leg (2026-10-15): the Jan 26 CADJPY D BUY (target = 115.431, the high its pullback started from)
+    # is still running on Feb 2, so Kevin's Feb 2 sweep story is not a NEW story (same BUY bias); it passes with
+    # target_mode nearest (that story ended at 113.318 on Jan 29).
+    known = ("usdcad-d-sell-friday-sweep", "cadjpy-d-buy-no-h4-exception")
     for i in PASS_BEFORE + ("euraud-sells", "gbpaud-sells", "gbpjpy-d-no-h4-breakout"):
-        if i != "usdcad-d-sell-friday-sweep":
+        if i not in known:
             assert res[i] == "PASS", i
-    assert res["usdcad-d-sell-friday-sweep"] == "FAIL"
-    old = {**cfg, "trend_mode": "protected"}
+    assert res["usdcad-d-sell-friday-sweep"] == "FAIL" and res["cadjpy-d-buy-no-h4-exception"] == "FAIL"
+    ex = next(e for e in V.EXAMPLES if e["id"] == "cadjpy-d-buy-no-h4-exception")
+    assert V.check(ex, V.load_csv(ex["pair"], DATA), {**cfg, "target_mode": "nearest"})[0] == "PASS"
+    old = {**cfg, "trend_mode": "protected", "target_mode": "nearest"}
     for i in PASS_BEFORE + ("gbpjpy-d-no-h4-breakout",):
         ex = next(e for e in V.EXAMPLES if e["id"] == i)
         assert V.check(ex, V.load_csv(ex["pair"], DATA), old)[0] == "PASS", i

@@ -270,4 +270,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   17 Feb 18:00 (ok) but story TARGET 1.67211 (5 pips past the break) is hit 18 Feb 02:00 -> story ends -> NO entry.
   Kevin's TP = 1.6620, "this low before I target the weekly key level" (the low the pullback started from).
   Open question to owner: target = that leg low (ERL) instead of the nearest small level?
+- 2026-10-15: `story.DEFAULT["target_mode"]` = leg (Kevin's ERL target), Mini App setting + backtest variant.
+  Examples 7/9 (CADJPY Feb 2 = same BUY bias from the Jan 26 story). REVIEW "Targets vs Kevin". Next: QMR entry
+  = limit at the H4 neck (Kevin's EURAUD 17-18 Feb), stop 15-20 pips; `slk/verify_trades` vs tests/kevin_trades.json.
 

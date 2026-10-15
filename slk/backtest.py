@@ -88,6 +88,8 @@ VARIANTS = [
     ("next_day_rule", "flag", "story", {"next_day_rule": "flag"}),
     ("trend_mode", "leg", "story", {"trend_mode": "leg"}),
     ("trend_mode", "protected", "story", {"trend_mode": "protected"}),
+    ("target_mode", "leg", "story", {"target_mode": "leg"}),
+    ("target_mode", "nearest", "story", {"target_mode": "nearest"}),
     ("cadjpy_exception", "on", "story", {"cadjpy_exception": True}),
     ("cadjpy_exception", "off", "story", {"cadjpy_exception": False}),
     ("pullback_levels", "on", "story", {"pullback_levels": True}),
