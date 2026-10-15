@@ -35,9 +35,9 @@ SCHEMA = [
        "retracing: levels on the weekly side start the story (Kevin's CADJPY, EURGBP and USDCAD daily stories: "
        "story-line-pt2@1420-1580, all-in-1@1357-1388, story-line-pt4@1465-1496). Off = only levels of the daily "
        "trend (then no daily story can start while daily and weekly disagree)."),
-    _s("htf_bias_filter", "bool", "on", "Bias rules",
-       "A Daily story against the standing Weekly bias (a Weekly story against the Monthly bias) is NO_TRADE: shown, "
-       "not alerted, no entries (Kevin weekly-recap: weekly and daily down, a 4h move up 'does it make any sense? No')."),
+    _s("htf_bias_filter", "bool", "off", "Bias rules",
+       "On = a Daily story against the standing Weekly bias (a Weekly story against the Monthly bias) is NO_TRADE. "
+       "Off (default): it is shown and alerted as a retracement (header D1\u2192H4 instead of W1\u2192D1\u2192H4)."),
     _s("mw_conflict_filter", "bool", "on", "Bias rules", "M and W disagree -> Daily stories are NO_TRADE."),
     _s("max_wait", "int", "5", "Bias rules", "Origin bars from tap to breakout before the story is dropped.",
        min=1, max=20),

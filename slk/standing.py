@@ -31,13 +31,14 @@ def _t(x):
     return datetime.fromisoformat(str(x).replace("T", " ")[:19])
 
 
-def standing(rows, story):
-    """{'story', 'side' ('BUY'/'SELL'/None), 'since' (confirm time of the first story of this run), 'stories' (how
-    many same-side stories in a row), 'last' (row holding the bias, or the one that ended it), 'state'}.
-    state: 'story active' | 'target reached, bias continues' | 'no outcome yet, bias continues' |
-    'invalidated' | 'ended by flip' | 'none' (never confirmed)."""
-    conf = sorted((r for r in rows if r.get("story") == story and _t(r.get("confirm_time")) is not None
-                   and r.get("status") in KEEPS + ENDS and r.get("end_reason") != DROPPED), key=lambda r: _t(r["confirm_time"]))
+def pullback(r):
+    """A story against its own TF's structure trend at the tap (pullback_levels: the TF retracing toward the higher
+    TF's levels) = a retracement inside the bias, not a new bias (owner 2026-10-15, GBPJPY W BUY in a bearish W)."""
+    t = r.get("trend")
+    return t in ("up", "down") and (r.get("side") == "BUY") != (t == "up")
+
+
+def _from_stories(conf, story):
     if not conf:
         return {"story": story, "side": None, "since": None, "stories": 0, "last": None, "state": "none"}
     last = conf[-1]
@@ -55,6 +56,30 @@ def standing(rows, story):
             "last": last, "state": state}
 
 
+def standing(rows, story, trend=None):
+    """{'story', 'side' ('BUY'/'SELL'/None), 'since' (confirm time of the first story of this run), 'stories' (how
+    many same-side stories in a row), 'last' (row holding the bias, or the one that ended it), 'state',
+    'pullback' (an active counter-trend story, or None)}.
+    Stories set the bias (pullback stories do not: they are retracements inside it). `trend` = the TF's structure
+    trend now (slk.story.tf_trend): when it points the other way, the structure has broken (BOS) and the bias is the
+    structure's side until a story confirms ("will it become bearish on weekly if we close below that body?
+    Exactly" [T all-in-1@1257-1267])."""
+    conf = sorted((r for r in rows if r.get("story") == story and _t(r.get("confirm_time")) is not None
+                   and r.get("status") in KEEPS + ENDS and r.get("end_reason") != DROPPED),
+                  key=lambda r: _t(r["confirm_time"]))
+    b = _from_stories([r for r in conf if not pullback(r)], story)
+    pb = [r for r in conf if pullback(r) and r["status"] == "CONFIRMED"]
+    b["pullback"] = pb[-1] if pb else None
+    if trend in ("up", "down"):
+        side = "BUY" if trend == "up" else "SELL"
+        if b["side"] != side:
+            b.update(side=side, since=None, stories=0,
+                     state=f"{'bullish' if side == 'BUY' else 'bearish'} structure (break of structure), no story yet")
+    if b["pullback"] is not None and b["side"] and b["pullback"]["side"] != b["side"]:
+        b["state"] += f" \u00b7 pullback {b['pullback']['side']} story active (retracement)"
+    return b
+
+
 def all_standing(rows, stories=("M", "W", "D")):
     return [standing(rows, s) for s in stories]
 
@@ -64,6 +89,8 @@ def note(event, row, before, after):
     before/after = standing() of this pair and story TF before / after this run's writes."""
     w = WORD.get(after.get("side")) if after else None
     if event == "CONFIRMED":
+        if after and after.get("side") and after["side"] != row["side"]:
+            return f"Pullback {row['side']} inside a {WORD[after['side']]} bias (retracement, not a bias change)"
         if before and before.get("side") == row["side"]:
             return f"Bias continues {WORD[row['side']]} (story {after.get('stories', 1)} in a row) · continuation"
         if before and before.get("side"):

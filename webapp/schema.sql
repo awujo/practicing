@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS bias (
   level_src     VARCHAR(8)   NULL,                  -- shape that drew the line: A / V / OC (a flip keeps its shape)
   level_candle  DATETIME     NULL,                  -- UTC, start of the origin candle whose close is the line
   chain         VARCHAR(24)  NULL,                  -- timeframes in line, e.g. W1->D1->H4 (W trend agrees) or D1->H4
+  trend         VARCHAR(8)   NULL,                  -- origin-TF structure trend at the tap (up/down/range); against side = pullback
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)
@@ -63,6 +64,15 @@ CREATE TABLE IF NOT EXISTS orders (
   pnl                  DOUBLE       NULL,
   UNIQUE KEY uq_client_order (client_order_id),
   KEY ix_orders_entry (entry_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- structure trend of each pair's story TF at the last run (standing bias: a BOS changes it, slk/standing.py)
+CREATE TABLE IF NOT EXISTS tf_state (
+  pair       VARCHAR(16) NOT NULL,
+  story      CHAR(1)     NOT NULL,
+  trend      VARCHAR(8)  NOT NULL,
+  updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (pair, story)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS settings (

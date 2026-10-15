@@ -51,22 +51,22 @@ def test_alert_notes():
                                                                      "target": 1.53, "invalidation": 1.5})
 
 
-def test_daily_against_weekly_bias_is_no_trade():
-    """Owner 2026-10-15 GBPJPY: W BUY confirmed + D SELL confirmed both shown as tradable; the D sell is against the
-    W bias -> NO_TRADE, and its chain is D1->H4 (not W1->D1->H4)."""
+def test_daily_against_weekly_bias_filter_option():
+    """htf_bias_filter on: a D story against the W bias -> NO_TRADE. The chain label is not touched (it is the W
+    structure trend, set in to_row)."""
     w = r(1, story="W")
     d = {**r(10, side="SELL"), "chain": "W1\u2192D1\u2192H4"}
-    out = live.mark_htf_bias([w, d])
-    assert d["no_trade"] and d["no_trade_reason"] == "against W bias (BULLISH)" and d["chain"] == "D1\u2192H4"
+    live.mark_htf_bias([w, d], {"htf_bias_filter": True})
+    assert d["no_trade"] and d["no_trade_reason"] == "against W bias (BULLISH)" and d["chain"] == "W1\u2192D1\u2192H4"
     up = r(10)
-    live.mark_htf_bias([w, up])
-    assert not up.get("no_trade") and up["chain"] == "W1\u2192D1\u2192H4"
+    live.mark_htf_bias([w, up], {"htf_bias_filter": True})
+    assert not up.get("no_trade")
     early = r(1, side="SELL")  # confirmed before the W story: no W bias then
-    live.mark_htf_bias([r(5, story="W"), early])
+    live.mark_htf_bias([r(5, story="W"), early], {"htf_bias_filter": True})
     assert not early.get("no_trade")
     off = {**r(10, side="SELL")}
     live.mark_htf_bias([w, off], {"htf_bias_filter": False})
-    assert not off.get("no_trade") and off["chain"] == "D1\u2192H4"
+    assert not off.get("no_trade")
 
 
 def test_story_dropped_by_new_rules_is_cancelled_quietly():
@@ -77,3 +77,25 @@ def test_story_dropped_by_new_rules_is_cancelled_quietly():
     writes, alerts = live.reconcile([], [old], pd.Timestamp("2026-10-15 12:00", tz="UTC"), h1, {"max_hold": 9999})
     assert writes[0]["status"] == "CANCELLED" and writes[0]["end_reason"] == S.DROPPED and not alerts
     assert S.standing(writes, "D")["side"] is None  # a dropped story holds no bias
+
+
+def test_retracement_against_weekly_bias_stays_tradable_by_default():
+    d = {**r(10, side="SELL")}
+    live.mark_htf_bias([r(1, story="W"), d])
+    assert not d.get("no_trade")
+
+
+def test_gbpjpy_weekly_pullback_buy_inside_bearish_structure():
+    """Owner 2026-10-15: GBPJPY weekly is bearish; the W BUY (V 207.610, monthly still up) is a pullback story. The
+    standing W bias stays BEARISH (structure), with the pullback noted; it does not flip the bias."""
+    old_buy = r(1, story="W", status="TARGET_HIT")             # July W BUY, trend up then
+    old_buy["trend"] = "up"
+    pb = {**r(20, story="W"), "trend": "down"}                 # pullback BUY while W structure is down
+    assert S.pullback(pb) and not S.pullback(old_buy)
+    b = S.standing([old_buy, pb], "W", "down")
+    assert b["side"] == "SELL" and "break of structure" in b["state"] and "pullback BUY story active" in b["state"]
+    assert S.standing([old_buy, pb], "W")["side"] == "BUY"     # without the structure: the old July story
+    assert S.note("CONFIRMED", pb, b, b).startswith("Pullback BUY inside a BEARISH bias")
+    # a story with the trend after a BOS: normal bias again
+    sell = {**r(25, story="W", side="SELL"), "trend": "down"}
+    assert S.standing([old_buy, pb, sell], "W", "down")["state"].startswith("story active")

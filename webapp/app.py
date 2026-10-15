@@ -161,13 +161,18 @@ def bias_state(user=Depends(require_user)):
     watched = [x for x in S.load(_db(db.get_settings))["stories"] if x in ("D", "W", "M")] or ["D", "W", "M"]
     rows = _db(db.query, "SELECT * FROM bias WHERE confirm_time IS NOT NULL AND story IN ("
                + ", ".join(["%s"] * len(watched)) + ")", watched)
-    by_pair = {}
+    by_pair, trends = {}, {}
     for r in rows:
         by_pair.setdefault(r["pair"], []).append(r)
+    try:  # structure trend per pair/TF from the last live run (table added 2026-10-15)
+        for t in _db(db.query, "SELECT pair, story, trend FROM tf_state", ()):
+            trends[(t["pair"], t["story"])] = t["trend"]
+    except HTTPException:
+        pass
     out = []
     for pair in sorted(by_pair):
         for st in [x for x in ("M", "W", "D") if x in watched]:
-            b = standing.standing(by_pair[pair], st)
+            b = standing.standing(by_pair[pair], st, trends.get((pair, st)))
             if b["state"] == "none":
                 continue
             last = b["last"] or {}
@@ -175,7 +180,8 @@ def bias_state(user=Depends(require_user)):
                         "since": b["since"], "stories": b["stories"], "state": b["state"],
                         "chain": last.get("chain"), "last_status": last.get("status"),
                         "last_target": last.get("target"), "last_level": last.get("level"),
-                        "last_confirm": last.get("confirm_time")})
+                        "last_confirm": last.get("confirm_time"),
+                        "pullback": (b.get("pullback") or {}).get("side")})
     return out
 
 

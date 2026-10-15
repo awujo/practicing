@@ -114,9 +114,7 @@ def test_examples_on_offline_data():
     assert res["usdcad-d-sell-friday-sweep"] == "FAIL" and res["cadjpy-d-buy-no-h4-exception"] == "FAIL"
     ex = next(e for e in V.EXAMPLES if e["id"] == "cadjpy-d-buy-no-h4-exception")
     assert V.check(ex, V.load_csv(ex["pair"], DATA), {**cfg, "target_mode": "nearest"})[0] == "PASS"
-    # htf_bias_filter (2026-10-15) off here: under the old settings the bot's W story on USDCAD is BULLISH (Kevin
-    # reads the weekly bearish, REVIEW "Weekly trend definition"), so the filter blocks Kevin's D SELL
-    old = {**cfg, "trend_mode": "protected", "target_mode": "nearest", "htf_bias_filter": False}
+    old = {**cfg, "trend_mode": "protected", "target_mode": "nearest"}
     for i in PASS_BEFORE + ("gbpjpy-d-no-h4-breakout",):
         ex = next(e for e in V.EXAMPLES if e["id"] == i)
         assert V.check(ex, V.load_csv(ex["pair"], DATA), old)[0] == "PASS", i

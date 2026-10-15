@@ -304,3 +304,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   chain label from the standing bias (`live.mark_htf_bias`; `state_stories` adds the higher TF). Examples 7/9 same.
   Stale CONFIRMED rows the engine stopped reporting (e.g. CADCHF flip after flip_max_age) -> CANCELLED quietly
   (`standing.DROPPED`, no bias).
+- 2026-10-15: Owner disagreed (GBPJPY weekly is bearish; a D->H4 sell under a W buy is a retracement, show D1->H4,
+  don't block). Fixed: `htf_bias_filter` default OFF; chain label back to the W structure trend; new `trend` column
+  (origin-TF structure at the tap) -> "Pullback" label in alert + card; pullback stories don't set the standing bias;
+  standing bias uses the TF structure trend now (`story.tf_trend`, table `tf_state`, written each live run, read by
+  `/api/bias/state`). GBPJPY: W BEARISH (structure) + W BUY pullback active, D SELL W1->D1->H4.

@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "db", "schema.sql")
 BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b", "target", "invalidation",
              "tap_time", "confirm_time", "no_trade", "no_trade_reason", "rule", "end_reason", "breakout_time",
-             "next_day", "retrace", "level_src", "level_candle", "chain")
+             "next_day", "retrace", "level_src", "level_candle", "chain", "trend")
 # columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
 MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
               ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"),
@@ -31,7 +31,8 @@ MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_
               # labels so the owner can check a story on the chart (KL shape + candle, timeframes in line)
               ("bias", "level_src", "VARCHAR(8) NULL AFTER retrace"),
               ("bias", "level_candle", "DATETIME NULL AFTER level_src"),
-              ("bias", "chain", "VARCHAR(24) NULL AFTER level_candle"))
+              ("bias", "chain", "VARCHAR(24) NULL AFTER level_candle"),
+              ("bias", "trend", "VARCHAR(8) NULL AFTER chain"))
 
 
 def parse_url(url):
@@ -145,6 +146,18 @@ def upsert_bias(row):
     upd = ", ".join(f"{c}=VALUES({c})" for c in BIAS_COLS if c not in ("pair", "story", "tap_time"))
     return execute(f"INSERT INTO bias ({', '.join(BIAS_COLS)}) VALUES ({', '.join(['%s'] * len(BIAS_COLS))}) "
                    f"ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), {upd}", vals)
+
+
+def upsert_tf_state(pair, story, trend):
+    """Current structure trend of one pair's story TF (standing bias input for the Mini App)."""
+    return execute("INSERT INTO tf_state (pair, story, trend) VALUES (%s, %s, %s) "
+                   "ON DUPLICATE KEY UPDATE trend=VALUES(trend)", (pair, story, trend))
+
+
+def get_tf_state(pair=None):
+    if pair:
+        return query("SELECT * FROM tf_state WHERE pair=%s", (pair,))
+    return query("SELECT * FROM tf_state", ())
 
 
 def get_bias(pair, story=None):

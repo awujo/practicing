@@ -129,6 +129,7 @@
         <div class="top"><span class="title"><span class="${esc(r.side)}">${esc(r.side)}</span> · ${esc(r.pair)} · ${esc(r.chain || r.story)}</span>
           <span>${Number(r.no_trade) ? `<span class="tag notrade" title="${esc(r.no_trade_reason || "")}">NO_TRADE</span> ` : ""}<span class="tag">${esc(r.status)}</span></span></div>
         ${Number(r.no_trade) ? `<div class="muted">No trade: ${esc(r.no_trade_reason || "filter")}</div>` : ""}
+        ${(r.trend === "up" || r.trend === "down") && (r.side === "BUY") !== (r.trend === "up") ? `<div class="muted">↩ Pullback: against the ${esc({ D: "D1", W: "W1", M: "MN1" }[r.story] || r.story)} structure (${esc(r.trend === "up" ? "bullish" : "bearish")}), a retracement inside it, not a bias change</div>` : ""}
         <div class="grid">
           ${field("Level", `${num(r.level)} ${kl(r)}`)}${field("Point B", num(r.point_b))}
           ${r.level_candle ? field("KL candle", candleDay(r.level_candle, r.story)) : ""}

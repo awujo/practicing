@@ -87,7 +87,7 @@ def test_bias_state_keeps_bias_after_target(client, monkeypatch):
              "confirm_time": "2026-10-06 21:00:00", "chain": "W1\u2192D1\u2192H4", "target": 1.627, "level": 1.587},
             {"pair": "EURGBP", "story": "D", "side": "SELL", "status": "INVALIDATED", "tap_time": "2026-10-05 21:00:00",
              "confirm_time": "2026-10-06 21:00:00"}]
-    monkeypatch.setattr(webapp.db, "query", lambda sql, args=None: rows)
+    monkeypatch.setattr(webapp.db, "query", lambda sql, args=None: [] if "tf_state" in sql else rows)
     out = client.get("/api/bias/state", headers=hdr(make_init_data())).json()
     assert [(b["pair"], b["bias"], b["state"]) for b in out] == [
         ("EURCAD", "BULLISH", "target reached, bias continues"), ("EURGBP", "NONE", "invalidated")]
@@ -145,11 +145,11 @@ def test_approve_needs_confirm_mode(client):
 
 def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
-    assert len(stmts) == 10 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:5])
-    assert stmts[5].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
+    assert len(stmts) == 11 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:6])
+    assert stmts[6].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
     # entries.model for tables created before it existed: guarded ALTER via a prepared statement
-    assert stmts[6].startswith("SET @slk_add_model") and "ADD COLUMN model" in stmts[6]
-    assert [s.split()[0] for s in stmts[7:]] == ["PREPARE", "EXECUTE", "DEALLOCATE"]
+    assert stmts[7].startswith("SET @slk_add_model") and "ADD COLUMN model" in stmts[7]
+    assert [s.split()[0] for s in stmts[8:]] == ["PREPARE", "EXECUTE", "DEALLOCATE"]
     assert "model       VARCHAR(16)  NOT NULL DEFAULT 'continuation'" in stmts[1] + stmts[2]
 
 

@@ -60,9 +60,9 @@ DEFAULT = {
     "flip_max_age": 100,    # bars (of the level's TF) from the candle that drew the line to the break; older -> no flip
                             # (0 = no limit, v0.7). Owner 2026-10-15: EURGBP D "tapped" 0.84614, a Jun-2024 OC level
                             # on its 7th flip; examples pass the same with 40..250 (7/9)
-    "htf_bias_filter": True,  # live: a story against the standing bias of the next higher story TF (W for D, M for W)
-                              # is NO_TRADE (owner 2026-10-15: GBPJPY W BUY + D SELL both "confirmed"; Kevin
-                              # weekly-recap@622-646 "4h structure to the upside ... does it make any sense? No")
+    "htf_bias_filter": False,  # live: on = a story against the standing bias of the next higher story TF is NO_TRADE.
+                               # Off (owner 2026-10-15): a D->H4 sell under a W buy bias can be the retracement that
+                               # continues the W story line; it is shown as D1->H4 (not W1->D1->H4), still tradable
     "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
     "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
     "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL
@@ -736,6 +736,19 @@ def _break_kind(sell, sw, k0, brk, C):
         if (C["high"][k] > x and C["close"][k] < x) if sell else (C["low"][k] < x and C["close"][k] > x):
             return "sweep_break"
     return "breakout"
+
+
+def tf_trend(h1, story, cfg=None):
+    """Structure trend ('up' / 'down' / 'range') of the story's origin TF at its last bar (h1 = closed bars cut at
+    the last closed origin bar), as the engine reads it at a tap (trend_mode). Used for the standing bias: a close
+    through the protected swing (BOS) changes the bias [T all-in-1@1249-1290]."""
+    cfg = {**DEFAULT, **(cfg or {})}
+    otf = STORIES[story][0]
+    ob = resample(h1, otf)
+    if len(ob) < 3:
+        return "range"
+    sb = SwingBook(_structure(ob, cfg, otf))
+    return trend(sb.at(len(ob) - 1), float(ob["close"].iloc[-1]))
 
 
 def current_tap(pair, h1, story, cfg=None):

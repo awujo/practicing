@@ -32,7 +32,7 @@ from .backtest import PAIRS
 from .candles import _key, nominal_end, resample
 from .entry import DEFAULT as ENTRY_DEFAULT
 from . import standing
-from .story import DEFAULT, STORIES, current_tap, find_stories, mw_conflict, pip
+from .story import DEFAULT, STORIES, tf_trend, current_tap, find_stories, mw_conflict, pip
 
 JOB = "live"
 HISTORY_DAYS = 3 * 365 + 30       # enough months for M/W stories
@@ -285,8 +285,9 @@ def _as_of(rows, t):
 
 def mark_htf_bias(rows, cfg=None):
     """Owner 2026-10-15 + Kevin weekly-recap@622-646: a D story against the standing W bias (W story against M) is
-    NO_TRADE ('against W bias'). The chain label (W1->D1->H4) follows that standing bias when the higher story TF
-    has one, else the higher-TF swing trend (slk.standing). Bias as of the story's confirmation (tap if TAPPED)."""
+    NO_TRADE ('against W bias'), when the setting htf_bias_filter is on (default off: a D->H4 move against the W
+    bias can be the retracement that continues the W story line). Bias as of the story's confirmation. The chain
+    label (W1->D1->H4) stays the higher-TF STRUCTURE trend (Kevin's alignment = BOS on W, D, H4)."""
     cfg = {**DEFAULT, **(cfg or {})}
     for r in rows:
         h = HIGHER_TF.get(r["story"])
@@ -297,8 +298,7 @@ def mark_htf_bias(rows, cfg=None):
         b = standing.standing(_as_of(hr, t), h)
         if not b["side"]:
             continue
-        r["chain"] = chain(r["story"], r["side"], "down" if b["side"] == "SELL" else "up")
-        if cfg.get("htf_bias_filter", True) and b["side"] != r["side"] and not r.get("no_trade"):
+        if cfg.get("htf_bias_filter") and b["side"] != r["side"] and not r.get("no_trade"):
             r["no_trade"] = True
             r["no_trade_reason"] = f"against {h} bias ({standing.WORD[b['side']]})"
     return rows
@@ -311,8 +311,7 @@ def state_stories(stories, cfg):
     need = set(stories)
     if "D" in stories and c.get("mw_conflict_filter", True):
         need |= {"W", "M"}
-    if c.get("htf_bias_filter", True):
-        need |= {HIGHER_TF[s] for s in stories if HIGHER_TF.get(s) in STORIES}
+    need |= {HIGHER_TF[s] for s in stories if HIGHER_TF.get(s) in STORIES}  # chain label / htf_bias_filter
     return list(stories) + [s for s in ("W", "M") if s in need and s not in stories]
 
 
@@ -325,7 +324,7 @@ def _same(a, b):
     if bool(a.get("no_trade")) != bool(b.get("no_trade")):
         return False
     for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason", "breakout_time", "level_src",
-              "level_candle", "chain"):
+              "level_candle", "chain", "trend"):
         if a.get(k) != b.get(k):
             return False
     for k in ("next_day", "retrace"):
@@ -380,7 +379,7 @@ def reconcile(new_rows, old_rows, now, h1=None, cfg=None):
     return writes, alerts
 
 
-def bias_notes(alerts, old, writes):
+def bias_notes(alerts, old, writes, trends=None):
     """Adds r['_bias_note'] (slk.standing.note) to each alert: continuation / BIAS CHANGE / bias stays after the
     target / no bias after an invalidation. old = stored rows before this run, writes = rows written now."""
     after = {(r["story"], r["tap_time"]): r for r in old}
@@ -388,8 +387,9 @@ def bias_notes(alerts, old, writes):
     after = list(after.values())
     for ev, r in alerts:
         # bias before this event: every other story as it stands now (a continuation sees the earlier ones)
-        before = standing.standing([x for x in after if x["tap_time"] != r["tap_time"]], r["story"])
-        r["_bias_note"] = standing.note(ev, r, before, standing.standing(after, r["story"]))
+        t = (trends or {}).get(r["story"])
+        before = standing.standing([x for x in after if x["tap_time"] != r["tap_time"]], r["story"], t)
+        r["_bias_note"] = standing.note(ev, r, before, standing.standing(after, r["story"], t))
     return alerts
 
 
@@ -700,6 +700,9 @@ def format_alert(event, r, tz=DISPLAY_TZ):
     al = _aligned(r)
     if al:
         lines.append(al)
+    if standing.pullback(r):
+        lines.append(f"\u21a9 Pullback: against the {O} structure ({'bullish' if r['trend'] == 'up' else 'bearish'}), "
+                     f"a retracement inside it, not a bias change")
     nd = _flag(r.get("next_day"))
     if nd is True:
         lines.append("\u2705 Next Day Rule \u00b7 breakout after the rejection candle closed")
@@ -847,10 +850,12 @@ def compute_pair(job):
         h1 = recent(pair, HISTORY_DAYS)
         memo = _load_memo(pair)
         rows = [r for r in pair_state(pair, h1, now, engine_stories, cfg, memo) if r["story"] in stories]
+        trends = {st: tf_trend(drop_forming(drop_forming(h1, "H1", now), STORIES[st][0], now), st, cfg)
+                  for st in stories}
         _save_memo(pair, memo)
         ents = entry_rows(pair, drop_forming(h1, "H1", now), rows, {}, cfg, ecfg=ecfg, keep_key=True) \
             if entries_on else []
-        return {"pair": pair, "rows": rows, "entries": ents}
+        return {"pair": pair, "rows": rows, "entries": ents, "trends": trends}
     except Exception as e:
         return {"pair": pair, "error": f"{type(e).__name__}: {e}", "trace": traceback.format_exc()}
 
@@ -1012,7 +1017,10 @@ def main(argv=None):
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
                     db.upsert_bias(r)
-                bias_notes(alerts, old, writes)
+                bias_notes(alerts, old, writes, res.get("trends"))
+                for st, t in (res.get("trends") or {}).items():
+                    if st in stories:
+                        db.upsert_tf_state(p, st, t)
                 for ev, r in alerts_enabled(filter_alerts(alerts), vals):
                     sent += send_telegram(format_alert(ev, r, tz))
                 if vals["early_breakout_alert"]:
