@@ -257,9 +257,12 @@ def test_migrate_paper_columns_idempotent(monkeypatch):
                    "ALTER TABLE entries ADD COLUMN result_r DOUBLE NULL AFTER filled_at",
                    "ALTER TABLE entries ADD COLUMN result_r_tp2 DOUBLE NULL AFTER result_r",
                    "ALTER TABLE entries ADD COLUMN hit_price DOUBLE NULL AFTER result_r_tp2",
-                   "ALTER TABLE entries ADD COLUMN closed_at DATETIME NULL AFTER hit_price"]
+                   "ALTER TABLE entries ADD COLUMN closed_at DATETIME NULL AFTER hit_price",
+                   "ALTER TABLE bias ADD COLUMN level_src VARCHAR(8) NULL AFTER retrace",
+                   "ALTER TABLE bias ADD COLUMN level_candle DATETIME NULL AFTER level_src",
+                   "ALTER TABLE bias ADD COLUMN chain VARCHAR(24) NULL AFTER level_candle"]
     db.migrate()
-    assert len(ddl) == 5  # second run: nothing to add
+    assert len(ddl) == 8  # second run: nothing to add
 
 
 def test_schema_has_paper_columns():

@@ -51,6 +51,10 @@ SCHEMA = [
        "Only the most recent fresh key level (formed before the tap) can start a story; an older level tapped "
        "while a newer fresh one exists is ignored (Kevin: 'mark the most recent one, remove everything else', "
        "story-line-pt2@897-1000)."),
+    _s("flip_max_age", "int", "100", "Bias rules",
+       "A key level broken by a body close becomes a fresh level on the other side (flip) only if it was drawn at "
+       "most this many candles (of its own timeframe) before the break: 100 = about 5 months on D1. 0 = no limit "
+       "(old behaviour: a 2024 EURGBP level crossed many times still counted as fresh)."),
     _s("flip_end", "bool", "on", "Bias rules",
        "Story ends early (ENDED_FLIP) when, on the way to the target, price taps an opposite daily key level, "
        "rejects it with a close the other way AND H4 breaks that level's point B the other way; the opposite "
@@ -304,7 +308,7 @@ def as_strings(stored=None):
 def story_cfg(vals):
     """Overrides of slk.story.DEFAULT from load() output."""
     return {k: vals[k] for k in ("trend_filter", "htf_filter", "mw_conflict_filter", "max_wait",
-                                 "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_end",
+                                 "max_retaps", "tap_tol_pips", "level_tol_pips", "use_oc", "pullback_levels", "most_recent_level", "flip_max_age", "flip_end",
                                  "htf_targets", "overlap_rule", "overlap_tol_pips", "alignment_start",
                                  "cadjpy_exception", "next_day_rule", "trend_mode", "target_mode")}
 

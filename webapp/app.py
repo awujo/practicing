@@ -134,6 +134,11 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
     if story:
         where.append("story = %s")
         args.append(story.upper())
+    else:  # only the story timeframes the owner watches (Settings > Markets > Stories); rows of a story turned off
+        # stay in the table but are not shown (owner 2026-10-15: "I removed M ... still seeing M bias")
+        watched = [x for x in S.load(_db(db.get_settings))["stories"] if x in ("D", "W", "M")] or ["D", "W", "M"]
+        where.append(f"story IN ({', '.join(['%s'] * len(watched))})")
+        args += watched
     if status == "active":
         where.append("status IN (%s, %s)")
         args += list(ACTIVE_BIAS)

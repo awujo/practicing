@@ -40,6 +40,38 @@
     if (weeks === 1) return `Next week ${name}, ${date}`;
     return `${name.slice(0, 3)} ${date}`;
   };
+  // Which D/W/M candle a stored candle start is, the way a chart labels it: candles open at 17:00 New York, so the
+  // D candle that opens Tue 22:00 WAT is Wednesday's (owner 2026-10-15: "it said tap on Tuesday ... I can't see").
+  const nyParts = (d) => {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "numeric",
+      day: "numeric", hour: "2-digit", hourCycle: "h23" }).formatToParts(d);
+    const g = (t) => Number(p.find((x) => x.type === t).value);
+    return { y: g("year"), m: g("month"), d: g("day"), h: g("hour") };
+  };
+  const candleDay = (v, tf) => {
+    if (!v) return "–";
+    const s = String(v).replace(" ", "T");
+    const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z");
+    if (isNaN(d)) return String(v).slice(0, 10);
+    const q = nyParts(d);
+    let k = Date.UTC(q.y, q.m - 1, q.d) / 86400000 + (q.h >= 17 ? 1 : 0);  // trading day number
+    const n = nyParts(new Date()), today = Date.UTC(n.y, n.m - 1, n.d) / 86400000 + (n.h >= 17 ? 1 : 0);
+    const day = new Date(k * 86400000);
+    if (tf === "M") return `${MON[day.getUTCMonth()]} ${day.getUTCFullYear()} (MN1 candle)`;
+    if (tf === "W") { k += (8 - day.getUTCDay()) % 7; }  // weekly candle: the Monday it trades from
+    const w = new Date(k * 86400000), name = DAYS[w.getUTCDay()];
+    const yr = w.getUTCFullYear() !== new Date(today * 86400000).getUTCFullYear() ? ` ${w.getUTCFullYear()}` : "";
+    const date = `${w.getUTCDate()} ${MON[w.getUTCMonth()]}${yr}`;
+    if (tf === "W") return `week of Mon ${date} (W1 candle)`;
+    const wd = (x) => (new Date(x * 86400000).getUTCDay() + 6) % 7, diff = k - today;
+    const weeks = Math.floor((k - wd(k) - (today - wd(today))) / 7);
+    const rel = diff === 0 ? `Today, ${name.slice(0, 3)}` : diff === -1 ? `Yesterday, ${name.slice(0, 3)}`
+      : weeks === 0 ? `${name},` : weeks === -1 ? `Last week ${name},` : name.slice(0, 3);
+    return `${rel} ${date} (D1 candle)`;
+  };
+  const KIND = { A: "A", V: "V", OC: "OC (open-close)", sweep: "sweep of previous candle", align: "alignment swing" };
+  const kl = (r) => r.level_kind === "flip" ? `${KIND[r.level_src] || "KL"} · flipped` : (KIND[r.level_kind] || r.level_kind || "");
+
   const dur = (s) => {
     if (s === null || s === undefined) return "–";
     const a = Math.abs(s);
@@ -79,13 +111,14 @@
     [...pairs].sort().forEach((p) => { if (!known.has(p)) sel.add(new Option(p, p)); });
     $("#bias-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
-        <div class="top"><span class="title">${esc(r.pair)} · ${esc(r.story)} <span class="${esc(r.side)}">${esc(r.side)}</span></span>
+        <div class="top"><span class="title"><span class="${esc(r.side)}">${esc(r.side)}</span> · ${esc(r.pair)} · ${esc(r.chain || r.story)}</span>
           <span>${Number(r.no_trade) ? `<span class="tag notrade" title="${esc(r.no_trade_reason || "")}">NO_TRADE</span> ` : ""}<span class="tag">${esc(r.status)}</span></span></div>
         ${Number(r.no_trade) ? `<div class="muted">No trade: ${esc(r.no_trade_reason || "filter")}</div>` : ""}
         <div class="grid">
-          ${field("Level", `${num(r.level)} ${r.level_kind || ""}`)}${field("Point B", num(r.point_b))}
+          ${field("Level", `${num(r.level)} ${kl(r)}`)}${field("Point B", num(r.point_b))}
+          ${r.level_candle ? field("KL candle", candleDay(r.level_candle, r.story)) : ""}
           ${field("Target", num(r.target))}${field("Invalid", num(r.invalidation))}
-          ${field("Tap", dt(r.tap_time))}${field("Confirm", dt(r.confirm_time))}
+          ${field("Tap candle", candleDay(r.tap_time, r.story))}${field("Confirm", dt(r.confirm_time))}
           ${field("Rule", r.rule || "standard")}${field("Updated", dt(r.updated_at))}
           ${r.breakout_time ? field("Breakout (open)", dt(r.breakout_time)) : ""}
           ${r.next_day == null ? "" : field("Next Day Rule", Number(r.next_day) ? "✅ next day" : "⚠ same day")}

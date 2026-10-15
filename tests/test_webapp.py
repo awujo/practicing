@@ -72,6 +72,16 @@ def test_valid_init_data(client):
     assert r.json()[0]["pair"] == "EURUSD"
 
 
+def test_bias_shows_only_watched_stories(client):
+    client.store["stories"] = "D,W"
+    client.get("/api/bias", headers=hdr(make_init_data()))
+    sql, args = [c for c in client.calls if "FROM bias" in c[0]][-1]
+    assert "story IN (%s, %s)" in sql and args[:2] == ["D", "W"]
+    client.get("/api/bias?story=M", headers=hdr(make_init_data()))
+    sql, args = [c for c in client.calls if "FROM bias" in c[0]][-1]
+    assert "story = %s" in sql and "story IN" not in sql and args[0] == "M"
+
+
 def test_authorization_tma_header(client):
     r = client.get("/api/me", headers={"Authorization": "tma " + make_init_data()})
     assert r.status_code == 200 and r.json()["id"] == OWNER

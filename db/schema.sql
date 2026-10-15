@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS bias (
   breakout_time DATETIME     NULL,                  -- UTC, open of the confirm-TF candle that broke point B
   next_day      TINYINT(1)   NULL,                  -- Next Day Rule: 1 = breakout after the rejection candle closed
   retrace       TINYINT(1)   NULL,                  -- 1 = closed back beyond B later on the breakout day (warning)
+  level_src     VARCHAR(8)   NULL,                  -- shape that drew the line: A / V / OC (a flip keeps its shape)
+  level_candle  DATETIME     NULL,                  -- UTC, start of the origin candle whose close is the line
+  chain         VARCHAR(24)  NULL,                  -- timeframes in line, e.g. W1->D1->H4 (W trend agrees) or D1->H4
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)

@@ -105,7 +105,20 @@ def to_row(s, status):
             "end_reason": s.get("end_reason") if status not in ACTIVE else None,
             "breakout_time": _dt(s.get("breakout_time")), "next_day": _flag(s.get("next_day")),
             "retrace": _flag(s.get("retrace")), "level_time": _dt(s.get("level_time")),
-            "trend": s.get("trend"), "htf_trend": s.get("htf_trend")}
+            "trend": s.get("trend"), "htf_trend": s.get("htf_trend"),
+            "level_src": s.get("level_src"), "level_candle": _dt(s.get("level_candle")),
+            "chain": chain(s["story"], s["side"], s.get("htf_trend"))}
+
+
+def chain(story, side, htf_trend):
+    """Timeframes in line for the header: 'D1→H4', or 'W1→D1→H4' when the higher TF (W for a D story) trends the
+    same way as the story (owner request 2026-10-15)."""
+    otf, ctf = STORIES[story]
+    tfs = [TF_LABEL[otf], TF_LABEL[ctf]]
+    h = HIGHER_TF.get(story)
+    if h in TF_LABEL and htf_trend == ("down" if side == "SELL" else "up"):
+        tfs.insert(0, TF_LABEL[h])
+    return "\u2192".join(tfs)
 
 
 def _beyond_target(row, bars):
@@ -280,7 +293,8 @@ def filter_alerts(alerts):
 def _same(a, b):
     if bool(a.get("no_trade")) != bool(b.get("no_trade")):
         return False
-    for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason", "breakout_time"):
+    for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason", "breakout_time", "level_src",
+              "level_candle", "chain"):
         if a.get(k) != b.get(k):
             return False
     for k in ("next_day", "retrace"):
@@ -547,6 +561,15 @@ def level_name(r):
     return f"{KIND_NAME.get(k, k or '-')}, {STORIES[r['story']][0]}"
 
 
+def kl_name(r):
+    """'A-shape KL', 'V-shape KL (flipped)': the shape that drew the line, also for a flipped level (owner request
+    2026-10-15: say A / V / OC, not just 'flipped')."""
+    k, src = r.get("level_kind"), r.get("level_src")
+    if k == "flip":
+        return f"{KIND_NAME[src]} KL (flipped)" if src in KIND_NAME else "flipped KL"
+    return f"{KIND_NAME.get(k, k or '-')} KL"
+
+
 def trading_day(t, tf):
     """Which candle a D/W/M candle starting at t (UTC) is, by its 17:00 New York close: 'Thu 8 Oct' (the D candle
     that opens Wed 17:00 New York is Thursday's), 'week of Mon 5 Oct', 'Oct 2026'."""
@@ -595,16 +618,19 @@ def format_alert(event, r, tz=DISPLAY_TZ):
               "BREAKOUT": f"{C} breakout \u2014 waiting for the {CLOSE_NAME[otf]} close",
               "RETRACE": "RETRACE warning after the breakout (still CONFIRMED)"}.get(
                   event, f"Story over: {HEAD.get(event, event)}")
-    lines = [f"{'SELL' if sell else 'BUY'} \u00b7 {p} \u00b7 {O}\u2192{C}",
+    lines = [f"{'SELL' if sell else 'BUY'} \u00b7 {p} \u00b7 {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}",
              f"BIAS \u00b7 {STORY_NAME[r['story']]} story \u00b7 {'BEARISH' if sell else 'BULLISH'}",
              status, ""]
     if r.get("level_kind") == "sweep":
         lines.append(f"Rejected at the {level_name(r)} @ {fp(r['level'])}")
     else:
-        kl = f"Rejected at {KIND_NAME.get(r.get('level_kind'), r.get('level_kind') or '-')} KL ({O}) @ {fp(r['level'])}"
-        if r.get("level_time") is not None:
-            kl += f" \u00b7 formed {trading_day(r['level_time'], otf)} ({O} candle)"
-        lines.append(kl)
+        lines.append(f"Rejected at {kl_name(r)} ({O}) @ {fp(r['level'])}")
+        if r.get("level_candle") is not None:
+            lines.append(f"KL candle: {O} {trading_day(r['level_candle'], otf)} (its close is the line)"
+                         + (f" \u00b7 broken, flipped {trading_day(r['level_time'], otf)}"
+                            if r.get("level_kind") == "flip" and r.get("level_time") is not None else ""))
+        elif r.get("level_time") is not None:
+            lines.append(f"KL formed {trading_day(r['level_time'], otf)} ({O} candle)")
     lines.append(f"Rejection candle: {O} {trading_day(r['tap_time'], otf)} ({_span(r['tap_time'], otf, tz)})")
     if cadjpy:
         lines.append(f"No point B: confirmed by the {O} close back {'below' if sell else 'above'} the level")

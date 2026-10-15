@@ -13,6 +13,9 @@ class Level:
     kind: str          # 'A', 'V', 'OC', or 'flip'
     born: int          # first bar index where the level exists (can be tapped from born on)
     events: list = field(default_factory=list)  # (bar, 'tap'|'break', rejected:bool)
+    src: str = ""      # shape that drew the line: 'A', 'V' or 'OC' (a flip keeps its original level's shape)
+    bar: int = -1      # the candle whose close draws the line (a flip keeps its original level's candle)
+    gen: int = 0       # 0 = drawn A/V/OC level, 1 = flipped once, 2 = flip of a flip ...
 
 
 def find_levels(bars, cfg):
@@ -27,16 +30,16 @@ def find_levels(bars, cfg):
             continue
         known = max(j, p[3]) + 1
         if p[1] == "H" and bull[i] and bear[j]:
-            lv.append(Level(c[i], "sell", "A", known))
+            lv.append(Level(c[i], "sell", "A", known, src="A", bar=i))
         elif p[1] == "L" and bear[i] and bull[j]:
-            lv.append(Level(c[i], "buy", "V", known))
+            lv.append(Level(c[i], "buy", "V", known, src="V", bar=i))
         if cfg["use_oc"] and j + 1 < len(c):
             # open-close: first two same-colour candles that start the leg away from the swing
             k = j + 1
             if p[1] == "H" and bear[j] and bear[k]:
-                lv.append(Level(c[j], "sell", "OC", max(k, p[3]) + 1))
+                lv.append(Level(c[j], "sell", "OC", max(k, p[3]) + 1, src="OC", bar=j))
             elif p[1] == "L" and bull[j] and bull[k]:
-                lv.append(Level(c[j], "buy", "OC", max(k, p[3]) + 1))
+                lv.append(Level(c[j], "buy", "OC", max(k, p[3]) + 1, src="OC", bar=j))
     return lv
 
 
@@ -48,10 +51,12 @@ def touch_tol(cfg, pip):
     return (cfg.get("tap_tol_pips", 0.0) + cfg.get("level_tol_pips", 0.0)) * pip
 
 
-def run_levels(bars, levels, tol):
+def run_levels(bars, levels, tol, max_flips=None, flip_max_age=None):
     """Walk each level forward. First wick touch (within `tol`, see touch_tol) = the tap (level used); a body close
     through (exact, no tolerance) = break, which creates a fresh flipped level on the other side (STRATEGY §1).
-    Returns all levels incl. flips.
+    Returns all levels incl. flips. max_flips: how many times one drawn level may flip (None = no limit, v0.7;
+    1 = only the drawn A/V/OC level flips, a broken flip is spent). flip_max_age: a break more than this many bars
+    after the candle that drew the line makes no flip (None = no limit).
     (Vectorised per level; same events and order as the bar-by-bar walk: the tap is the first touch before the
     first break bar, the break bar itself never counts as a tap.)"""
     h, l, c = bars["high"].to_numpy(), bars["low"].to_numpy(), bars["close"].to_numpy()
@@ -72,7 +77,10 @@ def run_levels(bars, levels, tol):
             lv.events.append((b0 + int(t.argmax()), "tap", True))  # close stayed on the original side = rejection
         if nb < len(broke):  # a used level also becomes fresh again (flipped) after a body close through
             lv.events.append((b0 + nb, "break", False))
-            queue.append(Level(lv.price, "buy" if lv.side == "sell" else "sell", "flip", b0 + nb + 1))
+            if (max_flips is None or lv.gen < max_flips) and \
+                    (flip_max_age is None or lv.bar < 0 or b0 + nb - lv.bar <= flip_max_age):
+                queue.append(Level(lv.price, "buy" if lv.side == "sell" else "sell", "flip", b0 + nb + 1,
+                                   src=lv.src, bar=lv.bar, gen=lv.gen + 1))
     return out
 
 

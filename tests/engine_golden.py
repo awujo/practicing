@@ -40,7 +40,7 @@ CASES = [  # (pair, seed, hours, cfg)
 # Defaults changed by the owner on 2026-10-14 after the golden files were made: next_day_rule flag -> require,
 # trend_mode protected -> leg, D-story entry TFs H4,H2,H1 -> H4,H2. Every frozen golden (engine_golden.json, _v07,
 # _v05) was made with the old values, so the tests pin them here (the files are unchanged).
-PIN = {"next_day_rule": "flag", "trend_mode": "protected", "target_mode": "nearest"}  # target_mode leg: 2026-10-15
+PIN = {"next_day_rule": "flag", "trend_mode": "protected", "target_mode": "nearest", "flip_max_age": 0}  # target_mode leg: 2026-10-15
 OLD_ENTRY_TFS = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
 # entry cfg of the old entry model the golden entries were made with (continuation only, breakout on c4)
 OLD_ENTRY = {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off", "stop_at": "rejection",
@@ -54,13 +54,13 @@ def pinned(cfg):
     """Golden-case cfg with the pre-2026-10-14 defaults pinned (the case's own keys win)."""
     return {**PIN, **cfg}
 
-LABELS = ("next_day", "retrace", "level_time")  # story labels added later (Next Day Rule etc.): no effect on outcomes
+LABELS = ("next_day", "retrace", "level_time", "level_src", "level_candle")  # story labels added later (Next Day Rule etc.): no effect on outcomes
 
 
 def strip_labels(x):
     """Story/tap dicts without LABELS (the golden files predate them; tests compare without them)."""
-    if isinstance(x, dict):
-        return {k: v for k, v in x.items() if k not in LABELS}
+    if isinstance(x, dict):  # a tap dict (has bars_left) also got htf_trend later (chain label W1->D1->H4)
+        return {k: v for k, v in x.items() if k not in LABELS and not (k == "htf_trend" and "bars_left" in x)}
     if isinstance(x, list):
         return [strip_labels(v) for v in x]
     return x

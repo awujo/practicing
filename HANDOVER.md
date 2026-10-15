@@ -284,4 +284,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   (13-15 Oct), up to 56 min late. Fix: Render endpoint `/cron/tick` (CRON_SECRET) dispatches live.yml with
   GH_DISPATCH_TOKEN (fine-grained, Actions r/w on this repo); cron-job.org calls it hourly. Steps: webapp/README.md
   "Hourly tick". live.yml input tick=1 obeys FX hours. Entry alerts stay on (alert_entry) + paper outcome tracking.
-
+- 2026-10-15: Owner checked EURGBP on the chart: "tap Tuesday" but no KL there. Findings: (1) the D candle that opens
+  Tue 22:00 WAT is Wednesday's; the Mini App now shows "Tap candle: Wed 14 Oct (D1 candle)" (NY 17:00 trading day,
+  `candleDay` in app.js). (2) The level 0.84614 "flip" was a Jun-2024 OC level on its 7th flip: new `flip_max_age`
+  (default 100 bars of the level's TF, 0 = old no-limit; Mini App Bias rules; examples 7/9 unchanged; backtest
+  variant added). (3) The owner's line 0.84738 (A, candle Thu 8 Oct) IS the bot's level for Thursday's tap, but an
+  H4 closed below point B 0.84547 the same day, so `next_day_rule` require drops it (Kevin's Next Day Rule).
+  New stored labels (db MIGRATIONS + schema): `level_src` (A/V/OC, kept by flips; "V-shape KL (flipped)"),
+  `level_candle`, `chain` ("W1→D1→H4" when the higher-TF trend agrees, used in the alert header and card title).
+  `/api/bias` shows only the watched story TFs (Settings → Markets → Stories); old M rows stay in the table.

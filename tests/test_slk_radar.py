@@ -106,7 +106,8 @@ def test_alert_lines_from_engine_story(monkeypatch):
     assert row["next_day"] is True and row["breakout_time"] == datetime(2023, 1, 10, 2)
     m = live.format_alert("CONFIRMED", row)
     assert m.splitlines()[0] == "SELL · EURUSD · D1→H4"
-    assert "Rejected at A-shape KL (D1) @ 1.01000 · formed Thu 5 Jan (D1 candle)" in m
+    assert "Rejected at A-shape KL (D1) @ 1.01000\nKL candle: D1 Wed 4 Jan (its close is the line)" in m
+    assert row["level_src"] == "A" and row["chain"] == "D1→H4"
     assert "Rejection candle: D1 Mon 9 Jan (open Sun 8 Jan 23:00 WAT, close Mon 9 Jan 23:00 WAT)" in m
     assert "H4 candle open Tue 10 Jan 03:00 WAT, close Tue 10 Jan 07:00 WAT" in m
     assert "✅ Next Day Rule" in m and "Not an entry signal" in m

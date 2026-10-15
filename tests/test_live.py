@@ -26,15 +26,26 @@ def row(**kw):
 
 
 # ------------------------------------------------------------- messages
+def test_flipped_level_names_its_shape(monkeypatch):
+    """Owner 2026-10-15: say which KL (A / V / OC) a flipped level was, and the candle that drew it."""
+    monkeypatch.setattr(live_mod, "CLOCK", lambda: pd.Timestamp("2026-12-31", tz="UTC"))
+    m = format_alert("TAPPED", row(status="TAPPED", level_kind="flip", level_src="V",
+                                   level_candle=datetime(2026, 10, 4, 21), level_time=datetime(2026, 10, 8, 21)))
+    assert "Rejected at V-shape KL (flipped) (D1) @ 1.08450" in m
+    assert "KL candle: D1 Mon 5 Oct (its close is the line) \u00b7 broken, flipped Fri 9 Oct" in m
+    assert live_mod.chain("D", "BUY", "up") == "W1\u2192D1\u2192H4" and live_mod.chain("D", "BUY", "down") == "D1\u2192H4"
+    assert live_mod.chain("W", "SELL", "down") == "MN1\u2192W1\u2192D1" and live_mod.chain("M", "SELL", "down") == "MN1\u2192W1"
+
+
 def test_alert_format(monkeypatch):
     monkeypatch.setattr(live_mod, "CLOCK", lambda: pd.Timestamp("2026-12-31", tz="UTC"))  # far away: plain dates
     m = format_alert("CONFIRMED", row(breakout_time=datetime(2026, 10, 12, 5), next_day=True, level_time=datetime(2026, 10, 1, 21),
                                       trend="down", htf_trend="down"))
     L = m.splitlines()
-    assert L[0] == "SELL \u00b7 EURUSD \u00b7 D1\u2192H4" and L[1] == "BIAS \u00b7 Daily story \u00b7 BEARISH"
+    assert L[0] == "SELL \u00b7 EURUSD \u00b7 W1\u2192D1\u2192H4" and L[1] == "BIAS \u00b7 Daily story \u00b7 BEARISH"
     assert L[2] == "External breakout confirmed"
     # default display_tz Africa/Lagos (WAT = UTC+1); every time says candle open or close
-    assert "Rejected at A-shape KL (D1) @ 1.08450 \u00b7 formed Fri 2 Oct (D1 candle)" in m
+    assert "Rejected at A-shape KL (D1) @ 1.08450\nKL formed Fri 2 Oct (D1 candle)" in m
     assert "Rejection candle: D1 Mon 12 Oct (open Sun 11 Oct 22:00 WAT, close Mon 12 Oct 22:00 WAT)" in m
     assert ("External break: H4 close below point B 1.08120 \u00b7 H4 candle open Mon 12 Oct 06:00 WAT, "
             "close Mon 12 Oct 10:00 WAT") in m

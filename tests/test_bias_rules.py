@@ -309,7 +309,7 @@ def test_rules_off_equal_v05_engine():
     off = {**G.PRE_EXAMPLES, "most_recent_level": False, "flip_end": False, "htf_targets": False,
            "overlap_rule": False, "alignment_start": False, "cadjpy_exception": False}
     gold = json.load(open(G.PATH_V05))
-    new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time")
+    new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time", "level_src", "level_candle")
     for i in (0, 2, 3):
         pair, seed, hours, cfg = G.CASES[i]
         h1 = G.data(pair, seed, hours)
@@ -319,7 +319,7 @@ def test_rules_off_equal_v05_engine():
             cuts = list(range(len(h1) // 2, len(h1), max(1, len(h1) // 25)))[::5]
             t = [S.current_tap(pair, h1.iloc[:n], st, {**cfg, **off}) for n in cuts]
             t = [None if x is None else {k: v for k, v in x.items() if k not in new} for x in t]
-            assert G._clean(t) == gold[i]["taps"][st][::5], (i, st)
+            assert G._clean(G.strip_labels(t)) == gold[i]["taps"][st][::5], (i, st)
 
 
 # ------------------------------------------------------------------ live runner + Telegram

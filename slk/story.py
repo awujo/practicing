@@ -55,6 +55,11 @@ DEFAULT = {
                             # high/low + close back inside [T story-line-pt3@1887-2010, pt4@1349-1500]
     # --- REVIEW #26, #29, #30, #31 (STRATEGY v0.6) ---
     "most_recent_level": True,  # #26 only the most recent fresh trend level formed before the tap counts
+    "max_flips": 0,         # times one drawn A/V/OC level may flip (body close through -> fresh on the other side);
+                            # 0 = no limit. Kevin's GBPJPY 211.386 (story-line-pt4@1315) is a 3rd flip: count is no rule
+    "flip_max_age": 100,    # bars (of the level's TF) from the candle that drew the line to the break; older -> no flip
+                            # (0 = no limit, v0.7). Owner 2026-10-15: EURGBP D "tapped" 0.84614, a Jun-2024 OC level
+                            # on its 7th flip; examples pass the same with 40..250 (7/9)
     "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
     "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
     "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL
@@ -254,8 +259,9 @@ class _Ctx:
         self.otf, self.ctf = otf, ctf
         ob, cb = resample(h1, otf), resample(h1, ctf)
         self.P = pip(pair)
+        self.flip_age = int(cfg.get("flip_max_age") or 0) or None
         self.tol = touch_tol(cfg, self.P)  # wick tests only (tap, fresh, first touch, re-taps); closes are exact
-        self.levels = run_levels(ob, find_levels(ob, cfg), self.tol)
+        self.levels = run_levels(ob, find_levels(ob, cfg), self.tol, cfg.get("max_flips") or None, self.flip_age)
         self.lv = _LevelSet(ob, self.levels)
         self.osw, self.csw = SwingBook(_structure(ob, cfg, otf)), SwingBook(pivots(cb["close"], cfg["b_pivot"]))
         # ERL targets: the swing_pivot swings (unchanged by trend_mode)
@@ -276,7 +282,7 @@ class _Ctx:
         if cfg["htf_targets"] or cfg["overlap_rule"]:
             for tf in HIGHER_ALL[story]:
                 hb = self.hb if tf == self.htf else resample(h1, tf)
-                self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol), tf)))
+                self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol, cfg.get("max_flips") or None, self.flip_age), tf)))
         self.taps = _taps(self.levels, ob, cfg)
         self._bs = {}       # break_search memo
         self._flips = None  # lazy: break bars of opposite levels (CADJPY precondition)
@@ -522,10 +528,18 @@ class _Ctx:
             return None
         r.update(pair=self.pair, story=self.story, trend=tr, level_kind=lv.kind, level=lv.price,
                  tap_time=str(self.o_start[bar])[:16], level_time=self.level_time(lv, bar),
-                 next_day=None if kind == "none" else bool(self.c2o[brk] > bar))
+                 next_day=None if kind == "none" else bool(self.c2o[brk] > bar), **self.level_shape(lv))
         if self.htf:
             r["htf_trend"] = h_tr
         return r
+
+    def level_shape(self, lv):
+        """Labels so the owner can find the line on a chart: level_src = the shape that drew it ('A', 'V', 'OC'; a
+        flip keeps the shape of the level it came from), level_candle = start of the origin candle whose close is
+        the line (for a flip: the original level's candle)."""
+        if getattr(lv, "bar", -1) < 0 or lv.bar >= len(self.o_start):
+            return {"level_src": None, "level_candle": None}
+        return {"level_src": lv.src or None, "level_candle": str(self.o_start[lv.bar])[:16]}
 
     def level_time(self, lv, bar):
         """Start of the origin candle at whose close the level was known ("formed"); the tap bar for a sweep."""
@@ -785,5 +799,6 @@ def current_tap(pair, h1, story, cfg=None):
             "level_kind": lv.kind, "level": lv.price, "B": B, "target": tg,
             "tap_time": str(X.o_start[bar])[:16], "bars_left": int(bar + cfg["max_wait"] - last),
             "rule": "sweep_start" if lv.kind == "sweep" else "standard", "level_time": X.level_time(lv, bar),
+            "htf_trend": X.htf_trend(X.o_start[bar]) if X.htf else None, **X.level_shape(lv),
         }
     return None
