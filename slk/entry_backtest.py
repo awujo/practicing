@@ -84,17 +84,41 @@ def report(df, cfg, path):
     open(path, "w").write("\n".join(lines))
 
 
-def pair_entries(pair, start, end, stories, scfg, ecfg):
+# Entry-setting variants run on the same stories (ENTRY_VARIANTS.md); "" = the --entry-cfg run itself.
+VARIANTS = {
+    "spread 1 pip": {"spread_pips": 1.0},
+    "min stop 8": {"min_stop_pips": 8.0},
+    "min stop 8, spread 1": {"min_stop_pips": 8.0, "spread_pips": 1.0},
+    "min stop 10, spread 1": {"min_stop_pips": 10.0, "spread_pips": 1.0},
+    "min stop 8, max stop 25, spread 1": {"min_stop_pips": 8.0, "max_stop_pips": 25.0, "spread_pips": 1.0},
+}
+
+
+def pair_entries(pair, start, end, stories, scfg, ecfg, variants=None):
     h1 = store.hourly(pair, start, end)
     h1 = h1[(h1.index.year >= start) & (h1.index.year <= end)]
     rows = []
     for st in stories:
         found = find_stories(pair, h1, st, scfg)
-        e = find_entries(pair, h1, found, ecfg, scfg)
-        n = sum(r["status"] == "TRIGGERED" for r in e)
-        print(f"{pair} {st}: {len(found)} stories, {n} entries filled", flush=True)
-        rows += e
+        for name, over in {"": {}, **(variants or {})}.items():
+            e = find_entries(pair, h1, found, {**ecfg, **over}, scfg)
+            if name == "":
+                n = sum(r["status"] == "TRIGGERED" for r in e)
+                print(f"{pair} {st}: {len(found)} stories, {n} entries filled", flush=True)
+            rows += [{**r, "variant": name} for r in e]
     return rows
+
+
+def variant_report(df, path):
+    """One table: every variant x entry model, D/W/M stories together."""
+    d = df[df["model"].fillna("-") != "-"].copy()
+    d["variant"] = d["variant"].replace("", "baseline (--entry-cfg)")
+    lines = ["# Entry variants (same stories, entry settings changed)", "",
+             "`min stop N` = a stop tighter than N pips is widened to N pips (Kevin's stops seen: 8-21 pips).",
+             "`spread 1 pip` = BUY fills and SELL stops/targets on the ask (bid + 1 pip).", "",
+             summarize(d, ["variant", "model"]).to_markdown(), "",
+             "## All models", "", summarize(d, ["variant"]).to_markdown(), ""]
+    open(path, "w").write("\n".join(lines))
 
 
 def _pair_job(args):
@@ -110,6 +134,7 @@ def main():
     ap.add_argument("--out", default="reports")
     ap.add_argument("--cfg", default="{}", help="JSON overrides of story.DEFAULT")
     ap.add_argument("--entry-cfg", default="{}", help="JSON overrides of entry.DEFAULT")
+    ap.add_argument("--variants", action="store_true", help="also run VARIANTS -> ENTRY_VARIANTS.md")
     a = ap.parse_args()
     scfg = {**STORY_DEFAULT, **json.loads(a.cfg)}
     ecfg = {**DEFAULT, "entry_tfs": ENTRY_TFS, **json.loads(a.entry_cfg)}
@@ -117,9 +142,12 @@ def main():
     pairs = a.pairs.split(",")
     store.months_all(pairs, a.start, a.end)
     store.close_feed()
-    jobs = [(p, a.start, a.end, a.stories.split(","), scfg, ecfg) for p in pairs]
+    jobs = [(p, a.start, a.end, a.stories.split(","), scfg, ecfg, VARIANTS if a.variants else None) for p in pairs]
     rows = [r for chunk in run_pairs(_pair_job, jobs) for r in chunk]
-    df = pd.DataFrame(rows)
+    allv = pd.DataFrame(rows)
+    if a.variants:
+        variant_report(allv, os.path.join(a.out, "ENTRY_VARIANTS.md"))
+    df = allv[allv["variant"] == ""].drop(columns="variant")
     df.to_csv(os.path.join(a.out, "entries.csv"), index=False)
     report(df, ecfg, os.path.join(a.out, "ENTRY_REPORT.md"))
     print(open(os.path.join(a.out, "ENTRY_REPORT.md")).read())

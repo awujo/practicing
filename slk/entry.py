@@ -51,6 +51,9 @@ DEFAULT = {
     "story_end": True,         # no new entry after the story's own end_time (flip #29 / invalidation / target)
     "breakout_max_bars": 0,    # 0 = no limit (Kevin gives none): any later candle, until a close back through the line
     "max_stop_pips": 20.0,     # wider stop = pattern does not qualify (JPY pairs: same number of pips)
+    "min_stop_pips": 0.0,      # 0 = off. A tighter stop is widened to this many pips from the entry. Kevin's stops
+                               # seen: 8-21 pips [STRATEGY "Stop loss"]; the bot's went down to 0.2 and 60% of the
+                               # <=5-pip ones stopped out in the fill hour (REVIEW "Stop size")
     "avoid_pairs": ["AUDNZD", "NZDCHF"],  # wide spread
     "retest_bars": 12,         # entry-TF bars after the breakout to wait for the retest, then MISSED
     "skip_first": True,        # no pattern formed at or before the top of the first retracement after the breakout
@@ -278,6 +281,10 @@ def _setup(px, tf, story, sell, entry, stop, bo, t_conf, why, extra):
     risk = (stop - entry) if sell else (entry - stop)
     if round(risk / P, 1) <= 0:  # stop on (or within 0.05 pip of) the entry: no stop at all
         return None
+    if risk / P < cfg.get("min_stop_pips", 0.0) - 1e-9:
+        risk = cfg["min_stop_pips"] * P
+        stop = entry + risk if sell else entry - risk
+        extra = {**extra, "stop_at": f"{extra.get('stop_at', '-')}+min"}
     if risk / P > cfg["max_stop_pips"] + 1e-9:
         why["wide_stop"] += 1
         return None

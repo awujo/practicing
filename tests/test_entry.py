@@ -373,3 +373,14 @@ def test_spread_on_bid_candles():
     # the buy retest's bid low goes 0.5 pip through the line: the ask (bid + spread) reaches it only if spread < 0.5
     assert find_entries("EURUSD", hb, [sb], {**H1ONLY, "spread_pips": 0.4})[0]["status"] == "TRIGGERED"
     assert find_entries("EURUSD", hb, [sb], {**H1ONLY, "spread_pips": 1.0})[0]["status"] == "MISSED"
+
+
+def test_min_stop_widens_tight_stop():
+    """min_stop_pips widens a stop tighter than N pips to N pips from the entry (0 = off, unchanged)."""
+    h1 = scenario()
+    e = find_entries("EURUSD", h1, [story_row(h1)], {**H1ONLY, "min_stop_pips": 8})[0]
+    assert e["status"] == "TRIGGERED" and e["stop_pips"] == 8.0
+    assert abs(e["stop"] - (1.1 + 23 * P)) < 1e-9 and e["stop_at"].endswith("+min")
+    assert e["tp1"] <= e["entry"] - 1.5 * 8 * P + 1e-9
+    e0 = find_entries("EURUSD", h1, [story_row(h1)], H1ONLY)[0]
+    assert e0["stop_pips"] == 4.0 and not e0["stop_at"].endswith("+min")

@@ -259,3 +259,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-15: Repo renamed `trading` -> `practicing` and made public (free Actions minutes until Nov 1). Live run
   dispatched and succeeded. Owner challenged entry results (0.34R bias trade view, break-even entries): plan = M5 sim,
   Kevin-trade check, BE after TP1, H1 trigger entries.
+- 2026-10-15: Entry stop diagnosis (REVIEW "Stop size"): tiny stops (<=5 pips) lose in the fill hour. New
+  `entry.DEFAULT["min_stop_pips"]` (0 = off) and `entry_backtest --variants` -> reports/ENTRY_VARIANTS.md
+  (backtest workflow runs it). Earlier claim "34% fill-hour stops = H1 too coarse" was wrong: those are real losses.
+

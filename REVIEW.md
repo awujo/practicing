@@ -430,3 +430,15 @@ setups will not qualify. A per-symbol max stop is not built.
 To dispatch: **cTrader smoke** (workflow_dispatch, symbol `XAUUSD`) → the error code or the ignored-request
 diagnostics; **SLK debug pair** (pair `XAUUSD`, days 1500) → `data/debug/XAUUSD_H1_<source>.csv.gz` +
 `XAUUSD_explain.txt`.
+
+## Stop size (2026-10-15)
+Owner challenged the entry results. From reports/entries.csv (606 fills, settings of 2026-10-14):
+- Median stop 9.75 pips, 25% under 6 pips, down to 0.2. Kevin's stops seen: 8-21 pips.
+- Stops <= 5 pips: 109 fills, 60% stopped in the fill hour, TP1 -0.45R. 15-20 pips: 14% fill-hour stops.
+- `rejection` fallback stops (zone wider than max_stop_pips): 86 fills, 51% fill-hour stops, TP1 -0.56R.
+- A fill-hour stop is a real loss, not an H1 ambiguity: a limit is filled on the way to the stop, so the
+  stop cannot be touched first. The H1 pessimism is only "same bar stop + TP after the fill bar" and "TP in the
+  fill bar ignored"; M5 refinement stays on the list but is not the main cause.
+Change: `min_stop_pips` (default 0 = unchanged); `slk.entry_backtest --variants` runs min stop 8/10, max stop 25
+and spread 1 pip on the same stories -> reports/ENTRY_VARIANTS.md. Default chosen from that report.
+
