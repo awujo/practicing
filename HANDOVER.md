@@ -3,7 +3,8 @@
 Project: Kevin King "SLK" trading bot. Gives **bias** (main goal), then **entry alerts**, later **trades on
 IC Markets cTrader (demo first)**. No VPS, no Docker, no MT5.
 
-Repo `awujo/trading`, work branch **`claude-kevin-king`** (Claude). `qwen-kevin-king` = Qwen's older attempt,
+Repo **`awujo/practicing`** (renamed from `awujo/trading` on 2026-10-15 and made **public** so Actions
+minutes are free; owner plans to make it private again after the billing reset on Nov 1), work branch **`claude-kevin-king`** (Claude). `qwen-kevin-king` = Qwen's older attempt,
 ignore. `main` = old bot code, don't touch. Owner Telegram chat id: 1410229777.
 
 **Rule for every session:** update this file (Status + Log) in the same commit as any change.
@@ -30,7 +31,12 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-14)
+## Status (2026-10-15)
+- [x] Repo public as `awujo/practicing`; live run works again (minutes were exhausted). Render: check the repo link
+      shows `awujo/practicing`. Back to private on/after Nov 1, then hourly live costs minutes again.
+- [ ] **Entry model re-test** (owner asked): fills/exits on M5 instead of H1 (34% same-H1-bar stops), Kevin's own
+      trades in the example check (entry/stop/TP R), break-even after TP1, H4 level + H1 breakout entries, drop the
+      misleading bias "trade view" R (0.34R target vs tap-wick stop is not a Kevin trade).
 - [x] **Data source = IC Markets cTrader** (store, backfill, live, backtest, verify-examples); Dukascopy = fallback.
 - [ ] **User, once:** Actions → "SLK candle backfill" → Run workflow (start 2018, pairs empty). Expected a few minutes;
       per-pair bar counts appear as `::notice::` annotations, the store check as "Store check". Old Dukascopy caches
@@ -250,3 +256,6 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Mini App: `/api/entries/summary` (owner auth; SELECT * so it works before the migration), status filter with the
   new statuses + `closed`, outcome tags, R, filled/closed times, "Paper results (signals)" card. Win = TP1 reached,
   so win% and total R match the backtest's TP1 row; TP2 R shown separately. Tests `tests/test_paper_results.py`.
+- 2026-10-15: Repo renamed `trading` -> `practicing` and made public (free Actions minutes until Nov 1). Live run
+  dispatched and succeeded. Owner challenged entry results (0.34R bias trade view, break-even entries): plan = M5 sim,
+  Kevin-trade check, BE after TP1, H1 trigger entries.
