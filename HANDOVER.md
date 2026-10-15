@@ -262,4 +262,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-15: Entry stop diagnosis (REVIEW "Stop size"): tiny stops (<=5 pips) lose in the fill hour. New
   `entry.DEFAULT["min_stop_pips"]` (0 = off) and `entry_backtest --variants` -> reports/ENTRY_VARIANTS.md
   (backtest workflow runs it). Earlier claim "34% fill-hour stops = H1 too coarse" was wrong: those are real losses.
+- 2026-10-15: Owner: "until the backtest gets Kevin's stop/entry and reproduces his examples, the system is not
+  modeled". min_stop 8 default NOT adopted (reverted; option stays, default 0). ENTRY_VARIANTS.md: min stop 8 helps
+  a little, every variant still <= 0 R with 1-pip spread. New `tests/kevin_trades.json` = Kevin's dated trades
+  (EURAUD H4 sell 17 Feb 2026, GBPAUD 2H sell 19 Feb, USDCHF 1H buy 21 Jan, EURGBP 4H sell 2 Feb / buy 15 Jan,
+  USDJPY 1H buy 12 Dec 2025). Bot vs Kevin, EURAUD: story level 1.68095 = Kevin's A-level (ok), B 1.67396 break
+  17 Feb 18:00 (ok) but story TARGET 1.67211 (5 pips past the break) is hit 18 Feb 02:00 -> story ends -> NO entry.
+  Kevin's TP = 1.6620, "this low before I target the weekly key level" (the low the pullback started from).
+  Open question to owner: target = that leg low (ERL) instead of the nearest small level?
 

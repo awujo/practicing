@@ -1,0 +1,20 @@
+[
+ {"id": "euraud-h4-sell-feb17", "pair": "EURAUD", "side": "SELL", "tf": "H4", "time": "2026-02-17 03:00",
+  "entry": 1.6748, "stop": 1.67667, "tp": 1.6660, "stop_pips": 18.7,
+  "src": "weekly-recap@1100-1360; F weekly-recap/sheet_015-017 (H4 A-level 1.6793-1.6809 tapped, QMR, short box entry 1.67481 stop 18.7 pips TP 88 pips R 4.71; 'I usually go with 15 to 20 pips plus')"},
+ {"id": "gbpaud-h2-sell-feb19", "pair": "GBPAUD", "side": "SELL", "tf": "H2", "time": "2026-02-19 00:00",
+  "entry": 1.9125, "stop": 1.9143, "tp": 1.9029, "stop_pips": 18.5,
+  "src": "weekly-recap@1380-1500; F weekly-recap/sheet_013-019 (H4 A-shape 1.9143, 2H box entry 1.9125 SL 1.9143 TP 1.9029 R 2.1; 'that 2 hours was good clean')"},
+ {"id": "usdchf-h1-buy-jan21", "pair": "USDCHF", "side": "BUY", "tf": "H1", "time": "2026-01-21 08:00",
+  "entry": 0.78997, "stop": 0.78898, "tp": 0.7913, "tp2": 0.79504, "stop_pips": 9.9,
+  "src": "class-wrok@77-900; F class-wrok/sheet_003-013 (D range-low 0.7890 reject + H4 level, 1H breakout, entry 0.78997 SL 0.78898 TP1 0.7913 TP2 0.79504, TP2 hit)"},
+ {"id": "eurgbp-h4-sell-feb02", "pair": "EURGBP", "side": "SELL", "tf": "H4", "time": "2026-02-02 08:00",
+  "entry": 0.8660, "stop": 0.8666, "tp": 0.8627, "stop_pips": 6.6,
+  "src": "eurgbp-bd@300-860; F eurgbp-bd/sheet_005-010 (daily option 0.8671 SL 15.3 R 2.59; taken on 4h 0.8660 SL 6.6 pips TP 32.7 pips R 4.95, worked)"},
+ {"id": "eurgbp-h4-buy-jan15", "pair": "EURGBP", "side": "BUY", "tf": "H4", "time": "2026-01-15 00:00",
+  "entry": 0.8675, "stop": 0.8657, "tp": 0.8723, "stop_pips": 18.0,
+  "src": "all-in-1@1600-2140; F all-in-1/sheet_023-027 (D V 0.8657 tapped, 4H EXB 0.8672, entry 0.8675 SL under the V 16-22 pips, TP KL 0.8723, hit)"},
+ {"id": "usdjpy-h1-buy-dec12", "pair": "USDJPY", "side": "BUY", "tf": "H1", "time": "2025-12-12 12:00",
+  "entry": 155.599, "stop": 155.450, "tp": 156.049, "stop_pips": 14.9,
+  "src": "qns-pt1@1380-1800; F qns-pt1/sheet_017-021 (1H box 155.50-155.60, entry 155.599 SL 155.450 TP 156.049 R 3.02)"}
+]
