@@ -466,14 +466,47 @@ def fmt_price(pair, x):
     return instruments.fmt(pair, x)
 
 
-def fmt_time(t, tz=None):
-    """'2026-10-12 21:00 UTC' (tz None), else e.g. 'Mon 12 Oct 22:00 WAT' in that IANA zone."""
+CLOCK = lambda: pd.Timestamp.now(tz="UTC")  # noqa: E731  (tests pin it)
+
+
+def rel_day(x, now):
+    """Owner request 2026-10-15: 'Today' / 'Yesterday' / 'Tomorrow' / 'Monday' (this week) / 'Last week Monday',
+    None further away. x and now are tz-aware in the same zone; weeks start on Monday."""
+    d = (x.normalize() - now.normalize()).days
+    if d == 0:
+        return "Today"
+    if d == -1:
+        return "Yesterday"
+    if d == 1:
+        return "Tomorrow"
+    week = lambda y: (y.normalize() - pd.Timedelta(days=y.dayofweek))  # noqa: E731
+    w = (week(x) - week(now)).days // 7
+    if w == 0:
+        return f"{x:%A}"
+    if w == -1:
+        return f"Last week {x:%A}"
+    if w == 1:
+        return f"Next week {x:%A}"
+    return None
+
+
+def fmt_time(t, tz=None, now=None):
+    """'2026-10-12 21:00 UTC' (tz None), else in that IANA zone with a friendly day when it is near:
+    'Today, Mon 12 Oct 22:00 WAT', 'Last week Monday, 5 Oct 22:00 WAT', far away 'Mon 21 Sep 22:00 WAT'
+    (year added when it is not the current year)."""
     if t is None:
         return "-"
     if not tz:
         return pd.Timestamp(t).strftime("%Y-%m-%d %H:%M") + " UTC"
     x = _ts(t).tz_convert(tz)
-    return f"{x:%a} {x.day} {x:%b %H:%M} {x.tzname()}"
+    now = _ts(now if now is not None else CLOCK()).tz_convert(tz)
+    yr = f" {x.year}" if x.year != now.year else ""
+    rel = rel_day(x, now)
+    if rel is None:
+        return f"{x:%a} {x.day} {x:%b}{yr} {x:%H:%M} {x.tzname()}"
+    if rel in ("Today", "Yesterday", "Tomorrow"):
+        return f"{rel}, {x:%a} {x.day} {x:%b %H:%M} {x.tzname()}"
+    return f"{rel}, {x.day} {x:%b}{yr} {x:%H:%M} {x.tzname()}"
 
 
 DISPLAY_TZ = S.DEFAULTS["display_tz"]

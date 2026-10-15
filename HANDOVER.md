@@ -273,4 +273,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-15: `story.DEFAULT["target_mode"]` = leg (Kevin's ERL target), Mini App setting + backtest variant.
   Examples 7/9 (CADJPY Feb 2 = same BUY bias from the Jan 26 story). REVIEW "Targets vs Kevin". Next: QMR entry
   = limit at the H4 neck (Kevin's EURAUD 17-18 Feb), stop 15-20 pips; `slk/verify_trades` vs tests/kevin_trades.json.
+- 2026-10-15: Friendly dates (owner request): Telegram `live.fmt_time` and Mini App `dt()` show "Today, Thu 15 Oct
+  10:00", "Yesterday, ...", "Monday, 12 Oct 22:00", "Last week Monday, 5 Oct 22:00", far away "Mon 28 Sep 22:00"
+  (+ year if not this year). DB sessions forced to UTC (`SET time_zone = '+00:00'`). Render needs a redeploy.
 

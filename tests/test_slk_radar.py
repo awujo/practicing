@@ -99,7 +99,8 @@ def test_retrace_flag_only():
 
 
 # ------------------------------------------------------------------ 2/5. alerts
-def test_alert_lines_from_engine_story():
+def test_alert_lines_from_engine_story(monkeypatch):
+    monkeypatch.setattr(live, "CLOCK", lambda: pd.Timestamp("2023-12-31", tz="UTC"))  # far away: plain dates
     s = {**started(NEXT), "pair": "EURUSD"}
     row = live.to_row(s, "CONFIRMED")
     assert row["next_day"] is True and row["breakout_time"] == datetime(2023, 1, 10, 2)

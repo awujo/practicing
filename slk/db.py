@@ -73,7 +73,7 @@ def connect(url=None):
     mode = p.pop("ssl_mode")
     return pymysql.connect(**p, ssl=_ssl_context(mode), charset="utf8mb4", autocommit=True,
                            cursorclass=pymysql.cursors.DictCursor, connect_timeout=15, read_timeout=60,
-                           write_timeout=60)
+                           write_timeout=60, init_command="SET time_zone = '+00:00'")  # TIMESTAMPs read as UTC
 
 
 _conn = None

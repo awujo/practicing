@@ -37,6 +37,7 @@ def _local_connect():
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=True,
         connect_timeout=10,
+        init_command="SET time_zone = '+00:00'",  # TIMESTAMP columns read as UTC (the app shows local days)
     )
     if ssl:
         kw["ssl"] = ssl["ssl"] or {"check_hostname": False}

@@ -7,7 +7,39 @@
   const $ = (s) => document.querySelector(s);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (v) => (v === null || v === undefined || v === "" ? "–" : Number(v).toFixed(Number(v) > 500 ? 2 : Number(v) > 20 ? 3 : 5));  // gold/indices 2, JPY/silver 3, FX 5
-  const dt = (v) => (v ? String(v).replace("T", " ").slice(0, 16) : "–");
+  // Times from the API are UTC. Shown in the display_tz setting (else the phone's zone) with a friendly day near
+  // now (owner request 2026-10-15): "Today, Thu 15 Oct 10:00", "Yesterday, ...", "Monday, 12 Oct 22:00",
+  // "Last week Monday, 5 Oct 22:00"; further away "Mon 28 Sep 22:00" (year added when not this year).
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fmtParts = (d, tz) => new Intl.DateTimeFormat("en-GB", { timeZone: tz, year: "numeric", month: "numeric",
+    day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d);
+  const parts = (d) => {  // wall-clock parts of d in the display zone (unknown zone -> the phone's zone)
+    let p;
+    try { p = fmtParts(d, settings.display_tz || undefined); } catch (e) { p = fmtParts(d, undefined); }
+    const g = (t) => Number(p.find((x) => x.type === t).value);
+    return { y: g("year"), m: g("month"), d: g("day"), hh: String(g("hour")).padStart(2, "0"), mm: String(g("minute")).padStart(2, "0") };
+  };
+  const dayNo = (q) => Date.UTC(q.y, q.m - 1, q.d) / 86400000;  // calendar day number of wall-clock parts
+  const dt = (v) => {
+    if (!v) return "–";
+    const s = String(v).replace(" ", "T");
+    const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z");
+    if (isNaN(d)) return String(v).slice(0, 16);
+    const x = parts(d), n = parts(new Date());
+    const dx = dayNo(x), dn = dayNo(n), wd = (k) => (new Date(k * 86400000).getUTCDay() + 6) % 7;  // Monday = 0
+    const diff = dx - dn, weeks = Math.floor((dx - wd(dx) - (dn - wd(dn))) / 7);
+    const name = DAYS[new Date(dx * 86400000).getUTCDay()];
+    const yr = x.y !== n.y ? ` ${x.y}` : "";
+    const date = `${x.d} ${MON[x.m - 1]}${yr} ${x.hh}:${x.mm}`;
+    if (diff === 0) return `Today, ${name.slice(0, 3)} ${date}`;
+    if (diff === -1) return `Yesterday, ${name.slice(0, 3)} ${date}`;
+    if (diff === 1) return `Tomorrow, ${name.slice(0, 3)} ${date}`;
+    if (weeks === 0) return `${name}, ${date}`;
+    if (weeks === -1) return `Last week ${name}, ${date}`;
+    if (weeks === 1) return `Next week ${name}, ${date}`;
+    return `${name.slice(0, 3)} ${date}`;
+  };
   const dur = (s) => {
     if (s === null || s === undefined) return "–";
     const a = Math.abs(s);

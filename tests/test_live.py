@@ -8,6 +8,7 @@ import pandas as pd
 from slk import data
 from slk.candles import resample
 from slk.db import parse_url
+import slk.live as live_mod
 from slk.live import (drop_forming, fmt_time, format_alert, format_summary, pair_state, planned_time, reconcile,
                       summary_due, summary_line)
 from slk.story import DEFAULT, current_tap, find_stories
@@ -25,7 +26,8 @@ def row(**kw):
 
 
 # ------------------------------------------------------------- messages
-def test_alert_format():
+def test_alert_format(monkeypatch):
+    monkeypatch.setattr(live_mod, "CLOCK", lambda: pd.Timestamp("2026-12-31", tz="UTC"))  # far away: plain dates
     m = format_alert("CONFIRMED", row(breakout_time=datetime(2026, 10, 12, 5), next_day=True, level_time=datetime(2026, 10, 1, 21),
                                       trend="down", htf_trend="down"))
     L = m.splitlines()
@@ -53,7 +55,17 @@ def test_alert_format():
     assert "W1\u2192D1" in w and "Weekly story" in w and "sweep of previous week low" in w
     assert "NO_TRADE (M/W conflict)" in w and "W1 week of Mon 12 Oct" in w
     assert fmt_time(datetime(2026, 10, 12, 21)) == "2026-10-12 21:00 UTC"
-    assert fmt_time(datetime(2026, 10, 12, 21), "Europe/London") == "Mon 12 Oct 22:00 BST"
+    now = datetime(2026, 12, 31)
+    assert fmt_time(datetime(2026, 10, 12, 21), "Europe/London", now) == "Mon 12 Oct 22:00 BST"
+    # owner request 2026-10-15: friendly day near now, the date always shown; year when not this year
+    now = datetime(2026, 10, 15, 12)  # Thursday
+    assert fmt_time(datetime(2026, 10, 15, 9), "Africa/Lagos", now) == "Today, Thu 15 Oct 10:00 WAT"
+    assert fmt_time(datetime(2026, 10, 14, 21), "Africa/Lagos", now) == "Yesterday, Wed 14 Oct 22:00 WAT"
+    assert fmt_time(datetime(2026, 10, 16, 21), "Africa/Lagos", now) == "Tomorrow, Fri 16 Oct 22:00 WAT"
+    assert fmt_time(datetime(2026, 10, 12, 21), "Africa/Lagos", now) == "Monday, 12 Oct 22:00 WAT"
+    assert fmt_time(datetime(2026, 10, 5, 21), "Africa/Lagos", now) == "Last week Monday, 5 Oct 22:00 WAT"
+    assert fmt_time(datetime(2026, 9, 28, 21), "Africa/Lagos", now) == "Mon 28 Sep 22:00 WAT"
+    assert fmt_time(datetime(2025, 9, 29, 21), "Africa/Lagos", now) == "Mon 29 Sep 2025 22:00 WAT"
 
 
 def test_summary():
