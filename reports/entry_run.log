@@ -44,8 +44,8 @@ EURNZD M: 6 stories, 0 entries filled
 GBPJPY M: 4 stories, 1 entries filled
 GBPAUD W: 32 stories, 5 entries filled
 GBPCAD W: 29 stories, 13 entries filled
-GBPCHF D: 191 stories, 34 entries filled
 GBPAUD M: 8 stories, 0 entries filled
+GBPCHF D: 191 stories, 34 entries filled
 GBPCAD M: 4 stories, 0 entries filled
 GBPNZD D: 210 stories, 20 entries filled
 AUDJPY D: 196 stories, 26 entries filled
@@ -65,22 +65,22 @@ AUDCAD M: 7 stories, 1 entries filled
 NZDJPY D: 200 stories, 40 entries filled
 NZDCHF D: 210 stories, 0 entries filled
 NZDCHF W: 21 stories, 0 entries filled
-NZDCHF M: 6 stories, 0 entries filled
 NZDCAD D: 245 stories, 35 entries filled
-AUDCHF W: 35 stories, 10 entries filled
+NZDCHF M: 6 stories, 0 entries filled
 CADJPY D: 213 stories, 37 entries filled
+AUDCHF W: 35 stories, 10 entries filled
 AUDCHF M: 6 stories, 2 entries filled
 NZDJPY W: 22 stories, 6 entries filled
 NZDJPY M: 2 stories, 0 entries filled
 CADCHF D: 210 stories, 40 entries filled
 NZDCAD W: 39 stories, 6 entries filled
 CHFJPY D: 204 stories, 26 entries filled
-NZDCAD M: 6 stories, 1 entries filled
 CADJPY W: 29 stories, 5 entries filled
+NZDCAD M: 6 stories, 1 entries filled
 CADJPY M: 3 stories, 0 entries filled
 CADCHF W: 25 stories, 9 entries filled
-CADCHF M: 5 stories, 0 entries filled
 CHFJPY W: 30 stories, 7 entries filled
+CADCHF M: 5 stories, 0 entries filled
 CHFJPY M: 3 stories, 0 entries filled
 # SLK entry-model backtest
 
@@ -101,7 +101,7 @@ Stop (`stop_at`): `zone` = beyond the c1..breakout-1 wicks (Kevin's invalidation
 the c3.. rejection wick when the zone is wider than `max_stop_pips`, `head` = QMR head. Candles are bid;
 `spread_pips` adds the ask side (0 = none). No entry after the story's own end (flip / invalidation).
 
-Settings: `{"tap_tol_pips": 1.0, "impulse_mult": 1.0, "impulse_lookback": 10, "stop_buffer_pips": 1.0, "stop_at": "zone", "story_end": true, "breakout_max_bars": 0, "max_stop_pips": 20.0, "min_stop_pips": 0.0, "avoid_pairs": ["AUDNZD", "NZDCHF"], "retest_bars": 12, "skip_first": true, "pivot": 2, "tp1_min_rr": 1.5, "tp1_max_rr": 3.0, "min_rr_tp2": 1.0, "max_story_bars": null, "max_trade_bars": 60, "spread_pips": 0.0, "entry_models": ["continuation", "qmr"], "qmr_max_bars": 30, "alignment": "d_h4", "entry_tfs": {"D": ["H4", "H2"], "W": ["D", "H4"], "M": ["W", "D"]}}`
+Settings: `{"tap_tol_pips": 1.0, "impulse_mult": 1.0, "impulse_lookback": 10, "stop_buffer_pips": 1.0, "stop_at": "zone", "story_end": true, "breakout_max_bars": 0, "max_stop_pips": 20.0, "min_stop_pips": 0.0, "avoid_pairs": ["AUDNZD", "NZDCHF"], "retest_bars": 12, "skip_first": true, "pivot": 2, "tp1_min_rr": 1.5, "tp1_max_rr": 3.0, "min_rr_tp2": 1.0, "max_story_bars": null, "max_trade_bars": 60, "spread_pips": 0.0, "entry_models": ["continuation", "qmr"], "qmr_max_bars": 30, "qmr_entry": "trigger", "qmr_stop_pips": 18.0, "alignment": "d_h4", "entry_tfs": {"D": ["H4", "H2"], "W": ["D", "H4"], "M": ["W", "D"]}}`
 
 ## Status count
 

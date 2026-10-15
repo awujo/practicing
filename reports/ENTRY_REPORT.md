@@ -17,7 +17,7 @@ Stop (`stop_at`): `zone` = beyond the c1..breakout-1 wicks (Kevin's invalidation
 the c3.. rejection wick when the zone is wider than `max_stop_pips`, `head` = QMR head. Candles are bid;
 `spread_pips` adds the ask side (0 = none). No entry after the story's own end (flip / invalidation).
 
-Settings: `{"tap_tol_pips": 1.0, "impulse_mult": 1.0, "impulse_lookback": 10, "stop_buffer_pips": 1.0, "stop_at": "zone", "story_end": true, "breakout_max_bars": 0, "max_stop_pips": 20.0, "min_stop_pips": 0.0, "avoid_pairs": ["AUDNZD", "NZDCHF"], "retest_bars": 12, "skip_first": true, "pivot": 2, "tp1_min_rr": 1.5, "tp1_max_rr": 3.0, "min_rr_tp2": 1.0, "max_story_bars": null, "max_trade_bars": 60, "spread_pips": 0.0, "entry_models": ["continuation", "qmr"], "qmr_max_bars": 30, "alignment": "d_h4", "entry_tfs": {"D": ["H4", "H2"], "W": ["D", "H4"], "M": ["W", "D"]}}`
+Settings: `{"tap_tol_pips": 1.0, "impulse_mult": 1.0, "impulse_lookback": 10, "stop_buffer_pips": 1.0, "stop_at": "zone", "story_end": true, "breakout_max_bars": 0, "max_stop_pips": 20.0, "min_stop_pips": 0.0, "avoid_pairs": ["AUDNZD", "NZDCHF"], "retest_bars": 12, "skip_first": true, "pivot": 2, "tp1_min_rr": 1.5, "tp1_max_rr": 3.0, "min_rr_tp2": 1.0, "max_story_bars": null, "max_trade_bars": 60, "spread_pips": 0.0, "entry_models": ["continuation", "qmr"], "qmr_max_bars": 30, "qmr_entry": "trigger", "qmr_stop_pips": 18.0, "alignment": "d_h4", "entry_tfs": {"D": ["H4", "H2"], "W": ["D", "H4"], "M": ["W", "D"]}}`
 
 ## Status count
 

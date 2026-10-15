@@ -24,8 +24,8 @@ NZDCHF: 237 stories, 3563 variant rows
 NZDJPY: 224 stories, 3430 variant rows
 NZDCAD: 290 stories, 4088 variant rows
 CADJPY: 245 stories, 3426 variant rows
-CADCHF: 240 stories, 3515 variant rows
 CHFJPY: 237 stories, 3636 variant rows
+CADCHF: 240 stories, 3515 variant rows
 # SLK story-line backtest
 
 Each row = a confirmed story (tap-reject-close + breakout of point B). Trade view: entry at the
