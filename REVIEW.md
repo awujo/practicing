@@ -454,3 +454,15 @@ Entries still miss Kevin's EURAUD trade: his entry is a limit at the H4 QM neck 
 head 1.67810, neck close-break 17 Feb 18:00, fill 18 Feb 02:00, stop 18.7 pips "15 to 20 pips plus"); the bot's
 QMR waits for an extra H1 Model-A pattern in the zone. Next: QMR direct limit at the neck, Kevin's stop rule.
 
+## Kevin's trades replay (2026-10-15)
+`python -m slk.verify_trades` (reports/KEVIN_TRADES.md; workflow verify-examples). PASS = same pair/side, filled
+within 3 days, entry and stop each within 5 pips. Default (qmr_entry trigger): 0/6. `qmr_entry` neck: 1/6, the
+EURAUD H4 sell is reproduced exactly (entry 1.67495 vs 1.67481, stop 1.67675 vs 1.67668, fill 18 Feb 02:00, TP2
+1.66234 hit). Still failing and why (next work):
+- GBPAUD 2H sell 1.9125/1.9143: the Feb 12 story reaches its target 1.90805 on Feb 19 18:00, so the Feb 18 tap of
+  the H4 A-shape 1.9143 is not a new story; Kevin enters on that second tap.
+- EURGBP 4H sell 2 Feb (0.8660, stop 6.6 pips) and 4H buy 15 Jan (0.8675, stop under the V 0.8657): bot stories
+  differ (Jan 12 story is a CADJPY-rule story with target 0.86804; Kevin targets the weekly KL 0.8722).
+- USDCHF 1H buy 21 Jan: range-low reversal + H1 breakout; no H1 entries and no matching D story in the bot.
+- USDJPY 1H buy 12 Dec 2025 (qns-pt1): H1 entry TF not used for D stories.
+

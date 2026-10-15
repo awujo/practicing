@@ -276,4 +276,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-15: Friendly dates (owner request): Telegram `live.fmt_time` and Mini App `dt()` show "Today, Thu 15 Oct
   10:00", "Yesterday, ...", "Monday, 12 Oct 22:00", "Last week Monday, 5 Oct 22:00", far away "Mon 28 Sep 22:00"
   (+ year if not this year). DB sessions forced to UTC (`SET time_zone = '+00:00'`). Render needs a redeploy.
+- 2026-10-15: `entry.DEFAULT` qmr_entry (trigger | neck) + qmr_stop_pips 18 (Mini App "Entry rules"); entry
+  variants "qmr neck". `slk/verify_trades.py` -> reports/KEVIN_TRADES.md (trigger 0/6) and reports/neck/ (1/6:
+  EURAUD exact). REVIEW "Kevin's trades replay" lists why the other 5 fail. Test test_kevin_euraud_qmr_neck_trade.
 

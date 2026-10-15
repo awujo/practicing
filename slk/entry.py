@@ -66,7 +66,12 @@ DEFAULT = {
     "spread_pips": 0.0,        # backtest cost: candles are BID; a BUY fills / a SELL stops or takes profit at ASK =
                                # bid + spread. 0 = bid-only simulation (optimistic); REVIEW "Entry diagnosis" uses 1.0      # entry-TF bars a trade is held before it is closed at market
     "entry_models": ["continuation", "qmr"],
-    "qmr_max_bars": 30,        # OUR CHOICE: QM-TF bars after the neck break for the zone reaction + trigger
+    "qmr_max_bars": 30,
+    "qmr_entry": "trigger",    # trigger = wait in the zone for a trigger-TF (H1) Model-A pattern, limit at its line
+                               # [T entry-4@830-1905]; neck = limit at the QM neck as soon as the QM exists
+                               # (Kevin's EURAUD 17-18 Feb 2026, weekly-recap@1140-1360)
+    "qmr_stop_pips": 18.0,     # neck mode: stop when the head is further than max_stop_pips ("15 to 20 pips plus",
+                               # weekly-recap@1340; his EURAUD/GBPAUD stops 18.7 / 18.5 pips)        # OUR CHOICE: QM-TF bars after the neck break for the zone reaction + trigger
     "alignment": "d_h4",       # setting entry_alignment: continuation entries only when D and H4 are in line (the
                                # CONFIRMED story = "daily reject daily" + the last H4 structural break the same way);
                                # w_d_h4 = also the last W structural break; off = no check
@@ -365,6 +370,25 @@ def _qmr_candidates(px, tf, story, sell, t_conf, t_end):
             continue
         lim = q["brk"] + cfg["qmr_max_bars"]
         t_lim = B["end"][lim] if lim < len(B["end"]) else np.datetime64("2262-01-01", "ns")
+        if cfg.get("qmr_entry", "trigger") == "neck":
+            # Kevin's EURAUD H4 QMR [T weekly-recap@1140-1360, F weekly-recap/sheet_015-017]: once the QM exists,
+            # a limit at the neck line, stop beyond the head wick if that fits max_stop_pips, else "15 to 20 pips
+            # plus" from the entry (qmr_stop_pips) [T weekly-recap@1340]
+            kq = min(qm_known(q, cfg["pivot"]), len(B["end"]) - 1)
+            entry = q["neck"]
+            head_stop = q["head_x"] + buf if sell else q["head_x"] - buf
+            if abs(head_stop - entry) / P <= cfg["max_stop_pips"] + 1e-9:
+                stop, at = head_stop, "head"
+            else:
+                d = cfg.get("qmr_stop_pips", 18.0) * P
+                stop, at = (entry + d, "fixed") if sell else (entry - d, "fixed")
+            c = _setup(px, tf, story, sell, entry, stop, kq, t_conf, why,
+                       {"model": "qmr", "c1_time": _s(B["start"][q["shoulder_i"]]), "bo_candle": 0,
+                        "qm_tf": tf, "qm_shoulder": q["shoulder"], "qm_neck": q["neck"], "qm_head": q["head"],
+                        "stop_at": at})
+            if c:
+                out.append(c)
+            continue
         k0 = int(np.searchsorted(T["start"], t_brk, "left"))   # first trigger bar after the neck break
         cl = T["close"][k0:]
         bad = np.flatnonzero(cl > q["head"] if sell else cl < q["head"])

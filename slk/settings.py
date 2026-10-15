@@ -119,6 +119,12 @@ SCHEMA = [
        "Ignore patterns formed before the top of the first retracement after the breakout."),
     _s("max_stop_pips", "float", "20", "Entry rules", "Wider stop = the pattern does not qualify.",
        min=5, max=50),
+    _s("qmr_entry", "choice", "trigger", "Entry rules",
+       "QMR entry. trigger = wait in the shoulder/neck zone for a 1H 3rd-candle breakout and enter its retest "
+       "(entry-4). neck = sell/buy limit at the QM neck as soon as the QM is complete (Kevin's EURAUD 17-18 Feb "
+       "2026, weekly-recap).", choices=["trigger", "neck"]),
+    _s("qmr_stop_pips", "float", "18", "Entry rules",
+       "Neck mode: stop distance when the head is further than the max stop ('15 to 20 pips plus').", min=5, max=40),
     _s("tp1_rr", "float", "1.5", "Entry rules", "Minimum reward:risk for TP1.", min=0.5, max=5),
     _s("avoid_pairs", "pairs", "AUDNZD,NZDCHF", "Entry rules", "No entries on these pairs (wide spread).",
        choices=PAIRS),
@@ -309,7 +315,8 @@ def entry_cfg(vals):
             "max_stop_pips": vals["max_stop_pips"], "tp1_min_rr": vals["tp1_rr"],
             "avoid_pairs": list(vals["avoid_pairs"]), "skip_first": vals["skip_first_retracement"],
             "entry_models": list(vals["entry_models"]), "breakout_max_bars": vals["breakout_max_bars"],
-            "alignment": vals["entry_alignment"]}
+            "alignment": vals["entry_alignment"], "qmr_entry": vals["qmr_entry"],
+            "qmr_stop_pips": vals["qmr_stop_pips"]}
 
 
 def schema_json():

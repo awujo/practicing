@@ -4,7 +4,7 @@ name: SLK verify Kevin examples
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/verify_examples.py", "slk/story.py", "slk/levels.py", "slk/structure.py", "slk/candles.py", "slk/live.py", ".github/workflows/verify-examples.yml"]  # rerun when the bias engine changes
+    paths: ["slk/verify_examples.py", "slk/story.py", "slk/levels.py", "slk/structure.py", "slk/candles.py", "slk/live.py", "slk/entry.py", "slk/verify_trades.py", "tests/kevin_trades.json", ".github/workflows/verify-examples.yml"]  # rerun when the bias engine changes
   workflow_dispatch:
     inputs:
       only: {description: "Comma list of pairs or example ids, empty = all", default: ""}
@@ -63,11 +63,17 @@ jobs:
               df.to_csv(f"data/examples/{p}_H1.csv.gz", float_format="%.6g")
               print(p, len(df))
           PY
+      - name: Replay Kevin's own trades (entry / stop / TP)
+        if: always()
+        run: |
+          python -m slk.verify_trades --data data/examples --out reports > reports/kevin_trades_run.log 2>&1 || true
+          python -m slk.verify_trades --data data/examples --out reports/neck --entry-cfg '{"qmr_entry": "neck"}' >> reports/kevin_trades_run.log 2>&1 || true
+          [ -f reports/KEVIN_TRADES.md ] && cat reports/KEVIN_TRADES.md >> "$GITHUB_STEP_SUMMARY"
       - name: Commit report
         if: success() || failure()  # a cancelled run must not commit half a report
         run: |
           git config user.name "slk-verify"; git config user.email "actions@github.com"
           git add -f data/examples/*.csv.gz 2>/dev/null || true
-          git add reports/EXAMPLES.md reports/examples_run.log 2>/dev/null || true
+          git add reports/EXAMPLES.md reports/examples_run.log reports/KEVIN_TRADES.md reports/neck/KEVIN_TRADES.md reports/kevin_trades_run.log 2>/dev/null || true
           git commit -m "Kevin examples replay ($(date -u +%F))" || exit 0
           git pull --rebase -X theirs origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}

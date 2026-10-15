@@ -384,3 +384,21 @@ def test_min_stop_widens_tight_stop():
     assert e["tp1"] <= e["entry"] - 1.5 * 8 * P + 1e-9
     e0 = find_entries("EURUSD", h1, [story_row(h1)], H1ONLY)[0]
     assert e0["stop_pips"] == 4.0 and not e0["stop_at"].endswith("+min")
+
+
+def test_kevin_euraud_qmr_neck_trade():
+    """Kevin's EURAUD H4 sell (weekly-recap@1140-1360): QM shoulder 1.67799, neck 1.67495, head 1.67810, neck broken
+    17 Feb 2026 18:00; sell limit 1.67481, stop 1.67668 ("15 to 20 pips plus"), target the leg low 1.6620."""
+    import os
+    from slk.verify_examples import load_csv
+    from slk.story import find_stories as fs
+    data = os.path.join(os.path.dirname(__file__), "..", "data", "examples")
+    if not os.path.exists(os.path.join(data, "EURAUD_H1.csv.gz")):
+        import pytest
+        pytest.skip("offline example data missing")
+    h1 = load_csv("EURAUD", data)
+    st = [s for s in fs("EURAUD", h1, "D") if s["tap_time"] == "2026-02-12 22:00"]
+    e = find_entries("EURAUD", h1, st, {"qmr_entry": "neck"})[0]
+    assert e["status"] == "TRIGGERED" and e["model"] == "qmr" and e["tf"] == "H4"
+    assert abs(e["entry"] - 1.67481) < 0.0002 and abs(e["stop"] - 1.67668) < 0.0002
+    assert e["fill_time"] == "2026-02-18 02:00" and e["tp2_outcome"] == "win" and abs(e["tp2"] - 1.6620) < 0.0005

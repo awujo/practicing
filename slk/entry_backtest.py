@@ -87,6 +87,8 @@ def report(df, cfg, path):
 # Entry-setting variants run on the same stories (ENTRY_VARIANTS.md); "" = the --entry-cfg run itself.
 VARIANTS = {
     "spread 1 pip": {"spread_pips": 1.0},
+    "qmr neck (Kevin EURAUD)": {"qmr_entry": "neck"},
+    "qmr neck, spread 1": {"qmr_entry": "neck", "spread_pips": 1.0},
     "min stop 8": {"min_stop_pips": 8.0},
     "min stop 8, spread 1": {"min_stop_pips": 8.0, "spread_pips": 1.0},
     "min stop 10, spread 1": {"min_stop_pips": 10.0, "spread_pips": 1.0},
