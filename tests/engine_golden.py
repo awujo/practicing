@@ -54,7 +54,7 @@ def pinned(cfg):
     """Golden-case cfg with the pre-2026-10-14 defaults pinned (the case's own keys win)."""
     return {**PIN, **cfg}
 
-LABELS = ("next_day", "retrace", "level_time", "level_src", "level_candle")  # story labels added later (Next Day Rule etc.): no effect on outcomes
+LABELS = ("next_day", "retrace", "level_time", "level_src", "level_candle", "erl_taken")  # story labels added later (Next Day Rule etc.): no effect on outcomes
 
 
 def strip_labels(x):

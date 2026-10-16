@@ -92,6 +92,7 @@ VARIANTS = [
     ("target_mode", "nearest", "story", {"target_mode": "nearest"}),
     ("target_unswept", "on", "story", {"target_unswept": True}),
     ("target_unswept", "off", "story", {"target_unswept": False}),
+    ("target_unswept", "skip", "story", {"target_unswept": "skip"}),
     ("flip_max_age", "100", "story", {"flip_max_age": 100}),
     ("flip_max_age", "0 (no limit)", "story", {"flip_max_age": 0}),
     ("cadjpy_exception", "on", "story", {"cadjpy_exception": True}),
@@ -161,6 +162,12 @@ def variants_table(vdf):
                                ("no breakout (cadjpy, n/a)", d["next_day"].isna())):
                     x = d[m]
                     rows.append(_score(f"  flag: {lab}", setting, value, x["result_R"], x["outcome"] == "win"))
+            if setting == "target_unswept" and value == "off" and "erl_taken" in d:
+                # owner 2026-10-16: stories whose target was already taken by a wick before the confirmation
+                for lab, m in (("ERL already taken before confirmation", d["erl_taken"] == True),  # noqa: E712
+                               ("ERL not taken yet", d["erl_taken"] != True)):  # noqa: E712
+                    x = d[m]
+                    rows.append(_score(f"  off: {lab}", setting, value, x["result_R"], x["outcome"] == "win"))
         else:
             t = d[d["status"] == "TRIGGERED"] if "status" in d else d.iloc[0:0]
             for tp in ("tp1", "tp2"):

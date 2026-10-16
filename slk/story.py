@@ -601,15 +601,21 @@ class _Ctx:
 
         # owner 2026-10-15 EURCHF: target 0.92739 set at the D close although an H4 wick had reached 0.92697 that
         # day; with target_unswept the target must lie beyond the extreme wick from the breakout to the confirmation
-        sw = None
-        if cfg["target_unswept"]:
-            sw = float(C["low"][brk:conf_k + 1].min()) if sell else float(C["high"][brk:conf_k + 1].max())
-        if self.overlap(lv, bar, t_conf):
+        # owner 2026-10-16 (AUDUSD): when the wick between the breakout and the confirmation already took the
+        # external range liquidity (the target), selling at the confirmation is late. target_unswept: True = aim
+        # beyond that wick, "skip" = no story (backtest variant), False = keep the old target.
+        sw = float(C["low"][brk:conf_k + 1].min()) if sell else float(C["high"][brk:conf_k + 1].max())
+        ov = self.overlap(lv, bar, t_conf)
+        if ov:
             rule += "+overlap"
-            target = self.target(sell, closed_o, t_conf, ref, "kl", swept=sw)
-        else:
-            mode = "erl" if rule == "cadjpy" else ("leg" if cfg["target_mode"] == "leg" else "nearest")
-            target = self.target(sell, closed_o, t_conf, ref, mode, self.leg_extreme(lv, bar), sw)
+        mode = "kl" if ov else "erl" if rule == "cadjpy" else ("leg" if cfg["target_mode"] == "leg" else "nearest")
+        leg = None if ov else self.leg_extreme(lv, bar)
+        target = self.target(sell, closed_o, t_conf, ref, mode, leg)
+        erl_taken = target is not None and ((sw <= target) if sell else (sw >= target))
+        if erl_taken and cfg["target_unswept"] == "skip":
+            return None
+        if erl_taken and cfg["target_unswept"]:
+            target = self.target(sell, closed_o, t_conf, ref, mode, leg, sw)
         if target is None:
             return None
         stop = (O["high"][bar] + cfg["stop_buffer_pips"] * P) if sell else (O["low"][bar] - cfg["stop_buffer_pips"] * P)
@@ -659,7 +665,7 @@ class _Ctx:
             "confirm_time": str(self.c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
             "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
             "stop_pips": round(risk / P, 1), "break_kind": kind, "rule": rule, "_busy": int(done_o),
-            "retrace": None if kind == "none" else self.retrace(sell, B, brk),
+            "retrace": None if kind == "none" else self.retrace(sell, B, brk), "erl_taken": bool(erl_taken),
         }
         if inv == "ended_flip":
             _, fo, f, fB = fl
