@@ -105,15 +105,17 @@ def test_alert_lines_from_engine_story(monkeypatch):
     row = live.to_row(s, "CONFIRMED")
     assert row["next_day"] is True and row["breakout_time"] == datetime(2023, 1, 10, 2)
     m = live.format_alert("CONFIRMED", row)
-    assert m.splitlines()[0] == "SELL · EURUSD · D1→H4"
-    assert "Rejected at A-shape KL (D1) @ 1.01000\nKL candle: D1 Wed 4 Jan (its close is the line)" in m
+    assert m.splitlines()[0] == "✅ SELL EURUSD · Daily story · D1→H4"
+    assert "A-shape key level at 1.01000 (D1)" in m and "Line from: D1 candle Wed 4 Jan (its close)" in m
     assert row["level_src"] == "A" and row["chain"] == "D1→H4"
-    assert "Rejection candle: D1 Mon 9 Jan (open Sun 8 Jan 23:00 WAT, close Mon 9 Jan 23:00 WAT)" in m
-    assert "H4 candle open Tue 10 Jan 03:00 WAT, close Tue 10 Jan 07:00 WAT" in m
-    assert "✅ Next Day Rule" in m and "Not an entry signal" in m
+    assert "Rejected: D1 candle Mon 9 Jan" in m and "H4 candle close Tue 10 Jan 07:00 WAT" in m
+    f = live.format_alert("CONFIRMED", row, detail="full")
+    assert "open Sun 8 Jan 23:00 WAT, close Mon 9 Jan 23:00 WAT" in f
+    assert "open Tue 10 Jan 03:00 WAT, close Tue 10 Jan 07:00 WAT" in f
+    assert "Next Day Rule ✅" in m and "Not an entry signal" in m
     t = live.format_alert("CONFIRMED", live.to_row({**started(RETRACE, next_day_rule="flag"), "pair": "EURUSD"},
                                                    "CONFIRMED"), "UTC")
-    assert "⚠ same-day breakout" in t and "⚠ Retrace" in t and "Mon 9 Jan 10:00 UTC" in t
+    assert "Next Day Rule ⚠" in t and "Retrace ⚠" in t and "H4 candle close Mon 9 Jan 14:00 UTC" in t
 
 
 def test_retrace_followup_and_row_compare():
@@ -154,7 +156,7 @@ def test_early_breakout_alert_once_never_confirmed():
         {"EURUSD|D|2023-01-08 22:00"}                                              # old keys pruned
     assert live.early_alerts([{**tap[0], "no_trade": True}], {}, "2023-01-10 07:30")[0] == []
     m = live.format_alert("BREAKOUT", al[0][1])
-    assert "H4 breakout — waiting for the daily close" in m and "NOT confirmed" in m and "Not an entry" in m
+    assert "EARLY H4 BREAK: not confirmed until the daily close" in m and "Not an entry" in m
     after = live.pair_state("EURUSD", h1, pd.Timestamp("2023-01-10 22:30", tz="UTC"), ["D"], cfg)
     # after the D close the tap broke out: no TAPPED row and no early flag any more (a CONFIRMED story comes only
     # from find_stories; here it has no target in this short history, see started())

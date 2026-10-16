@@ -53,7 +53,7 @@ def test_new_continuation_break_alert():
     ev, r = alerts[0]
     assert ev == "CONTINUATION" and [b["level"] for b in r["_new_breaks"]] == [0.92903, 0.92828][:len(r["_new_breaks"])]
     m = live.format_alert(ev, r)
-    assert "Continuation break: H4 close below the next V-shape" in m and "➤ NEW 0.92903" in m
+    assert "CONTINUATION BREAK: the bias continues" in m and "NEW 0.92903" in m
 
 
 def _h4(closes, t0="2026-10-12 21:00"):
@@ -77,7 +77,7 @@ def test_one_candle_through_several_vs_is_one_break():
     assert live.unpack_breaks(txt) == [{"level": 88.428, "time": br[0]["time"].strftime("%Y-%m-%d %H:%M"), "n": 4,
                                         "first": 88.501}]
     m = live.format_alert("CONFIRMED", {**NZD, "cont_breaks": txt})
-    assert sum("88.428" in x for x in m.splitlines()) == 1 and "cleared 4: 88.501 → 88.428" in m
+    assert sum("88.428" in x for x in m.splitlines()) == 1 and "88.428 (cleared 4 V's from 88.501)" in m
 
 
 def test_after_target_breaks_go_on_and_the_line_can_end():
@@ -87,7 +87,7 @@ def test_after_target_breaks_go_on_and_the_line_can_end():
     assert any(b["level"] < NZD["target"] for b in br)  # beyond the target: next liquidity
     m = live.format_alert("CONTINUATION", {**r, "cont_breaks": live.pack_breaks(br),
                                            "_new_breaks": live.unpack_breaks(live.pack_breaks(br))[-1:]})
-    assert "after the target (next liquidity)" in m and "· after the target" in m
+    assert "continues after the target" in m and "(next liquidity)" in m and "After the target: " in m
     # the line ends at the first origin (D) close back above the level after the confirmation
     d = pd.DataFrame({"start": pd.to_datetime(["2026-10-13 21:00", "2026-10-14 21:00", "2026-10-15 21:00"], utc=True),
                       "close": [88.5, 89.2, 89.3]})
@@ -96,11 +96,11 @@ def test_after_target_breaks_go_on_and_the_line_can_end():
     _, alerts = live.reconcile([{**r, "line_end": datetime(2026, 10, 14, 21)}], [dict(r)], now)
     assert [ev for ev, _ in alerts] == ["LINE_END"]
     m = live.format_alert("LINE_END", alerts[0][1])
-    assert "Story line ended after the target" in m and "closed above 89.090" in m
+    assert "STORY LINE ENDED after the target" in m and "closed above 89.090" in m
     from slk import standing
     assert standing.standing([{**r, "line_end": datetime(2026, 10, 14, 21)}], "D")["side"] is None
     assert standing.standing([r], "D")["side"] == "SELL"
-    assert "Next: a H4 close below the next V-shape continues" in live.format_alert("TARGET_HIT", r)
+    assert "Next: an H4 close below the next V-shape continues" in live.format_alert("TARGET_HIT", r)
 
 
 def test_same_break_on_two_stories_is_sent_once():

@@ -47,7 +47,7 @@ def test_alert_notes():
     inv = r(1, status="INVALIDATED")
     (_, v), = live.bias_notes([("INVALIDATED", inv)], [r(1)], [inv])
     assert v["_bias_note"].startswith("No standing bias now")
-    assert "Bias stays BULLISH" in live.format_alert("TARGET_HIT", {**z, "level": 1.5, "point_b": 1.51,
+    assert "bullish bias still stands" in live.format_alert("TARGET_HIT", {**z, "level": 1.5, "point_b": 1.51,
                                                                      "target": 1.53, "invalidation": 1.5})
 
 

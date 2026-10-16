@@ -145,8 +145,12 @@ SCHEMA = [
     _s("alert_confirmed", "bool", "on", "Alerts", "Telegram when a story is confirmed."),
     _s("alert_continuation", "bool", "on", "Alerts",
        "Telegram when a confirmed story's H4 (D for a weekly story) closes through the next V-shape (A-shape for a "
-       "buy) between point B and the target: a continuation break in the bias direction."),
+       "buy) after point B (also after the target): a continuation break in the bias direction."),
     _s("alert_ended", "bool", "on", "Alerts", "Telegram when a story hits target or is invalidated."),
+    _s("alert_detail", "choice", "short", "Alerts",
+       "How much each bias message shows. short = sections with the key facts (continuation breaks as a count + "
+       "the latest one). full = also every continuation break and each candle's open and close time.",
+       choices=["short", "full"]),
     _s("alert_entry", "bool", "on", "Alerts", "Telegram on new / triggered entries."),
     _s("early_breakout_alert", "bool", "off", "Alerts",
        "Extra early message when a TAPPED story's lower-TF candle (H4 for a daily story) closes beyond point B "

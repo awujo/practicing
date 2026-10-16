@@ -320,3 +320,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   settings `stories`, set by live.build_cfg): off -> M is not computed (state_stories), no M/W conflict, W stories
   have no higher TF in the engine (story._Ctx htf None, no M in HIGHER_ALL). Engine digest changes, so W stories
   are recomputed on the next run; a W story kept only by the M filter can now appear.
+- 2026-10-16: owner: bias messages unreadable (one long block, every break listed). `format_alert` rewritten in
+  sections: headline + one plain sentence / KEY LEVEL (A / V / OC named and explained, line candle, flipped) /
+  STORY SO FAR (numbered: rejected, external break, confirmed, continuation, target, after the target, line end;
+  times on their own line) / CONTEXT (higher-TF trend, own structure / pullback, Next Day Rule, retrace, rule) /
+  PLAN (target, invalidation, what next). New setting `alert_detail` short (default: breaks as count + latest) /
+  full (every break, candle open+close).

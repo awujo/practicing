@@ -336,9 +336,9 @@ def test_live_rows_and_messages_show_rules():
     e = to_row({**base, "rule": "standard+overlap", "side": "SELL", "end_reason": "flip: D V level 1.0 rejected"},
                "ENDED_FLIP")
     m = format_alert("ENDED_FLIP", e)
-    assert m.splitlines()[0] == "SELL \u00b7 EURUSD \u00b7 D1\u2192H4" and "Story over: ENDED EARLY (flip)" in m
-    assert "Reason: flip: D V level" in m
-    assert "overlap with W level" in m and "opposite story may start" in m
+    assert m.splitlines()[0] == "\U0001f504 SELL EURUSD \u00b7 Daily story \u00b7 D1\u2192H4" and "ENDED EARLY" in m
+    assert "Ended: flip: D V level" in m
+    assert "overlap with W level" in m and "watch for that story's own alert" in m
     assert "[alignment]" in summary_line("EURUSD", [{**r, "rule": "alignment"}])
     assert to_row({**base, "B": None}, "CONFIRMED")["point_b"] is None
     # an engine story that ended by a flip is stored ENDED_FLIP and announced

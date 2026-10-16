@@ -785,108 +785,191 @@ def _aligned(r):
     return f"Trend aligned with {'/'.join(tfs)}" if tfs else None
 
 
-def format_alert(event, r, tz=DISPLAY_TZ):
-    """Telegram BIAS message (never an entry). Compact header 'SELL · EURNZD · D1→H4', status, key level (kind,
-    price, formed), rejection candle (its trading day + open/close), breakout (price = point B, confirm-TF candle
-    open/close), confirmation close, trend alignment, Next Day Rule, retrace warning, target, invalidation, rule.
-    Times in `tz` (setting display_tz), each labelled candle open or close."""
+SHAPE_HELP = {"A": "a top: price closed up into it and turned down; the line is that top close",
+              "V": "a bottom: price closed down into it and turned up; the line is that bottom close",
+              "OC": "where the move away from a turn started: the close of the first of two same-colour candles"}
+
+
+def _an(tf):
+    return "an" if tf[:1] in "HM" else "a"  # an H4 / an MN1 / a D1 / a W1
+ICON = {"TAPPED": "\U0001f440", "BREAKOUT": "⏳", "CONFIRMED": "✅", "RETRACE": "⚠️",
+        "CONTINUATION": "➡️", "TARGET_HIT": "\U0001f3af", "INVALIDATED": "❌",
+        "ENDED_FLIP": "\U0001f504", "LINE_END": "⛔"}
+
+
+def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
+    """Telegram BIAS message (never an entry), in sections a person can read (owner 2026-10-16):
+    headline (what happened, in words) / KEY LEVEL (shape A / V / OC, price, its candle, flipped?) / STORY SO FAR
+    (numbered steps: rejection, external break, confirmation, target, continuation breaks, line end) / CONTEXT
+    (higher-TF trend, pullback, Next Day Rule, retrace, rule) / PLAN (target, invalidation, what is next).
+    detail (setting alert_detail): short = continuation breaks as a count + the latest; full = every break and each
+    candle's open and close. Times in `tz` (setting display_tz)."""
     p = r["pair"]
     fp = lambda x: fmt_price(p, x)  # noqa: E731
+    full = detail == "full"
     otf, ctf = STORIES[r["story"]]
     O, C = TF_LABEL[otf], TF_LABEL[ctf]
     sell = r["side"] == "SELL"
-    below = "below" if sell else "above"
+    below, above = ("below", "above") if sell else ("above", "below")
+    shape = "V" if sell else "A"
+    word = "bearish" if sell else "bullish"
     cadjpy = str(r.get("rule") or "").startswith("cadjpy")
-    status = {"TAPPED": f"TAPPED: waiting for the {C} breakout",
-              "CONFIRMED": f"{'Bias confirmed' if cadjpy else 'External breakout confirmed'}",
-              "BREAKOUT": f"{C} breakout \u2014 waiting for the {CLOSE_NAME[otf]} close",
-              "RETRACE": "RETRACE warning after the breakout (still CONFIRMED)",
-              "CONTINUATION": f"Continuation break: {C} close {below} the next {'V' if sell else 'A'}-shape "
-                              f"\u00b7 bias continues"
-                              + (" after the target (next liquidity)" if r.get("status") in AFTER_TARGET else ""),
-              "LINE_END": f"Story line ended after the target: {O} closed back {'above' if sell else 'below'} "
-                          f"the level"}.get(
-                  event, f"Story over: {HEAD.get(event, event)}")
-    lines = [f"{'SELL' if sell else 'BUY'} \u00b7 {p} \u00b7 {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}",
-             f"BIAS \u00b7 {STORY_NAME[r['story']]} story \u00b7 {'BEARISH' if sell else 'BULLISH'}",
-             status] + ([r["_bias_note"]] if r.get("_bias_note") else []) + \
-        ([f"(Confirmed at the {O} close {fmt_time(r['confirm_time'], tz)}; it already ended before this run, see "
-          f"the next message)"] if r.get("_late") else []) + [""]
+    when = lambda t, tf: "\n   \U0001f552 " + (_span(t, tf, tz) if full else  # noqa: E731
+                                                 f"{TF_LABEL.get(tf, tf)} candle close "
+                                                 f"{fmt_time(candle_end(t, tf), tz)}")
+    head = {"TAPPED": f"TAPPED: price is at a key level, waiting for the {C} break",
+            "BREAKOUT": f"EARLY {C} BREAK: not confirmed until the {CLOSE_NAME[otf]} close",
+            "CONFIRMED": "BIAS CONFIRMED" if cadjpy else "BIAS CONFIRMED (external break)",
+            "RETRACE": "RETRACE WARNING (the bias still stands)",
+            "CONTINUATION": "CONTINUATION BREAK: the bias continues"
+                            + (" after the target" if r.get("status") in AFTER_TARGET else ""),
+            "TARGET_HIT": "TARGET HIT",
+            "INVALIDATED": "INVALIDATED: the story failed",
+            "ENDED_FLIP": "ENDED EARLY: an opposite story took over",
+            "LINE_END": "STORY LINE ENDED after the target"}.get(event, HEAD.get(event, event))
+    what = {"TAPPED": f"The {O} candle touched the level and closed back {above} it. {_an(C).capitalize()} {C} close {below} point B "
+                      f"is needed before there is a story.",
+            "BREAKOUT": f"{_an(C).capitalize()} {C} candle closed {below} point B, but the {O} candle is still open.",
+            "CONFIRMED": f"The {O} is now {word}: look for {'sells' if sell else 'buys'} only (entries come in "
+                         f"their own alert).",
+            "RETRACE": f"After the break {_an(C)} {C} candle closed back {above} point B the same {PERIOD[otf]}: lower "
+                       f"probability, not invalidated.",
+            "CONTINUATION": f"{_an(C).capitalize()} {C} candle closed {below} the next {shape}-shape: the {word} move goes on"
+                            + (" (next liquidity)." if r.get("status") in AFTER_TARGET else "."),
+            "TARGET_HIT": f"Price reached the target. The {word} bias still stands until it is proven otherwise.",
+            "INVALIDATED": f"The {O} closed back {above} the key level before the target.",
+            "ENDED_FLIP": "An opposite key level was rejected and broken: watch for that story's own alert.",
+            "LINE_END": f"After the target, the {O} closed back {above} the key level. There is no "
+                        f"{STORY_NAME[r['story']].lower()} bias now: wait for the next confirmed story."}.get(event)
+    top = [f"{ICON.get(event, '')} {'SELL' if sell else 'BUY'} {p} · {STORY_NAME[r['story']]} story "
+           f"· {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}".strip(), head]
+    if what:
+        top.append(what)
+    if r.get("_bias_note") and event not in ("TARGET_HIT", "LINE_END", "INVALIDATED", "ENDED_FLIP"):
+        top.append(r["_bias_note"])  # the outcome headlines already say what happens to the bias
+    if r.get("_late"):
+        top.append(f"(Confirmed at the {O} close {fmt_time(r['confirm_time'], tz)}; it already ended before this "
+                   f"run: see the next message.)")
+    out = ["\n".join(top)]
+
+    # KEY LEVEL
+    kl = ["\U0001f4cd KEY LEVEL"]
     if r.get("level_kind") == "sweep":
-        lines.append(f"Rejected at the {level_name(r)} @ {fp(r['level'])}")
+        kl.append(f"{level_name(r).capitalize()} at {fp(r['level'])} ({O})")
     else:
-        lines.append(f"Rejected at {kl_name(r)} ({O}) @ {fp(r['level'])}")
+        src = r.get("level_src") if r.get("level_kind") == "flip" else r.get("level_kind")
+        kl.append(f"{KIND_NAME.get(src, 'Key level').capitalize()} key level at {fp(r['level'])} ({O})")
+        if src in SHAPE_HELP:
+            kl.append(f"\u2022 What it is: {SHAPE_HELP[src]}")
         if r.get("level_candle") is not None:
-            lines.append(f"KL candle: {O} {trading_day(r['level_candle'], otf)} (its close is the line)"
-                         + (f" \u00b7 broken, flipped {trading_day(r['level_time'], otf)}"
-                            if r.get("level_kind") == "flip" and r.get("level_time") is not None else ""))
+            kl.append(f"• Line from: {O} candle {trading_day(r['level_candle'], otf)} (its close)")
         elif r.get("level_time") is not None:
-            lines.append(f"KL formed {trading_day(r['level_time'], otf)} ({O} candle)")
-    lines.append(f"Rejection candle: {O} {trading_day(r['tap_time'], otf)} ({_span(r['tap_time'], otf, tz)})")
+            kl.append(f"• Formed: {O} candle {trading_day(r['level_time'], otf)}")
+        if r.get("level_kind") == "flip":
+            kl.append(f"• Flipped: broken"
+                      + (f" {trading_day(r['level_time'], otf)}" if r.get("level_time") is not None else "")
+                      + f", it now works the other way ({'resistance' if sell else 'support'})")
+    out.append("\n".join(kl))
+
+    # STORY SO FAR
+    st = ["\U0001f4d6 STORY SO FAR"]
+    n = iter(range(1, 20))
+    st.append(f"{next(n)}. Rejected: {O} candle {trading_day(r['tap_time'], otf)}, it touched the level and closed "
+              f"back {above} it" + (f"\n   \U0001f552 {_span(r['tap_time'], otf, tz)}" if full else ""))
     if cadjpy:
-        lines.append(f"No point B: confirmed by the {O} close back {'below' if sell else 'above'} the level")
+        st.append(f"{next(n)}. No point B: the {O} close back {below} the level confirms it")
     elif event == "BREAKOUT" and r.get("_early"):
         e = r["_early"]
-        lines.append(f"{C} close {below} point B {fp(r['point_b'])} (close {fp(e['close'])}) \u00b7 {C} candle "
-                     f"{_span(e['time'], ctf, tz)}")
-        lines.append(f"NOT confirmed: the {O} candle must also close {below} {fp(r['point_b'])} "
-                     f"(Kevin: cancel if it does not)")
+        st.append(f"{next(n)}. {C} closed {below} point B {fp(r['point_b'])} (at {fp(e['close'])})"
+                  f"{when(e['time'], ctf)}")
+        st.append(f"{next(n)}. Waiting: the {O} candle must also close {below} {fp(r['point_b'])} (Kevin: cancel "
+                  f"if it does not)")
     elif r.get("breakout_time") is not None:
-        lines.append(f"External break: {C} close {below} point B {fp(r['point_b'])} \u00b7 {C} candle "
-                     f"{_span(r['breakout_time'], ctf, tz)}")
+        st.append(f"{next(n)}. External break: {C} closed {below} point B {fp(r['point_b'])}"
+                  f"{when(r['breakout_time'], ctf)}")
     else:
-        lines.append(f"Point B {fp(r['point_b'])}: a {C} body close {below} it confirms (no breakout, no story)")
+        st.append(f"{next(n)}. Waiting: a {C} body close {below} point B {fp(r['point_b'])} (no break, no story)")
     if r.get("confirm_time") and event != "BREAKOUT":
-        lines.append(f"Confirmed at candle close {fmt_time(r['confirm_time'], tz)}")
-    brk = unpack_breaks(r.get("cont_breaks"))
-    if brk and event in ("CONFIRMED", "CONTINUATION", "TARGET_HIT", "RETRACE", "LINE_END"):
-        new = {(b["level"], b["time"]) for b in r.get("_new_breaks") or []}
-        lines.append(f"Continuation breaks ({C} close {below} the next {'V' if sell else 'A'}-shape after point B):")
-        tt = _ts(r["_end_time"]) if r.get("_end_time") else None
-        for b in brk:
-            mark = "\u27a4 NEW " if (b["level"], b["time"]) in new else "\u2022 "
-            many = f" (cleared {b['n']}: {fp(b['first'])} \u2192 {fp(b['level'])})" if b.get("n", 1) > 1 else ""
-            late = " \u00b7 after the target" if tt is not None and _ts(b["time"]) >= tt else ""
-            lines.append(f"  {mark}{fp(b['level'])}{many} \u00b7 {C} candle close "
-                         f"{fmt_time(candle_end(b['time'], ctf), tz)}{late}")
+        st.append(f"{next(n)}. Confirmed: the {O} candle also closed {below} point B\n   \U0001f552 {O} candle close "
+                  f"{fmt_time(r['confirm_time'], tz)}")
+    brk = unpack_breaks(r.get("cont_breaks")) if event not in ("TAPPED", "BREAKOUT") else []
+    tt = _ts(r["_end_time"]) if r.get("_end_time") else None
+    done = event in ("TARGET_HIT", "LINE_END") or r.get("status") == "TARGET_HIT"  # target already reached
+    pre = [b for b in brk if tt is None or _ts(b["time"]) < tt]
+    post = [b for b in brk if tt is not None and _ts(b["time"]) >= tt]
+    new = {(b["level"], b["time"]) for b in r.get("_new_breaks") or []}
+
+    def line(b):
+        many = f" (cleared {b['n']} {shape}'s from {fp(b['first'])})" if b.get("n", 1) > 1 else ""
+        mark = "NEW " if (b["level"], b["time"]) in new else ""
+        return f"   \u2022 {mark}{fp(b['level'])}{many} \u00b7 {C} close {fmt_time(candle_end(b['time'], ctf), tz)}"
+
+    def group(bs, label):
+        if not bs:
+            return
+        st.append(f"{next(n)}. {label}: {len(bs)} {C} close{'s' if len(bs) > 1 else ''} {below} the next "
+                  f"{shape}-shape")
+        shown = bs if full else ([b for b in bs if (b["level"], b["time"]) in new] or bs[-1:])
+        st.extend(line(b) for b in shown)
+        if not full and len(bs) > len(shown):
+            st.append("   (all of them: setting alert_detail = full, or the Mini App card)")
+
+    group(pre, "Continuation")
+    if done and r.get("target") is not None:
+        st.append(f"{next(n)}. Target {fp(r['target'])} reached")
+    group(post, "After the target")
     if event == "LINE_END" and r.get("line_end"):
-        lines.append(f"Line end: {O} candle {trading_day(r['line_end'], otf)} closed "
-                     f"{'above' if sell else 'below'} {fp(r['level'])} \u00b7 no standing {STORY_NAME[r['story']]} "
-                     f"bias until the next confirmed story")
-    elif event == "TARGET_HIT":
-        lines.append(f"Next: a {C} close {below} the next {'V' if sell else 'A'}-shape continues the line (next "
-                     f"liquidity); an {O} close back {'above' if sell else 'below'} {fp(r['level'])} ends it")
-    al = _aligned(r)
-    if al:
-        lines.append(al)
+        st.append(f"{next(n)}. Line ended: {O} candle {trading_day(r['line_end'], otf)} closed {above} "
+                  f"{fp(r['level'])}")
+    elif event in ("INVALIDATED", "ENDED_FLIP") and r.get("end_reason"):
+        st.append(f"{next(n)}. Ended: {r['end_reason']}")
+    out.append("\n".join(st))
+
+    # CONTEXT
+    cx = ["\U0001f9ed CONTEXT"]
+    h = HIGHER_TF.get(r["story"])
+    want = "down" if sell else "up"
+    if h in TF_LABEL and r.get("htf_trend") in ("up", "down"):
+        cx.append(f"• {TF_LABEL[h]} trend: {'bearish' if r['htf_trend'] == 'down' else 'bullish'} "
+                  + ("(agrees)" if r["htf_trend"] == want else "(against this story)"))
     if standing.pullback(r):
-        lines.append(f"\u21a9 Pullback: against the {O} structure ({'bullish' if r['trend'] == 'up' else 'bearish'}), "
-                     f"a retracement inside it, not a bias change")
+        cx.append(f"• {O} structure: {'bullish' if r['trend'] == 'up' else 'bearish'}, so this "
+                  f"{'sell' if sell else 'buy'} is a pullback (retracement) inside it, not a bias change")
+    elif r.get("trend") == want:
+        cx.append(f"• {O} structure: {word} (agrees)")
     nd = _flag(r.get("next_day"))
     if nd is True:
-        lines.append("\u2705 Next Day Rule \u00b7 breakout after the rejection candle closed")
+        cx.append(f"• Next Day Rule ✅ the {C} break came after the rejection candle closed")
     elif nd is False:
-        lines.append(f"\u26a0 same-day breakout \u00b7 {C} broke B before the {O} rejection candle closed "
-                     f"(lower probability)")
-    if _flag(r.get("retrace")) and not cadjpy:
-        lines.append(f"\u26a0 Retrace: a later {C} candle of the breakout {PERIOD[otf]} closed back "
-                     f"{'above' if sell else 'below'} the breakout level {fp(r['point_b'])} (Kevin: no longer high "
-                     f"probability; not invalidated)")
-    lines.append(f"Target {fp(r['target'])} \u00b7 Invalid if {O} closes {'above' if sell else 'below'} "
-                 f"{fp(r['invalidation'])}")
-    lines.append(f"Rule: {rule_name(r)}")
+        cx.append(f"• Next Day Rule ⚠ the {C} broke B before the {O} rejection candle closed (lower "
+                  f"probability)")
+    if _flag(r.get("retrace")) and not cadjpy and event != "RETRACE":
+        cx.append(f"• Retrace ⚠ a later {C} candle closed back {above} point B {fp(r['point_b'])} the "
+                  f"same {PERIOD[otf]}")
+    cx.append(f"• Rule: {rule_name(r)}")
+    out.append("\n".join(cx))
+
+    # PLAN
+    pl = ["\U0001f3af PLAN"]
+    over = event in ("INVALIDATED", "ENDED_FLIP", "LINE_END")
     if r.get("no_trade"):
-        lines.append(f"Status: NO_TRADE ({r.get('no_trade_reason') or 'filter'})")
-    elif event == "TAPPED":
-        lines.append(f"Status: NO_TRADE until the {C} breakout of point B (no breakout, no story)")
-    elif event not in ("CONFIRMED", "BREAKOUT", "RETRACE"):
-        if r.get("end_reason"):
-            lines.append(f"Reason: {r['end_reason']}")
-        if event == "ENDED_FLIP":
-            lines.append("The opposite story may start now: watch for its own alert")
-    lines += ["", f"Times: {tz} ({_ts(r['tap_time']).tz_convert(tz).tzname()}); each says candle open or close.",
-              "\u26a0 Not an entry signal. Bias only \u2014 wait for an entry alert."]
-    return "\n".join(lines)
+        pl.append(f"• NO_TRADE: {r.get('no_trade_reason') or 'filter'}")
+    elif event in ("TAPPED", "BREAKOUT"):
+        pl.append(f"• NO_TRADE until the {O} confirms (no break, no story)")
+    if not over:
+        if not done:
+            pl.append(f"\u2022 Target: {fp(r['target'])}" if r.get("target") is not None else
+                      "\u2022 Target: set when the story confirms")
+        pl.append(f"• Invalid if the {O} closes {above} {fp(r['invalidation'])}")
+        if done or r.get("status") in AFTER_TARGET:
+            pl.append(f"\u2022 Next: {_an(C)} {C} close {below} the next {shape}-shape continues the line; "
+                      f"{_an(O)} {O} close {above} {fp(r['level'])} ends it")
+    else:
+        pl.append("• Nothing to do on this story now: wait for the next confirmed story")
+    out.append("\n".join(pl))
+    out.append(f"\U0001f552 Times {_ts(r['tap_time']).tz_convert(tz).tzname()} \u00b7 Bias only. Not an entry "
+               f"signal: wait for an entry alert")
+    return "\n\n".join(out)
 
 
 def summary_line(pair, rows):
@@ -1181,11 +1264,11 @@ def main(argv=None):
                     if st in stories:
                         db.upsert_tf_state(p, st, t)
                 for ev, r in alerts_enabled(filter_alerts(alerts), vals):
-                    sent += send_telegram(format_alert(ev, r, tz))
+                    sent += send_telegram(format_alert(ev, r, tz, vals["alert_detail"]))
                 if vals["early_breakout_alert"]:
                     early, early_sent = early_alerts(new, early_sent, now)
                     for ev, r in early:
-                        sent += send_telegram(format_alert(ev, r, tz))
+                        sent += send_telegram(format_alert(ev, r, tz, vals["alert_detail"]))
                         early_dirty = True
                 by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
                 ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}

@@ -241,7 +241,7 @@ def test_gold_alert_prices():
          "target": 4175.6, "invalidation": 4154.36, "tap_time": "2026-10-12 22:00", "level_time": "2026-10-08 22:00",
          "rule": "standard", "trend": "up", "htf_trend": "up"}
     text = format_alert("TAPPED", r)
-    assert "@ 4154.36\n" in text and "Point B 4161.03" in text and "4154.36000" not in text
+    assert "at 4154.36 (D1)" in text and "point B 4161.03" in text and "4154.36000" not in text
 
 
 # ---------------------------------------------------------------- point B on the owner's H4 close line
