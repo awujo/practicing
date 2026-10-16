@@ -367,7 +367,7 @@ def _sent_age_ok(v, now, keep_days):
 def mark_mw_conflict(rows, cfg=None):
     """STRATEGY §2: latest CONFIRMED M and W stories point opposite ways -> D stories get no_trade=True."""
     cfg = {**DEFAULT, **(cfg or {})}
-    if not cfg.get("mw_conflict_filter", True):
+    if not cfg.get("mw_conflict_filter", True) or not cfg.get("use_monthly", True):
         return rows
     conf = lambda st: [r for r in rows if r["story"] == st and r["status"] == "CONFIRMED"]  # noqa: E731
     if mw_conflict(conf("M"), conf("W")):
@@ -409,9 +409,11 @@ def state_stories(stories, cfg):
     watched (settings `stories`). Rows of the extra stories are used for the check, not stored."""
     c = {**DEFAULT, **(cfg or {})}
     need = set(stories)
-    if "D" in stories and c.get("mw_conflict_filter", True):
+    if "D" in stories and c.get("mw_conflict_filter", True) and c.get("use_monthly", True):
         need |= {"W", "M"}
     need |= {HIGHER_TF[s] for s in stories if HIGHER_TF.get(s) in STORIES}  # chain label / htf_bias_filter
+    if not c.get("use_monthly", True):
+        need.discard("M")  # M unticked: the monthly plays no part
     return list(stories) + [s for s in ("W", "M") if s in need and s not in stories]
 
 
@@ -959,7 +961,7 @@ def build_cfg(stored=None, overrides=None):
     """(story cfg, entry cfg, typed settings) from stored strings (slk/settings.py schema); anything missing
     or invalid falls back to the code defaults (Kevin's rules). `overrides` (--cfg JSON) win over both."""
     vals = S.load(stored)
-    cfg = {**DEFAULT, **S.story_cfg(vals), **(overrides or {})}
+    cfg = {**DEFAULT, **S.story_cfg(vals), "use_monthly": "M" in vals["stories"], **(overrides or {})}
     ecfg = {**ENTRY_DEFAULT, **S.entry_cfg(vals)}
     return cfg, ecfg, vals
 

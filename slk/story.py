@@ -48,6 +48,8 @@ DEFAULT = {
     "max_retaps": 3,        # more re-taps before breakout = messy, skip
     "same_bar_close": True, # origin bar holding the breakout must close beyond B too
     "htf_filter": True,     # never against the higher-TF trend (STRATEGY §2 no-trade rules)
+    "use_monthly": True,    # owner 2026-10-16: M unticked in settings `stories` -> the monthly plays no part at all
+                            # (no M trend filter / pullback / chain for W stories, no M levels, no M/W conflict)
     "stop_buffer_pips": 2.0,
     "max_hold": 20,         # origin bars after confirmation
     "mw_conflict_filter": True,  # latest M and W stories point opposite ways -> D stories are NO_TRADE (§2)
@@ -279,13 +281,15 @@ class _Ctx:
         n = len(self.O["close"])
         self.first_k = np.searchsorted(self.c2o, np.arange(n + 1), "left")  # first confirm bar of origin bar i
         self.htf = HIGHER[story]
+        if self.htf == "M" and not cfg.get("use_monthly", True):
+            self.htf = None
         self.hb = resample(h1, self.htf) if self.htf else None
         if self.htf:
             self.h_start, self.h_close = self.hb["start"].to_numpy(), self.hb["close"].to_numpy()
             self.hsw = SwingBook(_structure(self.hb, cfg, self.htf))
         self.higher = []  # [(tf, _LevelSet)] next higher TF first
         if cfg["htf_targets"] or cfg["overlap_rule"]:
-            for tf in HIGHER_ALL[story]:
+            for tf in (t for t in HIGHER_ALL[story] if t != "M" or cfg.get("use_monthly", True)):
                 hb = self.hb if tf == self.htf else resample(h1, tf)
                 self.higher.append((tf, _LevelSet(hb, run_levels(hb, find_levels(hb, cfg), self.tol, cfg.get("max_flips") or None, self.flip_age), tf)))
         self.taps = _taps(self.levels, ob, cfg)

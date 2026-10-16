@@ -315,3 +315,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   (default on, backtest variant). New continuation breaks (STRATEGY 16e): `live.continuation_breaks`, column
   `bias.cont_breaks` ('level@time;...'), CONTINUATION alert (`alert_continuation`), Mini App card list.
 - 2026-10-16: NZDJPY (owner): one H4 close through 4 small V's was listed as 4 "NEW" breaks (read as a repeat) -> one break per candle ("cleared 4: 88.501 → 88.428"); the same break on two stories of a TF is sent once. After TARGET HIT the story is watched (STRATEGY 16f): breaks beyond the target = continuation (next liquidity), an origin close back through the level = "STORY LINE ENDED" (new column bias.line_end, migration; standing bias ends). TARGET HIT alert says what is next. Mini App card shows it. First run after deploy may send a few post-target continuation alerts (fresh breaks only, last 36 h).
+- 2026-10-16: owner unticked M but alerts still used the monthly (M/W conflict NO_TRADE on D stories, M trend
+  filter / pullback / MN1 chain for W stories, M levels as higher-TF targets). New cfg `use_monthly` (= "M" in
+  settings `stories`, set by live.build_cfg): off -> M is not computed (state_stories), no M/W conflict, W stories
+  have no higher TF in the engine (story._Ctx htf None, no M in HIGHER_ALL). Engine digest changes, so W stories
+  are recomputed on the next run; a W story kept only by the M filter can now appear.

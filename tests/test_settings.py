@@ -106,6 +106,16 @@ def test_mw_check_runs_even_when_only_d_is_watched():
     assert state_stories(["D", "M"], {}) == ["D", "M", "W"]
     assert state_stories(["D"], {"mw_conflict_filter": False}) == ["D", "W"]  # W bias for the chain label
     assert state_stories(["W"], {}) == ["W", "M"]
+    # owner 2026-10-16: M unticked -> the monthly is not computed at all (no M/W conflict, no M trend for W)
+    assert state_stories(["D", "W"], {"use_monthly": False}) == ["D", "W"]
+    assert state_stories(["D"], {"use_monthly": False}) == ["D", "W"]
+    from slk.live import build_cfg, mark_mw_conflict
+    assert build_cfg({"stories": "D,W"})[0]["use_monthly"] is False
+    assert build_cfg({"stories": "D,W,M"})[0]["use_monthly"] is True
+    rows = [{"story": "M", "status": "CONFIRMED", "side": "BUY", "confirm_time": 1},
+            {"story": "W", "status": "CONFIRMED", "side": "SELL", "confirm_time": 1},
+            {"story": "D", "status": "CONFIRMED", "side": "SELL"}]
+    assert not mark_mw_conflict([dict(r) for r in rows], {"use_monthly": False})[2].get("no_trade")
 
 
 def test_entry_models_setting():
