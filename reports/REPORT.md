@@ -149,32 +149,35 @@ confirmation close, stop beyond the tap wick + buffer, target), `win%` = target 
 `total_R` = result in R. Entry variants: filled entries on the default-rule stories, TP1 and TP2.
 First value of each setting = current default.
 
-| variant                         |   trades |   win% |   avg_R |   total_R |
-|:--------------------------------|---------:|-------:|--------:|----------:|
-| next_day_rule=require           |     5140 |   55.1 |  -0.021 |    -110.4 |
-| next_day_rule=flag              |     8800 |   48.5 |  -0.065 |    -576.4 |
-| flag: next-day breakouts only   |     4605 |   50.8 |  -0.012 |     -53.9 |
-| flag: same-day breakouts only   |     4047 |   45.6 |  -0.127 |    -514.8 |
-| flag: no breakout (cadjpy, n/a) |      148 |   58.1 |  -0.052 |      -7.7 |
-| trend_mode=leg                  |     5140 |   55.1 |  -0.021 |    -110.4 |
-| trend_mode=protected            |     5215 |   54   |  -0.029 |    -150.3 |
-| target_mode=leg                 |     5140 |   55.1 |  -0.021 |    -110.4 |
-| target_mode=nearest             |     5388 |   70.6 |  -0.014 |     -76.7 |
-| target_unswept=on               |     5140 |   55.1 |  -0.021 |    -110.4 |
-| target_unswept=off              |     5563 |   64.2 |  -0.018 |    -100.6 |
-| flip_max_age=100                |     5140 |   55.1 |  -0.021 |    -110.4 |
-| flip_max_age=0 (no limit)       |     5500 |   53.9 |  -0.023 |    -127.6 |
-| cadjpy_exception=on             |     5140 |   55.1 |  -0.021 |    -110.4 |
-| cadjpy_exception=off            |     5035 |   55   |  -0.02  |    -101.4 |
-| pullback_levels=on              |     5140 |   55.1 |  -0.021 |    -110.4 |
-| pullback_levels=off             |     4080 |   57.7 |  -0.01  |     -39.7 |
-| entry_alignment=d_h4 (TP1)      |     1046 |   32.9 |  -0.148 |    -155.3 |
-| entry_alignment=d_h4 (TP2)      |     1046 |    7.5 |   0.086 |      89.6 |
-| entry_alignment=w_d_h4 (TP1)    |      948 |   32.8 |  -0.15  |    -142.6 |
-| entry_alignment=w_d_h4 (TP2)    |      948 |    7.1 |   0.007 |       6.9 |
-| entry_alignment=off (TP1)       |     1188 |   32.4 |  -0.159 |    -188.8 |
-| entry_alignment=off (TP2)       |     1188 |    7.6 |   0.057 |      68.2 |
-| entry_tfs=D=H4,H2 (TP1)         |     1046 |   32.9 |  -0.148 |    -155.3 |
-| entry_tfs=D=H4,H2 (TP2)         |     1046 |    7.5 |   0.086 |      89.6 |
-| entry_tfs=D=H4,H2,H1 (TP1)      |     1427 |   31.8 |  -0.166 |    -236.6 |
-| entry_tfs=D=H4,H2,H1 (TP2)      |     1427 |    7.8 |   0.032 |      45.2 |
+| variant                                    |   trades |   win% |   avg_R |   total_R |
+|:-------------------------------------------|---------:|-------:|--------:|----------:|
+| next_day_rule=require                      |     5140 |   55.1 |  -0.021 |    -110.4 |
+| next_day_rule=flag                         |     8800 |   48.5 |  -0.065 |    -576.4 |
+| flag: next-day breakouts only              |     4605 |   50.8 |  -0.012 |     -53.9 |
+| flag: same-day breakouts only              |     4047 |   45.6 |  -0.127 |    -514.8 |
+| flag: no breakout (cadjpy, n/a)            |      148 |   58.1 |  -0.052 |      -7.7 |
+| trend_mode=leg                             |     5140 |   55.1 |  -0.021 |    -110.4 |
+| trend_mode=protected                       |     5215 |   54   |  -0.029 |    -150.3 |
+| target_mode=leg                            |     5140 |   55.1 |  -0.021 |    -110.4 |
+| target_mode=nearest                        |     5388 |   70.6 |  -0.014 |     -76.7 |
+| target_unswept=on                          |     5140 |   55.1 |  -0.021 |    -110.4 |
+| target_unswept=off                         |     5563 |   64.2 |  -0.018 |    -100.6 |
+| off: ERL already taken before confirmation |     1611 |   88.5 |  -0.001 |      -1.3 |
+| off: ERL not taken yet                     |     3952 |   54.3 |  -0.025 |     -99.3 |
+| target_unswept=skip                        |     4019 |   55   |  -0.02  |     -80   |
+| flip_max_age=100                           |     5140 |   55.1 |  -0.021 |    -110.4 |
+| flip_max_age=0 (no limit)                  |     5500 |   53.9 |  -0.023 |    -127.6 |
+| cadjpy_exception=on                        |     5140 |   55.1 |  -0.021 |    -110.4 |
+| cadjpy_exception=off                       |     5035 |   55   |  -0.02  |    -101.4 |
+| pullback_levels=on                         |     5140 |   55.1 |  -0.021 |    -110.4 |
+| pullback_levels=off                        |     4080 |   57.7 |  -0.01  |     -39.7 |
+| entry_alignment=d_h4 (TP1)                 |     1046 |   32.9 |  -0.148 |    -155.3 |
+| entry_alignment=d_h4 (TP2)                 |     1046 |    7.5 |   0.086 |      89.6 |
+| entry_alignment=w_d_h4 (TP1)               |      948 |   32.8 |  -0.15  |    -142.6 |
+| entry_alignment=w_d_h4 (TP2)               |      948 |    7.1 |   0.007 |       6.9 |
+| entry_alignment=off (TP1)                  |     1188 |   32.4 |  -0.159 |    -188.8 |
+| entry_alignment=off (TP2)                  |     1188 |    7.6 |   0.057 |      68.2 |
+| entry_tfs=D=H4,H2 (TP1)                    |     1046 |   32.9 |  -0.148 |    -155.3 |
+| entry_tfs=D=H4,H2 (TP2)                    |     1046 |    7.5 |   0.086 |      89.6 |
+| entry_tfs=D=H4,H2,H1 (TP1)                 |     1427 |   31.8 |  -0.166 |    -236.6 |
+| entry_tfs=D=H4,H2,H1 (TP2)                 |     1427 |    7.8 |   0.032 |      45.2 |
