@@ -63,6 +63,8 @@ DEFAULT = {
     "htf_bias_filter": False,  # live: on = a story against the standing bias of the next higher story TF is NO_TRADE.
                                # Off (owner 2026-10-15): a D->H4 sell under a W buy bias can be the retracement that
                                # continues the W story line; it is shown as D1->H4 (not W1->D1->H4), still tradable
+    "target_unswept": True,  # the target lies beyond the extreme wick between the breakout and the confirmation
+                             # (owner 2026-10-15 EURCHF: 0.92739 was already traded through when it was set)
     "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
     "htf_targets": True,    # #30 target = next opposite fresh KL of the same OR a higher TF, or ERL
     "overlap_rule": True,   # #31a origin KL shared with a (closed, rejected) higher-TF KL -> TP at the next KL
@@ -482,7 +484,7 @@ class _Ctx:
             return float(self.O["low"][i:bar + 1].min())
         return float(self.O["high"][i:bar + 1].max())
 
-    def target(self, sell, closed_o, t, ref, mode="nearest", leg=None):
+    def target(self, sell, closed_o, t, ref, mode="nearest", leg=None, swept=None):
         """#30 [T story-line@648 (monthly story -> next monthly fresh level), story-line-pt2@1914-1968; F story-line-
         pt2/sheet_025-028 (CADJPY TP = previous D high 114.65); T class-wrok@480-620 (H4 story on a level shared
         with D: TP at the next H4 level, never swung past the stronger opposing daily zone)]: nearest of the
@@ -494,6 +496,8 @@ class _Ctx:
             for _, H in self.higher:
                 kls += H.fresh_prices(sell, H.closed_upto(t))
         erl = [s[2] for s in self.tsw.at(closed_o) if s[1] == ("L" if sell else "H")]
+        if swept is not None:  # liquidity a wick already took since the breakout is no target any more
+            ref = min(ref, swept) if sell else max(ref, swept)
         beyond = lambda xs: [x for x in xs if (x < ref if sell else x > ref)]  # noqa: E731
         near = lambda xs: (max(xs) if sell else min(xs)) if xs else None  # noqa: E731
         kls, erl = beyond(kls), beyond(erl)
@@ -591,12 +595,17 @@ class _Ctx:
         t_conf = self.c_end[conf_k]
         closed_o = int(np.searchsorted(self.o_end, t_conf, "right")) - 1  # last origin bar closed at confirmation
 
+        # owner 2026-10-15 EURCHF: target 0.92739 set at the D close although an H4 wick had reached 0.92697 that
+        # day; with target_unswept the target must lie beyond the extreme wick from the breakout to the confirmation
+        sw = None
+        if cfg["target_unswept"]:
+            sw = float(C["low"][brk:conf_k + 1].min()) if sell else float(C["high"][brk:conf_k + 1].max())
         if self.overlap(lv, bar, t_conf):
             rule += "+overlap"
-            target = self.target(sell, closed_o, t_conf, ref, "kl")
+            target = self.target(sell, closed_o, t_conf, ref, "kl", swept=sw)
         else:
             mode = "erl" if rule == "cadjpy" else ("leg" if cfg["target_mode"] == "leg" else "nearest")
-            target = self.target(sell, closed_o, t_conf, ref, mode, self.leg_extreme(lv, bar))
+            target = self.target(sell, closed_o, t_conf, ref, mode, self.leg_extreme(lv, bar), sw)
         if target is None:
             return None
         stop = (O["high"][bar] + cfg["stop_buffer_pips"] * P) if sell else (O["low"][bar] - cfg["stop_buffer_pips"] * P)

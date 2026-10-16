@@ -143,6 +143,9 @@ SCHEMA = [
     _s("risk_pct", "float", "0.5", "Risk & trading", "Account % risked per trade.", min=0.1, max=2),
     _s("alert_tapped", "bool", "on", "Alerts", "Telegram when a level is tapped (waiting for breakout)."),
     _s("alert_confirmed", "bool", "on", "Alerts", "Telegram when a story is confirmed."),
+    _s("alert_continuation", "bool", "on", "Alerts",
+       "Telegram when a confirmed story's H4 (D for a weekly story) closes through the next V-shape (A-shape for a "
+       "buy) between point B and the target: a continuation break in the bias direction."),
     _s("alert_ended", "bool", "on", "Alerts", "Telegram when a story hits target or is invalidated."),
     _s("alert_entry", "bool", "on", "Alerts", "Telegram on new / triggered entries."),
     _s("early_breakout_alert", "bool", "off", "Alerts",

@@ -69,6 +69,15 @@
       : weeks === 0 ? `${name},` : weeks === -1 ? `Last week ${name},` : name.slice(0, 3);
     return `${rel} ${date} (D1 candle)`;
   };
+  // continuation breaks 'level@YYYY-MM-DD HH:MM;...' (candle start, UTC) -> "0.92999 · H4 close Today, Thu 15 Oct 14:00"
+  const contBreaks = (r) => String(r.cont_breaks || "").split(";").filter((x) => x.includes("@")).map((x) => {
+    const [lv, t] = x.split("@");
+    if (r.story === "D") {
+      const d = new Date(t.replace(" ", "T") + "Z"); d.setUTCHours(d.getUTCHours() + 4);
+      return `${num(lv)} · H4 close ${dt(d.toISOString())}`;
+    }
+    return `${num(lv)} · ${r.story === "W" ? "D1" : "W1"} close ${candleDay(t, r.story === "W" ? "D" : "W")}`;
+  });
   const KIND = { A: "A", V: "V", OC: "OC (open-close)", sweep: "sweep of previous candle", align: "alignment swing" };
   const kl = (r) => r.level_kind === "flip" ? `${KIND[r.level_src] || "KL"} · flipped` : (KIND[r.level_kind] || r.level_kind || "");
 
@@ -138,7 +147,7 @@
           ${field("Rule", r.rule || "standard")}${field("Updated", dt(r.updated_at))}
           ${r.breakout_time ? field("Breakout (open)", dt(r.breakout_time)) : ""}
           ${r.next_day == null ? "" : field("Next Day Rule", Number(r.next_day) ? "✅ next day" : "⚠ same day")}
-        </div>${Number(r.retrace) ? `<div class="muted">⚠ Retrace: closed back beyond point B on the breakout day</div>` : ""}${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}</div>`).join("") : empty("No stories");
+        </div>${contBreaks(r).length ? `<div class="muted">Continuation breaks (after point B):<br>${contBreaks(r).map(esc).join("<br>")}</div>` : ""}${Number(r.retrace) ? `<div class="muted">⚠ Retrace: closed back beyond point B on the breakout day</div>` : ""}${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}</div>`).join("") : empty("No stories");
   }
 
   // ---------------- Entries (+ paper results of filled signals: slk.entry.paper_track, not broker trades)

@@ -40,7 +40,7 @@ CASES = [  # (pair, seed, hours, cfg)
 # Defaults changed by the owner on 2026-10-14 after the golden files were made: next_day_rule flag -> require,
 # trend_mode protected -> leg, D-story entry TFs H4,H2,H1 -> H4,H2. Every frozen golden (engine_golden.json, _v07,
 # _v05) was made with the old values, so the tests pin them here (the files are unchanged).
-PIN = {"next_day_rule": "flag", "trend_mode": "protected", "target_mode": "nearest", "flip_max_age": 0}  # target_mode leg: 2026-10-15
+PIN = {"next_day_rule": "flag", "trend_mode": "protected", "target_mode": "nearest", "flip_max_age": 0, "target_unswept": False}  # target_mode leg: 2026-10-15
 OLD_ENTRY_TFS = {"D": ("H4", "H2", "H1"), "W": ("D", "H4"), "M": ("W", "D")}
 # entry cfg of the old entry model the golden entries were made with (continuation only, breakout on c4)
 OLD_ENTRY = {"breakout_max_bars": 1, "entry_models": ["continuation"], "alignment": "off", "stop_at": "rejection",

@@ -261,9 +261,10 @@ def test_migrate_paper_columns_idempotent(monkeypatch):
                    "ALTER TABLE bias ADD COLUMN level_src VARCHAR(8) NULL AFTER retrace",
                    "ALTER TABLE bias ADD COLUMN level_candle DATETIME NULL AFTER level_src",
                    "ALTER TABLE bias ADD COLUMN chain VARCHAR(24) NULL AFTER level_candle",
-                   "ALTER TABLE bias ADD COLUMN trend VARCHAR(8) NULL AFTER chain"]
+                   "ALTER TABLE bias ADD COLUMN trend VARCHAR(8) NULL AFTER chain",
+                   "ALTER TABLE bias ADD COLUMN cont_breaks TEXT NULL AFTER trend"]
     db.migrate()
-    assert len(ddl) == 9  # second run: nothing to add
+    assert len(ddl) == 10  # second run: nothing to add
 
 
 def test_schema_has_paper_columns():

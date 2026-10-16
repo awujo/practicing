@@ -90,6 +90,8 @@ VARIANTS = [
     ("trend_mode", "protected", "story", {"trend_mode": "protected"}),
     ("target_mode", "leg", "story", {"target_mode": "leg"}),
     ("target_mode", "nearest", "story", {"target_mode": "nearest"}),
+    ("target_unswept", "on", "story", {"target_unswept": True}),
+    ("target_unswept", "off", "story", {"target_unswept": False}),
     ("flip_max_age", "100", "story", {"flip_max_age": 100}),
     ("flip_max_age", "0 (no limit)", "story", {"flip_max_age": 0}),
     ("cadjpy_exception", "on", "story", {"cadjpy_exception": True}),

@@ -309,3 +309,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   (origin-TF structure at the tap) -> "Pullback" label in alert + card; pullback stories don't set the standing bias;
   standing bias uses the TF structure trend now (`story.tf_trend`, table `tf_state`, written each live run, read by
   `/api/bias/state`). GBPJPY: W BEARISH (structure) + W BUY pullback active, D SELL W1->D1->H4.
+- 2026-10-16: EURCHF (owner chart): only "TARGET HIT" arrived (runs every 4-5 h until the cron-job.org tick is set;
+  confirmed + target between two runs) -> reconcile now sends CONFIRMED ("_late") before the outcome. Target bug:
+  target set beyond the confirmation close although a wick had already traded through it -> `target_unswept`
+  (default on, backtest variant). New continuation breaks (STRATEGY 16e): `live.continuation_breaks`, column
+  `bias.cont_breaks` ('level@time;...'), CONTINUATION alert (`alert_continuation`), Mini App card list.

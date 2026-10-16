@@ -30,6 +30,7 @@ from . import settings as S
 from . import store as candles_store
 from .backtest import PAIRS
 from .candles import _key, nominal_end, resample
+from .structure import pivots
 from .entry import DEFAULT as ENTRY_DEFAULT
 from . import standing
 from .story import DEFAULT, STORIES, tf_trend, current_tap, find_stories, mw_conflict, pip
@@ -39,6 +40,7 @@ HISTORY_DAYS = 3 * 365 + 30       # enough months for M/W stories
 ALERT_WINDOW = timedelta(hours=36)  # a story first seen by the bot is announced only if this fresh
 ACTIVE = ("TAPPED", "CONFIRMED")
 ALERT_ON = ("TAPPED", "CONFIRMED", "TARGET_HIT", "INVALIDATED", "ENDED_FLIP")
+ENDED_AFTER_CONF = ("TARGET_HIT", "INVALIDATED", "ENDED_FLIP", "CANCELLED")
 STATUS_OF = {"target": "TARGET_HIT", "invalidated": "INVALIDATED", "ended_flip": "ENDED_FLIP"}  # engine -> bias
 BAR_LEN = {"H1": pd.Timedelta(hours=1), "H4": pd.Timedelta(hours=4), "D": pd.Timedelta(days=1),
            "W": pd.Timedelta(days=5)}  # a week closes Friday 17:00 New York (shifted Saturday 00:00)
@@ -191,7 +193,7 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
     for st in stories:
         otf = STORIES[st][0]
         h = drop_forming(h1, otf, now)
-        rows = []
+        rows, cb = [], None
         found, t = engine_rows(pair, h, st, cfg, memo)
         for s in found:
             status = STATUS_OF.get(s["kevin_outcome"], "CONFIRMED")
@@ -206,6 +208,12 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
                 elif since > cfg["max_hold"]:
                     r["status"] = "CANCELLED"   # held max_hold bars without an outcome
                     r["end_reason"] = f"no outcome within {cfg['max_hold']} {otf} bars"
+            if r.get("breakout_time") is not None and status in ("CONFIRMED", "TARGET_HIT", "INVALIDATED",
+                                                                  "ENDED_FLIP", "CANCELLED") \
+                    and now - _ts(r["breakout_time"]) <= timedelta(days=CONT_DAYS):
+                if cb is None:
+                    cb = resample(h1, STORIES[st][1])
+                r["cont_breaks"] = pack_breaks(continuation_breaks(r, cb, cfg, s.get("end_time")))
             rows.append(r)
         if t and not any(r["tap_time"] == _dt(t["tap_time"]) for r in rows) \
                 and not any(r["status"] == "CONFIRMED" for r in rows):
@@ -216,6 +224,57 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
             rows.append(r)
         out += rows
     return mark_htf_bias(mark_mw_conflict(out, cfg), cfg)
+
+
+CONT_DAYS = 60  # continuation breaks are tracked for stories that broke out in the last 60 days
+
+
+def pack_breaks(br):
+    """continuation_breaks -> stored text 'level@YYYY-MM-DD HH:MM;...' (column bias.cont_breaks), None if empty."""
+    return ";".join(f"{b['level']:.6g}@{pd.Timestamp(b['time']):%Y-%m-%d %H:%M}" for b in br) or None
+
+
+def unpack_breaks(txt):
+    out = []
+    for part in str(txt or "").split(";"):
+        if "@" in part:
+            lv, t = part.split("@", 1)
+            out.append({"level": float(lv), "time": t})
+    return out
+
+
+def continuation_breaks(r, cb, cfg, until=None):
+    """Owner 2026-10-16 (EURCHF chart: white line = external break of point B, yellow lines = the next breaks):
+    after the external break, each confirm-TF close (H4 for a D story) through the next intact close-line V-shape
+    (A-shape for a buy) lying between point B and the target = a continuation break in the bias direction.
+    `cb` = confirm-TF bars (resample of closed H1). Returns [{"level", "formed" (V candle start), "time" (breaking
+    candle start), "close"}] in time order, each level once. The V's are the order-`b_pivot` close-line turns
+    (the same as point B), known before the breaking candle closed (no look-ahead)."""
+    if r.get("breakout_time") is None or r.get("point_b") is None or r.get("target") is None or cb.empty:
+        return []
+    sell = r["side"] == "SELL"
+    B, T = float(r["point_b"]), float(r["target"])
+    start = pd.to_datetime(cb["start"])
+    k0 = int(np.searchsorted(start, _ts(r["breakout_time"]), "left"))
+    kend = len(cb) if until is None else int(np.searchsorted(start, _ts(until), "right"))
+    close = cb["close"].to_numpy()
+    lo = max(0, k0 - 120)  # V's formed in the 120 bars (20 days of H4) before the break are enough
+    piv = [p for p in pivots(close[lo:kend], cfg["b_pivot"]) if p[1] == ("L" if sell else "H")]
+    piv = [(p[0] + lo, p[2], p[3] + lo) for p in piv if ((T < p[2] < B) if sell else (B < p[2] < T))]
+    out, used = [], set()
+    for k in range(k0 + 1, kend):
+        for i, price, known in piv:
+            if i in used or known >= k:
+                continue
+            seg = close[i + 1:k]  # intact: no close through it since it formed
+            if len(seg) and ((seg < price).any() if sell else (seg > price).any()):
+                used.add(i)
+                continue
+            if (close[k] < price) if sell else (close[k] > price):
+                used.add(i)
+                out.append({"level": float(price), "formed": _dt(start[i]), "time": _dt(start[k]),
+                            "close": float(close[k])})
+    return out
 
 
 def early_breakout(r, h1, h, now):
@@ -324,7 +383,7 @@ def _same(a, b):
     if bool(a.get("no_trade")) != bool(b.get("no_trade")):
         return False
     for k in ("status", "side", "level_kind", "confirm_time", "rule", "end_reason", "breakout_time", "level_src",
-              "level_candle", "chain", "trend"):
+              "level_candle", "chain", "trend", "cont_breaks"):
         if a.get(k) != b.get(k):
             return False
     for k in ("next_day", "retrace"):
@@ -354,9 +413,22 @@ def reconcile(new_rows, old_rows, now, h1=None, cfg=None):
             continue
         if o is not None:
             if o["status"] != r["status"] and o["status"] in ACTIVE + (None,):
+                if o["status"] != "CONFIRMED" and r["status"] in ENDED_AFTER_CONF and r.get("confirm_time"):
+                    # confirmed and already over between two runs: announce the confirmation first (owner
+                    # 2026-10-16 EURCHF: only "TARGET HIT" arrived, never "CONFIRMED")
+                    alerts.append(("CONFIRMED", {**r, "status": "CONFIRMED", "_late": True}))
                 alerts.append((r["status"], r))
             elif r["status"] == "CONFIRMED" and _flag(r.get("retrace")) and _flag(o.get("retrace")) is False:
                 alerts.append(("RETRACE", r))  # flag only: the story stays CONFIRMED
+            if r["status"] == "CONFIRMED" and o["status"] == "CONFIRMED":
+                # new continuation breaks after the confirmation, announced while fresh (no burst of old ones)
+                seen_b = {(b["level"], b["time"]) for b in unpack_breaks(o.get("cont_breaks"))}
+                ctf = BAR_LEN.get(STORIES[r["story"]][1], timedelta(hours=4))
+                new_b = [b for b in unpack_breaks(r.get("cont_breaks")) if (b["level"], b["time"]) not in seen_b
+                         and _ts(b["time"]) >= _ts(r["confirm_time"])
+                         and _ts(now) - (_ts(b["time"]) + ctf) <= ALERT_WINDOW]
+                if new_b:
+                    alerts.append(("CONTINUATION", {**r, "_new_breaks": new_b}))
         else:  # first time the bot sees it: announce only fresh events
             when = r["confirm_time"] if r["status"] == "CONFIRMED" else r["tap_time"] if r["status"] == "TAPPED" else None
             if when is not None and now - when <= ALERT_WINDOW + _bar(r):
@@ -666,11 +738,15 @@ def format_alert(event, r, tz=DISPLAY_TZ):
     status = {"TAPPED": f"TAPPED: waiting for the {C} breakout",
               "CONFIRMED": f"{'Bias confirmed' if cadjpy else 'External breakout confirmed'}",
               "BREAKOUT": f"{C} breakout \u2014 waiting for the {CLOSE_NAME[otf]} close",
-              "RETRACE": "RETRACE warning after the breakout (still CONFIRMED)"}.get(
+              "RETRACE": "RETRACE warning after the breakout (still CONFIRMED)",
+              "CONTINUATION": f"Continuation break: {C} close {below} the next {'V' if sell else 'A'}-shape "
+                              f"\u00b7 bias continues"}.get(
                   event, f"Story over: {HEAD.get(event, event)}")
     lines = [f"{'SELL' if sell else 'BUY'} \u00b7 {p} \u00b7 {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}",
              f"BIAS \u00b7 {STORY_NAME[r['story']]} story \u00b7 {'BEARISH' if sell else 'BULLISH'}",
-             status] + ([r["_bias_note"]] if r.get("_bias_note") else []) + [""]
+             status] + ([r["_bias_note"]] if r.get("_bias_note") else []) + \
+        ([f"(Confirmed at the {O} close {fmt_time(r['confirm_time'], tz)}; it already ended before this run, see "
+          f"the next message)"] if r.get("_late") else []) + [""]
     if r.get("level_kind") == "sweep":
         lines.append(f"Rejected at the {level_name(r)} @ {fp(r['level'])}")
     else:
@@ -697,6 +773,15 @@ def format_alert(event, r, tz=DISPLAY_TZ):
         lines.append(f"Point B {fp(r['point_b'])}: a {C} body close {below} it confirms (no breakout, no story)")
     if r.get("confirm_time") and event != "BREAKOUT":
         lines.append(f"Confirmed at candle close {fmt_time(r['confirm_time'], tz)}")
+    brk = unpack_breaks(r.get("cont_breaks"))
+    if brk and event in ("CONFIRMED", "CONTINUATION", "TARGET_HIT", "RETRACE"):
+        new = {(b["level"], b["time"]) for b in r.get("_new_breaks") or []}
+        lines.append(f"Continuation breaks ({C} close {below} the next V-shape after point B):" if sell else
+                     f"Continuation breaks ({C} close {below} the next A-shape after point B):")
+        for b in brk:
+            mark = "\u27a4 NEW " if (b["level"], b["time"]) in new else "\u2022 "
+            lines.append(f"  {mark}{fp(b['level'])} \u00b7 {C} candle close "
+                         f"{fmt_time(candle_end(b['time'], ctf), tz)}")
     al = _aligned(r)
     if al:
         lines.append(al)
@@ -795,7 +880,7 @@ def send_telegram(text, token=None, chat=None):
 # ------------------------------------------------------------------ settings (DB table `settings`)
 ALERT_KEY = {"TAPPED": "alert_tapped", "CONFIRMED": "alert_confirmed", "TARGET_HIT": "alert_ended",
              "INVALIDATED": "alert_ended", "ENDED_FLIP": "alert_ended", "RETRACE": "alert_confirmed",
-             "BREAKOUT": "early_breakout_alert"}
+             "BREAKOUT": "early_breakout_alert", "CONTINUATION": "alert_continuation"}
 
 
 def build_cfg(stored=None, overrides=None):
