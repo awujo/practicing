@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS bias (
   chain         VARCHAR(24)  NULL,                  -- timeframes in line, e.g. W1->D1->H4 (W trend agrees) or D1->H4
   trend         VARCHAR(8)   NULL,                  -- origin-TF structure trend at the tap (up/down/range); against side = pullback
   cont_breaks   TEXT         NULL,                  -- continuation breaks after the external break: 'level@UTC time;...'
+  line_end      DATETIME     NULL,                  -- after the target: origin candle start that closed back through the level
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_bias (pair, story, tap_time),
   KEY ix_bias_status (status)

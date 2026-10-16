@@ -31,7 +31,7 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-15)
+## Status (2026-10-16)
 - [x] Repo public as `awujo/practicing`; live run works again (minutes were exhausted). Render: check the repo link
       shows `awujo/practicing`. Back to private on/after Nov 1, then hourly live costs minutes again.
 - [ ] **Entry model re-test** (owner asked): fills/exits on M5 instead of H1 (34% same-H1-bar stops), Kevin's own
@@ -314,3 +314,4 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   target set beyond the confirmation close although a wick had already traded through it -> `target_unswept`
   (default on, backtest variant). New continuation breaks (STRATEGY 16e): `live.continuation_breaks`, column
   `bias.cont_breaks` ('level@time;...'), CONTINUATION alert (`alert_continuation`), Mini App card list.
+- 2026-10-16: NZDJPY (owner): one H4 close through 4 small V's was listed as 4 "NEW" breaks (read as a repeat) -> one break per candle ("cleared 4: 88.501 → 88.428"); the same break on two stories of a TF is sent once. After TARGET HIT the story is watched (STRATEGY 16f): breaks beyond the target = continuation (next liquidity), an origin close back through the level = "STORY LINE ENDED" (new column bias.line_end, migration; standing bias ends). TARGET HIT alert says what is next. Mini App card shows it. First run after deploy may send a few post-target continuation alerts (fresh breaks only, last 36 h).

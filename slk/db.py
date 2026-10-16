@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "db", "schema.sql")
 BIAS_COLS = ("pair", "story", "side", "status", "level_kind", "level", "point_b", "target", "invalidation",
              "tap_time", "confirm_time", "no_trade", "no_trade_reason", "rule", "end_reason", "breakout_time",
-             "next_day", "retrace", "level_src", "level_candle", "chain", "trend", "cont_breaks")
+             "next_day", "retrace", "level_src", "level_candle", "chain", "trend", "cont_breaks", "line_end")
 # columns added after the first release: CREATE TABLE IF NOT EXISTS does not add them to an existing table
 MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_time"),
               ("bias", "no_trade_reason", "VARCHAR(64) NULL AFTER no_trade"),
@@ -33,7 +33,9 @@ MIGRATIONS = (("bias", "no_trade", "TINYINT(1) NOT NULL DEFAULT 0 AFTER confirm_
               ("bias", "level_candle", "DATETIME NULL AFTER level_src"),
               ("bias", "chain", "VARCHAR(24) NULL AFTER level_candle"),
               ("bias", "trend", "VARCHAR(8) NULL AFTER chain"),
-              ("bias", "cont_breaks", "TEXT NULL AFTER trend"))
+              ("bias", "cont_breaks", "TEXT NULL AFTER trend"),
+              # after the target: the origin candle that closed back through the level (story line over)
+              ("bias", "line_end", "DATETIME NULL AFTER cont_breaks"))
 
 
 def parse_url(url):

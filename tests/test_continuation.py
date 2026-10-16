@@ -54,3 +54,60 @@ def test_new_continuation_break_alert():
     assert ev == "CONTINUATION" and [b["level"] for b in r["_new_breaks"]] == [0.92903, 0.92828][:len(r["_new_breaks"])]
     m = live.format_alert(ev, r)
     assert "Continuation break: H4 close below the next V-shape" in m and "➤ NEW 0.92903" in m
+
+
+def _h4(closes, t0="2026-10-12 21:00"):
+    c = pd.Series(closes, dtype=float)
+    return pd.DataFrame({"start": pd.date_range(t0, periods=len(c), freq="4h", tz="UTC"), "open": c.shift(1).fillna(c[0]),
+                         "high": c + 0.01, "low": c - 0.01, "close": c})
+
+
+NZD = {"pair": "NZDJPY", "story": "D", "side": "SELL", "status": "CONFIRMED", "point_b": 88.839, "target": 88.115,
+       "breakout_time": datetime(2026, 10, 13, 9), "confirm_time": datetime(2026, 10, 13, 21),
+       "tap_time": datetime(2026, 10, 12, 21), "level": 89.090, "invalidation": 89.090, "level_kind": "flip"}
+
+
+def test_one_candle_through_several_vs_is_one_break():
+    # owner 2026-10-16 NZDJPY: four V's (88.501, 88.487, 88.462, 88.428) cleared by one H4 close read as a repeat
+    # after the break price retraced with higher lows (V's 88.428, 88.462, 88.487, 88.501), then one H4 closed below all
+    cl = [88.90, 88.80, 88.428, 88.50, 88.462, 88.52, 88.487, 88.55, 88.501, 88.60, 88.30, 88.35]
+    br = live.continuation_breaks(NZD, _h4(cl), {**DEFAULT, "b_pivot": 1})
+    assert len(br) == 1 and br[0]["n"] == 4 and (br[0]["first"], br[0]["level"]) == (88.501, 88.428)
+    txt = live.pack_breaks(br)
+    assert live.unpack_breaks(txt) == [{"level": 88.428, "time": br[0]["time"].strftime("%Y-%m-%d %H:%M"), "n": 4,
+                                        "first": 88.501}]
+    m = live.format_alert("CONFIRMED", {**NZD, "cont_breaks": txt})
+    assert sum("88.428" in x for x in m.splitlines()) == 1 and "cleared 4: 88.501 → 88.428" in m
+
+
+def test_after_target_breaks_go_on_and_the_line_can_end():
+    cl = [88.90, 88.80, 88.70, 88.60, 88.30, 88.10, 88.05, 88.20, 88.00, 88.10, 87.90, 88.00]  # V 88.00 below T broken
+    r = {**NZD, "status": "TARGET_HIT", "_end_time": datetime(2026, 10, 13, 17)}
+    br = live.continuation_breaks(r, _h4(cl), {**DEFAULT, "b_pivot": 1})
+    assert any(b["level"] < NZD["target"] for b in br)  # beyond the target: next liquidity
+    m = live.format_alert("CONTINUATION", {**r, "cont_breaks": live.pack_breaks(br),
+                                           "_new_breaks": live.unpack_breaks(live.pack_breaks(br))[-1:]})
+    assert "after the target (next liquidity)" in m and "· after the target" in m
+    # the line ends at the first origin (D) close back above the level after the confirmation
+    d = pd.DataFrame({"start": pd.to_datetime(["2026-10-13 21:00", "2026-10-14 21:00", "2026-10-15 21:00"], utc=True),
+                      "close": [88.5, 89.2, 89.3]})
+    assert live.line_end(r, d) == datetime(2026, 10, 14, 21)
+    now = pd.Timestamp("2026-10-16 06:00", tz="UTC")
+    _, alerts = live.reconcile([{**r, "line_end": datetime(2026, 10, 14, 21)}], [dict(r)], now)
+    assert [ev for ev, _ in alerts] == ["LINE_END"]
+    m = live.format_alert("LINE_END", alerts[0][1])
+    assert "Story line ended after the target" in m and "closed above 89.090" in m
+    from slk import standing
+    assert standing.standing([{**r, "line_end": datetime(2026, 10, 14, 21)}], "D")["side"] is None
+    assert standing.standing([r], "D")["side"] == "SELL"
+    assert "Next: a H4 close below the next V-shape continues" in live.format_alert("TARGET_HIT", r)
+
+
+def test_same_break_on_two_stories_is_sent_once():
+    br = "0.92903@2026-10-15 13:00"
+    old = [{**ROW, "cont_breaks": None, "confirm_time": datetime(2026, 10, 15, 5)},
+           {**ROW, "status": "TARGET_HIT", "tap_time": datetime(2026, 10, 5, 21),
+                                          "confirm_time": datetime(2026, 10, 6, 21), "cont_breaks": None}]
+    new = [{**o, "cont_breaks": br} for o in old]
+    _, alerts = live.reconcile(new, old, pd.Timestamp("2026-10-15 22:00", tz="UTC"))
+    assert [(ev, r["tap_time"]) for ev, r in alerts] == [("CONTINUATION", ROW["tap_time"])]

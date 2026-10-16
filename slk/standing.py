@@ -11,8 +11,9 @@ So per pair and story TF:
 - a CONFIRMED story sets the bias to its side (a new same-side story = continuation, the bias carries on);
 - target reached / no outcome in time (TARGET_HIT, CANCELLED) do NOT end it;
 - it ends only when proven otherwise: a confirmed story the other way (bias change), or the story that holds it is
-  INVALIDATED (origin close back through its level) or ENDED_FLIP (opposite level rejected + broken) -> no bias until
-  the next confirmed story.
+  INVALIDATED (origin close back through its level) or ENDED_FLIP (opposite level rejected + broken), or after its
+  target the origin closes back through its level (row `line_end`, slk.live.line_end) -> no bias until the next
+  confirmed story.
 Stdlib only (the Mini App imports it). Rows = table `bias` rows (dicts) of one pair, any status.
 """
 from datetime import datetime
@@ -42,12 +43,13 @@ def _from_stories(conf, story):
     if not conf:
         return {"story": story, "side": None, "since": None, "stories": 0, "last": None, "state": "none"}
     last = conf[-1]
-    if last["status"] in ENDS:
+    if last["status"] in ENDS or _t(last.get("line_end")) is not None:
         return {"story": story, "side": None, "since": None, "stories": 0, "last": last,
-                "state": "invalidated" if last["status"] == "INVALIDATED" else "ended by flip"}
+                "state": "invalidated" if last["status"] == "INVALIDATED" else "ended by flip"
+                if last["status"] == "ENDED_FLIP" else "story line ended after the target (close back through the level)"}
     run = [last]
     for r in reversed(conf[:-1]):
-        if r["side"] != last["side"] or r["status"] in ENDS:
+        if r["side"] != last["side"] or r["status"] in ENDS or _t(r.get("line_end")) is not None:
             break
         run.append(r)
     state = {"CONFIRMED": "story active", "TARGET_HIT": "target reached, bias continues",
@@ -99,6 +101,6 @@ def note(event, row, before, after):
     if event == "TARGET_HIT" and w:
         return (f"Bias stays {w}: a target is not the end of the bias. It ends only on a confirmed opposite story "
                 f"or a close back through the level")
-    if event in ENDS and not w:
+    if (event in ENDS or event == "LINE_END") and not w:
         return "No standing bias now: wait for the next confirmed story"
     return None
