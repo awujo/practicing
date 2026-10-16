@@ -326,3 +326,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   times on their own line) / CONTEXT (higher-TF trend, own structure / pullback, Next Day Rule, retrace, rule) /
   PLAN (target, invalidation, what next). New setting `alert_detail` short (default: breaks as count + latest) /
   full (every break, candle open+close).
+- 2026-10-16: owner (AUDUSD): selling after the external range liquidity (the target) was already taken is late.
+  Backtest split (target_unswept=off): 1611 such stories (wick took the target between breakout and confirmation).
+  target_unswept=on -110R, skip -80R -> new `erl_taken_no_trade` (on): story flag `erl_taken`, live row
+  NO_TRADE (reason live.ERL_TAKEN), still alerted as bias with "NO_TRADE: ... late", no entries.

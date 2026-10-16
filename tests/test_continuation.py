@@ -111,3 +111,10 @@ def test_same_break_on_two_stories_is_sent_once():
     new = [{**o, "cont_breaks": br} for o in old]
     _, alerts = live.reconcile(new, old, pd.Timestamp("2026-10-15 22:00", tz="UTC"))
     assert [(ev, r["tap_time"]) for ev, r in alerts] == [("CONTINUATION", ROW["tap_time"])]
+
+
+def test_erl_taken_is_bias_but_no_trade():
+    r = {**ROW, "no_trade": True, "no_trade_reason": live.ERL_TAKEN}
+    assert live.filter_alerts([("CONFIRMED", r)]) == [("CONFIRMED", r)]  # still announced as bias
+    assert "selling now is late" in live.format_alert("CONFIRMED", r)
+    assert live.entry_rows("EURCHF", None, [{**r, "_story": {}}], {}, finder=lambda *a, **k: 1 / 0) == []

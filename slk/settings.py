@@ -30,6 +30,9 @@ SCHEMA = [
        choices=["M", "W", "D"]),
     _s("trend_filter", "bool", "on", "Bias rules", "Only levels that agree with the origin-TF trend."),
     _s("htf_filter", "bool", "on", "Bias rules", "Never trade against the higher-TF trend."),
+    _s("erl_taken_no_trade", "bool", "on", "Bias rules",
+       "A story confirmed after a wick already took its target (the external range liquidity) is shown as bias but "
+       "NO_TRADE: no entries (owner 2026-10-16; backtest 2018-2026: not trading them -80R vs -110R)."),
     _s("pullback_levels", "bool", "on", "Bias rules",
        "When the origin TF (daily) trend points against the higher-TF (weekly) trend, the daily is only "
        "retracing: levels on the weekly side start the story (Kevin's CADJPY, EURGBP and USDCAD daily stories: "

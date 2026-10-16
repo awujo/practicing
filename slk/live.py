@@ -199,6 +199,10 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
             status = STATUS_OF.get(s["kevin_outcome"], "CONFIRMED")
             r = to_row(s, status)
             r["_story"] = s  # raw engine story (breakout_time etc.) for the entry model; not stored
+            if s.get("erl_taken") and cfg.get("erl_taken_no_trade", True):
+                # owner 2026-10-16 + backtest: a wick took the target (external range liquidity) before the
+                # confirmation -> trading it is late (variant target_unswept=skip: -80R vs -110R). Bias kept.
+                r["no_trade"], r["no_trade_reason"] = True, ERL_TAKEN
             if status == "CONFIRMED":
                 ob = resample(h, otf)
                 since = int((pd.to_datetime(ob["start"]) >= _ts(r["confirm_time"])).sum())
@@ -233,6 +237,7 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
     return mark_htf_bias(mark_mw_conflict(out, cfg), cfg)
 
 
+ERL_TAKEN = "external liquidity already taken before the confirmation"
 CONT_DAYS = 60  # continuation breaks are tracked for stories that broke out in the last 60 days
 AFTER_TARGET = ("TARGET_HIT", "CANCELLED")  # the bias stands after these (slk.standing.KEEPS) until the line ends
 
@@ -419,7 +424,8 @@ def state_stories(stories, cfg):
 
 def filter_alerts(alerts):
     """Drop TAPPED/CONFIRMED alerts of NO_TRADE (M/W conflict) stories; outcomes are still announced."""
-    return [(ev, r) for ev, r in alerts if not (r.get("no_trade") and ev in ACTIVE)]
+    return [(ev, r) for ev, r in alerts
+            if not (r.get("no_trade") and ev in ACTIVE and r.get("no_trade_reason") != ERL_TAKEN)]
 
 
 def _same(a, b):
@@ -952,8 +958,11 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
     # PLAN
     pl = ["\U0001f3af PLAN"]
     over = event in ("INVALIDATED", "ENDED_FLIP", "LINE_END")
-    if r.get("no_trade"):
-        pl.append(f"• NO_TRADE: {r.get('no_trade_reason') or 'filter'}")
+    if r.get("no_trade") and r.get("no_trade_reason") == ERL_TAKEN:
+        pl.append(f"\u2022 NO_TRADE: a wick already took the external liquidity before the confirmation, so "
+                  f"{'selling' if sell else 'buying'} now is late. Wait for a pullback and a new story")
+    elif r.get("no_trade"):
+        pl.append(f"\u2022 NO_TRADE: {r.get('no_trade_reason') or 'filter'}")
     elif event in ("TAPPED", "BREAKOUT"):
         pl.append(f"• NO_TRADE until the {O} confirms (no break, no story)")
     if not over:
@@ -1044,7 +1053,8 @@ def build_cfg(stored=None, overrides=None):
     """(story cfg, entry cfg, typed settings) from stored strings (slk/settings.py schema); anything missing
     or invalid falls back to the code defaults (Kevin's rules). `overrides` (--cfg JSON) win over both."""
     vals = S.load(stored)
-    cfg = {**DEFAULT, **S.story_cfg(vals), "use_monthly": "M" in vals["stories"], **(overrides or {})}
+    cfg = {**DEFAULT, **S.story_cfg(vals), "use_monthly": "M" in vals["stories"],
+           "erl_taken_no_trade": vals["erl_taken_no_trade"], **(overrides or {})}
     ecfg = {**ENTRY_DEFAULT, **S.entry_cfg(vals)}
     return cfg, ecfg, vals
 

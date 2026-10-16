@@ -65,6 +65,7 @@ DEFAULT = {
     "htf_bias_filter": False,  # live: on = a story against the standing bias of the next higher story TF is NO_TRADE.
                                # Off (owner 2026-10-15): a D->H4 sell under a W buy bias can be the retracement that
                                # continues the W story line; it is shown as D1->H4 (not W1->D1->H4), still tradable
+    "erl_taken_no_trade": True,  # live: such a story (erl_taken) is bias only, NO_TRADE (slk.live.ERL_TAKEN)
     "target_unswept": True,  # the target lies beyond the extreme wick between the breakout and the confirmation
                              # (owner 2026-10-15 EURCHF: 0.92739 was already traded through when it was set)
     "flip_end": True,       # #29 a D KL on the way rejected the other way + H4 break the other way ends the story
