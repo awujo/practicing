@@ -99,6 +99,12 @@ def healthz():
     return {"ok": True}
 
 
+@app.get("/version")
+def version():
+    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown"),
+            "settings_validation": "flip-age-bounds-v1"}
+
+
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})

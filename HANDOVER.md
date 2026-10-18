@@ -107,6 +107,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 4. Entry alerts live → then demo trading with kill switch + confirm button.
 
 ## Log
+- 2026-10-18: Owner still saw settings-save 500 at slk-backtest-viewer.onrender.com after 638db9c. First fix changed only shared slk code/tests/docs; Render root is webapp, so auto-deploy may have skipped it. Added public /version with RENDER_GIT_COMMIT and settings validation marker to identify deployed code and trigger a webapp deploy. /healthz unchanged.
 - 2026-10-12/13: Kevin King course study (transcripts + frames), STRATEGY v0.1→v0.3.
 - 2026-10-13: Built engine + backtest; parallel agents built entry model, live runner, cTrader client, Mini App.
   Fixed CI deps (`requirements-dev.txt`). Chat id default set. Live run blocked by Aiven password.
