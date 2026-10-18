@@ -833,7 +833,7 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
             "INVALIDATED": "INVALIDATED: the story failed",
             "ENDED_FLIP": "ENDED EARLY: an opposite story took over",
             "LINE_END": "STORY LINE ENDED after the target"}.get(event, HEAD.get(event, event))
-    what = {"TAPPED": f"The {O} candle touched the level and closed back {above} it. {_an(C).capitalize()} {C} close {below} point B "
+    what = {"TAPPED": f"The {O} candle touched the level and closed back {below} it. {_an(C).capitalize()} {C} close {below} point B "
                       f"is needed before there is a story.",
             "BREAKOUT": f"{_an(C).capitalize()} {C} candle closed {below} point B, but the {O} candle is still open.",
             "CONFIRMED": f"The {O} is now {word}: look for {'sells' if sell else 'buys'} only (entries come in "
@@ -881,7 +881,7 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
     st = ["\U0001f4d6 STORY SO FAR"]
     n = iter(range(1, 20))
     st.append(f"{next(n)}. Rejected: {O} candle {trading_day(r['tap_time'], otf)}, it touched the level and closed "
-              f"back {above} it" + (f"\n   \U0001f552 {_span(r['tap_time'], otf, tz)}" if full else ""))
+              f"back {below} it" + (f"\n   \U0001f552 {_span(r['tap_time'], otf, tz)}" if full else ""))
     if cadjpy:
         st.append(f"{next(n)}. No point B: the {O} close back {below} the level confirms it")
     elif event == "BREAKOUT" and r.get("_early"):
@@ -963,8 +963,10 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
                   f"{'selling' if sell else 'buying'} now is late. Wait for a pullback and a new story")
     elif r.get("no_trade"):
         pl.append(f"\u2022 NO_TRADE: {r.get('no_trade_reason') or 'filter'}")
-    elif event in ("TAPPED", "BREAKOUT"):
-        pl.append(f"• NO_TRADE until the {O} confirms (no break, no story)")
+    elif event == "TAPPED":
+        pl.append(f"• NO_TRADE: wait for a {C} body close {below} point B, then the {O} confirmation close {below} point B")
+    elif event == "BREAKOUT":
+        pl.append(f"• NO_TRADE: the {C} break has happened; wait for the {O} confirmation close {below} point B")
     if not over:
         if not done:
             pl.append(f"\u2022 Target: {fp(r['target'])}" if r.get("target") is not None else

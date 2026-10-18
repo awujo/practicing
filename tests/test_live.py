@@ -49,7 +49,7 @@ def test_alert_format(monkeypatch):
         assert "\n\n" + sec + "\n" in m
     # default display_tz Africa/Lagos (WAT = UTC+1)
     assert "A-shape key level at 1.08450 (D1)\n\u2022 What it is: a top" in m and "Formed: D1 candle Fri 2 Oct" in m
-    assert "1. Rejected: D1 candle Mon 12 Oct, it touched the level and closed back above it" in m
+    assert "1. Rejected: D1 candle Mon 12 Oct, it touched the level and closed back below it" in m
     assert "2. External break: H4 closed below point B 1.08120\n   \U0001f552 H4 candle close Mon 12 Oct 10:00 WAT" in m
     assert "3. Confirmed: the D1 candle also closed below point B\n   \U0001f552 D1 candle close Mon 12 Oct 22:00 WAT" in m
     assert "W1 trend: bearish (agrees)" in m and "D1 structure: bearish (agrees)" in m
@@ -66,7 +66,7 @@ def test_alert_format(monkeypatch):
                                    invalidation=190.123, confirm_time=None, status="TAPPED"))
     assert "TAPPED" in j and "190.123" in j and "Target: set when the story confirms" in j and "below" in j
     assert "Confirmed" not in j
-    assert j.startswith("\U0001f440 BUY GBPJPY") and "NO_TRADE until the D1 confirms" in j
+    assert j.startswith("\U0001f440 BUY GBPJPY") and "NO_TRADE: wait for a H4 body close above point B, then the D1 confirmation close above point B" in j
     assert "Next Day" not in j and "same-day" not in j
     w = format_alert("CONFIRMED", row(story="W", level_kind="sweep", side="BUY", no_trade=True,
                                       no_trade_reason="M/W conflict"))
