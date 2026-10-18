@@ -42,6 +42,10 @@ select, input, textarea { font: inherit; color: var(--text); background: var(--b
 .empty { color: var(--hint); text-align: center; padding: 30px 0; }
 .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; background: var(--bg2); }
 .msg.err { color: var(--sell); }
+.settings-actions { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding: 12px 0 max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--hint); }
+.settings-actions p { margin: 0 0 8px; }
+.settings-actions button { width: 100%; }
+#settings-feedback.err { color: var(--sell); }
 .form { display: flex; flex-direction: column; gap: 12px; }
 .form .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .form .row input[type=number], .form .row select { width: 120px; background: var(--bg); }

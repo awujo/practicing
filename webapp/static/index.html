@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>SLK Bias</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=settings-save-2">
 </head>
 <body>
   <header>
@@ -48,14 +48,17 @@
     <section id="orders" hidden><div id="orders-list" class="list"></div></section>
 
     <section id="settings" hidden>
-      <form id="settings-form" class="form">
+      <form id="settings-form" class="form" novalidate>
         <div id="settings-fields" class="form"></div>
-        <button type="submit" class="primary">Save</button>
+        <div class="settings-actions">
+          <p id="settings-feedback" role="status" aria-live="polite">Changes apply after you save.</p>
+          <button id="settings-save" type="submit" class="primary">Save settings</button>
+        </div>
       </form>
     </section>
 
     <section id="status" hidden><div id="runs-list" class="list"></div></section>
   </main>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=settings-save-2"></script>
 </body>
 </html>

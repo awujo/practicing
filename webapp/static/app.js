@@ -230,6 +230,13 @@
 
   // ---------------- Settings (form built from /api/settings/schema = slk/settings.py)
   let schema = null;
+  let settingsDirty = false;
+  let settingsSaving = false;
+  function settingsFeedback(text, error = false) {
+    const el = $("#settings-feedback");
+    el.textContent = text;
+    el.className = error ? "err" : "";
+  }
   const fid = (n) => `s-${n}`;
   const csv = (v) => String(v || "").split(/[,\s;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
   const ladder = (v) => Object.fromEntries(String(v || "").split(";").filter((p) => p.includes("="))
@@ -276,6 +283,7 @@
   }
 
   async function loadSettings() {
+    if (settingsDirty || settingsSaving) return;
     if (!schema) schema = await api("/api/settings/schema");
     settings = await api("/api/settings");
     $("#settings-fields").innerHTML = schema.groups.map((g) => `
@@ -286,13 +294,34 @@
 
   async function saveSettings(ev) {
     ev.preventDefault();
-    const body = Object.fromEntries(schema.settings.map((s) => [s.name, readField(s)]));
+    if (!schema || settingsSaving) return;
+    settingsSaving = true;
+    const button = $("#settings-save");
+    button.disabled = true;
+    button.textContent = "Saving…";
+    settingsFeedback("Saving your settings…");
     try {
-      settings = await api("/api/settings", { method: "POST", body: JSON.stringify(body) });
+      const body = Object.fromEntries(schema.settings.map((s) => [s.name, readField(s)]));
+      $("#settings-fields").querySelectorAll("input, select").forEach((el) => { el.disabled = true; });
+      const saved = await api("/api/settings", { method: "POST", body: JSON.stringify(body) });
+      const verified = await api("/api/settings", { cache: "no-store" });
+      if (schema.settings.some((s) => verified[s.name] !== saved[s.name])) {
+        throw new Error("Could not verify the saved settings. Please try again.");
+      }
+      settingsDirty = false;
+      settingsSaving = false;
       await loadSettings();
-      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
-      msg("Settings saved. The live runner uses them from its next hourly run.");
-    } catch (e) { msg(e.message, true); }
+      settingsFeedback("Saved ✓ Settings confirmed. The bot uses them from its next run.");
+      button.textContent = "Saved ✓";
+    } catch (e) {
+      settingsDirty = true;
+      settingsFeedback(`Save not confirmed: ${e.message}. Your changes are still here; try Save again.`, true);
+      button.textContent = "Retry save";
+    } finally {
+      settingsSaving = false;
+      button.disabled = false;
+      $("#settings-fields").querySelectorAll("input, select").forEach((el) => { el.disabled = false; });
+    }
   }
 
   // ---------------- Status
@@ -333,6 +362,11 @@
     if (b) approve(b.dataset.id, b);
   });
   $("#settings-form").addEventListener("submit", saveSettings);
+  $("#settings-fields").addEventListener("input", () => {
+    settingsDirty = true;
+    settingsFeedback("Unsaved changes — tap Save settings to apply.");
+    $("#settings-save").textContent = "Save settings";
+  });
 
   if (!initData) {
     msg("Open this page from the Telegram bot (Mini App). Direct browser access is not allowed.", true);
