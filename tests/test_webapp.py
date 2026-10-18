@@ -143,6 +143,50 @@ def test_approve_needs_confirm_mode(client):
     assert client.post("/api/entries/5/approve", headers=hdr(make_init_data())).status_code == 409
 
 
+def test_kill_switch_blocks_approval(client):
+    client.store["kill_switch"] = "on"
+    r = client.post("/api/entries/5/approve", headers=hdr(make_init_data()))
+    assert r.status_code == 409 and r.json()["detail"] == "kill switch is on"
+    assert client.calls == []
+
+
+def test_save_whole_settings_form_and_reload(client):
+    headers = hdr(make_init_data())
+    body = client.get("/api/settings", headers=headers).json()
+    schema = client.get("/api/settings/schema", headers=headers).json()["settings"]
+    # The browser sends every field, even when only one alert checkbox changed.
+    for enabled in ("off", "on"):
+        for field in schema:
+            if field["group"] == "Alerts":
+                body[field["name"]] = enabled if field["type"] == "bool" else field["default"]
+        r = client.post("/api/settings", json=body, headers=headers)
+        assert r.status_code == 200, r.text
+        assert r.json() == body
+        assert client.get("/api/settings", headers=headers).json() == body
+
+
+@pytest.mark.parametrize("value", ["-1", "10001", "inf", "-inf", "NaN", "2.5"])
+def test_invalid_flip_age_returns_validation_error(client, value):
+    r = client.post("/api/settings", json={"flip_max_age": value}, headers=hdr(make_init_data()))
+    assert r.status_code == 422
+
+
+def test_every_setting_roundtrips(client):
+    headers = hdr(make_init_data())
+    for field in webapp.S.SCHEMA:
+        values = [field["default"]]
+        if field["type"] == "bool":
+            values = ["off", "on"]
+        elif field["type"] == "choice":
+            values = field["choices"]
+        elif field["type"] in ("int", "float"):
+            values += [str(field["min"]), str(field["max"])]
+        for value in values:
+            r = client.post("/api/settings", json={field["name"]: value}, headers=headers)
+            assert r.status_code == 200, (field["name"], value, r.text)
+            assert r.json()[field["name"]] == webapp.S.clean(field["name"], value)
+
+
 def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
     assert len(stmts) == 11 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:6])

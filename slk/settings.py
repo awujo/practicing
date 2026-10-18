@@ -4,6 +4,7 @@ engine cfg) and the Mini App (validates + renders the Settings form via /api/set
 Dependency-free on purpose (stdlib only): the web app imports it without pandas. Defaults = Kevin's rules and
 must match slk.story.DEFAULT / slk.entry.DEFAULT (tests/test_settings.py checks this).
 """
+import math
 import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -61,7 +62,7 @@ SCHEMA = [
     _s("flip_max_age", "int", "100", "Bias rules",
        "A key level broken by a body close becomes a fresh level on the other side (flip) only if it was drawn at "
        "most this many candles (of its own timeframe) before the break: 100 = about 5 months on D1. 0 = no limit "
-       "(old behaviour: a 2024 EURGBP level crossed many times still counted as fresh)."),
+       "(old behaviour: a 2024 EURGBP level crossed many times still counted as fresh).", min=0, max=10000),
     _s("flip_end", "bool", "on", "Bias rules",
        "Story ends early (ENDED_FLIP) when, on the way to the target, price taps an opposite daily key level, "
        "rejects it with a close the other way AND H4 breaks that level's point B the other way; the opposite "
@@ -225,7 +226,7 @@ def clean(name, value):
             if isinstance(value, bool):
                 raise ValueError("must be a number")
             x = float(str(value).strip())
-            if x != x or (t == "int" and x != int(x)):
+            if not math.isfinite(x) or (t == "int" and x != int(x)):
                 raise ValueError(f"must be {'a whole number' if t == 'int' else 'a number'}")
             if x < s["min"] or x > s["max"]:
                 raise ValueError(f"must be between {s['min']:g} and {s['max']:g}")

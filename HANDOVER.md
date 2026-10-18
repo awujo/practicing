@@ -31,7 +31,8 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-16)
+## Status (2026-10-18)
+- [x] Mini App settings save fixed: flip_max_age now has numeric bounds; all fields and alert toggles covered by API regression tests. Non-finite numeric input returns 422.
 - [x] Repo public as `awujo/practicing`; live run works again (minutes were exhausted). Render: check the repo link
       shows `awujo/practicing`. Back to private on/after Nov 1, then hourly live costs minutes again.
 - [ ] **Entry model re-test** (owner asked): fills/exits on M5 instead of H1 (34% same-H1-bar stops), Kevin's own
@@ -330,3 +331,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Backtest split (target_unswept=off): 1611 such stories (wick took the target between breakout and confirmation).
   target_unswept=on -110R, skip -80R -> new `erl_taken_no_trade` (on): story flag `erl_taken`, live row
   NO_TRADE (reason live.ERL_TAKEN), still alerted as bias with "NO_TRADE: ... late", no entries.
+
+- 2026-10-18: Fixed settings-save HTTP 500: the browser submits all fields, but flip_max_age lacked min/max, causing KeyError during validation even when only alerts changed. Added bounds 0–10000 (0 still means unlimited), rejected non-finite numbers before integer conversion, and added full-form save/reload plus every-setting roundtrip tests. Kill switch verified to remain a string choice (off/on).
