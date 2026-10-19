@@ -143,3 +143,25 @@ def test_real_confirmed_or_ended_event_uses_actual_close():
     rows=live.pair_state('EURUSD',prefix,now,stories,cfg,{})
     events=r.extract(rows,{},now)
     assert any(e['kind']=='CONFIRMED' and e['occurred_at']==now.isoformat() for e in events)
+
+
+def test_daily_and_weekly_freshness_are_independent(tmp_path):
+    f=prices();begin=f.index[0]+pd.Timedelta(hours=1);end=f.index[-1]+pd.Timedelta(hours=1)
+    def state(pair,prefix,now,stories,cfg,memo):
+        out=[]
+        for tf in ('D','W'):
+            x=row('TAPPED' if now==begin else 'CONFIRMED');x['story']=tf
+            x['confirm_time']=None if now==begin else now
+            out.append(x)
+        return out
+    c=r.connect(tmp_path/'ledger.sqlite')
+    r.replay(f,'EURUSD',begin,end,c,'identity',{},state_fn=state,origins=('D','W'))
+    assert c.execute("select count(*) from decisions where policy='fresh_story' and accepted=1").fetchone()[0]==2
+
+
+def test_gap_skipping_is_explicit_and_rebootstraps(tmp_path):
+    f=prices().drop(prices().index[2]);begin=f.index[0]+pd.Timedelta(hours=1);end=f.index[-1]+pd.Timedelta(hours=1)
+    c=r.connect(tmp_path/'ledger.sqlite')
+    status=r.replay(f,'EURUSD',begin,end,c,'identity',{},state_fn=fake_state,skip_recent_gaps=True)
+    assert status=='complete'
+    assert c.execute('select count(*) from skips').fetchone()[0]>0

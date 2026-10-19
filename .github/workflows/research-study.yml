@@ -108,6 +108,9 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
   persist:
+    concurrency:
+      group: slk-research-publication
+      cancel-in-progress: false
     needs: study
     if: ${{ always() && inputs.publish && needs.study.result != 'cancelled' }}
     runs-on: ubuntu-latest

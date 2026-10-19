@@ -5,7 +5,7 @@ import sqlite3
 from .research import digest, encoded, MAX_OUTPUT
 
 
-def publish(path, connection_factory=None):
+def publish(path, connection_factory=None, max_total_bytes=None):
     if Path(path).stat().st_size > MAX_OUTPUT:
         raise ValueError('ledger exceeds 10 MiB')
     local=sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro',uri=True)
@@ -21,6 +21,8 @@ def publish(path, connection_factory=None):
         if 'entry_trials' in tables:
             records.extend(('entry_trials',digest(encoded([eid,variant])),payload)
                            for eid,variant,payload in local.execute('SELECT event_id,variant,payload FROM entry_trials'))
+        if 'scenarios' in tables:
+            records.extend(('scenarios',k,v) for k,v in local.execute('SELECT id,payload FROM scenarios'))
         if 'discovery_findings' in tables:
             records.extend(('discovery',digest(payload.encode()),payload) for k,payload in local.execute('SELECT id,payload FROM discovery_findings'))
         if 'steps' in tables:
@@ -41,9 +43,21 @@ def publish(path, connection_factory=None):
                     payload_sha256 CHAR(64) NOT NULL, payload LONGTEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY(run_id,kind,record_id))''')
+                total_bytes=0
+                if max_total_bytes is not None:
+                    if max_total_bytes<1:raise ValueError('positive research storage budget required')
+                    c.execute('SELECT COALESCE(SUM(OCTET_LENGTH(payload)),0) AS bytes FROM research_records')
+                    total_bytes=int(c.fetchone()['bytes'])
                 for first in range(0,len(records),100):
                     chunk=records[first:first+100]
                     rows=[(identity,kind,rid,digest(payload.encode()),payload) for kind,rid,payload in chunk]
+                    if max_total_bytes is not None:
+                        budget_ids=sorted({rid for _,rid,_ in chunk});budget_marks=','.join(['%s']*len(budget_ids))
+                        c.execute('SELECT kind,record_id,payload_sha256 FROM research_records WHERE run_id=%s AND record_id IN ('+budget_marks+')',(identity,*budget_ids))
+                        existing={(r['kind'],r['record_id']) for r in c.fetchall()}
+                        added=sum(len(payload.encode()) for kind,rid,payload in chunk if (kind,rid) not in existing)
+                        if total_bytes+added>max_total_bytes:raise ValueError('research payload storage budget exhausted')
+                        total_bytes+=added
                     c.executemany('INSERT IGNORE INTO research_records (run_id,kind,record_id,payload_sha256,payload) VALUES (%s,%s,%s,%s,%s)',rows)
                     ids=sorted({rid for _,rid,_ in chunk})
                     marks=','.join(['%s']*len(ids))

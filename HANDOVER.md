@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-19)
+- [x] Expanded research scenarios and full frozen-history workflow implemented: post-stop 24/72h paths, re-entry, old/new native Daily/Weekly stories, confirmation delay, stops/targets/exits/cost/context alternatives. See research/SCENARIOS.md for actual coverage, limits and budgets. No M5 reconstruction/live changes.
 - [x] All 28 FX research pairs completed; full evidence review in research/results/2026-10-19/ANALYSIS.md. 828 events, 200 distinct completed baseline units, 18 new entry confirmations; negative descriptive directional results, all per-pair discovery screens insufficient. No winning policy/live change.
 - [x] Research automatic queue: manually start research-queue.yml to process all 28 FX pairs in batches up to four, two attempts per pair maximum, 150-minute coordinator budget, completion artifact. No AI calls or live strategy changes.
 - [x] Next research phases: manual bounded multi-pair history/replay workflow, lifecycle alternatives, experimental prefix-only entry variants, shallow training-only screening and research_records MySQL persistence. Read research/STATUS.md for scope/limits; no live trading changes, no ANN or validated edge claims.
@@ -367,3 +368,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-19: Added deterministic research queue coordinator and workflow, correlated dispatch IDs, explicit completion tracking and bounded retries. Existing first four-pair run can be adopted. Publication failure leaves pairs unfinished. GitHub Actions minutes apply; no resident AI checker.
 
 - 2026-10-19: Inspected all seven batch artifacts and 28 SQLite ledgers; committed combined analysis, pair table and descriptive JSON. Continuations dominate (154/200 canonical units post-target), H1 entry variants each six closed cases with four ambiguous hourly stop/target bars; no reliable timeframe/policy selection. No extra run dispatched.
+
+- 2026-10-19: Owner authorized adding the scenario catalogue and testing. Added sidecar immutable scenario ledgers, full ~835-day native D/W replay in <=10 windows per pair, bounded two-worker workflow, seven-day compressed archives, research-only publication payload cap and deterministic combined analysis. Independent review corrections tested; full-history results must be checked before conclusions.
+
+- Validation: 80 research tests passed, independent checker completed; real 90-day EURUSD native replay completed in ~41s (189 events), expanded sidecar in ~18s (243 records). Historical full-run completion/results are pending; do not infer all scenarios profitable or every date gap-free.

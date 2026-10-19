@@ -1,3 +1,5 @@
+Expanded full-history/scenario workflow: see [SCENARIOS.md](SCENARIOS.md). The earlier pilot coverage below describes the original 21-day workflow, not the full scenario expansion.
+
 # Research implementation coverage
 
 ## Available now

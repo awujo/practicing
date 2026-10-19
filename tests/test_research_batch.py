@@ -74,3 +74,25 @@ def test_publication_idempotent_research_only(tmp_path):
     assert all('research_records' in sql for sql in remote.c.sql)
     remote.c.data[('a'*64,'events','b'*64)]='tampered'
     with pytest.raises(ValueError,match='conflict'):p.publish(path,lambda:remote)
+
+
+def test_scenario_publication_budget_is_checked_before_inserts(tmp_path):
+    path=tmp_path/'ledger.sqlite';local=r.connect(path)
+    local.execute('INSERT INTO meta VALUES (1,?,?)',('a'*64,'{}'))
+    local.execute('CREATE TABLE scenarios(id TEXT PRIMARY KEY,payload TEXT)')
+    local.execute('INSERT INTO scenarios VALUES(?,?)',('b'*64,'{"outcome":"observed"}'));local.commit();local.close()
+    class BudgetCursor(Cursor):
+        def __init__(self):super().__init__();self.bytes=0
+        def execute(self,sql,args=None):
+            if sql.startswith('INSERT IGNORE') and args[:3] not in self.data:self.bytes+=len(args[4].encode())
+            super().execute(sql,args)
+        def fetchone(self):return {'bytes':self.bytes}
+    remote=Remote();remote.c=BudgetCursor()
+    with pytest.raises(ValueError,match='storage budget'):
+        p.publish(path,lambda:remote,max_total_bytes=1)
+    assert not remote.c.data
+    assert p.publish(path,lambda:remote,max_total_bytes=1000)==3
+    actual=remote.c.bytes
+    assert any(kind=='scenarios' for _,kind,_ in remote.c.data)
+    assert p.publish(path,lambda:remote,max_total_bytes=actual)==3
+    assert remote.c.bytes==actual

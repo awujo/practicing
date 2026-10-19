@@ -73,13 +73,13 @@ def extract(rows, previous, now):
                            'observed_at':now.isoformat(),'row':clean(r),'story_definition':clean(r.get('_story',{})),
                            'already_ended_at_observation':True})
         if r.get('_early'):
-            end=close_time(r['_early']['time'],'H4')
+            end=close_time(r['_early']['time'],'H4' if r['story']=='D' else 'D')
             if end<=now:
                 result.append({'kind':'EXTERNAL_BREAK_PENDING_ORIGIN','story_key':k,'occurred_at':end.isoformat(),
                                'observed_at':now.isoformat(),'row':clean(r)})
         if r['status'] != old['status']:
             when = r.get('confirm_time') if r['status'] == 'CONFIRMED' else r.get('tap_time')
-            tf = 'D'
+            tf = r['story']
             event_time = (live._ts(when) if r['status'] == 'CONFIRMED' else close_time(when, tf)) if when is not None else now
             result.append({'kind': r['status'], 'story_key': k, 'occurred_at': event_time.isoformat(),
                            'observed_at': now.isoformat(), 'row': clean(r),
@@ -88,7 +88,7 @@ def extract(rows, previous, now):
             result.append({'kind':'LINE_END','story_key':k,'occurred_at':now.isoformat(),'observed_at':now.isoformat(),'row':clean(r)})
         seen = {(b['time'], b['level']) for b in live.unpack_breaks(old.get('cont_breaks'))}
         for b in live.unpack_breaks(r.get('cont_breaks')):
-            end = close_time(b['time'], 'H4')
+            end = close_time(b['time'], 'H4' if r['story']=='D' else 'D')
             if (b['time'], b['level']) not in seen and end <= now:
                 result.append({'kind': 'CONTINUATION', 'story_key': k, 'occurred_at': end.isoformat(),
                                'observed_at': now.isoformat(), 'break_level': b['level'], 'row': clean(r)})
@@ -149,7 +149,7 @@ def connect(path):
     return conn
 
 
-def replay(frame, pair, evaluation_start, cutoff, conn, identity, manifest, seconds=600, state_fn=None, cadence="H1"):
+def replay(frame, pair, evaluation_start, cutoff, conn, identity, manifest, seconds=600, state_fn=None, cadence="H1", origins=("D",), skip_recent_gaps=False):
     begun = time.monotonic()
     state_fn = state_fn or live.pair_state
     cfg = dict(DEFAULT)
@@ -175,10 +175,16 @@ def replay(frame, pair, evaluation_start, cutoff, conn, identity, manifest, seco
             return 'budget_exhausted'
         prefix = frame[frame.index + pd.Timedelta(hours=1) <= now]
         # Fail closed after a missing expected market hour: do not let resampling fabricate complete bars.
-        if gaps(prefix, max(frame.index[0], evaluation_start-pd.Timedelta(days=1)), now):
-            return 'missing_market_hours'
-        rows = state_fn(pair, prefix, now, live.state_stories(['D'], cfg), cfg, memo)
-        rows = [r for r in rows if r['story'] == 'D']
+        gap_start=max(frame.index[0], now-pd.Timedelta(days=8)) if skip_recent_gaps else max(frame.index[0], evaluation_start-pd.Timedelta(days=1))
+        if gaps(prefix, gap_start, now):
+            if not skip_recent_gaps:return 'missing_market_hours'
+            with conn:
+                conn.execute('CREATE TABLE IF NOT EXISTS skips(cutoff TEXT PRIMARY KEY,reason TEXT)')
+                conn.execute('INSERT OR IGNORE INTO skips VALUES (?,?)',(now.isoformat(),'missing expected H1 hour within previous eight days'))
+            previous={};memo={};bootstrapped=False
+            continue
+        rows = state_fn(pair, prefix, now, live.state_stories(list(origins), cfg), cfg, memo)
+        rows = [r for r in rows if r['story'] in origins]
         events = extract(rows, previous, now) if bootstrapped else []
         confirmed = [r for r in rows if r.get('confirm_time') and not r.get('no_trade') and not r.get('line_end')
                      and r['status'] in ('CONFIRMED', 'TARGET_HIT', 'CANCELLED')]
@@ -202,7 +208,10 @@ def replay(frame, pair, evaluation_start, cutoff, conn, identity, manifest, seco
                                      'level': event.get('break_level')}))
                 conn.execute('INSERT OR IGNORE INTO events VALUES (?,?)', (eid, encoded(event).decode()))
                 for policy in POLICIES:
-                    conn.execute('INSERT OR IGNORE INTO decisions VALUES (?,?,?)', (eid, policy, int(accepted(event, policy, context))))
+                    tfrows=[r for r in confirmed if r['story']==event['row']['story']]
+                    latest_tf=max(tfrows,key=lambda r:live._ts(r['confirm_time'])) if tfrows else None
+                    tfcontext={'latest_confirmed':key(latest_tf) if latest_tf else None}
+                    conn.execute('INSERT OR IGNORE INTO decisions VALUES (?,?,?)', (eid, policy, int(accepted(event, policy, tfcontext))))
             previous = {key(r): clean(r) for r in rows}
             bootstrapped = True
             conn.execute('DELETE FROM steps')
@@ -245,7 +254,7 @@ def report(conn, frame, cutoff):
                            'Overlapping 24h outcomes; no significance claim', 'Separate experimental entry simulator, no portfolio exposure model or untouched confirmatory holdout']}
 
 
-def run_pair(path, pair, start, end, evaluation_start, out, seconds=600):
+def run_pair(path, pair, start, end, evaluation_start, out, seconds=600, origins=("D",), entry_cap=12, skip_recent_gaps=False, ledger_pages=768):
     start, end, evaluation_start = utc(start), utc(end), utc(evaluation_start)
     if not start + pd.Timedelta(days=365) <= evaluation_start < end or end-start > pd.Timedelta(days=1500) or end-evaluation_start > pd.Timedelta(days=90):
         raise ValueError('need >=365 days warmup, <=1500 total days and <=90 evaluation days')
@@ -258,18 +267,22 @@ def run_pair(path, pair, start, end, evaluation_start, out, seconds=600):
     manifest = {'schema': 1, 'pair': pair, 'source': 'operator-declared ctrader', 'start': start.isoformat(),
                 'end': end.isoformat(), 'evaluation_start': evaluation_start.isoformat(), 'input_sha256': checksum,
                 'code_sha256': code, 'python': __import__('sys').version, 'pandas': pd.__version__, 'numpy':np.__version__,
-                'warmup_days': (evaluation_start-frame.index[0]).total_seconds()/86400, 'actual_first_hour': frame.index[0].isoformat(), 'actual_last_hour': frame.index[-1].isoformat(), 'warmup_rows': int((frame.index<evaluation_start).sum()), 'configuration': clean(DEFAULT), 'policies': list(POLICIES), 'decision_cadence': 'H4 closes', 'historical_gap_count': len(gaps(frame,frame.index[0],end)), 'baseline': 'pair_state event eligibility; code defaults, not DB settings'}
+                'warmup_days': (evaluation_start-frame.index[0]).total_seconds()/86400, 'actual_first_hour': frame.index[0].isoformat(), 'actual_last_hour': frame.index[-1].isoformat(), 'warmup_rows': int((frame.index<evaluation_start).sum()), 'configuration': clean(DEFAULT), 'policies': list(POLICIES), 'decision_cadence': 'H4 closes', 'origins':list(origins), 'entry_cap':entry_cap, 'skip_recent_gaps':skip_recent_gaps, 'ledger_pages':ledger_pages, 'historical_gap_count': len(gaps(frame,frame.index[0],end)), 'baseline': 'pair_state event eligibility; code defaults, not DB settings'}
     root = Path(out); root.mkdir(parents=True, exist_ok=True)
     conn = connect(root / 'ledger.sqlite')
+    if not 768<=ledger_pages<=2048:raise ValueError('ledger pages outside 768..2048')
+    conn.execute('PRAGMA max_page_count='+str(ledger_pages))
     try:
         begun=time.monotonic()
-        status = replay(frame, pair, evaluation_start, end, conn, digest(encoded(manifest)), manifest, seconds, cadence='H4')
+        status = replay(frame, pair, evaluation_start, end, conn, digest(encoded(manifest)), manifest, seconds, cadence='H4', origins=origins, skip_recent_gaps=skip_recent_gaps)
         result = report(conn, frame, end) | {'status': status, 'manifest': manifest}
         from .research_entries import evaluate
         from .research_discovery import screen
         remaining=max(0,seconds-(time.monotonic()-begun))
-        result['entry_study']=evaluate(conn,frame,end,remaining) if status=='complete' else {'status':'replay_incomplete'}
+        result['entry_study']=evaluate(conn,frame,end,remaining,cap=entry_cap) if status=='complete' else {'status':'replay_incomplete'}
         result['discovery']=screen(conn,evaluation_start,end)
+        tables={row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        result['skipped_h4_cutoffs']=conn.execute('SELECT count(*) FROM skips').fetchone()[0] if 'skips' in tables else 0
         if result['entry_study']['status']=='budget_exhausted':result['status']='budget_exhausted'
 
         atomic_json(root / 'report.json', result, root)

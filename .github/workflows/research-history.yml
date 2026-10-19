@@ -1,0 +1,140 @@
+name: SLK expanded historical scenarios
+on:
+  workflow_dispatch:
+    inputs:
+      pairs: {description: "CSV from the 28 frozen pairs; empty = all", default: ""}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: slk-research-history
+  cancel-in-progress: false
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      pairs: ${{ steps.plan.outputs.pairs }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - id: plan
+        env:
+          PAIRS_REQUESTED: ${{ inputs.pairs }}
+        run: |
+          python - <<'PY'
+          import json, os, ast
+          from pathlib import Path
+          tree=ast.parse(Path('slk/backtest.py').read_text())
+          node=next(n.value for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='PAIRS' for t in n.targets))
+          pairs=ast.literal_eval(node.func.value).split()
+          wanted=[p.strip().upper() for p in os.environ['PAIRS_REQUESTED'].split(',') if p.strip()] or pairs
+          if len(wanted)!=len(set(wanted)) or not set(wanted)<=set(pairs):raise ValueError('Choose distinct frozen FX pairs')
+          runs=[39255962764,39261223754,39261650880,39262056504,39262526990,39262964414,39263389187]
+          jobs=[{'pair':p,'source':str(runs[pairs.index(p)//4])} for p in wanted]
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('matrix='+json.dumps({'include':jobs})+'\n');f.write('pairs='+json.dumps(wanted)+'\n')
+          PY
+  study:
+    needs: plan
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 175
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas==2.2.3 pytest==8.3.5
+      - run: python -m pytest -q tests/test_research_scenarios.py tests/test_research_replay.py tests/test_research_entries.py tests/test_research_history.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: research-input-${{ matrix.source }}
+          run-id: ${{ matrix.source }}
+          github-token: ${{ github.token }}
+          path: research-input
+      - name: Native history replay and expanded scenario studies
+        env:
+          STUDY_PAIR: ${{ matrix.pair }}
+        run: python -m slk.research_history --input research-input --pair "$STUDY_PAIR" --out "history-results/$STUDY_PAIR"
+      - name: Compress bounded per-pair archive
+        if: always()
+        env:
+          STUDY_PAIR: ${{ matrix.pair }}
+        run: |
+          python - <<'PY'
+          import os,zipfile
+          from pathlib import Path
+          pair=os.environ['STUDY_PAIR'];root=Path('history-results')/pair
+          if not root.exists():raise SystemExit('No pair output')
+          with zipfile.ZipFile(pair+'.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for p in sorted(root.rglob('*')):
+                  if p.is_file():z.write(p,p.relative_to('history-results'))
+          if Path(pair+'.zip').stat().st_size>8*1024**2:
+              Path(pair+'.zip').unlink();raise SystemExit('Compressed pair output exceeded 8 MiB; not uploading')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: history-${{ matrix.pair }}-${{ github.run_id }}
+          path: ${{ matrix.pair }}.zip
+          retention-days: 7
+  persist:
+    concurrency:
+      group: slk-research-publication
+      cancel-in-progress: false
+    needs: [plan, study]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pymysql pandas==2.2.3
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: history-*-${{ github.run_id }}
+          path: history-results
+          merge-multiple: true
+      - name: Publish research-only ledgers and consolidate coverage
+        env:
+          EXPECTED_PAIRS: ${{ needs.plan.outputs.pairs }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from slk.research_publish import publish
+          import zipfile
+          for archive in Path('history-results').glob('*.zip'):
+              with zipfile.ZipFile(archive) as z:
+                  for info in z.infolist():
+                      if not (Path('history-results')/info.filename).resolve().is_relative_to(Path('history-results').resolve()):raise ValueError('unsafe archive')
+                  z.extractall('history-results')
+          rows=[];errors=[]
+          for p in sorted(Path('history-results').rglob('history-report.json')):rows.append(json.loads(p.read_text()))
+          for p in sorted(Path('history-results').rglob('ledger.sqlite')):
+              try:publish(p,max_total_bytes=128*1024**2)
+              except Exception as e:errors.append({'ledger':str(p),'error_type':type(e).__name__})
+          expected=json.loads(os.environ['EXPECTED_PAIRS'])
+          actual=[r['pair'] for r in rows]
+          missing=sorted(set(expected)-set(actual));unexpected=sorted(set(actual)-set(expected))
+          from slk.research_scenarios import aggregate
+          summary={'pairs':rows,'publication_errors':errors,'missing_pairs':missing,'unexpected_pairs':unexpected, 'analysis':aggregate('history-results')}
+          Path('history-summary.json').write_text(json.dumps(summary,indent=2))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Expanded research coverage\n'+json.dumps(summary,indent=2)+'\n')
+          if missing or unexpected or len(actual)!=len(set(actual)) or not rows or errors or any(r['status']!='complete' for r in rows):raise SystemExit('Partial research coverage: see summary artifact')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: history-summary-${{ github.run_id }}
+          path: history-summary.json
+          retention-days: 30

@@ -33,9 +33,9 @@ def find_entries(pair, prefix, stories, cfg, story_cfg, sim=False):
         # The caller enforces observed lifecycle termination and the fixed 24-hour search cap.
         horizon=engine._t(now+pd.Timedelta(hours=24))
         candidates=[]
-        for tf in config['entry_tfs']['D']:
+        for tf in config['entry_tfs'][story.get('story','D')]:
             for model in config.get('entry_models',engine.MODELS):
-                found,_=(engine._candidates(px,tf,story,sell,engine._t(story['breakout_time']),engine._t(story['confirm_time']),horizon)
+                found,_=(engine._candidates(px,tf,story,sell,engine._t(story.get('breakout_time') or story['confirm_time']),engine._t(story['confirm_time']),horizon)
                          if model=='continuation' else engine._qmr_candidates(px,tf,story,sell,engine._t(story['confirm_time']),horizon))
                 candidates.extend(found)
         if not candidates:
@@ -91,12 +91,13 @@ def execution(signal, frame, known, cutoff, spread, slippage, cancel_at=None):
             'execution':'H1 conservative; assumed fixed spread/slippage; zero commission'}
 
 
-def evaluate(conn, frame, cutoff, seconds):
+def evaluate(conn, frame, cutoff, seconds, cap=12):
+    if not 1<=cap<=128:raise ValueError("entry cap must be 1..128")
     begun=time.monotonic()
     conn.execute('CREATE TABLE IF NOT EXISTS entry_trials (event_id TEXT, variant TEXT, payload TEXT, PRIMARY KEY(event_id,variant))')
     signals=[(i,json.loads(v)) for i,v in conn.execute('SELECT id,payload FROM events ORDER BY json_extract(payload,\'$.observed_at\'),id')
              if json.loads(v)['kind']=='CONFIRMED' and json.loads(v).get('story_definition') and not json.loads(v)['row'].get('no_trade') and not json.loads(v).get('already_ended_at_observation')]
-    selected=signals[:12]  # Explicit chronological cap; report unevaluated remainder.
+    selected=signals[:cap]  # Explicit chronological cap; report unevaluated remainder.
     for eid,event in selected:
         known=utc(event['observed_at']); pair=event['pair'];raw=event['story_definition']
         lifecycle=[json.loads(payload) for payload, in conn.execute('SELECT payload FROM events')]
@@ -106,19 +107,19 @@ def evaluate(conn, frame, cutoff, seconds):
         cancel_at=min(endings) if endings else None
         for variant,(tf,stop_at) in VARIANTS.items():
             if conn.execute('SELECT 1 FROM entry_trials WHERE event_id=? AND variant=?',(eid,variant)).fetchone():continue
-            if time.monotonic()-begun>=seconds:return {'status':'budget_exhausted','eligible_confirmations':len(signals),'cap':12}
+            if time.monotonic()-begun>=seconds:return {'status':'budget_exhausted','eligible_confirmations':len(signals),'cap':cap}
             search_end=known+pd.Timedelta(hours=24)
             result={'status':'censored_setup_search'} if cutoff<search_end or gaps(frame,known,min(search_end,cutoff)) else {'status':'no_pending_setup_in_24h'}
             # An entry must be observable while pending. Backdated already-filled setups are never admitted.
             for decision in pd.date_range(known, min(known+pd.Timedelta(hours=24),cutoff),freq='h'):
                 if cancel_at is not None and decision>=cancel_at:
                     result={'status':'cancelled_before_setup'};break
-                if time.monotonic()-begun>=seconds:return {'status':'budget_exhausted','eligible_confirmations':len(signals),'cap':12}
+                if time.monotonic()-begun>=seconds:return {'status':'budget_exhausted','eligible_confirmations':len(signals),'cap':cap}
                 if close_time(decision-pd.Timedelta(hours=1),tf)!=decision:continue
                 prefix=frame[(frame.index>=known-pd.Timedelta(days=90))&(frame.index+pd.Timedelta(hours=1)<=decision)]
                 if prefix.empty or gaps(prefix,max(known-pd.Timedelta(days=1),prefix.index[0]),decision):continue
                 # decision is explicitly a tf close; no forming bin is admitted.
-                cfg={**DEFAULT,'entry_tfs':{'D':(tf,)},'stop_at':stop_at,'alignment':'off'}
+                cfg={**DEFAULT,'entry_tfs':{raw.get('story','D'):(tf,)},'stop_at':stop_at,'alignment':'off'}
                 found=find_entries(pair,prefix,[raw],cfg,story_cfg=event['configuration'],sim=False)[0]
                 if found.get('status')!='PENDING':continue
                 formed=live._ts(found['created_time'])
@@ -135,6 +136,6 @@ def evaluate(conn, frame, cutoff, seconds):
         closed=[v['result_R'] for v in values if v['status']=='closed']
         counts[variant]={'trials':len(values),'closed':len(closed),'censored':sum(v['status'].startswith('censored') for v in values),
                          'mean_R':sum(closed)/len(closed) if closed else None}
-    return {'status':'complete' if len(signals)<=12 else 'confirmation_cap_reached','eligible_confirmations':len(signals),
+    return {'status':'complete' if len(signals)<=cap else 'confirmation_cap_reached','eligible_confirmations':len(signals),
             'evaluated_confirmations':len(selected),'variants':counts,
             'conclusion':'Experimental pending-entry comparison. Not live-policy replication, portfolio performance or validated edge.'}
