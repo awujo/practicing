@@ -118,3 +118,22 @@ def test_erl_taken_is_bias_but_no_trade():
     assert live.filter_alerts([("CONFIRMED", r)]) == [("CONFIRMED", r)]  # still announced as bias
     assert "selling now is late" in live.format_alert("CONFIRMED", r)
     assert live.entry_rows("EURCHF", None, [{**r, "_story": {}}], {}, finder=lambda *a, **k: 1 / 0) == []
+
+
+def test_pair_state_excludes_unclosed_continuation_candle(monkeypatch):
+    now = pd.Timestamp("2026-10-19 08:00", tz="UTC")  # 09 WAT, before the 10 WAT H4 close
+    idx = pd.date_range(pd.Timestamp("2026-09-01", tz="UTC"), now - pd.Timedelta(hours=1), freq="h")
+    h1 = pd.DataFrame({k: 0.93 for k in ["open", "high", "low", "close"]}, index=idx)
+    story = {"pair": "EURCHF", "story": "D", "side": "SELL", "kevin_outcome": "target",
+             "level": 0.94, "B": 0.935, "target": 0.925, "tap_time": ROW["tap_time"],
+             "confirm_time": ROW["confirm_time"], "breakout_time": ROW["breakout_time"]}
+    monkeypatch.setattr(live, "engine_rows", lambda *a: ([story], None))
+    seen = []
+    def capture(r, cb, cfg, until):
+        seen.extend(cb["start"])
+        return []
+    monkeypatch.setattr(live, "continuation_breaks", capture)
+    live.pair_state("EURCHF", h1, now, ["D"], DEFAULT)
+    assert seen
+    assert max(seen) == pd.Timestamp("2026-10-19 01:00", tz="UTC")
+    assert all(live.candle_end(t, "H4") <= now for t in seen)

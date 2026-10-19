@@ -76,7 +76,7 @@ def drop_forming(h1, tf, now):
         return h1
     keys = _key(h1.index, tf)
     last = keys[-1]
-    now_shift = _key(pd.DatetimeIndex([now]), "H4")[0] + (now - now.floor("4h"))  # NY-17:00-shifted clock
+    now_shift = now.tz_convert("America/New_York").tz_localize(None) + pd.Timedelta(hours=7)
     if tf == "M":
         end = last + pd.offsets.MonthBegin(1)
     else:
@@ -216,7 +216,7 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
                                                                   "ENDED_FLIP", "CANCELLED") \
                     and now - _ts(r["breakout_time"]) <= timedelta(days=CONT_DAYS):
                 if cb is None:
-                    cb = resample(h1, STORIES[st][1])
+                    cb = resample(drop_forming(h1, STORIES[st][1], now), STORIES[st][1])
                 until = s.get("end_time")
                 if r["status"] in AFTER_TARGET and r.get("confirm_time"):
                     # owner 2026-10-16: after the target the question is what comes next, the story line ended

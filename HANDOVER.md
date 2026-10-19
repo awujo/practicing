@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-19)
+- [x] Continuation alerts exclude forming confirmation-timeframe candles (closed H1 does not imply closed H4). Candle completion clock now uses actual New York shifted wall time, including DST.
 - [x] Missing cTrader symbols no longer trigger multi-year fallback rebuilds in hourly jobs. Interrupted jobs are finalized by workflow cleanup; old unfinished runs display interrupted after 30 minutes. Runner step has 15-minute timeout inside 20-minute job budget; failure alerts include cancellations.
 - [x] Mini App settings save fixed: flip_max_age now has numeric bounds; all fields and alert toggles covered by API regression tests. Non-finite numeric input returns 422.
 - [x] Repo public as `awujo/practicing`; live run works again (minutes were exhausted). Render: check the repo link
@@ -108,6 +109,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 4. Entry alerts live → then demo trading with kill switch + confirm button.
 
 ## Log
+
+### 2026-10-19 — continuation alert before candle close
+- Owner received a continuation at 09 WAT describing a 10 WAT H4 close. Filter continuation inputs by the confirmation timeframe, and correct drop_forming shifted-clock calculation. Regression coverage checks before/exactly at/after H4 close in summer and winter, plus pair_state integration. Validation: 36 live/continuation/efficiency tests passed.
 
 ### 2026-10-19 — hourly runs timing out
 - Actions logs: NAS100/SPX500 unavailable on account, Dukascopy history rebuild exceeded 20 minutes before engine/alerts. Skip unavailable symbols with explicit pair errors, continue supported pairs. Workflow records interrupted run IDs and alerts on cancellation; UI labels stale runs interrupted. Validation: 67 tests passed (cTrader store, efficiency, webapp, live); JS syntax checked.

@@ -4,6 +4,7 @@ import struct
 from datetime import datetime, timedelta
 
 import pandas as pd
+import pytest
 
 from slk import data
 from slk.candles import resample
@@ -271,3 +272,18 @@ def test_main_flow_with_fake_db(monkeypatch, capsys, tmp_path):
     assert {k[0] for k in store} == {"EURUSD", "GBPJPY"}
     n, m = len(store), len(sent)
     assert live.main([]) == 0 and len(store) == n and len(sent) == m   # second run: nothing new, nothing re-alerted
+
+
+@pytest.mark.parametrize("date", ["2026-10-19", "2026-01-19"])
+def test_h4_only_available_at_actual_close(date):
+    # New York 17:00 alignment: summer closes at 10 WAT, winter at 11 WAT.
+    close = pd.Timestamp(date + " 09:00", tz="UTC")
+    if "01-19" in date:
+        close += pd.Timedelta(hours=1)
+    h = walk(24 * 60)
+    h.index = pd.date_range(end=close - pd.Timedelta(hours=1), periods=len(h), freq="h", tz="UTC")
+    for delta in [-60, -1, 0, 60]:
+        now = close + pd.Timedelta(seconds=delta)
+        cb = resample(drop_forming(h, "H4", now), "H4")
+        assert all(live_mod.candle_end(t, "H4") <= now for t in cb["start"])
+        assert (cb["start"].iloc[-1] == close - pd.Timedelta(hours=4)) == (delta >= 0)
