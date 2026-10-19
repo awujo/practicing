@@ -528,9 +528,15 @@ def update_all(pairs, now=None, days=30, threads=8, root=None, source=None):
         pre = _ctrader_each(pairs, lambda p, feed: update(p, now, days=days, root=root, source="ctrader", feed=feed))
         if not pre:
             return {}
+        # An unavailable broker symbol cannot be repaired by rebuilding years of
+        # another feed during an hourly run. Report it and continue the other pairs.
+        unavailable = {p: e for p, e in pre.items() if "not found on this account" in e}
+        pre = {p: e for p, e in pre.items() if p not in unavailable}
+        if not pre:
+            return unavailable
         _fallback_note(pre)
         pairs = list(pre)
-    errors = {}
+    errors = dict(unavailable) if src == "ctrader" else {}
 
     def one(pair):
         try:

@@ -1224,6 +1224,9 @@ def main(argv=None):
     event = os.environ.get("GITHUB_EVENT_NAME", "manual")
     planned = planned_time(started, event)
     run_id = db.start_run(JOB, naive(planned), naive(started))
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write(f"run_id={run_id}\n")
     print(f"run {run_id}: planned {planned:%H:%M} started {started:%H:%M:%S} UTC "
           f"(late {int((started - planned).total_seconds() // 60)} min)", flush=True)
 

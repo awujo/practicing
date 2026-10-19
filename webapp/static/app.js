@@ -328,11 +328,14 @@
   async function loadRuns() {
     const rows = await api("/api/runs");
     $("#runs-list").innerHTML = rows.length ? rows.map((r) => {
-      const okc = r.ok === null || r.ok === undefined ? "" : r.ok ? "good" : "bad";
+      const startText = String(r.started_at);
+      const startMs = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(startText) ? startText : startText + "Z");
+      const stale = r.ok == null && Number.isFinite(startMs) && Date.now() - startMs > 30 * 60 * 1000;
+      const okc = stale ? "bad" : r.ok === null || r.ok === undefined ? "" : r.ok ? "good" : "bad";
       const late = r.delay_s !== null && r.delay_s > 300 ? "late" : "";
       return `<div class="card">
         <div class="top"><span class="title">${esc(r.job)}</span>
-          <span class="tag ${okc}">${r.ok === null || r.ok === undefined ? "running" : r.ok ? "ok" : "failed"}</span></div>
+          <span class="tag ${okc}">${r.ok === null || r.ok === undefined ? (stale ? "interrupted" : "running") : r.ok ? "ok" : "failed"}</span></div>
         <div class="grid">
           ${field("Planned", dt(r.planned_at))}${field("Started", dt(r.started_at))}
           <div><span>Delay</span><b class="${late}">${esc(dur(r.delay_s))}</b></div>

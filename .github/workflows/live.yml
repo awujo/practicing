@@ -96,11 +96,24 @@ jobs:
               sys.exit(1)
           PY
       - name: Run live bias
+        id: runner
+        timeout-minutes: 15
         if: steps.s.outputs.ok == 'true'
         env:
           PAIRS_IN: ${{ inputs.pairs }}
         run: |
           if [ -n "$PAIRS_IN" ]; then python -m slk.live --pairs "$PAIRS_IN"; else python -m slk.live; fi
+      - name: Record interrupted run
+        if: always() && steps.runner.outputs.run_id != ''
+        env:
+          RUN_ID: ${{ steps.runner.outputs.run_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from slk import db
+          db.execute("UPDATE runs SET finished_at=UTC_TIMESTAMP(), ok=0, note=%s WHERE id=%s AND finished_at IS NULL",
+                     ("Runner interrupted or timed out; see GitHub Actions logs", int(os.environ["RUN_ID"])))
+          PY
       - name: Is the candle store complete?
         id: chk
         if: always()
@@ -113,12 +126,12 @@ jobs:
           path: data/store
           key: candles-v3-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Telegram alert on failure
-        if: failure()
+        if: failure() || cancelled()
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           [ -z "$TELEGRAM_BOT_TOKEN" ] && exit 0
           curl -sS -o /dev/null -w "telegram http %{http_code}\n" --max-time 20 \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=SLK live run FAILED $(date -u '+%Y-%m-%d %H:%M') UTC (${GITHUB_EVENT_NAME}). Log: ${RUN_URL}" \
+            --data-urlencode "text=SLK live run FAILED / INTERRUPTED $(date -u '+%Y-%m-%d %H:%M') UTC (${GITHUB_EVENT_NAME}). Log: ${RUN_URL}" \
             "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" || true

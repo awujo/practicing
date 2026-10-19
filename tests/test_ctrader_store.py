@@ -345,3 +345,17 @@ def test_ctrader_bars_build_17_ny_daily_candles():
     assert set(starts.dt.dayofweek) <= {6, 0, 1, 2, 3}  # Sun..Thu 17:00 NY opens: Mon..Fri daily candles, no weekend
     w = resample(h1, "W")
     assert len(w) == 3
+
+
+def test_unavailable_symbol_does_not_rebuild_fallback(monkeypatch):
+    from slk import store
+    monkeypatch.setattr(store, '_ctrader_each', lambda pairs, fn: {
+        'NAS100': "cTrader: KeyError: 'symbol NAS100 not found on this account'",
+        'GBPUSD': 'cTrader: connection failed',
+    })
+    calls = []
+    monkeypatch.setattr(store, 'update', lambda pair, *args, **kwargs: calls.append(pair))
+    errors = store.update_all(['EURUSD', 'NAS100', 'GBPUSD'], source='ctrader')
+    assert calls == ['GBPUSD']
+    assert list(errors) == ['NAS100']
+    assert 'not found on this account' in errors['NAS100']

@@ -31,7 +31,8 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-18)
+## Status (2026-10-19)
+- [x] Missing cTrader symbols no longer trigger multi-year fallback rebuilds in hourly jobs. Interrupted jobs are finalized by workflow cleanup; old unfinished runs display interrupted after 30 minutes. Runner step has 15-minute timeout inside 20-minute job budget; failure alerts include cancellations.
 - [x] Mini App settings save fixed: flip_max_age now has numeric bounds; all fields and alert toggles covered by API regression tests. Non-finite numeric input returns 422.
 - [x] Repo public as `awujo/practicing`; live run works again (minutes were exhausted). Render: check the repo link
       shows `awujo/practicing`. Back to private on/after Nov 1, then hourly live costs minutes again.
@@ -107,6 +108,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 4. Entry alerts live → then demo trading with kill switch + confirm button.
 
 ## Log
+
+### 2026-10-19 — hourly runs timing out
+- Actions logs: NAS100/SPX500 unavailable on account, Dukascopy history rebuild exceeded 20 minutes before engine/alerts. Skip unavailable symbols with explicit pair errors, continue supported pairs. Workflow records interrupted run IDs and alerts on cancellation; UI labels stale runs interrupted. Validation: 67 tests passed (cTrader store, efficiency, webapp, live); JS syntax checked.
+
 - 2026-10-18: Telegram wording only: SELL rejection closes back below the level, BUY above (headline and story step). PLAN distinguishes waiting for the lower-TF external break from waiting for the origin-TF confirmation close. Existing sections and strategy rules unchanged.
 - 2026-10-18: Settings save feedback moved beside sticky Save button (saving/saved/error/unsaved states). Disable native form validation (server validates all fields), retain unsaved edits across tabs, verify saved values with a fresh GET, and version static asset URLs to refresh Telegram caches.
 - 2026-10-18: Owner still saw settings-save 500 at slk-backtest-viewer.onrender.com after 638db9c. First fix changed only shared slk code/tests/docs; Render root is webapp, so auto-deploy may have skipped it. Added public /version with RENDER_GIT_COMMIT and settings validation marker to identify deployed code and trigger a webapp deploy. /healthz unchanged.
