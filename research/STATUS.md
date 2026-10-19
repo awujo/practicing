@@ -32,3 +32,7 @@ To resume a partial study, supply `resume_run_id` from a previous study run. It 
 Full live-policy reconciliation/standing-bias replication; deeper lifecycle transitions and structural-renewal rules; W/M storyline experiments; complete multi-year forward folds; calibrated costs/M5 execution; independent portfolio risk evaluation; multiple-comparison-adjusted confirmatory tests; automatic database retention/backups; larger data-driven discovery and ANN models. All live rule promotion remains under owner control.
 
 Publication inserts/verifies records in batches of 100 to limit database round trips. Pending detection and execution both use the same assumed 1-pip spread.
+
+## Verification
+
+GitHub run [39251591881](https://github.com/awujo/practicing/actions/runs/39251591881) passed all three jobs, including 55 focused tests, frozen-input restoration and MySQL publication. Generated reports were inspected: USDCHF 45 events/90 decision points, GBPCHF 36/90, one eligible confirmation and four entry trials per pair. Shallow discovery reported insufficient data and selected no rule. This verifies operation on two pairs; it does not mean all 28 pairs or all planned studies have completed.

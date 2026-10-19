@@ -112,6 +112,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 
 ## Log
 
+### 2026-10-19 — next-phase research verified on GitHub
+- Corrected run 39251591881 succeeded end to end: frozen input restore, 55 tests, two-pair replay, entry experiments, artifacts and batched MySQL publication (575 records). Reports inspected: USDCHF 45 events and GBPCHF 36 over 90 H4 decision points each; one eligible confirmation each, four entry variants each. Discovery returned insufficient_data (8/11 baseline development units, below 30), no selected rule. These small exploratory results do not establish an edge. Run URL: https://github.com/awujo/practicing/actions/runs/39251591881 .
+
 ### 2026-10-19 — research pending adapter and bounded publication
 - Initial real two-pair run 39250967333 succeeded: USDCHF 45 events/90 H4 observations, GBPCHF 36/90; 575 research records published. Follow-up replaces the full-history finder terminal-horizon assumption with a prefix-only prospective pending adapter; a real pattern fixture confirms pending detection before retest, with consistent 1-pip ask/bid treatment. Publication batches 100 records with immutable hash verification. Fresh replay can reuse frozen inputs after code changes without reusing incompatible ledgers.
 
