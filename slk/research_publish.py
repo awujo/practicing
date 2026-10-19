@@ -41,13 +41,15 @@ def publish(path, connection_factory=None):
                     payload_sha256 CHAR(64) NOT NULL, payload LONGTEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY(run_id,kind,record_id))''')
-                for kind,rid,payload in records:
-                    hashed=digest(payload.encode())
-                    c.execute('INSERT IGNORE INTO research_records (run_id,kind,record_id,payload_sha256,payload) VALUES (%s,%s,%s,%s,%s)',
-                              (identity,kind,rid,hashed,payload))
-                    c.execute('SELECT payload_sha256 FROM research_records WHERE run_id=%s AND kind=%s AND record_id=%s',(identity,kind,rid))
-                    got=c.fetchone()
-                    if got['payload_sha256']!=hashed:
+                for first in range(0,len(records),100):
+                    chunk=records[first:first+100]
+                    rows=[(identity,kind,rid,digest(payload.encode()),payload) for kind,rid,payload in chunk]
+                    c.executemany('INSERT IGNORE INTO research_records (run_id,kind,record_id,payload_sha256,payload) VALUES (%s,%s,%s,%s,%s)',rows)
+                    ids=sorted({rid for _,rid,_ in chunk})
+                    marks=','.join(['%s']*len(ids))
+                    c.execute('SELECT kind,record_id,payload_sha256 FROM research_records WHERE run_id=%s AND record_id IN ('+marks+')',(identity,*ids))
+                    hashes={(row['kind'],row['record_id']):row['payload_sha256'] for row in c.fetchall()}
+                    if any(hashes.get((kind,rid))!=digest(payload.encode()) for kind,rid,payload in chunk):
                         raise ValueError('immutable research record conflict')
             return len(records)
         finally:remote.close()

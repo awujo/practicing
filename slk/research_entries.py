@@ -4,13 +4,47 @@ import time
 
 import pandas as pd
 from . import live
-from .entry import DEFAULT, find_entries
+from .entry import DEFAULT
+from . import entry as engine
+import numpy as np
 from .instruments import pip
 from .research import encoded
 from .research_replay import gaps, close_time, utc
 
 VARIANTS = {'H4_zone':('H4','zone'), 'H2_zone':('H2','zone'),
             'H1_zone':('H1','zone'), 'H1_rejection':('H1','rejection')}
+
+
+
+def find_entries(pair, prefix, stories, cfg, story_cfg, sim=False):
+    """Research adapter: existing patterns, explicit prospective search horizon.
+
+    The full-history entry finder treats the end of its input as a terminal horizon;
+    that is not suitable for observing still-pending orders in a prefix replay.
+    """
+    config={**DEFAULT,**cfg,'spread_pips':1.,'story_cfg':story_cfg}
+    px=engine._Pair(pair,prefix,config)
+    now=prefix.index[-1]+pd.Timedelta(hours=1)
+    out=[]
+    for story in stories:
+        if pair in config['avoid_pairs']:
+            out.append({'status':'SKIPPED'});continue
+        sell=story['side']=='SELL'
+        # The caller enforces observed lifecycle termination and the fixed 24-hour search cap.
+        horizon=engine._t(now+pd.Timedelta(hours=24))
+        candidates=[]
+        for tf in config['entry_tfs']['D']:
+            for model in config.get('entry_models',engine.MODELS):
+                found,_=(engine._candidates(px,tf,story,sell,engine._t(story['breakout_time']),engine._t(story['confirm_time']),horizon)
+                         if model=='continuation' else engine._qmr_candidates(px,tf,story,sell,engine._t(story['confirm_time']),horizon))
+                candidates.extend(found)
+        if not candidates:
+            out.append({'status':'NO_SETUP'});continue
+        chosen,fill=engine._walk(px,candidates,sell,horizon)
+        pending=fill is None and min(chosen['expires'],horizon)>px.h1['end'][-1]
+        out.append({**chosen,'side':story['side'],'status':'PENDING' if pending else 'TRIGGERED' if fill is not None else 'MISSED',
+                    'created_time':engine._s(chosen['active'])})
+    return out
 
 
 def execution(signal, frame, known, cutoff, spread, slippage, cancel_at=None):

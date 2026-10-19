@@ -106,3 +106,34 @@ def test_story_end_prevents_later_setup_search(tmp_path,monkeypatch):
     e.evaluate(c,f,f.index[-1]+pd.Timedelta(hours=1),10)
     assert {json.loads(x[0])['status'] for x in c.execute('SELECT payload FROM entry_trials')}=={'cancelled_before_setup'}
     c.close()
+
+
+def test_actual_pattern_pending_without_future_candles():
+    from tests.test_entry import scenario,story_row,H1ONLY
+    from slk.story import DEFAULT as STORY_DEFAULT
+    from slk.entry import DEFAULT as ENTRY_DEFAULT
+    full=scenario(retest=True)
+    prefix=full.iloc[:15]  # Pattern just closed, retest has not happened.
+    story=story_row(full)
+    cfg={**ENTRY_DEFAULT,**H1ONLY}
+    result=e.find_entries('EURUSD',prefix,[story],cfg,STORY_DEFAULT,False)[0]
+    assert result['status']=='PENDING'
+    assert r.live._ts(result['created_time'])<=prefix.index[-1]+pd.Timedelta(hours=1)
+    # Future data does not enter prefix detection.
+    assert e.find_entries('EURUSD',full.iloc[:15],[story],cfg,STORY_DEFAULT,False)[0]['entry']==result['entry']
+
+
+def test_buy_bid_touch_does_not_fill_ask_limit():
+    from tests.test_entry import scenario,story_row,H1ONLY
+    from slk.story import DEFAULT as STORY_DEFAULT
+    from slk.entry import DEFAULT as ENTRY_DEFAULT
+    original=scenario(retest=True);f=original.copy()
+    f['open']=2.2-original.open;f['close']=2.2-original.close
+    f['high']=2.2-original.low;f['low']=2.2-original.high
+    story=story_row(f,side='BUY',level=1.,target=1.12)
+    cfg={**ENTRY_DEFAULT,**H1ONLY,'entry_models':['continuation']}
+    pending=e.find_entries('EURUSD',f.iloc[:15],[story],cfg,STORY_DEFAULT)[0]
+    assert pending['status']=='PENDING'
+    price=pending['entry'];prefix=f.iloc[:16].copy()
+    prefix.loc[prefix.index[-1],['open','high','low','close']]=[price+.0002,price+.0005,price-.00005,price+.0002]
+    assert e.find_entries('EURUSD',prefix,[story],cfg,STORY_DEFAULT)[0]['status']=='PENDING'

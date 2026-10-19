@@ -49,7 +49,11 @@ class Cursor:
         self.sql.append(sql)
         if sql.startswith('INSERT IGNORE'):self.data.setdefault(args[:3],args[3])
         if sql.startswith('SELECT'):self.selected=args
-    def fetchone(self):return {'payload_sha256':self.data[self.selected]}
+    def executemany(self,sql,rows):
+        for row in rows:self.execute(sql,row)
+    def fetchall(self):
+        run,*ids=self.selected
+        return [{'kind':kind,'record_id':rid,'payload_sha256':v} for (runid,kind,rid),v in self.data.items() if runid==run and rid in ids]
 
 
 class Remote:

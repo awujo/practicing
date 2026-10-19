@@ -112,9 +112,12 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 
 ## Log
 
+### 2026-10-19 — research pending adapter and bounded publication
+- Initial real two-pair run 39250967333 succeeded: USDCHF 45 events/90 H4 observations, GBPCHF 36/90; 575 research records published. Follow-up replaces the full-history finder terminal-horizon assumption with a prefix-only prospective pending adapter; a real pattern fixture confirms pending detection before retest, with consistent 1-pip ask/bid treatment. Publication batches 100 records with immutable hash verification. Fresh replay can reuse frozen inputs after code changes without reusing incompatible ledgers.
+
 ### 2026-10-19 — next research phases
 - Owner requested next phases. Added separate study workflow with shared broker acquisition lock, standard 28-pair queue in 1..4 batches, 1200-day exports/21-day evaluation, resumable exact artifacts and optional research-only publication. Offline as-of replay uses code-default config, not Mini App settings, at H4 closes. Four lifecycle alternatives, conservative H1 execution of four entry variants, exploratory chronological screening. SQLite transaction checkpoints and immutable/versioned MySQL research records.
-- Independent reviewer caught/fixed actual confirmation-close timestamp semantics, fresh-story eligibility, resource/manifest validation, incomplete entry-search censoring and mutable discovery publication. Coverage and assumptions in research/STATUS.md. No production strategy/alert logic changes. Validation: 53 focused research checks passed, including real-engine timestamp/prefix fixtures, conservative execution/censoring and idempotent research-only publication.
+- Independent reviewer caught/fixed actual confirmation-close timestamp semantics, fresh-story eligibility, resource/manifest validation, incomplete entry-search censoring and mutable discovery publication. Coverage and assumptions in research/STATUS.md. No production strategy/alert logic changes. Validation: 55 focused research checks passed, including real-engine timestamp/prefix fixtures, conservative execution/censoring and idempotent research-only publication.
 
 ### 2026-10-19 — research infrastructure pilot
 - Owner approved reviewed staged design and independent review agent. Added slk/research.py, manual-only research.yml and research docs. Strict OHLC/UTC/size/window validation, H4/D/W completion diagnostics (including DST), atomic local checkpoints tied to data/code/runtime identity, explicit insufficient-evidence status. No live strategy/settings changes, secret access, trading, data acquisition, schedules or LLM calls. Strategy/lifecycle studies remain planned until prefix-replay validation.
