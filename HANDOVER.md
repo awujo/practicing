@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-19)
+- [x] Research automatic queue: manually start research-queue.yml to process all 28 FX pairs in batches up to four, two attempts per pair maximum, 150-minute coordinator budget, completion artifact. No AI calls or live strategy changes.
 - [x] Next research phases: manual bounded multi-pair history/replay workflow, lifecycle alternatives, experimental prefix-only entry variants, shallow training-only screening and research_records MySQL persistence. Read research/STATUS.md for scope/limits; no live trading changes, no ANN or validated edge claims.
 - [x] Research phase 1: manual offline infrastructure workflow, bounded frozen-input diagnostics, integrity-checked local checkpoints, planned study catalogue. No strategy evaluation/ANN/DB writes/broker calls. See research/README.md and research/DESIGN.md.
 - [x] Continuation alerts exclude forming confirmation-timeframe candles (closed H1 does not imply closed H4). Candle completion clock now uses actual New York shifted wall time, including DST.
@@ -361,3 +362,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   NO_TRADE (reason live.ERL_TAKEN), still alerted as bias with "NO_TRADE: ... late", no entries.
 
 - 2026-10-18: Fixed settings-save HTTP 500: the browser submits all fields, but flip_max_age lacked min/max, causing KeyError during validation even when only alerts changed. Added bounds 0–10000 (0 still means unlimited), rejected non-finite numbers before integer conversion, and added full-form save/reload plus every-setting roundtrip tests. Kill switch verified to remain a string choice (off/on).
+
+- 2026-10-19: Added deterministic research queue coordinator and workflow, correlated dispatch IDs, explicit completion tracking and bounded retries. Existing first four-pair run can be adopted. Publication failure leaves pairs unfinished. GitHub Actions minutes apply; no resident AI checker.

@@ -1,7 +1,9 @@
 name: SLK research storyline study
+run-name: "Research batch ${{ inputs.queue_token || github.run_id }}"
 on:
   workflow_dispatch:
     inputs:
+      queue_token: {description: "Coordinator correlation ID (leave empty for manual runs)", default: ""}
       pairs: {description: "CSV symbols; empty = all 28 FX pairs (processed in batches)", default: ""}
       offset: {description: "Queue offset; next_offset is in the previous batch report", default: "0"}
       limit: {description: "Pairs in this batch (1..4)", default: "2"}

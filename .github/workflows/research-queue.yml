@@ -1,0 +1,32 @@
+name: SLK research automatic queue
+on:
+  workflow_dispatch:
+    inputs:
+      existing_run_id: {description: "Optional first four-pair run to adopt", default: ""}
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: slk-research-queue
+  cancel-in-progress: false
+jobs:
+  queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 160
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas==2.2.3
+      - name: Process bounded batches, at most two attempts per pair
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXISTING_RUN: ${{ inputs.existing_run_id }}
+        run: python -m slk.research_queue --existing "$EXISTING_RUN"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-queue-${{ github.run_id }}
+          path: research-queue.json
+          retention-days: 30
