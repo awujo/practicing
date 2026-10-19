@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-19)
+- [x] Research phase 1: manual offline infrastructure workflow, bounded frozen-input diagnostics, integrity-checked local checkpoints, planned study catalogue. No strategy evaluation/ANN/DB writes/broker calls. See research/README.md and research/DESIGN.md.
 - [x] Continuation alerts exclude forming confirmation-timeframe candles (closed H1 does not imply closed H4). Candle completion clock now uses actual New York shifted wall time, including DST.
 - [x] Missing cTrader symbols no longer trigger multi-year fallback rebuilds in hourly jobs. Interrupted jobs are finalized by workflow cleanup; old unfinished runs display interrupted after 30 minutes. Runner step has 15-minute timeout inside 20-minute job budget; failure alerts include cancellations.
 - [x] Mini App settings save fixed: flip_max_age now has numeric bounds; all fields and alert toggles covered by API regression tests. Non-finite numeric input returns 422.
@@ -109,6 +110,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 4. Entry alerts live → then demo trading with kill switch + confirm button.
 
 ## Log
+
+### 2026-10-19 — research infrastructure pilot
+- Owner approved reviewed staged design and independent review agent. Added slk/research.py, manual-only research.yml and research docs. Strict OHLC/UTC/size/window validation, H4/D/W completion diagnostics (including DST), atomic local checkpoints tied to data/code/runtime identity, explicit insufficient-evidence status. No live strategy/settings changes, secret access, trading, data acquisition, schedules or LLM calls. Strategy/lifecycle studies remain planned until prefix-replay validation.
+- Tests: 22 research checks passed; independent reviewer inspected logic and workflow. Artifacts expire after 30 days; local checkpoints are not durable cross-run storage. Hard-kill lock recovery documented.
 
 ### 2026-10-19 — continuation alert before candle close
 - Owner received a continuation at 09 WAT describing a 10 WAT H4 close. Filter continuation inputs by the confirmation timeframe, and correct drop_forming shifted-clock calculation. Regression coverage checks before/exactly at/after H4 close in summer and winter, plus pair_state integration. Validation: 36 live/continuation/efficiency tests passed.

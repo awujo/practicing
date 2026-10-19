@@ -1,0 +1,73 @@
+name: SLK research infrastructure
+on:
+  workflow_dispatch:
+    inputs:
+      pair: {description: "Symbol of the frozen export", default: "GBPCHF", required: true}
+      dataset: {description: "Repository IC Markets H1 export (<=5000 rows)", default: "data/debug/GBPCHF_H1_ctrader.csv.gz", required: true}
+      start: {description: "UTC window start, inclusive", default: "2026-09-01T00:00:00Z", required: true}
+      end: {description: "UTC cutoff; only completed hours", default: "2026-10-19T09:00:00Z", required: true}
+permissions:
+  contents: read
+concurrency:
+  group: slk-research-infrastructure
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      IN_DATASET: ${{ inputs.dataset }}
+      IN_PAIR: ${{ inputs.pair }}
+      IN_START: ${{ inputs.start }}
+      IN_END: ${{ inputs.end }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas==2.2.3 pytest==8.3.5
+      - name: Verify infrastructure
+        run: python -m pytest -q tests/test_research.py
+      - name: Run offline diagnostic pilot
+        shell: bash
+        timeout-minutes: 11
+        run: |
+          mkdir -p research-output
+          python - <<'PY' 2>&1 | tee research-output/runner.log
+          import os
+          from pathlib import Path
+          from slk.research import run
+          base = Path('data').resolve()
+          dataset = Path(os.environ['IN_DATASET']).resolve()
+          if base not in dataset.parents or dataset.name != os.environ['IN_PAIR'] + '_H1_ctrader.csv.gz':
+              raise SystemExit('Choose a repository data/* IC Markets H1 export')
+          status = run(dataset, os.environ['IN_PAIR'], 'ctrader', os.environ['IN_START'],
+                       os.environ['IN_END'], 'research-output', seconds=600)
+          raise SystemExit(0 if status == 'complete' else 2)
+          PY
+      - name: Job summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('## Offline research infrastructure pilot\nNo strategy comparison or profitability conclusion.\n\n')
+              for name in ['manifest.json', 'summary.json']:
+                  path = Path('research-output') / name
+                  if path.exists():
+                      out.write('```json\n' + path.read_text() + '```\n')
+                  else:
+                      out.write(name + ': unavailable; see failed step logs.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-infrastructure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            research-output/*.json
+            research-output/runner.log
+          retention-days: 30
+          if-no-files-found: warn
