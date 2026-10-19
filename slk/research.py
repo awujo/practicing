@@ -34,7 +34,8 @@ def utc(value):
     return t.tz_convert('UTC')
 
 
-def read_input(path, start, end):
+def read_input(path, start, end, max_rows=None):
+    max_rows = MAX_ROWS if max_rows is None else max_rows
     path = Path(path)
     if not path.is_file() or path.stat().st_size > MAX_INPUT:
         raise ValueError('input missing or exceeds 25 MiB')
@@ -43,9 +44,9 @@ def read_input(path, start, end):
         expanded = stream.read(MAX_EXPANDED + 1)
     if len(expanded) > MAX_EXPANDED:
         raise ValueError('expanded input exceeds 50 MiB')
-    frame = pd.read_csv(io.BytesIO(expanded), nrows=MAX_ROWS + 1)
-    if frame.empty or len(frame) > MAX_ROWS:
-        raise ValueError('input must contain 1..5000 H1 rows')
+    frame = pd.read_csv(io.BytesIO(expanded), nrows=max_rows + 1)
+    if frame.empty or len(frame) > max_rows:
+        raise ValueError(f'input must contain 1..{max_rows} H1 rows')
     if list(frame.columns) != ['t', 'open', 'high', 'low', 'close']:
         raise ValueError('expected t,open,high,low,close; t denotes H1 OPEN time')
     times = pd.DatetimeIndex([utc(v) for v in frame.pop('t')])
@@ -85,10 +86,10 @@ def diagnostic(frame, tf, cutoff):
             'interpretation': 'Data diagnostic only. No breakout, policy or financial conclusion.'}
 
 
-def atomic_json(path, value, root):
+def atomic_json(path, value, root, max_bytes=None):
     data = encoded(value)
     used = sum(p.stat().st_size for p in root.rglob('*') if p.is_file())
-    if used + len(data) > MAX_OUTPUT:
+    if used + len(data) > (MAX_OUTPUT if max_bytes is None else max_bytes):
         raise ValueError('output exceeds 10 MiB')
     tmp = path.with_suffix('.tmp')
     with tmp.open('wb') as f:

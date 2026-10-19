@@ -66,7 +66,7 @@ def test_bounds(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='600'):
         run(tmp_path, p, seconds=601)
     monkeypatch.setattr(r, 'MAX_ROWS', 2)
-    with pytest.raises(ValueError, match='5000'):
+    with pytest.raises(ValueError, match='H1 rows'):
         run(tmp_path, p)
 
 

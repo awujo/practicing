@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-19)
+- [x] Next research phases: manual bounded multi-pair history/replay workflow, lifecycle alternatives, experimental prefix-only entry variants, shallow training-only screening and research_records MySQL persistence. Read research/STATUS.md for scope/limits; no live trading changes, no ANN or validated edge claims.
 - [x] Research phase 1: manual offline infrastructure workflow, bounded frozen-input diagnostics, integrity-checked local checkpoints, planned study catalogue. No strategy evaluation/ANN/DB writes/broker calls. See research/README.md and research/DESIGN.md.
 - [x] Continuation alerts exclude forming confirmation-timeframe candles (closed H1 does not imply closed H4). Candle completion clock now uses actual New York shifted wall time, including DST.
 - [x] Missing cTrader symbols no longer trigger multi-year fallback rebuilds in hourly jobs. Interrupted jobs are finalized by workflow cleanup; old unfinished runs display interrupted after 30 minutes. Runner step has 15-minute timeout inside 20-minute job budget; failure alerts include cancellations.
@@ -110,6 +111,10 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 4. Entry alerts live → then demo trading with kill switch + confirm button.
 
 ## Log
+
+### 2026-10-19 — next research phases
+- Owner requested next phases. Added separate study workflow with shared broker acquisition lock, standard 28-pair queue in 1..4 batches, 1200-day exports/21-day evaluation, resumable exact artifacts and optional research-only publication. Offline as-of replay uses code-default config, not Mini App settings, at H4 closes. Four lifecycle alternatives, conservative H1 execution of four entry variants, exploratory chronological screening. SQLite transaction checkpoints and immutable/versioned MySQL research records.
+- Independent reviewer caught/fixed actual confirmation-close timestamp semantics, fresh-story eligibility, resource/manifest validation, incomplete entry-search censoring and mutable discovery publication. Coverage and assumptions in research/STATUS.md. No production strategy/alert logic changes. Validation: 53 focused research checks passed, including real-engine timestamp/prefix fixtures, conservative execution/censoring and idempotent research-only publication.
 
 ### 2026-10-19 — research infrastructure pilot
 - Owner approved reviewed staged design and independent review agent. Added slk/research.py, manual-only research.yml and research docs. Strict OHLC/UTC/size/window validation, H4/D/W completion diagnostics (including DST), atomic local checkpoints tied to data/code/runtime identity, explicit insufficient-evidence status. No live strategy/settings changes, secret access, trading, data acquisition, schedules or LLM calls. Strategy/lifecycle studies remain planned until prefix-replay validation.

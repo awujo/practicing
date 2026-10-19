@@ -21,3 +21,7 @@ The exclusive `.lock` prevents concurrent writes. A hard kill can leave it behin
 `complete` means all three diagnostic tasks finished, not that strategy research succeeded. `data_adequacy` distinguishes no complete bins; `strategy_evidence` remains insufficient. Missing component hours cause a bin exclusion and are counted; the code never invents candles. Closed-bin clocks account for DST. Historical arrival times are unknown and marked simulated. Results do not determine whether a structural break occurred or justify a BUY/SELL.
 
 Before phase 2: independently validate chronological storyline replay and policy population consistency, then implement lifecycle alternatives and durable research tables. Before return/drawdown comparisons: define execution/cost/exposure assumptions and implement the simulator. See `DESIGN.md` for gates and all planned study families.
+
+## Next-phase storyline workflow
+
+The separate **SLK research storyline study** workflow now supports IC Markets history collection, bounded multi-pair replay, lifecycle alternatives, experimental entry comparisons, exploratory screening and optional research-only database publication. See [STATUS.md](STATUS.md) for exact implemented scope, remaining work, assumptions, batch offsets and resume instructions. The infrastructure workflow above remains available as its smaller offline smoke test.

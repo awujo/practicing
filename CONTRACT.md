@@ -108,3 +108,8 @@ Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_
 - `ctrader/` Open API client
 - `webapp/` Telegram Mini App (Render web service)
 - `db/` schema
+
+
+## Research isolation
+
+Manual `research-study.yml` uses `research_records` (created only by `slk.research_publish`) in the existing MySQL instance: composite PK `(run_id,kind,record_id)`, SHA-256 payload checksum, LONGTEXT JSON payload, creation time. Kinds include manifest, events, observations, decisions, entry_trials, discovery and checkpoint. Per-event records are immutable; aggregate/checkpoint IDs are content hashes, so partial/resumed snapshots append without overwriting. It never calls live apply_schema or modifies bias/entries/orders/settings. Broker collection can refresh cTrader auth tokens using the existing client. Raw candles remain in expiring artifacts, not MySQL. See research/STATUS.md before enabling recurring research or relying on backup/retention.

@@ -1,0 +1,131 @@
+name: SLK research storyline study
+on:
+  workflow_dispatch:
+    inputs:
+      pairs: {description: "CSV symbols; empty = all 28 FX pairs (processed in batches)", default: ""}
+      offset: {description: "Queue offset; next_offset is in the previous batch report", default: "0"}
+      limit: {description: "Pairs in this batch (1..4)", default: "2"}
+      resume_run_id: {description: "Optional prior study run ID: reuse its frozen input and ledger", default: ""}
+      publish: {description: "Persist research-only records in existing MySQL", type: boolean, default: true}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: slk-research-study
+  cancel-in-progress: false
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: slk-live
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas==2.2.3 pymysql requests "protobuf>=3.20"
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_run_id != ''
+        with:
+          name: research-input-${{ inputs.resume_run_id }}
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ github.token }}
+          path: research-input
+      - name: Explicit bounded IC Markets export
+        if: inputs.resume_run_id == ''
+        timeout-minutes: 9
+        env:
+          IN_PAIRS: ${{ inputs.pairs }}
+          IN_OFFSET: ${{ inputs.offset }}
+          IN_LIMIT: ${{ inputs.limit }}
+          CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+          CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+          CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+          CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+          CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+          CTRADER_ENV: demo
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: python -m slk.research_collect --pairs "$IN_PAIRS" --offset "$IN_OFFSET" --limit "$IN_LIMIT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-input-${{ github.run_id }}
+          path: research-input/
+          retention-days: 30
+          if-no-files-found: warn
+  study:
+    needs: acquire
+    if: ${{ always() && needs.acquire.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas==2.2.3 pytest==8.3.5
+      - run: python -m pytest -q tests/test_research.py tests/test_research_replay.py tests/test_research_batch.py tests/test_research_entries.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: research-input-${{ github.run_id }}
+          path: research-input
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_run_id != ''
+        with:
+          name: research-results-${{ inputs.resume_run_id }}
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ github.token }}
+          path: research-results
+      - name: Offline as-of storyline study
+        timeout-minutes: 11
+        shell: bash
+        run: |
+          mkdir -p research-results
+          python -m slk.research_batch --input research-input --out research-results 2>&1 | tee research-results/runner.log
+      - name: Job summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          p=Path('research-results/batch-report.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## Storyline research\nExploratory event comparison, not trading returns or live-rule changes.\n\n')
+              out.write('```json\n'+p.read_text()+'```\n' if p.exists() else 'No batch report; see failed steps.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-results-${{ github.run_id }}
+          path: research-results/
+          retention-days: 30
+          if-no-files-found: warn
+  persist:
+    needs: study
+    if: ${{ always() && inputs.publish && needs.study.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pymysql pandas==2.2.3
+      - uses: actions/download-artifact@v4
+        with:
+          name: research-results-${{ github.run_id }}
+          path: research-results
+      - name: Persist immutable research records only
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: |
+          shopt -s nullglob
+          ledgers=(research-results/*/ledger.sqlite)
+          [ "${#ledgers[@]}" -gt 0 ] || { echo "No research ledgers to publish"; exit 1; }
+          python -m slk.research_publish "${ledgers[@]}"
