@@ -114,3 +114,30 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 - Next: source-grounded fourth-man/remaining entry routes, ERL and major-swing
   rules, exact historical alignment and exhaustive source replay; then broader
   cost-aware historical coverage. Paper runner/UI/integrations remain open.
+
+## Owner-directed full-study phase (2026-10-20)
+
+- Owner clarified sequence: study all material and understand the rules first,
+  then build the whole system, then test/correct against teaching examples.
+  Further engine implementation is paused; the earlier next-route build plan
+  is superseded by this source-study phase.
+- Inventory:28unique videos (~14.28hours),866unique existing contact sheets,
+  13alternate older ASR transcripts,13supplementary notes,60-pagePDF and4release
+  images. Independent readers assigned full transcript and systematic visual
+  coverage. See `knowledge-base/study/FULL_STUDY_PROGRESS.md` and per-source
+  inventory; enumeration/started jobs are not completed study.
+- Corrected course/plug sourcePTS frame extraction runs into separate scratch
+  staging while current sheets are read. Original MP4s retained for exact-frame
+  ambiguity checks. Do not claim completed extraction without manifest states.
+- Source correction: PDFp8's “4thman's CE” label does not by itself establish a
+  distinct unimplemented entry algorithm. Its high-swept/low-standing V-pattern
+  must be mapped to the lessons; earlier missing-route explanation was too strong.
+  No fixture values or engine outputs were changed by this correction.
+
+- Study checkpoint: saved full transcript ledgers for all28unique videos,
+  source-backed example narratives,13-note audit, PDF pageledger, four verified
+  releaseimages now retained with provenance, primary cross-check and separate
+  verifier. Visualstudy remains partial; see exactranges in perreaderreports.
+  Working synthesis is not implementation approval. Corrected frame job was
+  interrupted with prioragentturn; resumed in root session78088, adopting verified
+  completed7/8priorityoutputs and skipping previouslycomplete sources.

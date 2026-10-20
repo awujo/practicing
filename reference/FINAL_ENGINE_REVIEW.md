@@ -62,3 +62,12 @@ The seven tests in `tests/test_final_engine_review.py` independently cover the
 leading aggregate correction and no-trade acceptance regressions. No remaining
 material blocker was confirmed within this offline milestone. This does not
 certify full strategy fidelity, source acceptance or live readiness.
+
+## Subsequent source-study correction
+
+The full-study phase re-opened PDFp8 and checked the entry lessons. “4thman's
+CE” is attribution plus a high-swept/low-standing V-level description; this
+label alone does not prove a distinct algorithm. The earlier reference above
+to an unimplemented fourth-man route is provisional and must not be used as
+an established explanation for the zero-setup diagnostic. Source-to-rule
+mapping remains open. The engineering test findings are unaffected.

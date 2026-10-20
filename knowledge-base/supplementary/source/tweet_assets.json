@@ -1,0 +1,30 @@
+[
+  {
+    "filename": "tweet_2027770544188268548.jpg",
+    "source_url": "https://github.com/awujo/practicing/releases/download/defi-bishop/tweet_2027770544188268548.jpg",
+    "bytes": 64843,
+    "sha256": "7bc3a5630c2d24887d2177c6e45b2355d39c3859774ce11f797f98d504724403",
+    "release_tag": "defi-bishop"
+  },
+  {
+    "filename": "tweet_2058642708160192558.jpg",
+    "source_url": "https://github.com/awujo/practicing/releases/download/defi-bishop/tweet_2058642708160192558.jpg",
+    "bytes": 53751,
+    "sha256": "a0137fb60400ed8c332531ce12c0363a9e86a79e4f4e78dafc2ae4ee43d20606",
+    "release_tag": "defi-bishop"
+  },
+  {
+    "filename": "tweet_2083892003713008097.jpg",
+    "source_url": "https://github.com/awujo/practicing/releases/download/defi-bishop/tweet_2083892003713008097.jpg",
+    "bytes": 72287,
+    "sha256": "62ffe3e1df73d9927c6e35a8a02f53dfdb7840eeafb213c79d04678d0fb614e7",
+    "release_tag": "defi-bishop"
+  },
+  {
+    "filename": "tweet_2086465296412364923.jpg",
+    "source_url": "https://github.com/awujo/practicing/releases/download/defi-bishop/tweet_2086465296412364923.jpg",
+    "bytes": 67457,
+    "sha256": "222afc710d6d891dc9df5211b944471dad2533ff9af77cf94b80be8cf854fa42",
+    "release_tag": "defi-bishop"
+  }
+]
