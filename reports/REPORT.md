@@ -5,7 +5,7 @@ confirmation close, stop beyond the tap wick, target = nearest opposite level/sw
 `win%` = target before stop. `expectancy_R` = average result in R (>0 = profitable before costs).
 `kevin_target%` = target reached before an origin close back through the level (Kevin's invalidation).
 
-Settings: `{"level_pivot": 1, "swing_pivot": 2, "trend_mode": "leg", "b_pivot": 1, "use_oc": true, "trend_filter": true, "tap_tol_pips": 0.0, "level_tol_pips": 0.0, "max_wait": 5, "max_retaps": 3, "same_bar_close": true, "htf_filter": true, "use_monthly": true, "stop_buffer_pips": 2.0, "max_hold": 20, "mw_conflict_filter": true, "sweep_start": true, "most_recent_level": true, "max_flips": 0, "flip_max_age": 100, "htf_bias_filter": false, "erl_taken_no_trade": true, "target_unswept": true, "flip_end": true, "htf_targets": true, "overlap_rule": true, "overlap_tol_pips": 3.0, "align_retap_ends": true, "alignment_start": true, "pullback_levels": true, "cadjpy_zone": true, "cadjpy_exception": true, "target_mode": "leg", "next_day_rule": "require"}`
+Settings: `{"level_pivot": 1, "swing_pivot": 2, "trend_mode": "leg", "b_pivot": 1, "use_oc": true, "trend_filter": true, "tap_tol_pips": 0.0, "level_tol_pips": 0.0, "max_wait": 5, "max_retaps": 3, "same_bar_close": true, "htf_filter": true, "use_monthly": true, "stop_buffer_pips": 2.0, "max_hold": 20, "mw_conflict_filter": true, "sweep_start": true, "most_recent_level": true, "max_flips": 0, "flip_max_age": 100, "htf_bias_filter": false, "close_at_target": true, "erl_taken_no_trade": true, "target_unswept": true, "flip_end": true, "htf_targets": true, "overlap_rule": true, "overlap_tol_pips": 3.0, "align_retap_ends": true, "alignment_start": true, "pullback_levels": true, "cadjpy_zone": true, "cadjpy_exception": true, "target_mode": "leg", "next_day_rule": "require"}`
 
 ## By story
 
@@ -152,6 +152,9 @@ First value of each setting = current default.
 | variant                                    |   trades |   win% |   avg_R |   total_R |
 |:-------------------------------------------|---------:|-------:|--------:|----------:|
 | next_day_rule=require                      |     5140 |   55.1 |  -0.021 |    -110.4 |
+| new story after a target, same side        |     2498 |   56.3 |  -0.029 |     -72   |
+| new story after a target, other side       |      424 |   59.2 |  -0     |      -0.1 |
+| new story after no target                  |     2134 |   52.9 |  -0.014 |     -30.4 |
 | next_day_rule=flag                         |     8800 |   48.5 |  -0.065 |    -576.4 |
 | flag: next-day breakouts only              |     4605 |   50.8 |  -0.012 |     -53.9 |
 | flag: same-day breakouts only              |     4047 |   45.6 |  -0.127 |    -514.8 |
