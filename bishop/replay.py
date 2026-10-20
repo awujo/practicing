@@ -118,8 +118,32 @@ def check_example(example, candidates):
         dimensions = ("pair",) if example["kind"] == "no_trade" else ("pair", "tf", "mode")
         if any(candidate.get(k) != example[k] for k in dimensions):
             continue
+        if example["kind"] == "no_trade" and candidate.get("status") in ("FILLED", "PENDING", "TRIGGERED", "APPROVED", "MISSED", "CANCELLED", "CENSORED"):
+            # Actionable pending exposure matters even if the eventual fill or
+            # the current observation happens after the teacher's window.
+            try:
+                began = _time(candidate.get("setup_time"))
+                ended_value = candidate.get("pending_end")
+                if ended_value is None:
+                    ended_value = candidate.get("time") if candidate.get("status") == "FILLED" else candidate.get("observed_at") or candidate.get("time")
+                ended = _time(ended_value)
+                if ended < began:
+                    raise ValueError("pending end precedes setup")
+            except ValueError:
+                invalid.append("order has missing or invalid actionable interval")
+                continue
+            if began <= end and ended >= start:
+                matched.append(candidate)
+            continue
+        if example["kind"] == "trade" and candidate.get("status") in ("PENDING", "MISSED", "CANCELLED", "CENSORED", "UNAVAILABLE", "NO_TRADE"):
+            # An unfilled candidate is not a fill with an invalid timestamp.
+            # Preserve null fill times; never replace them with observation time.
+            continue
         try:
-            t = _time(candidate.get("time"))
+            stamp = candidate.get("time")
+            if example["kind"] == "no_trade" and candidate.get("status") != "FILLED" and stamp is None:
+                stamp = candidate.get("observed_at")
+            t = _time(stamp)
         except ValueError:
             invalid.append("candidate has invalid time")
             continue
@@ -131,7 +155,7 @@ def check_example(example, candidates):
         return result
     if example["kind"] == "no_trade":
         # Absence of engine output is not proof the pair was evaluated.
-        if any(c.get("status") in ("FILLED", "PENDING", "TRIGGERED", "APPROVED") for c in matched):
+        if any(c.get("status") in ("FILLED", "PENDING", "TRIGGERED", "APPROVED", "MISSED", "CANCELLED", "CENSORED") for c in matched):
             result["reasons"] = ["engine traded or issued an actionable order inside a no-trade window"]
         elif any(c.get("status") == "NO_TRADE" and all(c.get(k) == example[k] for k in ("tf", "mode")) for c in matched):
             result["status"] = "PASS"

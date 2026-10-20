@@ -1,8 +1,9 @@
 # Bishop bot rebuild
 
-Branch: `claude-bishop-aggressive`. Current stage: source verification and
-acceptance infrastructure. No completed Bishop trading engine or live deployment
-exists yet. Passing unit tests does not mean teaching examples match.
+Branch: `claude-bishop-aggressive`. Current stage: an initial offline causal
+engine, paper execution simulator and source verification. The full Bishop bot
+and live deployment remain unfinished. Passing unit tests does not mean teaching
+examples match.
 
 ## Development
 
@@ -14,6 +15,39 @@ python -m bishop.store --help
 
 The Bishop development checks Action runs offline tests without production
 credentials. It does not send alerts or execute broker orders.
+
+## Initial offline engine
+
+The engine currently supports KL rejection/prior-candle sweep followed by a
+closed lower-TF breakout, then engulf/retest or OC-break/retest candidates.
+Local structural references, level interpretation and context retirement are
+explicit implementation choices. Targets are opposing origin-TF KLs; nearest
+ERL selection and the aggressive direct-entry models are still unsupported.
+Candidate alternatives are unranked; their sum is not a portfolio return or a
+claim that every alternative should be traded.
+
+Reproduce the small frozen-input engineering comparison:
+
+```bash
+python -m reports.reproduce_initial_study
+```
+
+This uses the retained IC Markets EURGBP BID export and declared assumptions
+(1-pip spread, 0.2-pip stop slippage, 0.5-pip round-trip commission). Reports
+record the input hash, engine hash, runtime versions, coverage and exact policy
+choices. This script completes an engineering study; teacher acceptance remains
+UNRESOLVED. See [the result](reports/ENGINE_MILESTONE.md).
+
+The `python -m bishop.backtest --help` CLI requires explicit input/source,
+historical clock, warmup/scan range, timeframes, level/stop policy, costs and
+pending expiry. Add `--examples tests/bishop_examples.json` to apply the hard
+acceptance gate; unresolved or mismatched source cases return nonzero.
+
+H1 execution separates setup availability, a fill-bar interval, the first
+observation of a fill and the current observation clock. A partial active bar,
+missing market hour or ambiguous fill-bar target cannot become an invented
+precise execution. No complete-history claim is made from partial cache data.
+See [review coverage and open limits](reference/ENGINE_REVIEW.md).
 
 ## Example acceptance
 

@@ -9,6 +9,9 @@ Explicit conservative choices:
   On continuous candles this is the familiar close-line turn. Gapped junctions
   are skipped: no inferred tolerance or level interpolation is a teacher rule.
 * Same-direction candles with that exact junction form OC; dojis form no level.
+  Explicit alternate ``close_reference`` mode uses the first close without
+  requiring the next open to equal it, and requires the second close to finish
+  on its proposed side. It does not interpolate gaps or introduce a tolerance.
 * A level becomes available at candle TWO's end. It cannot classify its own
   formation candle. A level break here is not an inferred structural BOS or
   an 'impulsive' trade trigger: no numerical impulse threshold is invented.
@@ -114,22 +117,31 @@ def validated_bars(bars, *, as_of=None):
     return pd.DataFrame(values, index=idx, columns=required)
 
 
-def levels(bars, *, as_of=None):
+def levels(bars, *, as_of=None, level_mode="exact_junction"):
     """Find causal two-candle A/V/OC levels in oldest-availability order.
 
     ``formed_at`` is the first candle's junction close; ``available_at`` is
     the second candle's completed end. Returned levels are candidates, not
     confirmed bias, fresh-level assertions or trading recommendations.
+    The default preserves exact junctions. ``close_reference`` is an explicit
+    alternate interpretation of S01, not an automatically selected relaxation.
     """
+    if level_mode not in ("exact_junction", "close_reference"):
+        raise ValueError("level_mode must be exact_junction or close_reference")
     frame = validated_bars(bars, as_of=as_of)
     out = []
     for i in range(1, len(frame)):
         left, right = frame.iloc[i - 1], frame.iloc[i]
-        if left["close"] != right["open"]:
+        if level_mode == "exact_junction" and left["close"] != right["open"]:
             continue  # Explicit exact-junction policy; no inferred gap level.
         a = np.sign(left["close"] - left["open"])
         b = np.sign(right["close"] - right["open"])
         if not a or not b:
+            continue
+        # Source S01 places the thin line at the first closing price. This
+        # alternate policy does not average the gap or fit a pip tolerance.
+        # Require candle two to finish on its proposed side of that reference.
+        if level_mode == "close_reference" and np.sign(right["close"] - left["close"]) != b:
             continue
         kind = "OC" if a == b else ("A" if a > 0 else "V")
         out.append(KeyLevel(kind, left["close"], "BUY" if b > 0 else "SELL",

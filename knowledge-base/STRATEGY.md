@@ -45,7 +45,9 @@ are unaffected. Core sheets have not yet been regenerated with the corrected
 extractor; treat their burned times as approximate visual locators. Broad source
 ranges remain useful, but an exact chart fixture must use native-time extraction
 and verify the actual image state rather than infer candle completion from a
-mislabelled contact-sheet timestamp. Bishop re-extraction is being corrected.
+mislabelled contact-sheet timestamp. The nine unique Bishop sessions have been
+regenerated with recorded actual source timestamps; the core and plug sheets
+still need timestamp-correct regeneration.
 
 **Hard acceptance requirement (owner): every verified teaching example must
 match its documented model.** A full match includes directional context, setup
@@ -228,3 +230,29 @@ Before calling Bishop “built and matching,” all of the following must be con
 **Current status:** first-pass evidence specification only. The engine, complete
 numeric historical fixtures, independent verification of all rules/examples,
 full replay and multi-pair backtests are not certified by this document.
+
+## 10. Initial implementation coverage
+
+`bishop/structure.py` implements provisional local close turns and causal
+sweep/break observations. `bishop/bias.py` implements D01/D02 initial routes,
+with same-day confirmation published only after origin closure. An already
+broken reference cannot provide a fresh confirmation. Destination roles broken
+before eligibility are retired; the frozen destination is an opposing origin-TF
+KL, explicitly not Bishop's nearest ERL.
+
+`bishop/setups.py` implements `engulf_retest` and `oc_break_retest` formation,
+with source-style structural-wick and separate fixed-stop profiles. The default
+exact-junction policy is preserved; explicit `close_reference` uses the first
+close across an opening gap without averaging it or fitting a tolerance.
+
+`bishop/engine.py` assembles these routes on completed candles and records all
+choices/unsupported branches. Conservative operating retirement at a target,
+origin invalidation or opposite confirmation is not certification of the full
+L02 structural storyline-flip model. Conflicting opposite contexts observed at
+one clock do not automatically place orders. Concurrent pattern alternatives
+remain unranked candidates, not a position-selection or exposure policy.
+
+`bishop/execution.py` provides declared-cost H1 paper observations only. Finer
+execution, the remaining §5 models, weekly fallback/alignment, source-specific
+ERL selection and full lifecycle remain open. Retained teacher observations
+are unchanged; no exact historical match has been promoted by these additions.

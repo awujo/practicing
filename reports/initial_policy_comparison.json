@@ -1,0 +1,91 @@
+{
+  "scope": "Predeclared one-pair engineering comparison; not teacher matches, selected operating rules, or portfolio returns",
+  "engine_sha256": "c1d485ca2fb8b1c56a39dfb48ec53cf032edaee6cd97854eb914debe49814c14",
+  "input_sha256": "815f153eccb7ac981c06850bab82a5cd39dd41146810497f7b115d0839d559b0",
+  "runtime": {
+    "python": "3.12.14",
+    "pandas": "2.2.3"
+  },
+  "rows": [
+    {
+      "entry_tf": "H1",
+      "level_mode": "exact_junction",
+      "stop_profile": "structural_wick",
+      "seconds": 0.073,
+      "stories": 12,
+      "setups": 0,
+      "filled": 0,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H1",
+      "level_mode": "exact_junction",
+      "stop_profile": "fixed_pips",
+      "seconds": 0.064,
+      "stories": 12,
+      "setups": 0,
+      "filled": 0,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H1",
+      "level_mode": "close_reference",
+      "stop_profile": "structural_wick",
+      "seconds": 0.256,
+      "stories": 25,
+      "setups": 67,
+      "filled": 56,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H1",
+      "level_mode": "close_reference",
+      "stop_profile": "fixed_pips",
+      "seconds": 0.276,
+      "stories": 25,
+      "setups": 67,
+      "filled": 56,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H2",
+      "level_mode": "exact_junction",
+      "stop_profile": "structural_wick",
+      "seconds": 0.064,
+      "stories": 12,
+      "setups": 0,
+      "filled": 0,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H2",
+      "level_mode": "exact_junction",
+      "stop_profile": "fixed_pips",
+      "seconds": 0.069,
+      "stories": 12,
+      "setups": 0,
+      "filled": 0,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H2",
+      "level_mode": "close_reference",
+      "stop_profile": "structural_wick",
+      "seconds": 0.199,
+      "stories": 25,
+      "setups": 38,
+      "filled": 28,
+      "censored": 0
+    },
+    {
+      "entry_tf": "H2",
+      "level_mode": "close_reference",
+      "stop_profile": "fixed_pips",
+      "seconds": 0.173,
+      "stories": 25,
+      "setups": 38,
+      "filled": 28,
+      "censored": 0
+    }
+  ]
+}

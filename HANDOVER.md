@@ -95,3 +95,22 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 - Implement the causal Bishop detector and execution models from the verified specification, reviewing every increment. Preserve source stops/targets separately from the aggressive operating preset. Never branch on fixture IDs or fill observations from expected values.
 - Run every promoted teaching case through the actual detector; no release claim until every verified example matches and unresolved coverage is closed. Then freeze cost assumptions and run supported-pair 2018+ backtests with actual coverage checks (the candle store may otherwise return partial cached history after acquisition failure).
 - Build paper runner, hourly/backtest/replay workflows, database bias/entry persistence, Telegram formatting and Mini App. No Bishop live deployment or broker execution has been enabled.
+
+## Offline causal engine milestone (2026-10-20)
+
+- Added causal structure/bias, two supported setup routes, explicit risk profiles,
+  coverage validation, bid/ask execution and offline backtest CLI. Choices and
+  unsupported routes are reported; no live activation or broker orders.
+- Added frozen alternate-feed EURGBP input/provenance and reproducible eight-case
+  study. First-close H1 yields 67 candidates/56 observed fills; H2 38/28.
+  These overlap and are not portfolio results. Exact-junction variants yield
+  no setups. Selected teacher H2 window yields zero setups; all 40 source
+  observations remain UNRESOLVED. Fourth-man CE and source clock/feed
+  alignment remain open; source expectations were not changed.
+- Independent final review reproduced and verified fixes for leading partial
+  aggregates and historical actionable-order intervals in no-trade replay.
+  Full suite: 204 passed. Reports and scope: `reports/ENGINE_MILESTONE.md`,
+  `reference/ENGINE_REVIEW.md`, `reference/FINAL_ENGINE_REVIEW.md`.
+- Next: source-grounded fourth-man/remaining entry routes, ERL and major-swing
+  rules, exact historical alignment and exhaustive source replay; then broader
+  cost-aware historical coverage. Paper runner/UI/integrations remain open.

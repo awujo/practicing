@@ -1,0 +1,2383 @@
+[
+  {
+    "id": "776d6084678bfdea90ff8262",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86343,
+    "requested_entry": 0.86343,
+    "stop": 0.8633,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.86343,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-11T16:00:00+00:00",
+    "exit_price": 0.8632799999999999,
+    "net_r": -1.5384615384613838,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "3acbc04cee3349bc4acb99e1",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8643,
+    "requested_entry": 0.8643,
+    "stop": 0.86155,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.8643,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.04727272727275375,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "eee66e1c09b5289505f9bbd5",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86429,
+    "requested_entry": 0.86429,
+    "stop": 0.86155,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.86429,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.051094890510958134,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "da14743cea3398ec5fdd6d11",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86414,
+    "requested_entry": 0.86414,
+    "stop": 0.86155,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.86414,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.11196911196911546,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "983288c5311bb68f2676433a",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86402,
+    "requested_entry": 0.86402,
+    "stop": 0.86155,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.86402,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.1659919028340164,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "bd874e28b533df55b2a34abc",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86385,
+    "requested_entry": 0.86385,
+    "stop": 0.86155,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T16:00:00+00:00",
+    "time": "2026-06-11T16:00:00+00:00",
+    "fill_price": 0.86385,
+    "fill_window": {
+      "start": "2026-06-11T15:00:00+00:00",
+      "end": "2026-06-11T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.2521739130434901,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "1325ae6691a60c582c3b4abd",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86266,
+    "requested_entry": 0.86266,
+    "stop": 0.86251,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T22:00:00+00:00",
+    "time": "2026-06-11T22:00:00+00:00",
+    "fill_price": 0.86266,
+    "fill_window": {
+      "start": "2026-06-11T21:00:00+00:00",
+      "end": "2026-06-11T22:00:00+00:00"
+    },
+    "exit_time": "2026-06-11T22:00:00+00:00",
+    "exit_price": 0.86249,
+    "net_r": -1.4666666666668513,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "f905d52d8e3b153ce9bbecc2",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86273,
+    "requested_entry": 0.86273,
+    "stop": 0.86248,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-11T22:00:00+00:00",
+    "time": "2026-06-11T22:00:00+00:00",
+    "fill_price": 0.86273,
+    "fill_window": {
+      "start": "2026-06-11T21:00:00+00:00",
+      "end": "2026-06-11T22:00:00+00:00"
+    },
+    "exit_time": "2026-06-11T22:00:00+00:00",
+    "exit_price": 0.86246,
+    "net_r": -1.2800000000001108,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "db45cca670a11e3064f6594e",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86219,
+    "requested_entry": 0.86219,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T23:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T21:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "b3213132eaa698ec8bdcf23c",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86299,
+    "requested_entry": 0.86299,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T23:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T00:00:00+00:00",
+    "time": "2026-06-12T00:00:00+00:00",
+    "fill_price": 0.86299,
+    "fill_window": {
+      "start": "2026-06-11T23:00:00+00:00",
+      "end": "2026-06-12T00:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 1.1428571428571008,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "a9598338a84110525effd8c2",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86265,
+    "requested_entry": 0.86265,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T05:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T07:00:00+00:00",
+    "time": "2026-06-12T07:00:00+00:00",
+    "fill_price": 0.86265,
+    "fill_window": {
+      "start": "2026-06-12T06:00:00+00:00",
+      "end": "2026-06-12T07:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.4666666666668513,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "41165b06adfee5fc7e3d0d0a",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86268,
+    "requested_entry": 0.86268,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T18:00:00+00:00",
+    "time": "2026-06-12T18:00:00+00:00",
+    "fill_price": 0.86268,
+    "fill_window": {
+      "start": "2026-06-12T17:00:00+00:00",
+      "end": "2026-06-12T18:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.388888888889091,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "e55f93c4f3eff56c06e88bf2",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86317,
+    "requested_entry": 0.86317,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T08:00:00+00:00",
+    "time": "2026-06-12T08:00:00+00:00",
+    "fill_price": 0.86317,
+    "fill_window": {
+      "start": "2026-06-12T07:00:00+00:00",
+      "end": "2026-06-12T08:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.8750000000000252,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "126763fd3d152e340921f12b",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86291,
+    "requested_entry": 0.86291,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T12:00:00+00:00",
+    "time": "2026-06-12T12:00:00+00:00",
+    "fill_price": 0.86291,
+    "fill_window": {
+      "start": "2026-06-12T11:00:00+00:00",
+      "end": "2026-06-12T12:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.1707317073171593,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "04a6dcec9863eabc56dd6a0a",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86284,
+    "requested_entry": 0.86284,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T16:00:00+00:00",
+    "time": "2026-06-12T16:00:00+00:00",
+    "fill_price": 0.86284,
+    "fill_window": {
+      "start": "2026-06-12T15:00:00+00:00",
+      "end": "2026-06-12T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.2058823529412313,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "98f0e94cc49cbb1f085eb441",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86294,
+    "requested_entry": 0.86294,
+    "stop": 0.8627,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T15:00:00+00:00",
+    "time": "2026-06-12T15:00:00+00:00",
+    "fill_price": 0.86294,
+    "fill_window": {
+      "start": "2026-06-12T14:00:00+00:00",
+      "end": "2026-06-12T15:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T17:00:00+00:00",
+    "exit_price": 0.86268,
+    "net_r": -1.2916666666667282,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "ba7ce5481092fbe6a7f7e486",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86303,
+    "requested_entry": 0.86303,
+    "stop": 0.8627,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T15:00:00+00:00",
+    "time": "2026-06-12T15:00:00+00:00",
+    "fill_price": 0.86303,
+    "fill_window": {
+      "start": "2026-06-12T14:00:00+00:00",
+      "end": "2026-06-12T15:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T17:00:00+00:00",
+    "exit_price": 0.86268,
+    "net_r": -1.2121212121213105,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "2283d011050b05c300b3ac1f",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86276,
+    "requested_entry": 0.86276,
+    "stop": 0.86248,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T21:00:00+00:00",
+    "time": "2026-06-12T21:00:00+00:00",
+    "fill_price": 0.86276,
+    "fill_window": {
+      "start": "2026-06-12T20:00:00+00:00",
+      "end": "2026-06-12T21:00:00+00:00"
+    },
+    "exit_time": "2026-06-14T22:00:00+00:00",
+    "exit_price": 0.86246,
+    "net_r": -1.2500000000001188,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "272d32e665ecafbae9997fdc",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86252,
+    "requested_entry": 0.86252,
+    "stop": 0.86221,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-14T22:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-15T10:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "fa7f0db30c149088fee6120f",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86343,
+    "requested_entry": 0.86343,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-14T22:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-14T23:00:00+00:00",
+    "time": "2026-06-14T23:00:00+00:00",
+    "fill_price": 0.86343,
+    "fill_window": {
+      "start": "2026-06-14T22:00:00+00:00",
+      "end": "2026-06-14T23:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.5882352941176323,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "27e1ef76df61c28fc074f30d",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86295,
+    "requested_entry": 0.86295,
+    "stop": 0.86242,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-15T02:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-15T10:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "444e3c2b4e3515b5ad80d89a",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86219,
+    "requested_entry": 0.86219,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T23:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T21:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "cf9240473782c22df4ef81e6",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86299,
+    "requested_entry": 0.86299,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-11T23:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T00:00:00+00:00",
+    "time": "2026-06-12T00:00:00+00:00",
+    "fill_price": 0.86299,
+    "fill_window": {
+      "start": "2026-06-11T23:00:00+00:00",
+      "end": "2026-06-12T00:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 1.1428571428571008,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "8f4f551009257534b58f8b58",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86265,
+    "requested_entry": 0.86265,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T05:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T07:00:00+00:00",
+    "time": "2026-06-12T07:00:00+00:00",
+    "fill_price": 0.86265,
+    "fill_window": {
+      "start": "2026-06-12T06:00:00+00:00",
+      "end": "2026-06-12T07:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.4666666666668513,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "24bfb04a876c29d886f3029d",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86268,
+    "requested_entry": 0.86268,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T18:00:00+00:00",
+    "time": "2026-06-12T18:00:00+00:00",
+    "fill_price": 0.86268,
+    "fill_window": {
+      "start": "2026-06-12T17:00:00+00:00",
+      "end": "2026-06-12T18:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.388888888889091,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "35ab71583d174b60dee8b507",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86317,
+    "requested_entry": 0.86317,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T08:00:00+00:00",
+    "time": "2026-06-12T08:00:00+00:00",
+    "fill_price": 0.86317,
+    "fill_window": {
+      "start": "2026-06-12T07:00:00+00:00",
+      "end": "2026-06-12T08:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.8750000000000252,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "cec00833c376836e494c78d6",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86291,
+    "requested_entry": 0.86291,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T12:00:00+00:00",
+    "time": "2026-06-12T12:00:00+00:00",
+    "fill_price": 0.86291,
+    "fill_window": {
+      "start": "2026-06-12T11:00:00+00:00",
+      "end": "2026-06-12T12:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.1707317073171593,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "5e1b563447faba31b55b7afa",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86284,
+    "requested_entry": 0.86284,
+    "stop": 0.8625,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T16:00:00+00:00",
+    "time": "2026-06-12T16:00:00+00:00",
+    "fill_price": 0.86284,
+    "fill_window": {
+      "start": "2026-06-12T15:00:00+00:00",
+      "end": "2026-06-12T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T21:00:00+00:00",
+    "exit_price": 0.86248,
+    "net_r": -1.2058823529412313,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "11591cea9001ee9ababbd3db",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86294,
+    "requested_entry": 0.86294,
+    "stop": 0.8627,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T15:00:00+00:00",
+    "time": "2026-06-12T15:00:00+00:00",
+    "fill_price": 0.86294,
+    "fill_window": {
+      "start": "2026-06-12T14:00:00+00:00",
+      "end": "2026-06-12T15:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T17:00:00+00:00",
+    "exit_price": 0.86268,
+    "net_r": -1.2916666666667282,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "2cc1956e4e7b94a6cefe2002",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86303,
+    "requested_entry": 0.86303,
+    "stop": 0.8627,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T15:00:00+00:00",
+    "time": "2026-06-12T15:00:00+00:00",
+    "fill_price": 0.86303,
+    "fill_window": {
+      "start": "2026-06-12T14:00:00+00:00",
+      "end": "2026-06-12T15:00:00+00:00"
+    },
+    "exit_time": "2026-06-12T17:00:00+00:00",
+    "exit_price": 0.86268,
+    "net_r": -1.2121212121213105,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "2d2f9d4558ad2c1c5106bb38",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86276,
+    "requested_entry": 0.86276,
+    "stop": 0.86248,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-12T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-12T21:00:00+00:00",
+    "time": "2026-06-12T21:00:00+00:00",
+    "fill_price": 0.86276,
+    "fill_window": {
+      "start": "2026-06-12T20:00:00+00:00",
+      "end": "2026-06-12T21:00:00+00:00"
+    },
+    "exit_time": "2026-06-14T22:00:00+00:00",
+    "exit_price": 0.86246,
+    "net_r": -1.2500000000001188,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "aab90dee8d064f8dd00a7b17",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86252,
+    "requested_entry": 0.86252,
+    "stop": 0.86221,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-14T22:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-15T10:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "c1e1e6d5e4032274694777c8",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86343,
+    "requested_entry": 0.86343,
+    "stop": 0.86173,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-14T22:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-14T23:00:00+00:00",
+    "time": "2026-06-14T23:00:00+00:00",
+    "fill_price": 0.86343,
+    "fill_window": {
+      "start": "2026-06-14T22:00:00+00:00",
+      "end": "2026-06-14T23:00:00+00:00"
+    },
+    "exit_time": "2026-06-15T10:00:00+00:00",
+    "exit_price": 0.86448,
+    "net_r": 0.5882352941176323,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "219f6941ae4a5f894ed8ffa8",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86295,
+    "requested_entry": 0.86295,
+    "stop": 0.86242,
+    "target": 0.86448,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-15T02:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-15T10:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "88b60679dfe74ed0fe006312",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86242,
+    "requested_entry": 0.86242,
+    "stop": 0.86229,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T17:00:00+00:00",
+    "time": "2026-06-26T17:00:00+00:00",
+    "fill_price": 0.86242,
+    "fill_window": {
+      "start": "2026-06-26T16:00:00+00:00",
+      "end": "2026-06-26T17:00:00+00:00"
+    },
+    "exit_time": "2026-06-26T17:00:00+00:00",
+    "exit_price": 0.86227,
+    "net_r": -1.5384615384618436,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "2efd40ac84ae3efa88941027",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86497,
+    "requested_entry": 0.86497,
+    "stop": 0.8602,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T14:00:00+00:00",
+    "time": "2026-06-26T14:00:00+00:00",
+    "fill_price": 0.86497,
+    "fill_window": {
+      "start": "2026-06-26T13:00:00+00:00",
+      "end": "2026-06-26T14:00:00+00:00"
+    },
+    "exit_time": "2026-07-01T09:00:00+00:00",
+    "exit_price": 0.86018,
+    "net_r": -1.0146750524109054,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "4a93f18346edd700adc90b7c",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86377,
+    "requested_entry": 0.86377,
+    "stop": 0.8602,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T15:00:00+00:00",
+    "time": "2026-06-26T15:00:00+00:00",
+    "fill_price": 0.86377,
+    "fill_window": {
+      "start": "2026-06-26T14:00:00+00:00",
+      "end": "2026-06-26T15:00:00+00:00"
+    },
+    "exit_time": "2026-07-01T09:00:00+00:00",
+    "exit_price": 0.86018,
+    "net_r": -1.0196078431372602,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "bed2d36772b1931518fd3746",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86326,
+    "requested_entry": 0.86326,
+    "stop": 0.8602,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T16:00:00+00:00",
+    "time": "2026-06-26T16:00:00+00:00",
+    "fill_price": 0.86326,
+    "fill_window": {
+      "start": "2026-06-26T15:00:00+00:00",
+      "end": "2026-06-26T16:00:00+00:00"
+    },
+    "exit_time": "2026-07-01T09:00:00+00:00",
+    "exit_price": 0.86018,
+    "net_r": -1.0228758169934702,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "49871a270d9e7f19854e54c0",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86293,
+    "requested_entry": 0.86293,
+    "stop": 0.8602,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T16:00:00+00:00",
+    "time": "2026-06-26T16:00:00+00:00",
+    "fill_price": 0.86293,
+    "fill_window": {
+      "start": "2026-06-26T15:00:00+00:00",
+      "end": "2026-06-26T16:00:00+00:00"
+    },
+    "exit_time": "2026-07-01T09:00:00+00:00",
+    "exit_price": 0.86018,
+    "net_r": -1.0256410256410329,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "4963f683b0a4b9c3ce9a94aa",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8629,
+    "requested_entry": 0.8629,
+    "stop": 0.8602,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T16:00:00+00:00",
+    "time": "2026-06-26T16:00:00+00:00",
+    "fill_price": 0.8629,
+    "fill_window": {
+      "start": "2026-06-26T15:00:00+00:00",
+      "end": "2026-06-26T16:00:00+00:00"
+    },
+    "exit_time": "2026-07-01T09:00:00+00:00",
+    "exit_price": 0.86018,
+    "net_r": -1.025925925925933,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "b23ca8f341da82751be14cd4",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86254,
+    "requested_entry": 0.86254,
+    "stop": 0.86229,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T13:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T16:00:00+00:00",
+    "time": "2026-06-26T16:00:00+00:00",
+    "fill_price": 0.86254,
+    "fill_window": {
+      "start": "2026-06-26T15:00:00+00:00",
+      "end": "2026-06-26T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-26T17:00:00+00:00",
+    "exit_price": 0.86227,
+    "net_r": -1.2800000000001108,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "ad3c6dc5c799efc4c7f9d0ce",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86256,
+    "requested_entry": 0.86256,
+    "stop": 0.86237,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-26T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-26T21:00:00+00:00",
+    "time": "2026-06-26T21:00:00+00:00",
+    "fill_price": 0.86256,
+    "fill_window": {
+      "start": "2026-06-26T20:00:00+00:00",
+      "end": "2026-06-26T21:00:00+00:00"
+    },
+    "exit_time": "2026-06-26T21:00:00+00:00",
+    "exit_price": 0.86235,
+    "net_r": -1.3684210526316387,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "271f3888edd79681ed93250b",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8617,
+    "requested_entry": 0.8617,
+    "stop": 0.86116,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-28T23:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T13:00:00+00:00",
+    "time": "2026-06-29T13:00:00+00:00",
+    "fill_price": 0.8617,
+    "fill_window": {
+      "start": "2026-06-29T12:00:00+00:00",
+      "end": "2026-06-29T13:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T14:00:00+00:00",
+    "exit_price": 0.86114,
+    "net_r": -1.1296296296296704,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "b41bff6af692af2369afe267",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86225,
+    "requested_entry": 0.86225,
+    "stop": 0.86116,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-28T23:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T12:00:00+00:00",
+    "time": "2026-06-29T12:00:00+00:00",
+    "fill_price": 0.86225,
+    "fill_window": {
+      "start": "2026-06-29T11:00:00+00:00",
+      "end": "2026-06-29T12:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T14:00:00+00:00",
+    "exit_price": 0.86114,
+    "net_r": -1.0642201834862612,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "b22274dd9fb6bd631fa5c1ea",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86238,
+    "requested_entry": 0.86238,
+    "stop": 0.86219,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-29T06:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T07:00:00+00:00",
+    "time": "2026-06-29T07:00:00+00:00",
+    "fill_price": 0.86238,
+    "fill_window": {
+      "start": "2026-06-29T06:00:00+00:00",
+      "end": "2026-06-29T07:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T12:00:00+00:00",
+    "exit_price": 0.86217,
+    "net_r": -1.3684210526316387,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "0beef7c9e8d6af0c30e94708",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86248,
+    "requested_entry": 0.86248,
+    "stop": 0.86219,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-29T06:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T07:00:00+00:00",
+    "time": "2026-06-29T07:00:00+00:00",
+    "fill_price": 0.86248,
+    "fill_window": {
+      "start": "2026-06-29T06:00:00+00:00",
+      "end": "2026-06-29T07:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T12:00:00+00:00",
+    "exit_price": 0.86217,
+    "net_r": -1.2413793103448862,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "2a376ef95d205d00a179161f",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8626,
+    "requested_entry": 0.8626,
+    "stop": 0.86219,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-29T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T08:00:00+00:00",
+    "time": "2026-06-29T08:00:00+00:00",
+    "fill_price": 0.8626,
+    "fill_window": {
+      "start": "2026-06-29T07:00:00+00:00",
+      "end": "2026-06-29T08:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T12:00:00+00:00",
+    "exit_price": 0.86217,
+    "net_r": -1.170731707317113,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "02eea049df06e24338d8f1f7",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86253,
+    "requested_entry": 0.86253,
+    "stop": 0.86219,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-29T07:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T11:00:00+00:00",
+    "time": "2026-06-29T11:00:00+00:00",
+    "fill_price": 0.86253,
+    "fill_window": {
+      "start": "2026-06-29T10:00:00+00:00",
+      "end": "2026-06-29T11:00:00+00:00"
+    },
+    "exit_time": "2026-06-29T12:00:00+00:00",
+    "exit_price": 0.86217,
+    "net_r": -1.2058823529412313,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "99776f7a385548fba85086bb",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86225,
+    "requested_entry": 0.86225,
+    "stop": 0.86103,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-29T15:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-29T16:00:00+00:00",
+    "time": "2026-06-29T16:00:00+00:00",
+    "fill_price": 0.86225,
+    "fill_window": {
+      "start": "2026-06-29T15:00:00+00:00",
+      "end": "2026-06-29T16:00:00+00:00"
+    },
+    "exit_time": "2026-06-30T05:00:00+00:00",
+    "exit_price": 0.8610099999999999,
+    "net_r": -1.0573770491803443,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "cd4d207d0a15ed14ce3c28a4",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8619,
+    "requested_entry": 0.8619,
+    "stop": 0.86115,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-30T01:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-30T02:00:00+00:00",
+    "time": "2026-06-30T02:00:00+00:00",
+    "fill_price": 0.8619,
+    "fill_window": {
+      "start": "2026-06-30T01:00:00+00:00",
+      "end": "2026-06-30T02:00:00+00:00"
+    },
+    "exit_time": "2026-06-30T05:00:00+00:00",
+    "exit_price": 0.86113,
+    "net_r": -1.0933333333333566,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "b45f2541b23b4879d1ec6658",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86179,
+    "requested_entry": 0.86179,
+    "stop": 0.86115,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-30T01:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-30T02:00:00+00:00",
+    "time": "2026-06-30T02:00:00+00:00",
+    "fill_price": 0.86179,
+    "fill_window": {
+      "start": "2026-06-30T01:00:00+00:00",
+      "end": "2026-06-30T02:00:00+00:00"
+    },
+    "exit_time": "2026-06-30T05:00:00+00:00",
+    "exit_price": 0.86113,
+    "net_r": -1.1093750000000357,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "dd8851413dd8afa68e8722d1",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.86159,
+    "requested_entry": 0.86159,
+    "stop": 0.86115,
+    "target": 0.86672,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-06-30T01:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-06-30T03:00:00+00:00",
+    "time": "2026-06-30T03:00:00+00:00",
+    "fill_price": 0.86159,
+    "fill_window": {
+      "start": "2026-06-30T02:00:00+00:00",
+      "end": "2026-06-30T03:00:00+00:00"
+    },
+    "exit_time": "2026-06-30T05:00:00+00:00",
+    "exit_price": 0.86113,
+    "net_r": -1.159090909090956,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "c208da5521f4de3810ef35e9",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85318,
+    "requested_entry": 0.85318,
+    "stop": 0.85082,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-13T09:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-13T12:00:00+00:00",
+    "time": "2026-07-13T12:00:00+00:00",
+    "fill_price": 0.85318,
+    "fill_window": {
+      "start": "2026-07-13T11:00:00+00:00",
+      "end": "2026-07-13T12:00:00+00:00"
+    },
+    "exit_time": "2026-07-14T14:00:00+00:00",
+    "exit_price": 0.85415,
+    "net_r": 0.38983050847453565,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "4bb4b6cbbe7700cb638be850",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8523,
+    "requested_entry": 0.8523,
+    "stop": 0.85223,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-13T20:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-13T22:00:00+00:00",
+    "time": "2026-07-13T22:00:00+00:00",
+    "fill_price": 0.8523,
+    "fill_window": {
+      "start": "2026-07-13T21:00:00+00:00",
+      "end": "2026-07-13T22:00:00+00:00"
+    },
+    "exit_time": "2026-07-13T22:00:00+00:00",
+    "exit_price": 0.85219,
+    "net_r": -2.28571428571663,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "5ceb8275cbc8c63240674d7c",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85255,
+    "requested_entry": 0.85255,
+    "stop": 0.85174,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-13T21:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-13T22:00:00+00:00",
+    "time": "2026-07-13T22:00:00+00:00",
+    "fill_price": 0.85255,
+    "fill_window": {
+      "start": "2026-07-13T21:00:00+00:00",
+      "end": "2026-07-13T22:00:00+00:00"
+    },
+    "exit_time": "2026-07-13T22:00:00+00:00",
+    "exit_price": 0.85172,
+    "net_r": -1.0864197530864468,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": [
+      "marketable at bar open; conservative requested-price fill without improvement"
+    ]
+  },
+  {
+    "id": "caddeec103da13f327426162",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85276,
+    "requested_entry": 0.85276,
+    "stop": 0.85126,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T02:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T05:00:00+00:00",
+    "time": "2026-07-14T05:00:00+00:00",
+    "fill_price": 0.85276,
+    "fill_window": {
+      "start": "2026-07-14T04:00:00+00:00",
+      "end": "2026-07-14T05:00:00+00:00"
+    },
+    "exit_time": "2026-07-14T14:00:00+00:00",
+    "exit_price": 0.85415,
+    "net_r": 0.8933333333333672,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "a4c48acbf5845bfb40f2be4d",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.8531,
+    "requested_entry": 0.8531,
+    "stop": 0.85126,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T08:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "WIN",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T09:00:00+00:00",
+    "time": "2026-07-14T09:00:00+00:00",
+    "fill_price": 0.8531,
+    "fill_window": {
+      "start": "2026-07-14T08:00:00+00:00",
+      "end": "2026-07-14T09:00:00+00:00"
+    },
+    "exit_time": "2026-07-14T14:00:00+00:00",
+    "exit_price": 0.85415,
+    "net_r": 0.5434782608695767,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "03d0d8f8dd58053d55f899b0",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85277,
+    "requested_entry": 0.85277,
+    "stop": 0.85222,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T08:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T09:00:00+00:00",
+    "time": "2026-07-14T09:00:00+00:00",
+    "fill_price": 0.85277,
+    "fill_window": {
+      "start": "2026-07-14T08:00:00+00:00",
+      "end": "2026-07-14T09:00:00+00:00"
+    },
+    "exit_time": "2026-07-14T10:00:00+00:00",
+    "exit_price": 0.8522,
+    "net_r": -1.127272727272752,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "e427486b2efaf6b7f016a497",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85264,
+    "requested_entry": 0.85264,
+    "stop": 0.85222,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T08:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T09:00:00+00:00",
+    "time": "2026-07-14T09:00:00+00:00",
+    "fill_price": 0.85264,
+    "fill_window": {
+      "start": "2026-07-14T08:00:00+00:00",
+      "end": "2026-07-14T09:00:00+00:00"
+    },
+    "exit_time": "2026-07-14T10:00:00+00:00",
+    "exit_price": 0.8522,
+    "net_r": -1.1666666666667238,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "a9d053a5d93fa9018b190d3a",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85184,
+    "requested_entry": 0.85184,
+    "stop": 0.85172,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T12:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T14:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "53deed51ee43233458b42bec",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85212,
+    "requested_entry": 0.85212,
+    "stop": 0.85172,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T12:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T14:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "8e6600dcf25a440bc8e5b8dd",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85347,
+    "requested_entry": 0.85347,
+    "stop": 0.85126,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T13:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T14:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "df713bbf2927ad32539f7674",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85321,
+    "requested_entry": 0.85321,
+    "stop": 0.85126,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T13:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T14:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "920eca0b49667d00c723485b",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85233,
+    "requested_entry": 0.85233,
+    "stop": 0.85172,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-14T13:00:00+00:00",
+    "status": "CANCELLED",
+    "outcome": "STORY_ENDED",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-14T14:00:00+00:00",
+    "time": null,
+    "fill_price": null,
+    "fill_window": null,
+    "exit_time": null,
+    "exit_price": null,
+    "net_r": null,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "e1a37b8808b761da06f9b538",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85279,
+    "requested_entry": 0.85279,
+    "stop": 0.8527,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-15T01:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-15T07:00:00+00:00",
+    "time": "2026-07-15T07:00:00+00:00",
+    "fill_price": 0.85279,
+    "fill_window": {
+      "start": "2026-07-15T06:00:00+00:00",
+      "end": "2026-07-15T07:00:00+00:00"
+    },
+    "exit_time": "2026-07-15T07:00:00+00:00",
+    "exit_price": 0.85268,
+    "net_r": -1.7777777777777017,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "7f3c2dd37c8d12687015bffa",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85286,
+    "requested_entry": 0.85286,
+    "stop": 0.85255,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-15T01:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-15T07:00:00+00:00",
+    "time": "2026-07-15T07:00:00+00:00",
+    "fill_price": 0.85286,
+    "fill_window": {
+      "start": "2026-07-15T06:00:00+00:00",
+      "end": "2026-07-15T07:00:00+00:00"
+    },
+    "exit_time": "2026-07-15T07:00:00+00:00",
+    "exit_price": 0.85253,
+    "net_r": -1.225806451613025,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  },
+  {
+    "id": "c0345229002b6c734bf39b06",
+    "pair": "EURGBP",
+    "side": "BUY",
+    "tf": "H1",
+    "mode": "structural_wick",
+    "entry": 0.85301,
+    "requested_entry": 0.85301,
+    "stop": 0.85233,
+    "target": 0.85415,
+    "bias": {
+      "side": "BUY",
+      "tf": "D"
+    },
+    "setup_time": "2026-07-15T02:00:00+00:00",
+    "status": "FILLED",
+    "outcome": "LOSS",
+    "observed_at": "2026-07-24T00:00:00+00:00",
+    "pending_end": "2026-07-15T07:00:00+00:00",
+    "time": "2026-07-15T07:00:00+00:00",
+    "fill_price": 0.85301,
+    "fill_window": {
+      "start": "2026-07-15T06:00:00+00:00",
+      "end": "2026-07-15T07:00:00+00:00"
+    },
+    "exit_time": "2026-07-15T07:00:00+00:00",
+    "exit_price": 0.85231,
+    "net_r": -1.1029411764706156,
+    "execution_resolution": "H1; time is first-observed fill-bar end, not exact intrabar fill",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    },
+    "flags": []
+  }
+]

@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "scope": "Source-to-alternate-feed chronology diagnostics, not verified teacher acceptance",
+  "cases": [
+    {
+      "example_id": "pdf-p08-eurgbp-buy-1",
+      "status": "UNRESOLVED",
+      "for_acceptance": false,
+      "source_feed": "FOREXCOM",
+      "source_timeframe": "H2",
+      "source_snapshot_minute_utc": {
+        "start": "2026-07-23T18:08:00Z",
+        "end_exclusive": "2026-07-23T18:09:00Z",
+        "basis": "PDF header Jul 23 2026 19:08 UTC+1: snapshot only, not setup or fill."
+      },
+      "preserved_source_prices": {
+        "entry": 0.85315,
+        "stop": 0.85289,
+        "target": 0.85447
+      },
+      "alternate_feed": {
+        "pair": "EURGBP",
+        "source": "Existing public IC Markets cTrader BID H1 export from Kevin branch; not source FOREXCOM feed",
+        "repository": "https://github.com/awujo/practicing",
+        "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+        "original_path": "data/examples/EURGBP_H1.csv.gz",
+        "original_sha256": "257ea6b66bd6c9fc46f421abe358ea792ae50319a38a900d1c4d7b49402fcad6",
+        "frozen_path": "data/examples/EURGBP_pdf_p08_icmarkets_bid_H1.csv.gz",
+        "frozen_sha256": "815f153eccb7ac981c06850bab82a5cd39dd41146810497f7b115d0839d559b0",
+        "rows": 3624,
+        "first_start_utc": "2026-01-01 22:00:00+00:00",
+        "last_start_utc": "2026-07-31 20:00:00+00:00",
+        "timestamp_convention": "UTC H1 start; sample usable only after start + 1 hour.",
+        "precision": "Original repository export uses float_format %.6g; parsed source precision preserved using %.5f FX prices.",
+        "evidence_id": "pdf-p08-eurgbp-buy-1",
+        "acceptance_status": "UNRESOLVED_DIFFERENT_FEED_AND_UNKNOWN_FILL"
+      },
+      "hourly_coverage": {
+        "start": "2026-07-22T00:00:00Z",
+        "end_exclusive": "2026-07-24T00:00:00Z",
+        "expected_rows": 48,
+        "observed_rows": 48,
+        "missing_hours": 0,
+        "does_not_prove": "M30/tick coverage, spreads, or FOREXCOM compatibility"
+      },
+      "h2_candidate_chronology": [
+        {
+          "start": "2026-07-23 01:00:00+00:00",
+          "end": "2026-07-23 03:00:00+00:00",
+          "open": 0.85321,
+          "high": 0.85351,
+          "low": 0.853,
+          "close": 0.85346
+        },
+        {
+          "start": "2026-07-23 03:00:00+00:00",
+          "end": "2026-07-23 05:00:00+00:00",
+          "open": 0.85345,
+          "high": 0.85403,
+          "low": 0.85341,
+          "close": 0.854
+        },
+        {
+          "start": "2026-07-23 05:00:00+00:00",
+          "end": "2026-07-23 07:00:00+00:00",
+          "open": 0.85401,
+          "high": 0.85419,
+          "low": 0.85362,
+          "close": 0.8541
+        },
+        {
+          "start": "2026-07-23 07:00:00+00:00",
+          "end": "2026-07-23 09:00:00+00:00",
+          "open": 0.85408,
+          "high": 0.85442,
+          "low": 0.85345,
+          "close": 0.85353
+        },
+        {
+          "start": "2026-07-23 09:00:00+00:00",
+          "end": "2026-07-23 11:00:00+00:00",
+          "open": 0.85354,
+          "high": 0.8537,
+          "low": 0.85298,
+          "close": 0.85313
+        },
+        {
+          "start": "2026-07-23 11:00:00+00:00",
+          "end": "2026-07-23 13:00:00+00:00",
+          "open": 0.85311,
+          "high": 0.85335,
+          "low": 0.85284,
+          "close": 0.85327
+        },
+        {
+          "start": "2026-07-23 13:00:00+00:00",
+          "end": "2026-07-23 15:00:00+00:00",
+          "open": 0.85328,
+          "high": 0.85383,
+          "low": 0.85288,
+          "close": 0.85371
+        },
+        {
+          "start": "2026-07-23 15:00:00+00:00",
+          "end": "2026-07-23 17:00:00+00:00",
+          "open": 0.8537,
+          "high": 0.85467,
+          "low": 0.85367,
+          "close": 0.85411
+        }
+      ],
+      "feed_diagnostic": {
+        "previous_h2_close": 0.85313,
+        "next_h2_open": 0.85311,
+        "difference_price": 2e-05,
+        "difference_pips": 0.2,
+        "source_entry_vs_previous_close_pips": 0.2,
+        "interpretation": "Exact open/previous-close policy excludes a nearby source KL candidate; this is not permission to widen acceptance tolerance."
+      },
+      "blockers": [
+        "Different price feed: FOREXCOM source versus IC Markets alternate.",
+        "Actual setup/fill time and order type are unknown; a position tool is not fill proof.",
+        "The fourth_man trigger is named but not mechanically specified by this PDF.",
+        "Daily BUY context is explicitly annotated on page 7, but exact event availability still needs source/candle alignment.",
+        "No independently measured source-candle OHLC tolerance exists.",
+        "H1 cannot resolve intrabar H2/M30 confirmation, fill, spread, or stop/target ordering."
+      ],
+      "source_bias_annotation": {
+        "side": "BUY",
+        "tf": "D",
+        "status": "VISUALLY_CONFIRMED_ANNOTATION_ONLY",
+        "evidence": {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 7,
+          "note": "Daily bullish BOS printed on D and H4 views; H4 breakout with idm H4RH4. Not an exact causal availability timestamp."
+        }
+      }
+    },
+    {
+      "example_id": "video-entries5-native-t1410-eurusd",
+      "status": "UNRESOLVED",
+      "for_acceptance": false,
+      "source_feed": "FOREXCOM",
+      "source_timeframe": "H2",
+      "source_video_pts_seconds": 1410,
+      "preserved_source_prices": {
+        "entry": 1.1533,
+        "stop": 1.1528,
+        "target": 1.15589
+      },
+      "drawing_anchor_candidate": {
+        "chart_local": "2026-08-05T06:00:00+01:00",
+        "utc": "2026-08-05T05:00:00Z",
+        "status": "SOURCE_READER_REPORTED_BOX_ANCHOR_NOT_TRIGGER_OR_FILL",
+        "basis": "Prior native1395 box handle;1410 x-axis geometry is consistent, but is not unique order-availability proof."
+      },
+      "blockers": [
+        "No frozen EURUSD candles are available locally.",
+        "Dukascopy primary month/day URLs returned HTTP503; alternate www host redirected and returned unvalidated content/HTTP429, not accepted data.",
+        "This is an illustrative personally-I-would-have plan, not an independently executed trade.",
+        "Exact bias/setup/fill UTC event alignment remains unavailable."
+      ]
+    }
+  ]
+}

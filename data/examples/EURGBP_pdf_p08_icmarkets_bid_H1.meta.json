@@ -1,0 +1,17 @@
+{
+  "pair": "EURGBP",
+  "source": "Existing public IC Markets cTrader BID H1 export from Kevin branch; not source FOREXCOM feed",
+  "repository": "https://github.com/awujo/practicing",
+  "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+  "original_path": "data/examples/EURGBP_H1.csv.gz",
+  "original_sha256": "257ea6b66bd6c9fc46f421abe358ea792ae50319a38a900d1c4d7b49402fcad6",
+  "frozen_path": "data/examples/EURGBP_pdf_p08_icmarkets_bid_H1.csv.gz",
+  "frozen_sha256": "815f153eccb7ac981c06850bab82a5cd39dd41146810497f7b115d0839d559b0",
+  "rows": 3624,
+  "first_start_utc": "2026-01-01 22:00:00+00:00",
+  "last_start_utc": "2026-07-31 20:00:00+00:00",
+  "timestamp_convention": "UTC H1 start; sample usable only afterstart+1hour",
+  "precision": "Original repository export float_format%.6g; preserved parsed source precision using%.5fFXprices",
+  "evidence_id": "pdf-p08-eurgbp-buy-1",
+  "acceptance_status": "UNRESOLVED_DIFFERENT_FEED_AND_UNKNOWN_FILL"
+}

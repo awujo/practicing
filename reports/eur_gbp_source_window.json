@@ -1,0 +1,1383 @@
+{
+  "status": "COMPUTED_SUPPORTED_ROUTES",
+  "pair": "EURGBP",
+  "as_of": "2026-07-24T00:00:00+00:00",
+  "engine_sha256": "c1d485ca2fb8b1c56a39dfb48ec53cf032edaee6cd97854eb914debe49814c14",
+  "runtime": {
+    "python": "3.12.14",
+    "pandas": "2.2.3"
+  },
+  "history_start": "2026-06-01T00:00:00+00:00",
+  "scan_start": "2026-07-22T00:00:00+00:00",
+  "coverage": {
+    "status": "COMPLETE",
+    "start": "2026-06-01T00:00:00+00:00",
+    "end": "2026-07-24T00:00:00+00:00",
+    "calendar": "FX Friday17:00-Sunday17:00 America/New_York weekend; holidays not assumed",
+    "expected_hours": 936,
+    "present_hours": 936,
+    "missing_hours": 0,
+    "missing_first_100": []
+  },
+  "policies": {
+    "level_mode": "close_reference",
+    "structure": "latest_close_turn",
+    "target": "nearest_known_unbroken_opposing_ORIGIN_KL_not_ERL",
+    "context_retirement": "target_or_origin_close_invalidation_or_opposite_confirmation",
+    "stop_profile": "structural_wick",
+    "buffer_pips": 0.5,
+    "fixed_stop_pips": 11.0,
+    "pending_hours": 24,
+    "models": [
+      "engulf_retest",
+      "oc_break_retest"
+    ],
+    "candidate_selection": "unranked alternatives; not a portfolio or mandated stacking",
+    "same_clock_opposite_contexts": "skip conflicting contexts; do not guess a side",
+    "costs": {
+      "spread_pips": 1.0,
+      "stop_slippage_pips": 0.2,
+      "commission_pips": 0.5
+    }
+  },
+  "unsupported_routes": [
+    "role_flipped_or_reused_origin",
+    "weekly_level_daily_fallback",
+    "engulf_then_further_tf",
+    "full_story_lifecycle",
+    "counterweekly_policy",
+    "nearest_ERL_target_selection",
+    "direct_h4",
+    "direct_h2",
+    "engulf_irl_retest",
+    "aggressive_fvg_direct",
+    "M30_H3_entries",
+    "broker_execution"
+  ],
+  "stories": [
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-03T21:00:00+00:00",
+      "available_at": "2026-06-04T17:00:00+00:00",
+      "level": 0.86317,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86483,
+      "reference_available_at": "2026-06-02T13:00:00+00:00",
+      "confirmation_at": "2026-06-04T17:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-04T21:00:00+00:00",
+      "available_at": "2026-06-04T21:00:00+00:00",
+      "level": 0.86382,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86483,
+      "reference_available_at": "2026-06-02T13:00:00+00:00",
+      "confirmation_at": "2026-06-04T17:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-08T21:00:00+00:00",
+      "available_at": "2026-06-09T09:00:00+00:00",
+      "level": 0.8649,
+      "level_kind": "A",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86388,
+      "reference_available_at": "2026-06-08T13:00:00+00:00",
+      "confirmation_at": "2026-06-09T09:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-09T21:00:00+00:00",
+      "available_at": "2026-06-11T13:00:00+00:00",
+      "level": 0.86263,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86346,
+      "reference_available_at": "2026-06-09T17:00:00+00:00",
+      "confirmation_at": "2026-06-11T13:00:00+00:00",
+      "target": 0.86448,
+      "target_available_at": "2026-06-09T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-10T21:00:00+00:00",
+      "available_at": "2026-06-11T13:00:00+00:00",
+      "level": 0.86247,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86346,
+      "reference_available_at": "2026-06-09T17:00:00+00:00",
+      "confirmation_at": "2026-06-11T13:00:00+00:00",
+      "target": 0.86448,
+      "target_available_at": "2026-06-09T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-11T21:00:00+00:00",
+      "available_at": "2026-06-11T21:00:00+00:00",
+      "level": 0.86279,
+      "level_kind": "V",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86346,
+      "reference_available_at": "2026-06-09T17:00:00+00:00",
+      "confirmation_at": "2026-06-11T13:00:00+00:00",
+      "target": 0.86448,
+      "target_available_at": "2026-06-09T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-11T21:00:00+00:00",
+      "available_at": "2026-06-11T21:00:00+00:00",
+      "level": 0.86197,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86346,
+      "reference_available_at": "2026-06-09T17:00:00+00:00",
+      "confirmation_at": "2026-06-11T13:00:00+00:00",
+      "target": 0.86448,
+      "target_available_at": "2026-06-09T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-17T21:00:00+00:00",
+      "available_at": "2026-06-17T21:00:00+00:00",
+      "level": 0.86402,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86488,
+      "reference_available_at": "2026-06-15T17:00:00+00:00",
+      "confirmation_at": "2026-06-17T17:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-22T21:00:00+00:00",
+      "available_at": "2026-06-22T21:00:00+00:00",
+      "level": 0.8676,
+      "level_kind": "A",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86637,
+      "reference_available_at": "2026-06-19T13:00:00+00:00",
+      "confirmation_at": "2026-06-22T13:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-22T21:00:00+00:00",
+      "available_at": "2026-06-22T21:00:00+00:00",
+      "level": 0.86813,
+      "level_kind": "PREVIOUS_HIGH",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86637,
+      "reference_available_at": "2026-06-19T13:00:00+00:00",
+      "confirmation_at": "2026-06-22T13:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-24T21:00:00+00:00",
+      "available_at": "2026-06-26T13:00:00+00:00",
+      "level": 0.86149,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86293,
+      "reference_available_at": "2026-06-23T21:00:00+00:00",
+      "confirmation_at": "2026-06-26T13:00:00+00:00",
+      "target": 0.86672,
+      "target_available_at": "2026-06-22T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-26T21:00:00+00:00",
+      "available_at": "2026-06-30T05:00:00+00:00",
+      "level": 0.86252,
+      "level_kind": "A",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86141,
+      "reference_available_at": "2026-06-26T05:00:00+00:00",
+      "confirmation_at": "2026-06-30T05:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-26T21:00:00+00:00",
+      "available_at": "2026-06-26T21:00:00+00:00",
+      "level": 0.86105,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.86252,
+      "reference_available_at": "2026-06-25T01:00:00+00:00",
+      "confirmation_at": "2026-06-26T09:00:00+00:00",
+      "target": 0.86252,
+      "target_available_at": "2026-06-25T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-26T21:00:00+00:00",
+      "available_at": "2026-06-30T05:00:00+00:00",
+      "level": 0.86276,
+      "level_kind": "PREVIOUS_HIGH",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86141,
+      "reference_available_at": "2026-06-26T05:00:00+00:00",
+      "confirmation_at": "2026-06-30T05:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-30T21:00:00+00:00",
+      "available_at": "2026-07-01T09:00:00+00:00",
+      "level": 0.86225,
+      "level_kind": "A",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86091,
+      "reference_available_at": "2026-06-30T09:00:00+00:00",
+      "confirmation_at": "2026-07-01T09:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-06-30T21:00:00+00:00",
+      "available_at": "2026-06-30T21:00:00+00:00",
+      "level": 0.86108,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86203,
+      "reference_available_at": "2026-06-29T21:00:00+00:00",
+      "confirmation_at": "2026-06-30T13:00:00+00:00",
+      "target": 0.86151,
+      "target_available_at": "2026-06-30T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-01T21:00:00+00:00",
+      "available_at": "2026-07-01T21:00:00+00:00",
+      "level": 0.86151,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.86124,
+      "reference_available_at": "2026-07-01T01:00:00+00:00",
+      "confirmation_at": "2026-07-01T09:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-03T21:00:00+00:00",
+      "available_at": "2026-07-06T09:00:00+00:00",
+      "level": 0.857,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.85635,
+      "reference_available_at": "2026-07-03T05:00:00+00:00",
+      "confirmation_at": "2026-07-06T09:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-08T21:00:00+00:00",
+      "available_at": "2026-07-08T21:00:00+00:00",
+      "level": 0.85439,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.85335,
+      "reference_available_at": "2026-07-07T13:00:00+00:00",
+      "confirmation_at": "2026-07-08T17:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-08T21:00:00+00:00",
+      "available_at": "2026-07-08T21:00:00+00:00",
+      "level": 0.85545,
+      "level_kind": "PREVIOUS_HIGH",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.85415,
+      "reference_available_at": "2026-07-08T01:00:00+00:00",
+      "confirmation_at": "2026-07-08T17:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-10T21:00:00+00:00",
+      "available_at": "2026-07-13T09:00:00+00:00",
+      "level": 0.85167,
+      "level_kind": "PREVIOUS_LOW",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.85358,
+      "reference_available_at": "2026-07-09T17:00:00+00:00",
+      "confirmation_at": "2026-07-13T09:00:00+00:00",
+      "target": 0.85415,
+      "target_available_at": "2026-07-08T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-14T21:00:00+00:00",
+      "available_at": "2026-07-15T13:00:00+00:00",
+      "level": 0.85415,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.85233,
+      "reference_available_at": "2026-07-14T13:00:00+00:00",
+      "confirmation_at": "2026-07-15T13:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-14T21:00:00+00:00",
+      "available_at": "2026-07-14T21:00:00+00:00",
+      "level": 0.85175,
+      "level_kind": "V",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.85378,
+      "reference_available_at": "2026-07-13T13:00:00+00:00",
+      "confirmation_at": "2026-07-14T17:00:00+00:00",
+      "target": 0.85415,
+      "target_available_at": "2026-07-08T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "SELL",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-14T21:00:00+00:00",
+      "available_at": "2026-07-15T13:00:00+00:00",
+      "level": 0.8541,
+      "level_kind": "PREVIOUS_HIGH",
+      "trigger": "CANDLE_SWEEP",
+      "confirmation_kind": "BREAKOUT",
+      "confirmation_reference": 0.85233,
+      "reference_available_at": "2026-07-14T13:00:00+00:00",
+      "confirmation_at": "2026-07-15T13:00:00+00:00",
+      "target": null,
+      "target_available_at": null,
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    },
+    {
+      "side": "BUY",
+      "origin_tf": "D",
+      "level_tf": "D",
+      "confirmation_tf": "H4",
+      "origin_at": "2026-07-20T21:00:00+00:00",
+      "available_at": "2026-07-21T13:00:00+00:00",
+      "level": 0.84883,
+      "level_kind": "OC",
+      "trigger": "KL_REJECTION",
+      "confirmation_kind": "SWEEP_BOS",
+      "confirmation_reference": 0.85107,
+      "reference_available_at": "2026-07-17T13:00:00+00:00",
+      "confirmation_at": "2026-07-21T13:00:00+00:00",
+      "target": 0.85282,
+      "target_available_at": "2026-07-15T21:00:00+00:00",
+      "target_kind": "ORIGIN_KL",
+      "target_tf": "D",
+      "policy": "first_touch_local_turn_nearest_known_kl",
+      "level_mode": "close_reference"
+    }
+  ],
+  "setups": [],
+  "observations": [],
+  "skipped": [
+    {
+      "origin_at": "2026-06-03T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-04T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-08T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-17T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-22T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-22T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-26T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-26T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-06-30T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-01T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-03T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-08T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-08T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-14T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    },
+    {
+      "origin_at": "2026-07-14T21:00:00+00:00",
+      "reason": "no_known_directional_origin_target"
+    }
+  ],
+  "aggregation_coverage": {
+    "D": {
+      "dropped_partial_leading": true,
+      "opening_missing_hours": 3,
+      "nominal_first_start": "2026-05-31T21:00:00+00:00",
+      "observed_first_start": "2026-06-01T00:00:00+00:00"
+    },
+    "H4": {
+      "dropped_partial_leading": true,
+      "opening_missing_hours": 3,
+      "nominal_first_start": "2026-05-31T21:00:00+00:00",
+      "observed_first_start": "2026-06-01T00:00:00+00:00"
+    },
+    "H2": {
+      "dropped_partial_leading": true,
+      "opening_missing_hours": 1,
+      "nominal_first_start": "2026-05-31T23:00:00+00:00",
+      "observed_first_start": "2026-06-01T00:00:00+00:00"
+    }
+  },
+  "summary": {
+    "stories": 25,
+    "setups": 0,
+    "filled": 0,
+    "censored": 0
+  },
+  "teacher_acceptance": {
+    "status": "UNRESOLVED",
+    "results": [
+      {
+        "id": "pdf-p02-eurcad-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p03-eurjpy-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p05-eurchf-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p06-eurchf-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p08-eurgbp-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p10-usoil-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "Stacked-box target-to-entry association requires a second visual review.",
+          "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p10-usoil-buy-2",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "Stacked-box target-to-entry association requires a second visual review.",
+          "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p11-xauusd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p13-eurnzd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p15-usdcad-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p17-audusd-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p19-gbpjpy-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "Stacked-box target-to-entry association requires a second visual review.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p19-gbpjpy-buy-2",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "Stacked-box target-to-entry association requires a second visual review.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p20-xagusd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p20-usoil-buy-2",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p22-xagusd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p22-xagusd-sell-2",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p23-usdchf-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p23-usdchf-sell-2",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p25-audusd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p27-gbpusd-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p29-chfjpy-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p31-gbpnzd-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p33-gbpcad-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p35-gbpjpy-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop",
+          "missing or invalid stop tolerance",
+          "missing or invalid target",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p37-eurgbp-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p38-us30-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p40-audcad-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p42-usoil-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p44-ethusdt-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p46-eurjpy-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p47-gbpcad-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p50-nas100-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p52-nas100-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p54-eurgbp-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p55-us30-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p58-jp225-buy-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "pdf-p60-gbpaud-sell-1",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+          "Source-feed candle alignment and matching tolerances are not yet established.",
+          "Independent second source reviewer has not yet signed off this extraction.",
+          "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+          "Bias timeframe and setup-availability UTC window have not been independently established.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "video-entries5-native-t1065-xauusd",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Illustrative position-tool plan, not independently established filled order.",
+          "Exact bias, setup-availability and fill UTC windows are not established.",
+          "Drawing anchor time must not be substituted for actual trigger or fill time.",
+          "Source-feed candles and justified numerical tolerances are not established.",
+          "Independent numeric second review remains pending.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      },
+      {
+        "id": "video-entries5-native-t1410-eurusd",
+        "status": "UNRESOLVED",
+        "reasons": [
+          "Illustrative position-tool plan, not independently established filled order.",
+          "Exact bias, setup-availability and fill UTC windows are not established.",
+          "Drawing anchor time must not be substituted for actual trigger or fill time.",
+          "Source-feed candles and justified numerical tolerances are not established.",
+          "Independent numeric second review remains pending.",
+          "missing or invalid time window",
+          "missing or invalid bias context",
+          "missing or invalid setup time window",
+          "missing or invalid entry tolerance",
+          "missing or invalid stop tolerance",
+          "missing or invalid target tolerance"
+        ]
+      }
+    ],
+    "counts": {
+      "PASS": 0,
+      "FAIL": 0,
+      "UNRESOLVED": 40
+    }
+  },
+  "input": {
+    "path": "data/examples/EURGBP_pdf_p08_icmarkets_bid_H1.csv.gz",
+    "sha256": "815f153eccb7ac981c06850bab82a5cd39dd41146810497f7b115d0839d559b0",
+    "declared_source": "IC Markets cTrader BID public export at7bccddd; alternate to FOREXCOM teaching charts"
+  }
+}
