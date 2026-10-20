@@ -42,3 +42,11 @@ Windows reset engine observation state; events already present at bootstrap are 
 - This larger run consumes GitHub Actions time/storage. No resident AI checker is needed. No recurring schedule or automatic live-rule promotion.
 
 An independent code reviewer checked chronology, partial sizing, managed-stop references, renewal eligibility, resume identity and missing-pair accounting; regressions cover those cases. Comprehensive research means explicit scenario coverage and honest limits, not a guarantee of a globally optimal system.
+
+## Resumable finalization (20 October 2026)
+
+The original full-history run `39296129468` completed all 28 pair studies and saved all archives. Its monolithic database-saving job timed out after its configured 60 minutes; the research itself was not cancelled mid-study.
+
+`research-finalize.yml` now recovers those archives without replaying data. On its first run it validates all expected pairs/window ledgers, produces the combined `history-summary.json`, and uploads that summary **before** database work. Each subsequent job downloads only the relevant pair archive, saves at most four ledgers within a 420-second cooperative budget, and uploads an atomic checkpoint. It explicitly dispatches the next workflow with that checkpoint. A partially written ledger is retried idempotently, with matching existing records skipped.
+
+Jobs have a 15-minute timeout; at most 200 slices are allowed. Two consecutive unexpected errors or the 128 MiB research payload cap stop automatic continuation visibly rather than looping indefinitely. Cancellation suppresses automatic continuation. Checkpoints and recovered summary are retained 30 days; source pair archives retain their original seven-day expiry. A manual recovery can provide the last `state_run` if dispatch/setup fails; there is no resident AI watcher. Future full-history studies automatically dispatch this short-job finalization after their matrix succeeds.

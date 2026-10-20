@@ -31,7 +31,8 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-19)
+## Status (2026-10-20)
+- [x] All 28 full-history studies succeeded in run 39296129468; only monolithic 60-minute database publication timed out. Resumable finalization now saves combined analysis first and self-dispatches short checkpointed publication slices, reusing saved archives and skipping existing records.
 - [x] Expanded research scenarios and full frozen-history workflow implemented: post-stop 24/72h paths, re-entry, old/new native Daily/Weekly stories, confirmation delay, stops/targets/exits/cost/context alternatives. See research/SCENARIOS.md for actual coverage, limits and budgets. No M5 reconstruction/live changes.
 - [x] All 28 FX research pairs completed; full evidence review in research/results/2026-10-19/ANALYSIS.md. 828 events, 200 distinct completed baseline units, 18 new entry confirmations; negative descriptive directional results, all per-pair discovery screens insufficient. No winning policy/live change.
 - [x] Research automatic queue: manually start research-queue.yml to process all 28 FX pairs in batches up to four, two attempts per pair maximum, 150-minute coordinator budget, completion artifact. No AI calls or live strategy changes.
@@ -372,3 +373,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-19: Owner authorized adding the scenario catalogue and testing. Added sidecar immutable scenario ledgers, full ~835-day native D/W replay in <=10 windows per pair, bounded two-worker workflow, seven-day compressed archives, research-only publication payload cap and deterministic combined analysis. Independent review corrections tested; full-history results must be checked before conclusions.
 
 - Validation: 80 research tests passed, independent checker completed; real 90-day EURUSD native replay completed in ~41s (189 events), expanded sidecar in ~18s (243 records). Historical full-run completion/results are pending; do not infer all scenarios profitable or every date gap-free.
+
+- 2026-10-20: Owner noticed cancellation. Confirmed all 28 study matrix jobs succeeded, 28 archives saved; persist job hit configured 60-minute timeout, not a four-hour overall GitHub limit. Replaced monolithic finalizer with research-finalize.yml (15-minute jobs, 420-second/four-ledger work slices, immutable checkpoints, automatic next dispatch, two-error retry bound, storage-cap stop). Combined analysis is uploaded before DB work. Publisher now validates/skips existing hashes instead of reinserting every record. No studies rerun, no live changes.

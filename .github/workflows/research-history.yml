@@ -81,60 +81,18 @@ jobs:
           name: history-${{ matrix.pair }}-${{ github.run_id }}
           path: ${{ matrix.pair }}.zip
           retention-days: 7
-  persist:
-    concurrency:
-      group: slk-research-publication
-      cancel-in-progress: false
+  finalize:
     needs: [plan, study]
-    if: ${{ always() && !cancelled() }}
+    if: ${{ !cancelled() && needs.study.result == 'success' }}
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-        with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
-      - run: pip install pymysql pandas==2.2.3
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: history-*-${{ github.run_id }}
-          path: history-results
-          merge-multiple: true
-      - name: Publish research-only ledgers and consolidate coverage
+      - name: Start short resumable finalization workflows
         env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ github.run_id }}
           EXPECTED_PAIRS: ${{ needs.plan.outputs.pairs }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_CA: ${{ secrets.DATABASE_CA }}
-        run: |
-          python - <<'PY'
-          import json,os
-          from pathlib import Path
-          from slk.research_publish import publish
-          import zipfile
-          for archive in Path('history-results').glob('*.zip'):
-              with zipfile.ZipFile(archive) as z:
-                  for info in z.infolist():
-                      if not (Path('history-results')/info.filename).resolve().is_relative_to(Path('history-results').resolve()):raise ValueError('unsafe archive')
-                  z.extractall('history-results')
-          rows=[];errors=[]
-          for p in sorted(Path('history-results').rglob('history-report.json')):rows.append(json.loads(p.read_text()))
-          for p in sorted(Path('history-results').rglob('ledger.sqlite')):
-              try:publish(p,max_total_bytes=128*1024**2)
-              except Exception as e:errors.append({'ledger':str(p),'error_type':type(e).__name__})
-          expected=json.loads(os.environ['EXPECTED_PAIRS'])
-          actual=[r['pair'] for r in rows]
-          missing=sorted(set(expected)-set(actual));unexpected=sorted(set(actual)-set(expected))
-          from slk.research_scenarios import aggregate
-          summary={'pairs':rows,'publication_errors':errors,'missing_pairs':missing,'unexpected_pairs':unexpected, 'analysis':aggregate('history-results')}
-          Path('history-summary.json').write_text(json.dumps(summary,indent=2))
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-              f.write('## Expanded research coverage\n'+json.dumps(summary,indent=2)+'\n')
-          if missing or unexpected or len(actual)!=len(set(actual)) or not rows or errors or any(r['status']!='complete' for r in rows):raise SystemExit('Partial research coverage: see summary artifact')
-          PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: history-summary-${{ github.run_id }}
-          path: history-summary.json
-          retention-days: 30
+        run: gh workflow run research-finalize.yml --repo "$GITHUB_REPOSITORY" --ref claude-kevin-king -f source_run="$SOURCE_RUN" -f expected_pairs="$EXPECTED_PAIRS"

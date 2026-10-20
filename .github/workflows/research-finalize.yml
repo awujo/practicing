@@ -1,0 +1,83 @@
+name: SLK research resumable finalization
+on:
+  workflow_dispatch:
+    inputs:
+      source_run: {description: "Completed historical study run", default: "39296129468"}
+      expected_pairs: {description: "Expected pair list as JSON; empty array means all 28", default: "[]"}
+      state_run: {description: "Previous finalization run with checkpoint; empty for first slice", default: ""}
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: slk-history-finalization
+  cancel-in-progress: false
+jobs:
+  finalize:
+    concurrency:
+      group: slk-research-publication
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install pandas==2.2.3 pymysql pytest==8.3.5
+      - run: python -m pytest -q tests/test_research_finalize.py tests/test_research_batch.py
+      - uses: actions/download-artifact@v4
+        if: inputs.state_run != ''
+        with:
+          name: finalize-state-${{ inputs.state_run }}
+          run-id: ${{ inputs.state_run }}
+          github-token: ${{ github.token }}
+          path: .
+      - uses: actions/download-artifact@v4
+        if: inputs.state_run == ''
+        with:
+          pattern: history-*-${{ inputs.source_run }}
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+          path: history-results
+          merge-multiple: true
+      - id: plan
+        env:
+          SOURCE_RUN: ${{ inputs.source_run }}
+          EXPECTED_PAIRS: ${{ inputs.expected_pairs }}
+        run: python -m slk.research_finalize plan --source "$SOURCE_RUN" --expected-pairs "$EXPECTED_PAIRS"
+      - uses: actions/upload-artifact@v4
+        if: inputs.state_run == ''
+        with:
+          name: recovered-history-summary-${{ github.run_id }}
+          path: history-summary.json
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/download-artifact@v4
+        if: steps.plan.outputs.pair != ''
+        with:
+          name: history-${{ steps.plan.outputs.pair }}-${{ inputs.source_run }}
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+          path: history-results
+      - id: slice
+        env:
+          SOURCE_RUN: ${{ inputs.source_run }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: python -u -m slk.research_finalize advance --source "$SOURCE_RUN"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finalize-state-${{ github.run_id }}
+          path: finalize-state.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Start next short workflow from checkpoint
+        if: success() && steps.slice.outputs.more == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+          PREVIOUS_RUN: ${{ github.run_id }}
+          EXPECTED_PAIRS: ${{ inputs.expected_pairs }}
+        run: gh workflow run research-finalize.yml --repo "$GITHUB_REPOSITORY" --ref claude-kevin-king -f source_run="$SOURCE_RUN" -f state_run="$PREVIOUS_RUN" -f expected_pairs="$EXPECTED_PAIRS"

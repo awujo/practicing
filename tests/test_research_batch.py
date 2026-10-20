@@ -53,7 +53,7 @@ class Cursor:
         for row in rows:self.execute(sql,row)
     def fetchall(self):
         run,*ids=self.selected
-        return [{'kind':kind,'record_id':rid,'payload_sha256':v} for (runid,kind,rid),v in self.data.items() if runid==run and rid in ids]
+        return [{'kind':kind,'record_id':rid,'payload_sha256':v} for (runid,kind,rid),v in self.data.items() if runid==run and (not ids or rid in ids)]
 
 
 class Remote:
