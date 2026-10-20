@@ -1,0 +1,15 @@
+[2.0-16.0] So, yeah, so one of the things that is our major custom is that when students pay, right, we treat it like an institution, right, in the sense that when students pay, we try as much as possible to give to them what we call a welcome address call.
+[16.0-29.0] So the primary purpose of that is, you know, the way institutions behave, right, you know, when you get admission into an institution that is for those people that are students, right, you know that the first thing you would do is that there's something called a matriculation,
+[29.0-51.0] where you are told about the norms, the mode of operation of how the school works. So, yeah, so the reason why we always have a welcome address before any other team, right, is because we want to try as much as possible to make everyone who is a part of us to understand how we do things here.
+[51.0-61.0] So first thing first, I always want to give a disclaimer, right, I want to be disclaimer I want to give is that number one, I don't sell dreams to people, I will never sell a dream to anybody.
+[599.0-613.6] Funny enough, we took the two trades together Euro NZ and GBP USD. This is GBP USD from me. It was a zero drawdown trade the trade is even running. And this is the Euro NZ. Let me show you guys.
+[613.6-630.6] This is from Oanda. Yes, the data feed was from Oanda. So, so do look, look at it. Okay. Yes. So look at it. So can you see how, right? Oanda didn't feel it, but you can see from me, you know, this was it.
+[630.6-638.6] If you check the free telegram channel, you'll see where I shared it with him. Right. We're supposed to, we're going to sell from here. So he saw that this particular liquidity point.
+[638.6-648.6] Right. And this is just one model that I know that if I want, I said, if I want to trade just one model for the rest of my life, this is the model I'm going to trade. Right. And these are things that I'm going to teach you.
+[1292.1-1293.6] And I've said it before
+[1293.6-1298.9] Right. I've said it in the free telegram channel. All you need is one model increased risk and a repeated process
+[1299.4-1301.7] Somebody came to me and said what do I mean by increased risk?
+[1301.7-1306.3] What I mean is by increased risk is that if as much as your equity continues to increase
+[1306.8-1312.1] If you started trading with 0.01 lot size and you are repeating the same process you're using the same model
+
+[NOTE: This is a condensed excerpt of the strategy-relevant portions. Full 264-line transcript is orientation/onboarding content with minimal strategy substance -- see notes.md for the complete summary. Full raw transcript available in session scratch dir if needed later.]
