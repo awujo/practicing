@@ -89,8 +89,13 @@ def test_bias_state_keeps_bias_after_target(client, monkeypatch):
              "confirm_time": "2026-10-06 21:00:00"}]
     monkeypatch.setattr(webapp.db, "query", lambda sql, args=None: [] if "tf_state" in sql else rows)
     out = client.get("/api/bias/state", headers=hdr(make_init_data())).json()
+    # default close_at_target (owner 2026-10-20): the story is done at its target, the next bias is a new story
     assert [(b["pair"], b["bias"], b["state"]) for b in out] == [
-        ("EURCAD", "BULLISH", "target reached, bias continues"), ("EURGBP", "NONE", "invalidated")]
+        ("EURCAD", "NONE", "target reached: waiting for the pullback into internal range and a new story"),
+        ("EURGBP", "NONE", "invalidated")]
+    monkeypatch.setattr(webapp.db, "get_settings", lambda: {"close_at_target": "off"})
+    out = client.get("/api/bias/state", headers=hdr(make_init_data())).json()
+    assert out[0]["bias"] == "BULLISH" and out[0]["state"] == "target reached, bias continues"
 
 
 def test_authorization_tma_header(client):

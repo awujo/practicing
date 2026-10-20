@@ -39,7 +39,10 @@ def pullback(r):
     return t in ("up", "down") and (r.get("side") == "BUY") != (t == "up")
 
 
-def _from_stories(conf, story):
+TARGET_DONE = "target reached: waiting for the pullback into internal range and a new story"
+
+
+def _from_stories(conf, story, close_at_target=False):
     if not conf:
         return {"story": story, "side": None, "since": None, "stories": 0, "last": None, "state": "none"}
     last = conf[-1]
@@ -47,9 +50,14 @@ def _from_stories(conf, story):
         return {"story": story, "side": None, "since": None, "stories": 0, "last": last,
                 "state": "invalidated" if last["status"] == "INVALIDATED" else "ended by flip"
                 if last["status"] == "ENDED_FLIP" else "story line ended after the target (close back through the level)"}
+    if close_at_target and last["status"] == "TARGET_HIT":
+        # owner 2026-10-20 + Kevin [T liquidity@1500-1516 "when price takes out the external range price will come
+        # back to the internal range"]: the story is done at its target; the next bias is a new story
+        return {"story": story, "side": None, "since": None, "stories": 0, "last": last, "state": TARGET_DONE}
     run = [last]
     for r in reversed(conf[:-1]):
-        if r["side"] != last["side"] or r["status"] in ENDS or _t(r.get("line_end")) is not None:
+        if r["side"] != last["side"] or r["status"] in ENDS or _t(r.get("line_end")) is not None \
+                or (close_at_target and r["status"] == "TARGET_HIT"):
             break
         run.append(r)
     state = {"CONFIRMED": "story active", "TARGET_HIT": "target reached, bias continues",
@@ -58,7 +66,7 @@ def _from_stories(conf, story):
             "last": last, "state": state}
 
 
-def standing(rows, story, trend=None):
+def standing(rows, story, trend=None, close_at_target=False):
     """{'story', 'side' ('BUY'/'SELL'/None), 'since' (confirm time of the first story of this run), 'stories' (how
     many same-side stories in a row), 'last' (row holding the bias, or the one that ended it), 'state',
     'pullback' (an active counter-trend story, or None)}.
@@ -69,10 +77,12 @@ def standing(rows, story, trend=None):
     conf = sorted((r for r in rows if r.get("story") == story and _t(r.get("confirm_time")) is not None
                    and r.get("status") in KEEPS + ENDS and r.get("end_reason") != DROPPED),
                   key=lambda r: _t(r["confirm_time"]))
-    b = _from_stories([r for r in conf if not pullback(r)], story)
+    b = _from_stories([r for r in conf if not pullback(r)], story, close_at_target)
     pb = [r for r in conf if pullback(r) and r["status"] == "CONFIRMED"]
     b["pullback"] = pb[-1] if pb else None
-    if trend in ("up", "down"):
+    if trend in ("up", "down") and b["state"] == TARGET_DONE:
+        b["state"] += f" \u00b7 structure {'bullish' if trend == 'up' else 'bearish'}"  # context, not a bias
+    elif trend in ("up", "down"):
         side = "BUY" if trend == "up" else "SELL"
         if b["side"] != side:
             b.update(side=side, since=None, stories=0,
@@ -98,6 +108,8 @@ def note(event, row, before, after):
         if before and before.get("side"):
             return f"BIAS CHANGE: {WORD[before['side']]} → {WORD[row['side']]}"
         return f"New bias: {WORD[row['side']]}"
+    if event == "TARGET_HIT" and not w and after and after.get("state") == TARGET_DONE:
+        return "Story done at its target: wait for the pullback and a new story (no continuation trades)"
     if event == "TARGET_HIT" and w:
         return (f"Bias stays {w}: a target is not the end of the bias. It ends only on a confirmed opposite story "
                 f"or a close back through the level")

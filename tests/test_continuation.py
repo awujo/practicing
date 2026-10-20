@@ -137,3 +137,22 @@ def test_pair_state_excludes_unclosed_continuation_candle(monkeypatch):
     assert seen
     assert max(seen) == pd.Timestamp("2026-10-19 01:00", tz="UTC")
     assert all(live.candle_end(t, "H4") <= now for t in seen)
+
+
+def test_close_at_target_story_is_done():
+    from slk import standing
+    hit = {**ROW, "status": "TARGET_HIT"}
+    b = standing.standing([hit], "D", "down", close_at_target=True)
+    assert b["side"] is None and b["state"].startswith("target reached: waiting for the pullback")
+    assert standing.standing([hit], "D", close_at_target=False)["side"] == "SELL"
+    new = {**ROW, "status": "CONFIRMED", "tap_time": datetime(2026, 10, 20, 21), "confirm_time": datetime(2026, 10, 21, 21)}
+    b = standing.standing([hit, new], "D", close_at_target=True)
+    assert b["side"] == "SELL" and b["stories"] == 1  # the new story is a new bias, not story 2 of the old line
+    # no continuation alert from a story closed at its target
+    old = {**hit, "cont_breaks": None}
+    r = {**hit, "cont_breaks": "0.92903@2026-10-15 13:00", "_closed_at_target": True,
+         "confirm_time": datetime(2026, 10, 15, 5)}
+    assert live.reconcile([r], [{**old, "confirm_time": datetime(2026, 10, 15, 5)}],
+                          pd.Timestamp("2026-10-15 22:00", tz="UTC"))[1] == []
+    m = live.format_alert("TARGET_HIT", r)
+    assert "this story is done" in m and "Story closed: no continuation alerts or entries" in m

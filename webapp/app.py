@@ -164,7 +164,8 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
 def bias_state(user=Depends(require_user)):
     """Standing bias per pair and watched story TF (slk.standing): the direction stays after a target is reached and
     ends only on a confirmed opposite story or an invalidation. Strongest first: M, W, D."""
-    watched = [x for x in S.load(_db(db.get_settings))["stories"] if x in ("D", "W", "M")] or ["D", "W", "M"]
+    vals = S.load(_db(db.get_settings))
+    watched = [x for x in vals["stories"] if x in ("D", "W", "M")] or ["D", "W", "M"]
     rows = _db(db.query, "SELECT * FROM bias WHERE confirm_time IS NOT NULL AND story IN ("
                + ", ".join(["%s"] * len(watched)) + ")", watched)
     by_pair, trends = {}, {}
@@ -178,7 +179,7 @@ def bias_state(user=Depends(require_user)):
     out = []
     for pair in sorted(by_pair):
         for st in [x for x in ("M", "W", "D") if x in watched]:
-            b = standing.standing(by_pair[pair], st, trends.get((pair, st)))
+            b = standing.standing(by_pair[pair], st, trends.get((pair, st)), vals["close_at_target"])
             if b["state"] == "none":
                 continue
             last = b["last"] or {}

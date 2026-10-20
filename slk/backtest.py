@@ -162,6 +162,16 @@ def variants_table(vdf):
                                ("no breakout (cadjpy, n/a)", d["next_day"].isna())):
                     x = d[m]
                     rows.append(_score(f"  flag: {lab}", setting, value, x["result_R"], x["outcome"] == "win"))
+            if setting == "next_day_rule" and value == "require" and len(d):
+                # owner 2026-10-20: after a story reaches its target, how do the NEW stories that follow do?
+                x = d.sort_values(["pair", "story", "tap_time"])
+                prev = x.groupby(["pair", "story"])["kevin_outcome"].shift(1)
+                pside = x.groupby(["pair", "story"])["side"].shift(1)
+                for lab, m in (("new story after a target, same side", (prev == "target") & (pside == x["side"])),
+                               ("new story after a target, other side", (prev == "target") & (pside != x["side"])),
+                               ("new story after no target", prev.notna() & (prev != "target"))):
+                    y = x[m]
+                    rows.append(_score(f"  {lab}", setting, value, y["result_R"], y["outcome"] == "win"))
             if setting == "target_unswept" and value == "off" and "erl_taken" in d:
                 # owner 2026-10-16: stories whose target was already taken by a wick before the confirmation
                 for lab, m in (("ERL already taken before confirmation", d["erl_taken"] == True),  # noqa: E712

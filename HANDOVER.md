@@ -378,3 +378,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-20: Owner noticed cancellation. Confirmed all 28 study matrix jobs succeeded, 28 archives saved; persist job hit configured 60-minute timeout, not a four-hour overall GitHub limit. Replaced monolithic finalizer with research-finalize.yml (15-minute jobs, 420-second/four-ledger work slices, immutable checkpoints, automatic next dispatch, two-error retry bound, storage-cap stop). Combined analysis is uploaded before DB work. Publisher now validates/skips existing hashes instead of reinserting every record. No studies rerun, no live changes.
 
 - 2026-10-20: Reviewed complete ~835-day D/W study independently of incomplete DB copying (406/560 at payload cap). Downloaded all archives, checked matched stops, post-stop paths, re-entry returns, ambiguity, calendar-year behaviour and every pair. Committed evidence and reproducible analyzer; no new study/live-rule changes.
+- 2026-10-20: `close_at_target` (default on, STRATEGY 16g): story done at its target, standing bias ends
+  (standing.TARGET_DONE), no post-target continuation / LINE_END alerts, TARGET HIT text says wait for the pullback
+  and a new story. standing(..., close_at_target) also used by summary, bias notes, mark_htf_bias, /api/bias/state.
+  Backtest REPORT adds "new story after a target, same / other side" under next_day_rule=require.

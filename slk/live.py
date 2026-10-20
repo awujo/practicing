@@ -218,7 +218,9 @@ def pair_state(pair, h1, now, stories, cfg, memo=None):
                 if cb is None:
                     cb = resample(drop_forming(h1, STORIES[st][1], now), STORIES[st][1])
                 until = s.get("end_time")
-                if r["status"] in AFTER_TARGET and r.get("confirm_time"):
+                if cfg.get("close_at_target"):
+                    r["_closed_at_target"] = r["status"] == "TARGET_HIT"  # alert text; not stored
+                elif r["status"] in AFTER_TARGET and r.get("confirm_time"):
                     # owner 2026-10-16: after the target the question is what comes next, the story line ended
                     # (origin close back through the level) or a new internal break that continues it
                     r["_end_time"] = s.get("end_time") or _target_time(r, h1)
@@ -400,7 +402,7 @@ def mark_htf_bias(rows, cfg=None):
         if not hr:
             continue
         t = r.get("confirm_time") or r["tap_time"]
-        b = standing.standing(_as_of(hr, t), h)
+        b = standing.standing(_as_of(hr, t), h, close_at_target=cfg.get("close_at_target", False))
         if not b["side"]:
             continue
         if cfg.get("htf_bias_filter") and b["side"] != r["side"] and not r.get("no_trade"):
@@ -474,7 +476,8 @@ def reconcile(new_rows, old_rows, now, h1=None, cfg=None):
                     and _ts(now) - (_ts(r["line_end"]) + {**BAR_LEN, "M": pd.Timedelta(days=31)}[STORIES[r["story"]][0]]) \
                     <= ALERT_WINDOW:
                 alerts.append(("LINE_END", r))  # the story line ended after its target: no standing bias
-            elif r["status"] in ("CONFIRMED",) + AFTER_TARGET and r["status"] == o["status"]:
+            elif r["status"] in ("CONFIRMED",) + (() if r.get("_closed_at_target") is not None else AFTER_TARGET) \
+                    and r["status"] == o["status"]:
                 # new continuation breaks after the confirmation (and after the target), announced while fresh
                 # (no burst of old ones)
                 seen_b = {(b["level"], b["time"]) for b in unpack_breaks(o.get("cont_breaks"))}
@@ -519,7 +522,7 @@ def _one_continuation(alerts):
     return [a for i, a in enumerate(alerts) if i not in drop]
 
 
-def bias_notes(alerts, old, writes, trends=None):
+def bias_notes(alerts, old, writes, trends=None, close_at_target=False):
     """Adds r['_bias_note'] (slk.standing.note) to each alert: continuation / BIAS CHANGE / bias stays after the
     target / no bias after an invalidation. old = stored rows before this run, writes = rows written now."""
     after = {(r["story"], r["tap_time"]): r for r in old}
@@ -528,8 +531,8 @@ def bias_notes(alerts, old, writes, trends=None):
     for ev, r in alerts:
         # bias before this event: every other story as it stands now (a continuation sees the earlier ones)
         t = (trends or {}).get(r["story"])
-        before = standing.standing([x for x in after if x["tap_time"] != r["tap_time"]], r["story"], t)
-        r["_bias_note"] = standing.note(ev, r, before, standing.standing(after, r["story"], t))
+        before = standing.standing([x for x in after if x["tap_time"] != r["tap_time"]], r["story"], t, close_at_target)
+        r["_bias_note"] = standing.note(ev, r, before, standing.standing(after, r["story"], t, close_at_target))
     return alerts
 
 
@@ -842,7 +845,10 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
                        f"probability, not invalidated.",
             "CONTINUATION": f"{_an(C).capitalize()} {C} candle closed {below} the next {shape}-shape: the {word} move goes on"
                             + (" (next liquidity)." if r.get("status") in AFTER_TARGET else "."),
-            "TARGET_HIT": f"Price reached the target. The {word} bias still stands until it is proven otherwise.",
+            "TARGET_HIT": (f"Price reached the target (external range liquidity): this story is done. Kevin: after "
+                           f"the external range, price comes back to the internal range. Wait for that pullback "
+                           f"and a NEW story; no trades from this one.") if r.get("_closed_at_target") else
+                          f"Price reached the target. The {word} bias still stands until it is proven otherwise.",
             "INVALIDATED": f"The {O} closed back {above} the key level before the target.",
             "ENDED_FLIP": "An opposite key level was rejected and broken: watch for that story's own alert.",
             "LINE_END": f"After the target, the {O} closed back {above} the key level. There is no "
@@ -972,22 +978,29 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
             pl.append(f"\u2022 Target: {fp(r['target'])}" if r.get("target") is not None else
                       "\u2022 Target: set when the story confirms")
         pl.append(f"• Invalid if the {O} closes {above} {fp(r['invalidation'])}")
-        if done or r.get("status") in AFTER_TARGET:
+        if r.get("_closed_at_target"):
+            pass
+        elif done or r.get("status") in AFTER_TARGET:
             pl.append(f"\u2022 Next: {_an(C)} {C} close {below} the next {shape}-shape continues the line; "
                       f"{_an(O)} {O} close {above} {fp(r['level'])} ends it")
     else:
-        pl.append("• Nothing to do on this story now: wait for the next confirmed story")
+        pl.append("\u2022 Nothing to do on this story now: wait for the next confirmed story")
+    if r.get("_closed_at_target") and event == "TARGET_HIT":
+        pl[1:] = [f"\u2022 Story closed: no continuation alerts or entries from it",
+                  f"\u2022 Next: a pullback into the internal range, then a new rejection + {C} break = a new "
+                  f"story (its own alert)"]
     out.append("\n".join(pl))
     out.append(f"\U0001f552 Times {_ts(r['tap_time']).tz_convert(tz).tzname()} \u00b7 Bias only. Not an entry "
                f"signal: wait for an entry alert")
     return "\n\n".join(out)
 
 
-def summary_line(pair, rows):
+def summary_line(pair, rows, close_at_target=False):
     """'EURUSD: W BUY tapped (...), D SELL B 1.08120 T 1.07600' + the standing bias of story TFs whose story is
     over (target reached etc.), e.g. 'D BEARISH bias (target reached, bias continues)' (slk.standing)."""
     act = sorted((r for r in rows if r["status"] in ACTIVE), key=lambda r: "MWD".index(r["story"]))
-    stand = {s: standing.standing(rows, s) for s in "MWD" if any(r["story"] == s for r in rows)}
+    stand = {s: standing.standing(rows, s, close_at_target=close_at_target) for s in "MWD"
+             if any(r["story"] == s for r in rows)}
     parts = []
     for r in act:
         s = f"{r['story']} {r['side']}"
@@ -1011,11 +1024,11 @@ def summary_line(pair, rows):
     return line
 
 
-def format_summary(now, by_pair, kill_switch="off"):
+def format_summary(now, by_pair, kill_switch="off", close_at_target=False):
     ny = _ts(now).tz_convert("America/New_York")
     head = [f"SLK daily BIAS {ny:%a %Y-%m-%d} (NY close) - direction only, not entries",
             "Trading: OFF (kill switch)" if str(kill_switch).lower() == "on" else "Trading: kill switch off"]
-    return "\n".join(head + [summary_line(p, rows) for p, rows in by_pair.items()])
+    return "\n".join(head + [summary_line(p, rows, close_at_target) for p, rows in by_pair.items()])
 
 
 def summary_due(now, last_sent):
@@ -1056,7 +1069,8 @@ def build_cfg(stored=None, overrides=None):
     or invalid falls back to the code defaults (Kevin's rules). `overrides` (--cfg JSON) win over both."""
     vals = S.load(stored)
     cfg = {**DEFAULT, **S.story_cfg(vals), "use_monthly": "M" in vals["stories"],
-           "erl_taken_no_trade": vals["erl_taken_no_trade"], **(overrides or {})}
+           "erl_taken_no_trade": vals["erl_taken_no_trade"], "close_at_target": vals["close_at_target"],
+           **(overrides or {})}
     ecfg = {**ENTRY_DEFAULT, **S.entry_cfg(vals)}
     return cfg, ecfg, vals
 
@@ -1274,7 +1288,7 @@ def main(argv=None):
                 writes, alerts = reconcile(new, old, now, h1, cfg)
                 for r in writes:
                     db.upsert_bias(r)
-                bias_notes(alerts, old, writes, res.get("trends"))
+                bias_notes(alerts, old, writes, res.get("trends"), cfg.get("close_at_target", False))
                 for st, t in (res.get("trends") or {}).items():
                     if st in stories:
                         db.upsert_tf_state(p, st, t)
@@ -1312,7 +1326,7 @@ def main(argv=None):
         print(f"timing: download {t_cpu - t_dl:.1f}s, engine {t_db - t_cpu:.1f}s, db+alerts "
               f"{time.monotonic() - t_db:.1f}s", flush=True)
         if by_pair and vals["daily_summary"] and summary_due(started, db.get_setting("last_summary")):
-            if send_telegram(format_summary(started, by_pair, kill)) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
+            if send_telegram(format_summary(started, by_pair, kill, cfg.get("close_at_target", False))) or not os.environ.get("TELEGRAM_BOT_TOKEN"):
                 db.set_setting("last_summary", _ts(started).tz_convert("America/New_York").strftime("%Y-%m-%d"))
         if early_dirty:
             db.set_setting("early_alerts_sent", json.dumps(early_sent, sort_keys=True))

@@ -31,6 +31,11 @@ SCHEMA = [
        choices=["M", "W", "D"]),
     _s("trend_filter", "bool", "on", "Bias rules", "Only levels that agree with the origin-TF trend."),
     _s("htf_filter", "bool", "on", "Bias rules", "Never trade against the higher-TF trend."),
+    _s("close_at_target", "bool", "on", "Bias rules",
+       "A story is done when it reaches its target (the external range liquidity): no continuation alerts or "
+       "entries from it and no standing bias from it; the next bias is a NEW story (Kevin: after the external range "
+       "price comes back to the internal range). Off = the old story's bias continues after the target until a "
+       "close back through its level (research 2018-2026: post-target continuation was the weakest signal)."),
     _s("erl_taken_no_trade", "bool", "on", "Bias rules",
        "A story confirmed after a wick already took its target (the external range liquidity) is shown as bias but "
        "NO_TRADE: no entries (owner 2026-10-16; backtest 2018-2026: not trading them -80R vs -110R)."),
