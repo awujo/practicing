@@ -10,30 +10,37 @@ slk.ltf_features columns, all measured from candles closed at the entry). Method
   3. A bucket is a CANDIDATE when on TRAIN it has >= MIN_N trades and its avg R beats the TRAIN baseline of the
      same entry TF / entry kind by >= MIN_LIFT R, for the outcome column (default R_3R: fixed 3R target).
   4. Candidates are then shown on TEST once. A rule "holds" when TEST n >= MIN_N_TEST, TEST avg R beats the TEST
-     baseline by >= MIN_LIFT / 2 and TEST avg R > 0 after costs.
+     baseline by >= MIN_LIFT and TEST avg R > 0 after costs.
   5. Pairs of two candidates (AND) are tried the same way (train-chosen, test-checked).
+  6. Chance level: the same screen on the same trades with the outcome shuffled within tf / entry / train-test
+     (CHANCE_SEEDS runs). Real "holds" well above that mean are worth a look; at or below it they are luck.
+Caveats (verifier agent 2026-10-20): rows overlap (one row per level and TF; ~half are within 24 h of another
+same-pair same-side row), so n overstates the independent sample; the flat cost (1.2 pips / stop) makes wide-stop
+buckets look better by construction; hours 20-23 UTC (rollover) have bid spikes the flat cost does not cover.
 Many buckets are tested, so some TRAIN winners are luck: only TEST decides, and even a TEST pass on 8 pairs is a
 lead for the full 28-pair run, not a rule. No ANN. Nothing here changes the live bot.
 
     python -m slk.ltf_discovery --trades reports/pattern_trades.csv.gz --split 2023 --out reports
 
 
-Trades: 105442, 28 pairs, years 2018-2025; train < 2023 <= test. Outcome: R_3R (cost included).
+Trades: 100543, 28 pairs, years 2018-2025; train < 2023 <= test. Outcome: R_3R (cost included).
+
+Chance level (10 shuffles of R_3R): single holds mean 0.2 (max 1), two-condition holds mean 0.0 (max 0). Real: single 1, two-condition 11.
 
 ## Best fixed target
 
 | tf   | entry      | part   |     n |   R_1R |   R_2R |   R_3R |   R_5R |
 |:-----|:-----------|:-------|------:|-------:|-------:|-------:|-------:|
-| H1   | h1_confirm | train  | 12754 | -0.158 | -0.134 | -0.124 | -0.12  |
-| H1   | h1_confirm | test   |  7471 | -0.164 | -0.156 | -0.163 | -0.155 |
+| H1   | h1_confirm | train  | 11322 | -0.172 | -0.143 | -0.133 | -0.128 |
+| H1   | h1_confirm | test   |  6530 | -0.179 | -0.17  | -0.178 | -0.174 |
 | H1   | limit      | train  | 26996 | -0.576 | -0.429 | -0.36  | -0.285 |
 | H1   | limit      | test   | 15705 | -0.572 | -0.426 | -0.359 | -0.305 |
-| H2   | h1_confirm | train  |  6426 | -0.131 | -0.146 | -0.146 | -0.137 |
-| H2   | h1_confirm | test   |  3676 | -0.108 | -0.107 | -0.099 | -0.121 |
+| H2   | h1_confirm | train  |  5467 | -0.139 | -0.154 | -0.143 | -0.146 |
+| H2   | h1_confirm | test   |  3052 | -0.124 | -0.127 | -0.125 | -0.152 |
 | H2   | limit      | train  | 12147 | -0.432 | -0.329 | -0.28  | -0.248 |
 | H2   | limit      | test   |  6810 | -0.424 | -0.291 | -0.235 | -0.215 |
-| H4   | h1_confirm | train  |  3126 | -0.105 | -0.083 | -0.111 | -0.154 |
-| H4   | h1_confirm | test   |  1792 | -0.133 | -0.121 | -0.095 | -0.077 |
+| H4   | h1_confirm | train  |  2542 | -0.101 | -0.075 | -0.112 | -0.147 |
+| H4   | h1_confirm | test   |  1433 | -0.166 | -0.164 | -0.136 | -0.145 |
 | H4   | limit      | train  |  5444 | -0.353 | -0.256 | -0.24  | -0.228 |
 | H4   | limit      | test   |  3095 | -0.351 | -0.285 | -0.214 | -0.177 |
 
@@ -41,15 +48,15 @@ Trades: 105442, 28 pairs, years 2018-2025; train < 2023 <= test. Outcome: R_3R (
 
 | tf   | entry      | rule   |   train n |   train avg R |   train base |   test n |   test avg R |   test base |
 |:-----|:-----------|:-------|----------:|--------------:|-------------:|---------:|-------------:|------------:|
-| H1   | h1_confirm | dow=6  |       226 |         0.067 |       -0.124 |      152 |        0.371 |      -0.163 |
+| H1   | h1_confirm | dow=6  |       179 |         0.089 |       -0.133 |      118 |        0.375 |      -0.178 |
 
 ## Single conditions: all TRAIN candidates (top 40 by train avg R)
 
 | tf   | entry      | rule                |   train n |   train avg R |   train base |   test n |   test avg R |   test base | holds   |
 |:-----|:-----------|:--------------------|----------:|--------------:|-------------:|---------:|-------------:|------------:|:--------|
-| H1   | h1_confirm | dow=6               |       226 |         0.067 |       -0.124 |      152 |        0.371 |      -0.163 | True    |
-| H4   | h1_confirm | atr_pips>15.5333    |      1042 |        -0.003 |       -0.111 |      617 |       -0.039 |      -0.095 | False   |
+| H1   | h1_confirm | dow=6               |       179 |         0.089 |       -0.133 |      118 |        0.375 |      -0.178 | True    |
 | H2   | limit      | session=late        |      1752 |        -0.022 |       -0.28  |     1205 |       -0.058 |      -0.235 | False   |
+| H2   | h1_confirm | stop_atr>1.25       |      1820 |        -0.041 |       -0.143 |     1179 |       -0.155 |      -0.125 | False   |
 | H4   | limit      | session=late        |       900 |        -0.05  |       -0.24  |      597 |       -0.039 |      -0.214 | False   |
 | H1   | limit      | session=late        |      3574 |        -0.078 |       -0.36  |     2674 |       -0.172 |      -0.359 | False   |
 | H4   | limit      | 0.9<run_R<=0.94     |      1911 |        -0.08  |       -0.24  |     1077 |       -0.108 |      -0.214 | False   |
