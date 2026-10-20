@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-20)
+- [x] Successive bias-target measurement: research/results/2026-10-20-bias-targets/ANALYSIS.md. Direct frozen target-1: D806/1393, W114/243; after another completed continuation break, target-2 D457/626 selected, W30/62. Missing target/confirmation and unfinished paths are separate; these are a native-derived research ladder, not previously broadcast target forecasts.
 - [x] Full-history review completed: research/results/2026-10-20/ANALYSIS.md. All 28 archives/560 ledgers analyzed; 30,760 events. Daily direction near neutral; post-stop recovery common, but no profitable tested entry variant. Weekly 24-real-hour entry clock misses next session; tiny-stop/rollover gap assumptions materially affect R. No live promotion.
 - [x] All 28 full-history studies succeeded in run 39296129468; only monolithic 60-minute database publication timed out. Resumable finalization now saves combined analysis first and self-dispatches short checkpointed publication slices, reusing saved archives and skipping existing records.
 - [x] Expanded research scenarios and full frozen-history workflow implemented: post-stop 24/72h paths, re-entry, old/new native Daily/Weekly stories, confirmation delay, stops/targets/exits/cost/context alternatives. See research/SCENARIOS.md for actual coverage, limits and budgets. No M5 reconstruction/live changes.
@@ -382,3 +383,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   (standing.TARGET_DONE), no post-target continuation / LINE_END alerts, TARGET HIT text says wait for the pullback
   and a new story. standing(..., close_at_target) also used by summary, bias notes, mark_htf_bias, /api/bias/state.
   Backtest REPORT adds "new story after a target, same / other side" under next_day_rule=require.
+
+- 2026-10-20: Owner requested bias targets and continuation, not entry TP1. Added causal native-derived target ladder up to five stages, two timing modes, gap/ambiguity/window censoring and direct primary target checks. Measured all28 frozen inputs offline. Preserved per-story records and denominators; no live rules or DB budget changes.
