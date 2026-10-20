@@ -83,6 +83,16 @@ jobs:
           exit $rc
       - name: Leg backtest (structural stops; continuation after the target)
         if: ${{ !cancelled() && steps.bt.outcome != 'skipped' }}
+        env:  # missing months come from IC Markets cTrader (Dukascopy fallback); refreshed tokens persist in the DB
+          CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+          CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+          CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+          CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+          CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+          CTRADER_ENV: demo
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
         run: |
           ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
           [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
