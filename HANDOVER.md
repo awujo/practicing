@@ -15,7 +15,28 @@ Keep this file up to date with every commit: what is built, how it maps to the c
 | `knowledge-base/STRATEGY.md` | the consolidated rulebook written from all of the above (sections 1-9). A summary, not the source: check every rule against the transcripts/notes before coding it, quote them in code comments as `[T video-13@...]` / `[N b_entries_part5]` |
 | `reference/OPEN_QUESTIONS.md`, `reference/PROJECT_HISTORY.md` | lessons from the first Bishop bot on `main` (MT5/VPS, conservative + aggressive styles): read them, do not copy its code |
 
-The video **frames were left out on purpose (low quality)**: do not rely on frame screenshots.
+The old video **frames were left out on purpose (low quality)**, and 15 of the 18 core videos have notes but no
+transcript. **Step 0 is to rebuild the source material from the original videos**, as was done for the Kevin bot:
+
+| Release tag (GitHub Releases of this repo) | Videos | `slug_prefix` |
+|---|---|---|
+| `video1` | course video 1 | `video` |
+| `remaining-videes` | course videos 2-18 | `video` |
+| `defi-bishop` | 10 Bishop study sessions (+ 4 tweet images) | `bishop` |
+| `plug-and-play` | Plug and Play system video | `bishop` |
+
+1. Actions → "Transcribe" (`.github/workflows/transcribe.yml`, run on this branch, one run per tag above):
+   faster-whisper transcript + contact sheets → `knowledge-base/videos/<slug>/transcript.txt`,
+   `knowledge-base/frames/<slug>/`. Use a larger whisper model than `small` if it fits the time limit.
+2. Actions → "Extract course video frames" (`extract-frames.yml`): readable sheets (1280 px tiles, 2x2, every
+   20 s; lower the interval where a chart is being drawn). Check the source resolution printed in the job log.
+3. Study every video from its new transcript AND its frames (charts, levels, entries, stops, targets, pair,
+   timeframe, date), with independent agents cross-checking: one agent reads, a second agent verifies each
+   extracted rule/example against transcript + frames, disagreements are resolved against the source and written
+   down. Rebuild `knowledge-base/STRATEGY.md` from that (the old one is kept as a first draft; mark every rule as
+   confirmed / corrected / new, with its source). Record Bishop's concrete trade examples (pair, date, TF, entry,
+   stop, TP) in `tests/bishop_examples.json` so the bot can be replayed against them, as `tests/kevin_trades.json`
+   on `claude-kevin-king`.
 
 ## What to build: the AGGRESSIVE style
 
@@ -52,3 +73,4 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 ## Status
 
 - 2026-10-20: branch created with the material only (no code yet).
+- 2026-10-20: added transcribe.yml, extract-frames.yml (slug_prefix input) and knowledge-base/tools/extract_frames.py from claude-kevin-king to rebuild transcripts + readable frames (Step 0).

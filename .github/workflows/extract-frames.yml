@@ -1,0 +1,114 @@
+name: Extract course video frames
+
+# Frames-only re-run for a release whose transcripts are already committed.
+# Larger tiles (default 1280px, 2x2 per sheet) so charts are readable, and
+# the source video's real resolution is printed in each job log.
+# Replaces knowledge-base/frames/<slug>/ for every video.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug_prefix:
+        description: "Folder prefix: video (18-video course: tags video1, remaining-videes) or bishop (defi-bishop, plug-and-play)"
+        required: false
+        default: "bishop"
+      release_tag:
+        description: "Release tag holding the videos"
+        required: true
+        default: "remaining-videes"
+      interval:
+        description: "Seconds between frames"
+        required: false
+        default: "20"
+      tile_width:
+        description: "Width in px of each frame on a sheet"
+        required: false
+        default: "1280"
+      cols:
+        description: "Frames per sheet row"
+        required: false
+        default: "2"
+      rows:
+        description: "Frame rows per sheet"
+        required: false
+        default: "2"
+
+permissions:
+  contents: write
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+          PREFIX: ${{ inputs.slug_prefix }}
+        run: |
+          m=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '
+            [.assets[] | select(.name|test("\\.mp4$"))
+             | {id: .id, slug: (($ENV.PREFIX // "bishop") + "-" + (.name | ascii_downcase | sub("(\\.mp4)+$";"") | gsub("[^a-z0-9]+";"-") | sub("-+$";"")))}]')
+          echo "matrix={\"include\":$(echo "$m" | jq -c .)}" >> "$GITHUB_OUTPUT"
+
+  process:
+    needs: list
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix: ${{ fromJson(needs.list.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+      - name: Download video
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/video
+          gh api -H "Accept: application/octet-stream" \
+            "repos/$GITHUB_REPOSITORY/releases/assets/${{ matrix.id }}" > /tmp/video/in.mp4
+          echo "SOURCE ${{ matrix.slug }}:"
+          ffprobe -v error -select_streams v:0 \
+            -show_entries stream=width,height,r_frame_rate,bit_rate -of default=nw=1 /tmp/video/in.mp4
+      - name: Contact sheets
+        run: |
+          rm -rf "knowledge-base/frames/${{ matrix.slug }}"
+          python3 knowledge-base/tools/extract_frames.py sheets \
+            --video /tmp/video/in.mp4 \
+            --transcript "knowledge-base/videos/${{ matrix.slug }}/transcript.txt" \
+            --name "${{ matrix.slug }}" --interval "${{ inputs.interval }}" \
+            --width "${{ inputs.tile_width }}" --tile-width "${{ inputs.tile_width }}" \
+            --cols "${{ inputs.cols }}" --rows "${{ inputs.rows }}" --quality 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.slug }}
+          path: knowledge-base/frames/${{ matrix.slug }}
+
+  commit:
+    needs: process
+    if: always() && needs.process.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/new
+      - name: Commit
+        run: |
+          for d in /tmp/new/*/; do
+            s=$(basename "$d")
+            rm -rf "knowledge-base/frames/$s"
+            mkdir -p "knowledge-base/frames/$s"
+            cp -r "$d". "knowledge-base/frames/$s/"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A knowledge-base/frames
+          git diff --cached --quiet && { echo "nothing new"; exit 0; }
+          git commit -m "Higher-resolution contact sheets (${{ inputs.tile_width }}px)"
+          git pull --rebase && git push
