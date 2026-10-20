@@ -385,3 +385,6 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   Backtest REPORT adds "new story after a target, same / other side" under next_day_rule=require.
 
 - 2026-10-20: Owner requested bias targets and continuation, not entry TP1. Added causal native-derived target ladder up to five stages, two timing modes, gap/ambiguity/window censoring and direct primary target checks. Measured all28 frozen inputs offline. Preserved per-story records and denominators; no live rules or DB budget changes.
+- 2026-10-20: `slk.leg_backtest` (backtest.yml step, reports/LEG_REPORT.md + leg_trades.csv): D stories traded with
+  H4 swing stops (6/12 bars, min width) vs the tap-wick stop; and the 1st / every H4 continuation break after the
+  target (entry H4 close, next target by the native ladder rule). 1.2 pip cost, stop first, 20-day cap.

@@ -2,7 +2,7 @@ name: SLK backtest
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", "slk/store.py", ".github/workflows/backtest.yml"]
+    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", "slk/store.py", "slk/leg_backtest.py", ".github/workflows/backtest.yml"]
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = all 28", default: ""}
@@ -81,6 +81,17 @@ jobs:
           echo "exit=$rc" >> reports/entry_run.log
           tail -c 60000 reports/entry_run.log >> "$GITHUB_STEP_SUMMARY"
           exit $rc
+      - name: Leg backtest (structural stops; continuation after the target)
+        if: ${{ !cancelled() && steps.bt.outcome != 'skipped' }}
+        run: |
+          ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
+          [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
+          set +e
+          python -m slk.leg_backtest "${ARGS[@]}" > reports/leg_run.log 2>&1
+          rc=$?
+          echo "exit=$rc" >> reports/leg_run.log
+          tail -c 30000 reports/leg_run.log >> "$GITHUB_STEP_SUMMARY"
+          exit 0
       - name: Is the candle store complete?
         id: chk
         if: always()
