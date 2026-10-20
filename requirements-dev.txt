@@ -1,0 +1,10 @@
+pandas
+tabulate
+pytest
+pymysql
+protobuf>=3.20
+fastapi
+uvicorn
+httpx
+pyyaml
+requests
