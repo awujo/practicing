@@ -664,7 +664,7 @@ def describe(pair, root=None):
 
 def main(argv=None):
     import argparse
-    from .backtest import PAIRS
+    from .universe import PAIRS
     ap = argparse.ArgumentParser(description="Fill the candle store (python -m bishop.store --start 2018)")
     ap.add_argument("--pairs", default="")
     ap.add_argument("--start", type=int, default=datetime.now(timezone.utc).year - 3)

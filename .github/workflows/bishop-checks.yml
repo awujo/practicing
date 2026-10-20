@@ -1,0 +1,27 @@
+name: Bishop development checks
+
+on:
+  push:
+    branches: [claude-bishop-aggressive]
+    paths: ['bishop/**', 'ctrader/**', 'db/**', 'tests/**', '.github/workflows/bishop-checks.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - name: Install frame extraction test dependency
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Offline regression tests (not teacher replay acceptance)
+        run: python -m pytest -q tests
+      - name: Backfill CLI import check
+        run: python -m bishop.store --help

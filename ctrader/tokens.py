@@ -2,8 +2,9 @@
 
 Tokens are read from the DB `settings` table (keys ctrader_access_token, ctrader_refresh_token,
 ctrader_token_expiry = unix seconds) when available, else from env CTRADER_ACCESS_TOKEN /
-CTRADER_REFRESH_TOKEN. Refreshed tokens are written back to the DB (the refresh call invalidates
-the previous refresh token, so without a DB the new pair is only kept in memory for this process).
+CTRADER_REFRESH_TOKEN. Shared tokens are read-only even when DB access is unavailable.
+Set CTRADER_TOKEN_TABLE to an empty string only for Bishop's separately owned tokens;
+then refreshed tokens are stored in bishop_settings (or process-local memory without a DB).
 
 CLI (one-time setup, see ctrader/README.md):
     python -m ctrader.tokens auth-url --redirect-uri https://example.com/callback
@@ -12,6 +13,7 @@ CLI (one-time setup, see ctrader/README.md):
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.parse
@@ -22,15 +24,22 @@ REFRESH_MARGIN_S = 3 * 24 * 3600  # refresh when < 3 days left
 
 
 class MemorySettings:
-    """Fallback settings store (no DB): env-seeded, process-local."""
+    """Process-local fallback with the same shared-token policy as DbSettings.
 
-    def __init__(self, initial=None):
+    Losing database access must never grant permission to rotate shared tokens.
+    Explicit borrowed=False is for separately owned token stores and isolated tests.
+    """
+
+    def __init__(self, initial=None, borrowed=None):
         self.d = dict(initial or {})
+        self.borrowed = bool(os.environ.get("CTRADER_TOKEN_TABLE", "settings")) if borrowed is None else borrowed
 
     def get(self, k, default=None):
         return self.d.get(k, default)
 
     def set(self, k, v):
+        if self.borrowed and k.startswith("ctrader_"):
+            return
         self.d[k] = None if v is None else str(v)
 
 
@@ -48,6 +57,8 @@ class DbSettings:
     def __init__(self, db, token_table=None):
         self.db = db
         self.token_table = os.environ.get("CTRADER_TOKEN_TABLE", "settings") if token_table is None else token_table
+        if self.token_table and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,63}", self.token_table):
+            raise ValueError("CTRADER_TOKEN_TABLE must be empty or a plain SQL identifier of at most 64 characters")
         self.borrowed = bool(self.token_table)
 
     def get(self, k, default=None):
@@ -67,7 +78,9 @@ class DbSettings:
 
 def default_settings(strict=True):
     """DbSettings when DATABASE_URL is set, else MemorySettings. With strict=True an unusable DB
-    raises (so the kill switch is never silently skipped); strict=False falls back to memory."""
+    raises (so the kill switch is never silently skipped); strict=False falls back to memory.
+    Both paths preserve the read-only shared-token policy from CTRADER_TOKEN_TABLE.
+    """
     if os.environ.get("DATABASE_URL"):
         try:
             from bishop import db  # optional dependency, see CONTRACT.md
@@ -131,6 +144,8 @@ def refresh_tokens(settings=None, refresh_token=None, client_id=None, client_sec
 
 
 def _store(settings, data):
+    if getattr(settings, "borrowed", False):
+        raise RuntimeError("cTrader tokens are borrowed from the Kevin bot (read-only); token writes are disabled")
     expiry = int(time.time() + int(data.get("expiresIn") or 0)) if data.get("expiresIn") else None
     settings.set("ctrader_access_token", data["accessToken"])
     if data.get("refreshToken"):

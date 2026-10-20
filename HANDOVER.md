@@ -8,15 +8,18 @@ Keep this file up to date with every commit: what is built, how it maps to the c
 
 | Path | What |
 |---|---|
-| `knowledge-base/videos/video-01 .. video-18/` | the 18-video core course: `notes.md` (all), `transcript.txt` (01, 04, 13) |
+| `knowledge-base/videos/video-N-<description>/` | rebuilt transcripts for all 18 core videos; numeric-only folders contain older notes/transcripts |
 | `knowledge-base/videos/bishop-*/transcript.txt`, `plug-and-play/` | 10 Bishop sessions: bias entries, building bias 1+2, daily routine, entries part 5, repeating system, trades breakdown 2+3, what next, plug and play |
 | `knowledge-base/supplementary/*.md` | written notes per Bishop session, SL measurements, chart-example notes |
 | `knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf` | Bishop's 60-page chart-example PDF (the only visual source kept) |
 | `knowledge-base/STRATEGY.md` | the consolidated rulebook written from all of the above (sections 1-9). A summary, not the source: check every rule against the transcripts/notes before coding it, quote them in code comments as `[T video-13@...]` / `[N b_entries_part5]` |
 | `reference/OPEN_QUESTIONS.md`, `reference/PROJECT_HISTORY.md` | lessons from the first Bishop bot on `main` (MT5/VPS, conservative + aggressive styles): read them, do not copy its code |
 
-The old video **frames were left out on purpose (low quality)**, and 15 of the 18 core videos have notes but no
-transcript. **Step 0 is to rebuild the source material from the original videos**, as was done for the Kevin bot:
+Transcripts have landed for all release assets. Transcription completion is not source-study completion.
+Bishop's 10 release assets include one byte-identical duplicate (Part 3), leaving nine unique sessions.
+Course and plug-and-play high-resolution sheets exist; Bishop session sheets initially had ~420px tiles
+and are being replaced by readable sheets (coverage is recorded in the study ledgers).
+The original source releases are:
 
 | Release tag (GitHub Releases of this repo) | Videos | `slug_prefix` |
 |---|---|---|
@@ -74,3 +77,17 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 
 - 2026-10-20: branch created with the material only (no code yet).
 - 2026-10-20: added transcribe.yml, extract-frames.yml (slug_prefix input) and knowledge-base/tools/extract_frames.py from claude-kevin-king to rebuild transcripts + readable frames (Step 0).
+- 2026-10-20, Codex continuation: separate source readers, second source verifier, chart extractor and ongoing code reviewer are active as requested. Their actual coverage and disagreements are recorded in `knowledge-base/study/`; this is targeted first-pass verification, not all-source completion.
+- Rebuilt `knowledge-base/STRATEGY.md` as an evidence-qualified first-pass specification; unchanged old draft preserved as `knowledge-base/study/STRATEGY_LEGACY.md`. Do not copy Kevin's next-day-only filter: Bishop explicitly permits same-day confirmation. Source-backed direct 10–11-pip teaching exists in video 3 as well as continuation discussion in video 13.
+- Added strict `bishop/replay.py`: matching includes fill, pair, side, timeframe, execution profile, bias, separate setup/fill timing, entry, stop and target. Source tolerances are explicit, with no hidden pip/day relaxation. Unresolved/empty/error coverage cannot pass. The checker compares actual engine observations; it is not a detector or a substitute for running one.
+- Initial `tests/bishop_examples.json` contains 38 PDF observations, including repeated/stacked/chart-vs-broker views; these are not 38 independent executed trades. All remain unresolved until UTC timing, source-feed alignment, execution status and independently supported tolerances are established. Multiple old numerical notes were corrected from rendered PDF labels. Position-tool risk-box edges alone do not prove independent FVG geometry.
+- Infrastructure corrections: shared-token read-only policy now covers memory fallback; invalid token-table identifiers are rejected; initial SQL schema creates only `bishop_settings`/`bishop_runs`; backfill CLI no longer imports the absent backtest module. Candle ends now use calendar closes, and `candles.completed` excludes forming H1 and higher-timeframe bars. The inherited session clock is FX-specific; weekend-traded assets need a separate policy.
+- Development CI runs offline regression tests and the backfill import check; it is explicitly not a successful teacher-replay certificate. `reference/BUILD_REVIEW.md` tracks independent findings and remaining gaps.
+- First engine primitives: `bishop/price_action.py` detects two-candle A/V/OC candidates at exact shared body junctions and classifies role-relative touches/sweeps/close breaks. This exact-junction/gap policy is an explicit conservative implementation choice. Availability is the second candle's close; formation candles cannot trigger their own levels. Synthetic/prefix tests and separate reviewer integration tests pass. These are not complete bias, freshness, entry or execution models.
+
+## Open continuation work
+
+- Finish exhaustive source/frame coverage and resolve exact historical example timestamps, feed geometry and demonstrated execution states. Correct frame timestamp sampling before promoting exact timed video observations.
+- Implement the causal Bishop detector and execution models from the verified specification, reviewing every increment. Preserve source stops/targets separately from the aggressive operating preset. Never branch on fixture IDs or fill observations from expected values.
+- Run every promoted teaching case through the actual detector; no release claim until every verified example matches and unresolved coverage is closed. Then freeze cost assumptions and run supported-pair 2018+ backtests with actual coverage checks (the candle store may otherwise return partial cached history after acquisition failure).
+- Build paper runner, hourly/backtest/replay workflows, database bias/entry persistence, Telegram formatting and Mini App. No Bishop live deployment or broker execution has been enabled.

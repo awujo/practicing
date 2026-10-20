@@ -1,0 +1,1641 @@
+{
+  "schema_version": 1,
+  "source_sha256": "e6393b2e35cf79e3b3f8b63095cce9224ded8487f845e3dd29172730288c2729",
+  "review_date": "2026-10-20",
+  "scope": "38 PDF source observations plus 2 native-video position-plan observations; no completed historical replay; source values need independent verification before promotion.",
+  "examples": [
+    {
+      "id": "pdf-p02-eurcad-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURCAD",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.61278,
+      "stop": 1.61135,
+      "target": 1.61716,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-31",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 2,
+          "note": "Chart labels; broker arrow near 1.61274 is a different execution observation."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p03-eurjpy-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURJPY",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 186.324,
+      "stop": 186.231,
+      "target": 186.8,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-29",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 3,
+          "note": "Exact axis labels are visible; old notes only approximated this plan."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p05-eurchf-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURCHF",
+      "side": "BUY",
+      "tf": "M30",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.93193,
+      "stop": 0.93147,
+      "target": 0.93498,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-29",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 5,
+          "note": "Chart plan TP is .93498; broker pending-order TP differs on page 6."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p06-eurchf-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURCHF",
+      "side": "BUY",
+      "tf": "M30",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.93193,
+      "stop": 0.93147,
+      "target": 0.93704,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "buy_limit",
+      "source_feed": "broker",
+      "chart_snapshot_date": null,
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 6,
+          "note": "BUY LIMIT 0.91, entry .93193, SL .93147, TP .93704; screenshot x-axis includes July 28-29, year inferred only from adjacent chart."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "PENDING"
+    },
+    {
+      "id": "pdf-p08-eurgbp-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURGBP",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.85315,
+      "stop": 0.85289,
+      "target": 0.85447,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "fourth_man",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-23",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 8,
+          "note": "H2 High swept, Low standing V-shaped kl 4thman's CE. Grey label reads .85315, not old-note .85319."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN",
+      "price_review": {
+        "extractor": "examples",
+        "independent_reviewer": "root",
+        "fields": [
+          "entry",
+          "stop",
+          "target"
+        ],
+        "result": "agreed",
+        "scope": "Source numeric labels only; no fill-time, bias, FVG or engine-replay signoff."
+      }
+    },
+    {
+      "id": "pdf-p10-usoil-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USOIL",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 8119.7,
+      "stop": 8027.9,
+      "target": 8462.1,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-21",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 10,
+          "note": "First of two entries. Raw chart units preserved; broker chart alongside quotes ~81-85, not 8100-8500."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p10-usoil-buy-2",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USOIL",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 8172.1,
+      "stop": 8103.5,
+      "target": 8459.8,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-21",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 10,
+          "note": "Second entry. Two teal labels 8462.1/8459.8; box-to-label target association needs independent verification."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p11-xauusd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "XAUUSD",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 4125.22,
+      "stop": 4134.59,
+      "target": 4092.16,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": null,
+      "chart_snapshot_date": "2026-07-08",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 11,
+          "note": "mindguy0x community example in Bishop compilation; grey rather than pink risk box. Not a uniquely Bishop entry."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p13-eurnzd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURNZD",
+      "side": "SELL",
+      "tf": "H3",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.96156,
+      "stop": 1.96472,
+      "target": 1.94902,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-17",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 13,
+          "note": "Daily bearish breakout / H4 breakout with idm / H3 Engulfing Confirmation Entry."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p15-usdcad-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USDCAD",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.40471,
+      "stop": 1.40539,
+      "target": 1.40129,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-16",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 15,
+          "note": "H1 Breakout Confirmation Entry."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p17-audusd-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "AUDUSD",
+      "side": "BUY",
+      "tf": "M30",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.69853,
+      "stop": 0.69793,
+      "target": 0.70156,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-16",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 17,
+          "note": "M30 Engulfing Confirmation Entry; initial entry appears on July 15, snapshot July 16."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p19-gbpjpy-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPJPY",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 216.877,
+      "stop": 216.7,
+      "target": 218.014,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-15",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 19,
+          "note": "First of two stacked plans. Two teal labels 218.014/218.007; association needs independent verification."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p19-gbpjpy-buy-2",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPJPY",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 217.255,
+      "stop": 217.088,
+      "target": 218.007,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout_with_idm",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-15",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 19,
+          "note": "Second of two stacked plans; do not merge stops/targets."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p20-xagusd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "XAGUSD",
+      "side": "SELL",
+      "tf": "H4",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 59.9649,
+      "stop": 60.4838,
+      "target": 57.2402,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "Saxo",
+      "chart_snapshot_date": "2026-07-14",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 20,
+          "note": "Left chart, no named CE trigger."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p20-usoil-buy-2",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USOIL",
+      "side": "BUY",
+      "tf": "H4",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 7266.8,
+      "stop": 7134.2,
+      "target": 8111.4,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-14",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 20,
+          "note": "Right chart; raw source price units preserved."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p22-xagusd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "XAGUSD",
+      "side": "SELL",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 59.7269,
+      "stop": 60.0626,
+      "target": 58.3773,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "Saxo",
+      "chart_snapshot_date": "2026-07-13",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 22,
+          "note": "Chart plan differs from the broker execution and TP on the right."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p22-xagusd-sell-2",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "XAGUSD",
+      "side": "SELL",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 59.655,
+      "stop": null,
+      "target": 58.534,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "broker",
+      "chart_snapshot_date": null,
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 22,
+          "note": "SELL 0.06 line at 59.655; broker TP58.534; a numeric broker SL is not readable. Do not borrow chart SL."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "OPEN_POSITION"
+    },
+    {
+      "id": "pdf-p23-usdchf-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USDCHF",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.80736,
+      "stop": 0.80783,
+      "target": 0.80535,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-10",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 23,
+          "note": "Left snapshot. Target axis label reads .80535, not old-note .80525."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p23-usdchf-sell-2",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USDCHF",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.80736,
+      "stop": 0.80787,
+      "target": 0.80532,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-09",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 23,
+          "note": "Right snapshot of same setup with different stop/target; a separate source-demonstrated variant, not an extra independent trade."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p25-audusd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "AUDUSD",
+      "side": "SELL",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.69391,
+      "stop": 0.6946,
+      "target": 0.69108,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-08",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 25,
+          "note": "Explicit note: Daily recent breakout bullish, looking for shorts to liquidity, more confidence since weekly bearish."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p27-gbpusd-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPUSD",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.31932,
+      "stop": 1.31999,
+      "target": 1.31594,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-24",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 27,
+          "note": "Grey entry axis label reads1.31932, not old-note1.31923."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p29-chfjpy-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "CHFJPY",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 199.637,
+      "stop": 199.787,
+      "target": 199.01,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-24",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 29,
+          "note": "Chart plan shown on right; broker fills are a separate observation."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p31-gbpnzd-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPNZD",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 2.29993,
+      "stop": 2.29842,
+      "target": 2.30503,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-10",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 31,
+          "note": "Chart plan. Broker order below opens2.30008, closes2.30172; shown SL2.30017 is above original buy fill and is a managed SL, not this initial stop."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p33-gbpcad-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPCAD",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.86184,
+      "stop": 1.86043,
+      "target": 1.87036,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-09",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 33,
+          "note": "H2 Breakout Confirmation Entry; daily PDL swept/reject daily context on right."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p35-gbpjpy-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPJPY",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": null,
+      "stop": null,
+      "target": null,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-05",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 35,
+          "note": "Confirmation entry label but no numeric position box labels; do not infer exact entry/stop/TP from axis proximity."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p37-eurgbp-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURGBP",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.8658,
+      "stop": 0.86611,
+      "target": 0.86451,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-01",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 37,
+          "note": "Daily recent breakout bearish, PDH swept, Daily reject Daily."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p38-us30-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "US30",
+      "side": "BUY",
+      "tf": "M30",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 50816.7,
+      "stop": 50750.8,
+      "target": 51022.9,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-29",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 38,
+          "note": "Grey entry label50816.7, not old-note50818.7."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p40-audcad-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "AUDCAD",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.98719,
+      "stop": 0.98622,
+      "target": 0.99123,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-29",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 40,
+          "note": "H2 Breakout CE; daily bullish breakout/PDL swept/reject daily."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p42-usoil-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "USOIL",
+      "side": "SELL",
+      "tf": "H3",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 9007.0,
+      "stop": 9087.0,
+      "target": 8651.5,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-28",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 42,
+          "note": "H4 rejects H4 at extreme; raw source units preserved."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p44-ethusdt-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "ETHUSDT",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 2078.59,
+      "stop": 2084.05,
+      "target": 2052.41,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "Bybit",
+      "chart_snapshot_date": "2026-05-27",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 44,
+          "note": "Source ticker ETHUSDT.P perpetual. Broker screen alongside is not necessarily same contract/feed."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p46-eurjpy-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURJPY",
+      "side": "BUY",
+      "tf": "M45",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 185.214,
+      "stop": 185.146,
+      "target": 185.624,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-27",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 46,
+          "note": "M45 chart trigger; broker chart alongside is M30 and entry appears on May26."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p47-gbpcad-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPCAD",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.84768,
+      "stop": 1.84653,
+      "target": 1.85244,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "engulfing",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-21",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 47,
+          "note": "Grey entry label1.84768, not old-note1.84766."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p50-nas100-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "NAS100",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 29032.3,
+      "stop": 28981.2,
+      "target": 29322.3,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": null,
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-21",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 50,
+          "note": "Position box without named CE label; origin of plan appears May20."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p52-nas100-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "NAS100",
+      "side": "SELL",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 28978.8,
+      "stop": 29060.5,
+      "target": 28714.4,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-19",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 52,
+          "note": "Red stop label29060.5, not old-note29068.5."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p54-eurgbp-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURGBP",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 0.86609,
+      "stop": 0.86544,
+      "target": 0.86975,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 54,
+          "note": "Grey entry label.86609, not old-note.86606."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p55-us30-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "US30",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 49824.3,
+      "stop": 49775.1,
+      "target": 50123.3,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 55,
+          "note": "H1 breakout CE in right chart; page56 supplies H4 context."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p58-jp225-buy-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "JP225",
+      "side": "BUY",
+      "tf": "H1",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 62991,
+      "stop": 62813,
+      "target": 63793,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 58,
+          "note": "Red stop label62813, not old-note62613. Entry appears May13; exact UTC must be aligned."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "pdf-p60-gbpaud-sell-1",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "GBPAUD",
+      "side": "SELL",
+      "tf": "M45",
+      "mode": "teacher_source_stop",
+      "time": null,
+      "entry": 1.87881,
+      "stop": 1.88,
+      "target": 1.8739,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "trigger": "breakout_with_idm",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-12",
+      "price_observation": "visually_read_source_labels",
+      "evidence": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 60,
+          "note": "Second Entry H4 breakout with idm H4rH4 / M45 break with idm. Teal label1.87390, not old-note1.87393."
+        }
+      ],
+      "unresolved_reasons": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "bias": null,
+      "setup_time": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN"
+    },
+    {
+      "id": "video-entries5-native-t1065-xauusd",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "XAUUSD",
+      "side": "BUY",
+      "tf": "H3",
+      "mode": "teacher_source_stop",
+      "bias": null,
+      "setup_time": null,
+      "time": null,
+      "entry": 4079.56,
+      "stop": 4064.31,
+      "target": 4165.88,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "source_feed": "Saxo",
+      "chart_snapshot_date": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN",
+      "price_observation": "visually_read_native_video_frame",
+      "evidence": [
+        {
+          "path": "knowledge-base/study/examples/entries5-native-t1065.png",
+          "source_video_slug": "bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case",
+          "source_pts_seconds": 1065,
+          "source_video_sha256": "85012b57574f2f7d42f5256a36e48bec2efaa6fec89ad1899f8fc1a38097597a",
+          "note": "Actual native PTS1065: selected3h; tool RR5.66 and stop15.25. Drawing anchor Wed05Aug26 02:00 UTC+1 is not proof of fill. Teacher subsequently changes target/stop while demonstrating."
+        },
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+          "start_seconds": 1057.8,
+          "end_seconds": 1085.0
+        }
+      ],
+      "unresolved_reasons": [
+        "Illustrative position-tool plan, not independently established filled order.",
+        "Exact bias, setup-availability and fill UTC windows are not established.",
+        "Drawing anchor time must not be substituted for actual trigger or fill time.",
+        "Source-feed candles and justified numerical tolerances are not established.",
+        "Independent numeric second review remains pending."
+      ]
+    },
+    {
+      "id": "video-entries5-native-t1410-eurusd",
+      "verification": "unresolved",
+      "kind": "trade",
+      "pair": "EURUSD",
+      "side": "BUY",
+      "tf": "H2",
+      "mode": "teacher_source_stop",
+      "bias": null,
+      "setup_time": null,
+      "time": null,
+      "entry": 1.1533,
+      "stop": 1.1528,
+      "target": 1.15589,
+      "tolerances": {
+        "entry": null,
+        "stop": null,
+        "target": null
+      },
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": null,
+      "execution_status": "unresolved",
+      "source_execution_status": "ILLUSTRATIVE_PLAN",
+      "price_observation": "visually_read_native_video_frame",
+      "evidence": [
+        {
+          "path": "knowledge-base/study/examples/entries5-native-t1410.png",
+          "source_video_slug": "bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case",
+          "source_pts_seconds": 1410,
+          "source_video_sha256": "85012b57574f2f7d42f5256a36e48bec2efaa6fec89ad1899f8fc1a38097597a",
+          "note": "Actual native PTS1410: selected2h; final visible example after transient stop-dragging at1395. Transcript1403-1418: personally I would have done something like this, aim for about5R. Illustrative, not actual historical fill proof."
+        },
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+          "start_seconds": 1403.0,
+          "end_seconds": 1418.2
+        }
+      ],
+      "unresolved_reasons": [
+        "Illustrative position-tool plan, not independently established filled order.",
+        "Exact bias, setup-availability and fill UTC windows are not established.",
+        "Drawing anchor time must not be substituted for actual trigger or fill time.",
+        "Source-feed candles and justified numerical tolerances are not established.",
+        "Independent numeric second review remains pending."
+      ]
+    }
+  ]
+}
