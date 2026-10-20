@@ -1,0 +1,347 @@
+[3.1-17.1] Okay, nice. So if you pay attention to these mid-mics, so if you pay attention to what I was trying to say, let me give you a pictorial representation of what I'm trying to say.
+[17.1-27.1] So for example, we have something like this, right? The origin of the trade has actually started. We have a sweep, we have a break, we have internal range liquidity, right?
+[27.1-35.1] So pay attention to what I'm trying to show to you, right? So you see that we have this internal range liquidity, right? That we have internal range liquidity.
+[35.1-43.1] We also have this particular QMLK level. So now let's say, for example, you are not the type of person that plays a setup directly.
+[43.1-52.1] You always want to wait for confirmation entry because there are people like that. So number one, even if you have all this sweep, break, internal range liquidity sets, right?
+[52.1-68.1] So let's say price begins to trade, take out internal range liquidity and tap into that QMLK level. One of the things you can do for yourself is that you want to wait for all that current, like the four hour candle that taps into that QMLK level, how it is going to close.
+[68.1-74.1] So let's say price taps into the QMLK level, comes down with little, then the next thing you want to see is you want to see how it closes.
+[74.1-85.1] So if it closes above, right? The moment you see it close above, right? Many times you will see it close, not just above the QMLK level that it tapped into, you will see it close even above the internal range liquidity.
+[85.1-95.1] So the same thing, the same factor again, move one time frame lower from the four hours, let's say this is for four hours, just move one time frame lower to the one hour and also to the 30 minutes, right?
+[95.1-101.1] All the 30 minutes, one hour, the 30 minutes, and you are just looking for something like this. You are looking for an engulfing, right?
+[101.1-113.1] The moment you see the price engulfs after you see that the four hour time frame has actually tapped into the QMLK level and closed above, most likely you will see price just tap into this particular V-shaped QMLK level and to just continue to fly, right?
+[113.1-121.1] So many times what I was trying to say to us is that if you don't see something like that happen, another way you can see, another thing you can see most likely happen is this.
+[121.1-126.1] Let me show you. So because price is actually giving to us a bearish momentum to the downside, right? Look at this.
+[127.1-136.1] So because we are coming to take out internal range liquidity, so you will see that for us to take out internal range liquidity, price is going to be giving to us a slow movement to the downside, right?
+[136.1-144.1] So we are going to be having consecutive sales, more of sales, right? To the downside. So there is every possibility that you are going to see the same engulfing, right?
+[144.1-155.1] But in a different pattern like this. So what you are going to see is that before this internal range liquidity was going to be taken, you will see that we are going to have, let's say for example, two consecutive down candles, right?
+[155.1-166.1] So the moment you see us have two consecutive down candles, it could be this last candle, right? That was responsible for this liquidity sweep and that led price to, you know, maybe that was what made price.
+[166.1-177.1] Let's say these two consecutive down candles were what was responsible for this internal range liquidity sweep, then it was the third candle that was responsible for price, you know, to tap into this particular
+[177.1-188.0] internal range liquidity, then on the 30 minutes you will see that it engulfed. So you will see something like this just follow, right? So we had this engulfing like this.
+[188.0-199.0] So now that you have seen that, you know, we have moved runtime framework, we have seen that price has now engulfed, right? The next thing we are going to do is that there are two major places we should be looking to buy from, right?
+[199.0-211.0] We have this V-shaped key level that was already created here from that closing price. We also have this open close which is a key level here that price has also, price now disrespected because if you remember we are actually moving to the downside, right?
+[211.0-224.0] The other flow for the retracement was to the downside, but we know that what we wanted to see price come to do is that we want to see price take out internal range liquidity, tap into a particular key level that we are expecting price to tap into.
+[224.0-232.0] We just tapped there, rejected at both. And when we move one time from lower either the one hour 30 minutes, we now began to see that price actually broke.
+[232.0-240.0] Price did not just, don't just pay attention to this little engulfing that happened there. Sometimes pay attention to the two consecutive down candles before the engulfing.
+[240.0-247.0] You will see that these two consecutive down candles created for us what we call an open close, right? That open close got disrespected.
+[247.0-253.0] Remember that same open close, we could use that same open close for even more self-continuations, right?
+[253.0-262.0] We could use that same open close for more self-continuations, but only for price to do like this, price broke above it with an impossible move, close above it as a body.
+[262.0-269.0] And the next thing we saw price did was that the next candle tapped into that open close that got disrespected and price will continue to move to the upside.
+[269.0-278.0] So what could be the cost for many times missed entries, right? I have my entry here, price tapped into the open close that is here, right?
+[278.0-285.0] So we saw it engulfed, I had my entry at the V-shaped key level here, price tapped into this open close that got disrespected, right?
+[285.0-294.0] And price just continued to move. So I say, oh, missed entry, well, finish me this week, you know, all of those kind of funny, funny stuffs that we always say are straight and all of those things.
+[294.0-301.0] And only for me to just go back to my chat and study and I saw that, okay, what price actually did was that this is a key level that got disrespected, right?
+[301.0-307.0] Price just took it out, price disrespected, price came back to it again, and we just continued to move to the upside.
+[307.0-314.0] So the same thing, let's say we had this week here, right? If I'm entering here, my stop was just going to be below this particular low.
+[314.0-318.0] Even if I was entering at the same V-shaped key level, my stop was will be at this particular low.
+[318.0-323.0] Maybe I'll just had a few peeps just to give it some space to breathe, right? And all of those things.
+[323.0-332.0] So you'll see that even if you enter there and price didn't want to go like a deep retracement, right, to the V-shaped key level, you are still safe because your stop was just going to be below the week.
+[332.0-339.0] So when we talk about building bias, right, we are not talking about you mapping out one POI, you know, all of those things.
+[339.0-343.0] No, you can build bias from the current structure, especially in the four hours, right?
+[343.0-354.0] So if you look at this is what I'm trying to say. Let's say, just from what I just even explained, price has swept liquidity, broken structure, and we have something like this.
+[354.0-360.0] So one of its ways you can build bias is to tell yourself that this is an internal range liquidity that needs to go, right?
+[360.0-367.0] As much as you know that this internal range liquidity needs to go now, you are expecting a sale because you have seen a sweep of liquidity and a break of structure.
+[367.0-374.0] So how do you build a bias from this? You don't just mark out any key level that is resting here because when you look at this, we had the other flows to the downside.
+[374.0-378.0] Why? We are broken below two major structural points. One, two.
+[378.0-385.0] Two structural point has been broken below. So we know that the other flows to the downside. So I'm not just going to mark out any key level.
+[385.0-396.0] I'm not just going to mark out any key level, right? So the next thing I'm going to be doing is that I want to see how this four hours time frame is going to take out this internal range liquidity, react from a particular key level.
+[396.0-403.0] Many times you might mark out an open close, right, that you want to see price react from only for price to come to the QMR key level.
+[403.0-412.0] So what matters is not where, you know, at that time, what matters is not the exact key level that you mark, you know, all of those things, spots where the price came to, right?
+[412.0-421.0] Let's say you marked out an open close key level, price traded above it, only for price to come to where the QMR key level like this. Let's say price came to this QMR key level, right?
+[421.0-431.0] So what really matters is you can spot, okay, now we know that price has taken out internal range liquidity, price has also rejected from a QMR key level.
+[431.0-441.0] What matters to us is how the candle closes, right? How did the candle close? We tapped into the QMR key level in this type of situation because of how far price went.
+[441.0-450.0] Price might not have enough strength to come to take out, you know, enough time, not strength now to take out, you know, close below the below this internal range liquidity.
+[450.0-459.0] Many times we just see price take out, you know, take out internal range liquidity, tap into a QMR key level and, you know, price is just going to close below it like this.
+[459.0-468.0] The QMR price closes below it again. What do you do? Just move one time frame lower. It's simple. Move one time frame lower, move to like the 30 minutes or to the one hour, right?
+[468.0-475.0] And you're looking for simple thing, an engulfing. So there are several things you will see for an engulfing, right?
+[475.0-483.0] The moment you see price has engulfed, it will create for you an A-shaped key level. So one of the type of price action you're going to see is that after price has engulfed and created for you an A-shaped key level,
+[483.0-493.0] the next 30 minutes can do a one hour candle we serve as internal range liquidity, which means that we want to see price take out this particular internal range liquidity and continue to move to the downside.
+[493.0-500.0] If price doesn't give to you this type of price action, the next thing you're going to see price give to you is that you will see what we call an engulfing.
+[500.0-507.0] And after an engulfing price will directly just tap into that A-shaped key level created and it will continue to drop.
+[507.0-512.0] And if you don't see any of these two, you are likely going to see this third one. The third one is what I spoke about.
+[512.0-522.0] She will see what we call consecutive up candles, consecutive up candles that will create for us an open close, right?
+[522.0-529.0] Instead of price to respect the open close and continue to buy, we are going to see what we call an impulsive move to the downside.
+[529.0-538.0] That impulsive move to the downside, we still engulf to this particular candle, but it makes a lot of sense now because within just engulf, we broke below this open close.
+[538.0-544.0] So there's every possibility, like a 70% chance that price might not come back to this V-shaped key level again, right?
+[544.0-548.0] Price might come back to this open close that price now broke.
+[548.0-552.0] We still engulfed here, right? But the logic is not just in the engulfing.
+[552.0-557.0] We see two consecutive candles to the upside that created for us an open close, which is the key level.
+[557.0-567.0] Now the price has broken below it. So there's every possibility that price will tap into this particular key level open close that got disrespected and price will continue to move to the downside.
+[567.0-574.0] So if you do not see an engulfing where the next candle serves as internal range liquidity, you will see an engulfing where price just taps into it and continue to drops.
+[574.0-580.0] Or you see an engulfing where price breaks below the open close with an impulsive move to the downside or upside.
+[580.0-584.0] Price will play the open close that was disrespected and price will continue to move to the downside.
+[584.0-588.0] Do you understand? Right? So we're still going somewhat short.
+[588.0-594.0] So if you look at what is happening here, right? So if you look at I'm selling this guy, right?
+[594.0-600.0] In fact, the guy did want to eat from my entry, but I just went break even. I just left it and went break even.
+[600.0-604.0] So if you look at what price did here, this is the daily time for me.
+[604.0-611.0] You can see on the daily, if you move to the daily, you can see with swept liquidity on the line chart, we also broke structure, right?
+[611.0-614.0] But this is where I want to show you something, right? Look at this.
+[614.0-618.0] We took out this internal range liquidity, right?
+[618.0-625.0] If we investigate all of these candles that you see on the daily time frame, you will see that this reaction that you have here, right?
+[625.0-627.0] Let me show you something, right?
+[627.0-634.6] Because I was not in the chat when all of this, let me take out this magnet is giving me issues.
+[634.6-639.6] So I was not in the chat when all of these reactions happened, right? I just saw it.
+[639.6-646.6] So you see that all of these reactions here that you have on the daily, if you move, let's investigate what price is actually doing, right?
+[646.6-653.4] Salem Ozma. Yes, you said that is my favorite. You can see.
+[653.4-659.4] I mean, that is the uniqueness. Should I use the word uniqueness or the blessedness?
+[659.4-664.4] I don't even know which one to use. So I will not sound too pastoral, right? Of what we teach here, right?
+[664.4-670.4] You will see that what has given Dixon more win rates is just this simple continuation model.
+[670.4-674.4] Price breaks above a key level, creates an inducement liquidity or not.
+[674.4-678.4] Price comes to play that key level that is overlapping with an imbalance.
+[678.4-683.4] And you will see Dixon playing only this model over and over and over again.
+[683.4-688.4] So Salem says this is his own model, right? Where price just, you know, engulfs and all of those things.
+[688.4-690.4] So back to what we are saying, let's investigate.
+[690.4-698.4] So if you investigate where price is actually reacting from, you can see on the daily timeframe where price was actually reacting from was weeks.
+[698.4-703.4] When we came to the four hours timeframe to see the exact place where price was reacting from, right?
+[703.4-711.4] We saw that this is a four hour key level, right? This is like a four hour key level that price just kept dancing and dancing around, right?
+[711.4-714.4] So if you notice something, what did you notice here?
+[714.4-718.4] We took out internal range liquidity. You see, you are not doing so many things.
+[718.4-723.4] After internal range liquidity is taken, right? How did this kind of close?
+[723.4-727.4] It's close below. So it means that we should likely be looking for more sales, right?
+[727.4-732.4] So, but you see what price did, price came again, traded above it, right?
+[732.4-741.4] Then the next candle engulfed, right? This is where patience comes in because as you saw the price close above it, you could, you might want to say you want to start looking for buys, right?
+[741.4-746.4] But even if you want to look for buys, you must be patient enough to wait for that entry, right?
+[746.4-750.4] You must wait for a proper confirmation. So what did you see price do here?
+[750.4-756.4] Tapped into it, we took out internal range liquidity tapped into the four hour key level close below, right?
+[756.4-759.4] We must jump one time from lower to continue to look for selling opportunities.
+[759.4-767.4] So what would you see price do here, right? On the four hours timeframe, you remember we are coming from the daily on the four hours timeframe, you can see this engulfing.
+[767.4-772.4] So what did the engulfing create for us is an A-shaped key level, right?
+[772.4-776.4] Look at how price did not go below or above that A-shaped key level, right?
+[776.4-782.4] So look at this. So look at this. Tapped into that for our A-shaped key level engulfed again.
+[782.4-786.4] We kept playing around the same spot. We kept playing around the same spot.
+[786.4-791.4] Then how did I join this particular sale? Let me show us how I joined this particular sale.
+[791.4-800.0] My stop loss was very little on the one hour timeframe.
+[800.0-814.8] I hope we are learning. Let me show you how I joined the sale.
+[814.8-817.8] I want to show you guys how I joined the sale.
+[817.8-825.8] My stop loss was very tight. Not like very tight. It was a little bit, just a little.
+[825.8-836.8] Why is one hour timeframe not coming up now? I don't know why one hour timeframe is not coming up.
+[836.8-841.8] Okay, but since one hour timeframe is not coming up, I think I have an idea of what I'm just going to do.
+[841.8-847.8] Let me just use two hours. So you see on the two hours timeframe, you can see I entered at this.
+[847.8-855.9] Okay, might be network, I guess, but okay, let me try one hour again. I don't know why it's not coming up.
+[855.9-866.9] Oh, God, what have we done? What did we do to one hour now?
+[866.9-875.9] Let me just use two hours. Let's use two hours because I'm still seeing the same price action on two hours.
+[875.9-881.9] So it's still the same. Okay, reload the site. Okay, let's reload.
+[881.9-889.8] Thank you for your patience, everybody. Let me reload.
+[889.8-895.8] So you see, I have more hopes that this guy is going to go to the downside because on the daily, we have already broken structure.
+[895.8-897.8] We're certainly going to get liquidated broken structure.
+[897.8-903.8] But I want to come back to this low, at least this old daily low. Let's take it out.
+[903.8-908.8] So that's not my business, right? So, but on the one hour timeframe, so this is what I did.
+[908.8-913.8] Okay, beautiful. So this is where my entry was on the one hour timeframe.
+[913.8-926.1] So you see, it's when I checked price, price was here, please meet your mind.
+[926.1-933.1] So as I went, I checked price, price was here, right? So it was very simple. I didn't do so many logic on it.
+[933.1-936.1] I just marked out my open place key level.
+[936.1-942.1] I didn't even mark out this inducement liquidity, right? I knew that this was going to serve as our inducement liquidity, right?
+[942.1-948.1] But I didn't mark it out. The only thing I just marked out was I just marked out this open close key level that is resting here, right?
+[948.1-954.1] After marking out the open close key level, my stop loss was very tiny here like this. It was just here, right?
+[954.1-961.1] I just wanted to just try something, right? So, and only for me to just come back and check price was already here, right?
+[961.1-970.1] You can see price is reversing. So what I'm believing is, I still believe that price is going to go much lower because on the line charts, you can see we already broke structure here, right?
+[970.1-979.1] We broke below this particular low, which means that body to body, we had a break of structure body to body on the two hours to the same time, right?
+[979.1-986.1] So which means most likely we broke below this one. So most likely we might want to get another entry opportunity at this issue of key level.
+[986.1-996.1] A little tight stop loss again, until me, I want to even see all of these laws go. This is this low. I want to see this one. This one is what I want to even see go.
+[996.1-1005.1] I want to see this particular low go. That is my own concern. That is where I want to see go, right? So this is the low I want to actually see go.
+[1005.1-1012.1] So in fact, I wanted to join this by yesterday, right? When I got back yesterday, when I opened the channel, it was the first thing I saw.
+[1012.1-1021.1] But I wanted to see this low. I wanted to see this one take out. I wanted to see price come to take out this particular low, play out from a particular key level in this place.
+[1021.1-1028.1] Yeah. Well, price didn't get there. But if you look at what price did, right? Look at what price did. I want to show us what price did.
+[1028.1-1036.1] So you can see, you see how we engulfed here, right? You can see we had like three consecutive down candles to the downside, right?
+[1036.1-1044.1] But what did you notice? We engulfed, broke above this particular key level. You can see this is an A-shape. This is an open close key level, right?
+[1044.1-1050.1] Don't pay attention to all this price action that is happening here. No, that's not your business. So you can see what I just explained to us, right?
+[1050.1-1057.1] We had these two consecutive down candles that created for us open close. So price did like it was going to tap into it, but it didn't tap into it.
+[1057.1-1065.1] But you can see we had that impulsive move to the upside that broke above the key level. Now, I mean, in fact, I was just waiting around here.
+[1065.1-1072.1] This was where my entry, my entry was around, my entry was around somewhere here, right? I had a key level around that area, right?
+[1072.1-1077.1] Because I wanted to see this low taken, right? I didn't pay attention. I was already asleep. So I didn't see all of these things play out.
+[1077.1-1089.1] So this was already a key level, open close key level. Price engulfed this, engulfed this, but overall it makes a lot of sense to us because we broke above this particular open close key level.
+[1089.1-1099.1] If I was awake, right? Naturally would have been expecting price to come back to the V-shape key level, right? Is this not the V-shape key level you've been expecting price to come back to, right?
+[1099.1-1109.1] So where did price come back to again? Look at this. This is the open close key level that price broke above with an impulsive move, closed above it as a body. Price came back there, tapped into it.
+[1109.1-1120.1] And what did I say? When a key level is right, momentum must kick in. So what did you see price do? Tapped into it, one, two was preparation. The main momentum came in at the third move.
+[1120.1-1128.1] Where did the second entry come in from? Open close again. This is the next open close. Second entry tapped into the open close and the third candle.
+[1129.1-1138.1] Straight up to when to take out all of this liquidity that we're engineered. Are you seeing now? So you can see that what I just explained to us is what VIX 25 did yesterday, right?
+[1138.1-1152.1] So what I'm saying is that many times you are going to see price, right? After price takes out an internal range liquidity. If you want to wait for continuation entry, I bet you I can tell you for sure that trading is simple, right?
+[1152.1-1162.1] I know that capital might be the issue, but don't let capital be the issue. It can be an issue, but don't make it be the issue, right? Just follow these things that I'm showing you.
+[1162.1-1174.1] So what I'm trying to say to you is that confirmation entry after price takes out, or let's say an internal range liquidity, or price takes out, rejects from a particular key level and you move on time frame lower.
+[1174.1-1184.1] The moment you see two consecutive candles to the downside or to the upside, right? That creates for you an open close and you see candle like this. We broke below it. Two things should come to your mind.
+[1184.1-1193.1] Number one, we engulfed. Number two, we broke below this open close. There's every possibility that price might not come back to the A-shaped key level created, which is the extreme.
+[1193.1-1203.1] It means that there's every possibility that price will come back to something like this. This open close that got disrespected, right? That price broke and closed and price will continue to move to the downside.
+[1203.1-1213.1] So what do you want to do? If we have something like this, internal range liquidity, price took out the internal range liquidity, we are moving one time frame lower to just look for something.
+[1213.1-1223.1] Either an engulfing that has an internal range liquidity or an engulfing that's created for us an open close that got disrespected. Are we getting what I'm saying?
+[1224.1-1243.1] Is it making sense? Is it making sense? So look at this. Look at where we are now. Look at this. This could serve as an extra another entry, right? This is an open close that price created, right? This is an open close that price created, right?
+[1243.1-1250.1] Two consecutive candles to the upside, price created and open close. Disrespected is closed below it as a body. You can see how price is rejecting from there.
+[1250.1-1260.2] It means that there's every possibility where we might just continue to see more sales to the downside until this particular law even goes.
+[1260.2-1281.0] Do we see, you can see the simplicity of what we do, right? Very simple. We're not doing, it's not complicated. What we do is very, very simple.
+[1281.0-1289.0] So if you build your bias, right? I'm sorry, somebody is going to quickly attend to it.
+[1289.0-1306.8] So please stay on the call. So you will see that.
+[1306.8-1320.2] Okay, let me just. So one of the things you would actually notice is what I was trying to say to us is that if you build your bias from the weekly, build it from the.
+[1320.2-1325.2] Okay, let's look at G you said G is a very good example of what I want to show to you guys.
+[1325.2-1334.2] So when you look at G you, let's start from the day.
+[1334.2-1341.2] They.
+[1341.2-1345.2] So I wanted to see what I just explained to you on the daily time frame.
+[1345.2-1352.2] This thing is, it's, see, you can take closely so what I assure you of your win rates.
+[1352.2-1360.2] Right. I'm assuring you what do you see here to consecutive candles to the upside. Right. So okay, let's start with let's start from here now right.
+[1360.2-1374.2] I've taught you how to build bias already candle closures matters a lot blah blah blah. Pay attention to price now to consecutive candles to the upside price broke below now we didn't golf, but you can see we had a break of structure to the downside.
+[1374.2-1383.2] So what did you notice when you look to the left. Right. Pay attention to this first place. This is an open close that price stopped got disrespected.
+[1383.2-1391.2] Now, where did price come back to that same key level tapped into its momentum kicked in for two days we sold straight.
+[1391.2-1395.2] Are you seeing now. So what are we expecting next.
+[1395.2-1403.2] What happened today. Now, this one now. We had this all daily high internal range liquidity. Right.
+[1405.5-1413.5] Two consecutive candles to the upside. This time we engulfed and we broke below this low right if you move to the line that you can see how we broke below this particular.
+[1413.5-1419.5] So what did you notice we have these two consecutive candles created for us what we call an open close.
+[1419.5-1423.5] Are you seeing how price came back there again.
+[1423.5-1428.5] We could still want to wait at this V shaped key level.
+[1428.5-1438.5] Right. If you wait at a V shaped killer, it's a mistrait can price go back to the V shaped killer. Yes, it's price it has a mind of its own and I want to do whatever it likes.
+[1438.5-1444.5] Do you understand what I'm saying, but look at what price did here. Right. Look at this.
+[1444.5-1448.5] Look at this two consecutive candles to the upside.
+[1448.5-1457.5] So there is the there is the complete logic to it right you but you will not see us painting our chat like that with sweat liquidity right after the sweep of liquidity.
+[1457.5-1462.1] We broke structure.
+[1462.1-1468.1] So I'm training you to see specific areas to that you can treat as what we call point of interest.
+[1468.1-1478.1] Right. I'm training to say one of those things so you can see sweep of liquidity break of structure we didn't go off we didn't go off but when you look at the structure we broke below it.
+[1478.1-1482.1] Right. So we should look for it makes more sense to look for more cells. Right. Good.
+[1482.1-1488.1] So how many key levels here would you be anticipating you have this a shape key level that is here one.
+[1488.1-1491.1] You have this open close here that is here too.
+[1491.1-1500.1] But overall we have the main key level that you are expecting to consecutive candles to the upside that led to sweep of liquidity impossible move broke it.
+[1500.1-1502.1] Simple. No long story.
+[1502.1-1507.1] We had an open close here that price tested once but now it was broken and disrespected.
+[1507.1-1511.3] Boom.
+[1511.3-1517.3] That same key level tapped into it momentum kicked in and we continue to move to the downside.
+[1517.3-1521.3] The same thing repeated itself again on G you look at this.
+[1521.3-1523.3] Internet range liquidity is resting here.
+[1523.3-1528.6] These things happen on the big seat happens everywhere.
+[1528.6-1537.6] Don't go and test it or X everything to consecutive candles to the upside created for us an open close price disrespected with an impossible move to the downside.
+[1537.6-1539.6] Where did price come back to again?
+[1539.6-1543.6] This is it now open close key level tapped into it.
+[1543.6-1554.6] Look at this on the daily on the daily are you saying open close key level to consecutive candles price tapped into it was respected broke below it.
+[1554.6-1556.6] As an impossible move to the downside.
+[1556.6-1558.6] What did you notice here?
+[1558.6-1559.6] This is an imbalance.
+[1559.6-1560.6] Yeah.
+[1560.6-1565.6] Can you see how that open closes overlapping inside of all of this tapped.
+[1565.6-1567.6] We're just selling.
+[1567.6-1570.6] We just kept selling today again the same thing we just kept selling.
+[1570.6-1572.6] We just kept selling.
+[1572.6-1574.6] Are you seeing that you are using.
+[1574.6-1578.6] Are you seeing how he's making sense for us now?
+[1578.6-1580.6] Is it making sense to you?
+[1580.6-1582.6] Is it making sense to you as well?
+[1582.6-1585.9] Oh God.
+[1585.9-1591.8] Are we still together?
+[1591.8-1599.3] Is it making sense to you?
+[1599.3-1605.3] It must make sense to you.
+[1605.3-1606.3] Somebody has a question.
+[1606.3-1607.3] Let's take questions.
+[1607.3-1608.3] Anybody who has a question.
+[1608.3-1610.3] We have about 10 minutes left.
+[1610.3-1612.3] I wish we could stay at the 5.
+[1612.3-1615.3] We can do it though.
+[1615.3-1617.3] Who wants to do it?
+[1617.3-1624.3] We can do it though.
+[1624.3-1625.3] Okay.
+[1625.3-1626.3] Good evening.
+[1626.3-1627.3] I have a question.
+[1627.3-1628.3] Yes, please go ahead.
+[1628.3-1630.3] For your explanation so far.
+[1630.3-1632.3] It's getting clearer and clearer.
+[1632.3-1636.3] I think one thing I got tonight that I didn't get before was the open close key level.
+[1636.3-1640.3] And it's really advanced in terms of the engulfing.
+[1640.3-1646.3] So I think one thing I'm currently struggling with is stop loss placement.
+[1646.3-1647.3] Okay.
+[1647.3-1650.3] Because when you explain it, I know you have attended a level of mastery.
+[1650.3-1653.3] So the way you kind of explain it.
+[1653.3-1660.3] I don't always get a standard when I say mechanical logic to stop loss placement.
+[1660.3-1663.3] So how can we go about that?
+[1663.3-1668.3] Apart from saying maybe 10 pips or stuff like that, which sometimes you say,
+[1668.3-1675.3] is there another mechanical method that you could use for stop placement?
+[1675.3-1676.3] Yes.
+[1676.3-1677.3] Okay.
+[1677.3-1678.3] Who is that?
+[1678.3-1680.3] I'm using confirmation entry.
+[1680.3-1681.3] Okay.
+[1681.3-1682.3] Yes.
+[1682.3-1683.3] Okay.
+[1683.3-1684.3] Okay.
+[1684.3-1685.3] Okay.
+[1685.3-1686.3] Yes.
+[1686.3-1689.3] So it's, it's what we can do is that let's do this.
+[1689.3-1692.3] So we're going to, we're going to use this as an example.
+[1692.3-1697.3] So let's see for example.
+[1697.3-1700.3] I'm trying to look for, I'm trying to look for one.
+[1700.3-1702.3] That is very good.
+[1702.3-1708.3] So for me, I prefer I would love to just do one to four, one to.
+[1709.3-1710.3] Right.
+[1710.3-1712.3] So I don't know.
+[1712.3-1713.3] I don't know.
+[1713.3-1714.3] Okay.
+[1714.3-1715.3] Okay.
+[1715.3-1717.3] I don't want to digress, but let's just continue.
+[1717.3-1719.3] So now mechanical placement.
+[1719.3-1723.3] So for example, now we have price that's tapped into this particular key level that is overlapping
+[1723.3-1729.3] inside of this in balance price has created for us this, and a shape key level within golf.
+[1729.3-1735.3] We just created for us a shape key level tapped into it and started to drop onto this low was taken, right?
+[1735.3-1737.3] So in this type of scenario like this,
+[1737.3-1742.0] be a little my stopper is supposed to be here right but I would just add one more pips to it
+[1742.5-1747.2] right just to just give you more space I believe that in the same key level because this is the
+[1747.2-1752.0] flexibility that comes with how we trade if this key level gets disrespected and includes above
+[1752.0-1756.7] it with an impossible move to the upside right I will switch and look for more buying opportunities
+[1756.7-1761.2] from that same key level again but now we're still we're just talking about key placement
+[1762.0-1766.0] stop plus placement right so in situations like this instead of my stopper should just be a
+[1766.0-1771.1] little bit above the week I want one more pips to it right just to make it be a little bit below in
+[1771.1-1776.3] fact EU almost took me out safe EU almost took me out because my stop loss was here you see where
+[1776.3-1781.8] this cross line is it was here normally a hair let me use this is a good example so my stop
+[1781.8-1786.4] loss was supposed to be here which is not a bad place to put your stops because my entry was at
+[1786.4-1793.3] this v-shaped key level so my stop loss let's say let's let's use this as an example now I think
+[1793.3-1799.0] this is a good example for us to use so if my stop loss was supposed to be here you can see that it's
+[1799.0-1805.5] still fair these are seven pips tops right so but I just moved it here I just moved it here to about
+[1805.5-1813.8] five pips and it almost took me out right it's almost took me out it was about five pips right
+[1813.8-1820.2] so we have a one to three already so but it was about five pips so I just believe that if
+[1820.2-1825.6] price closes below it right with an impossible move we might just continue to move to the downside
+[1825.6-1830.3] considering all of these liquidities that are resting here but ideally where we should place
+[1830.3-1834.9] our stops in situations like this is just below the low below this particular low
+[1835.8-1841.3] right below this particular low so the same thing applies if we have an origin of a trade
+[1841.3-1846.1] in we have a sweep we have a break internal range liquidity QMRRK level we are playing
+[1846.1-1851.1] above this QMRRK level the ideal place to place your stops is just going to be above this particular
+[1851.1-1857.1] high right just place it above this particular high to give it some space to break for me I just
+[1857.1-1864.4] love I love it to be more adventurous right I love I just I just believe that 10 pips is fine
+[1864.4-1870.3] so for example if I'm taking a QMRRK level in this type of place now and my stop loss is supposed
+[1870.3-1874.6] to be able to be an extreme 15 pips tops so I'm trying to look at how long it's going to
+[1874.6-1881.8] take to hit one to three men it might take very long time so my one my 10 pips top might just be
+[1882.5-1888.1] very it might just be somewhere around right I would just prefer to play the 10 pips tops
+[1888.1-1893.2] right or many a times I could just put my stop loss at the a shape key level so what I'm trying
+[1893.2-1897.4] to say is that I'm trying to let myself know that there's every possibility that price would
+[1897.4-1903.0] tap into my QMRRK level hit my stop loss which is the V shape key level before it continues to
+[1903.0-1907.5] drop so it teaches me something when I'm coming back to the market next that is always safer for me
+[1907.5-1913.6] to put it above you know that high the strong high that was actually created so it teaches me and
+[1913.6-1918.9] you know it teaches me that as well so ideally when you catch an origin of a trade just put it
+[1918.9-1924.8] above right and write it down give it more space to break right give it more space to break
+[1924.8-1929.8] but if you catch a trade like we call the continuation like this price breaks above
+[1929.8-1935.9] it we have an a key level that is overlapping I mean I don't know I just use 10 pips max 10 11
+[1937.5-1940.5] because I can't imagine myself putting it before this no all right
+[1943.3-1948.4] I use them 10 pips on there was a USD card I caught last week and it worked
+[1948.4-1955.3] yes the next trade didn't work and that level was actually disrespected properly so
+[1955.3-1960.8] I think generally the other works but today I tried on on gold okay I think there were two
+[1960.8-1966.7] key levels so I entered on the first key level with the stop above the second key level where
+[1966.7-1973.2] there was still another high so price price kind of went through the two key levels and then went
+[1973.2-1980.6] to the high if you if you see it on the this is good yes this is good and this is Saxo I have
+[1980.6-1986.4] to go I have this Saxo broker and I have this major other broker and the reason is because this
+[1986.4-1991.4] Saxo broker is for it is that this is the broker that is consistent for mt4 so let me use this one
+[1991.4-1994.4] okay if you look at 4x
+[1996.4-1996.8] okay
+[2002.7-2006.2] nobody should go so we have XAU
+[2007.0-2015.3] okay so we use 4x 4x.com yeah I think I use I use 4x.com okay
+[2019.1-2028.2] oh okay apparently I use Saxo sorry you use Saxo yeah but I use that too I have to follow the
+[2028.2-2038.2] mentor back to back so are you Saxo right so this is Saxo okay so I think I was on the one
+[2038.2-2046.1] hour I could see that price price took out a qmr level from that from the left side
+[2046.1-2055.6] before a qmr level if if I'm if I'm reading is right then I entered so what I could see what
+[2055.8-2063.1] I could see like through what looked like through key levels to me so I entered at the lower one
+[2063.1-2070.5] and then put my stop loss above the the higher key level the the actual age a shape is easy for this
+[2070.5-2079.8] cell this cell yes okay so you can start right him close to that high this one yeah yes that one
+[2079.8-2087.3] yes yes so if you know there's there's more like a like a open close at the bottom of that
+[2087.3-2088.8] there is a range there too
+[2093.7-2100.0] and I annotate yes please go ahead and annotate this is what I'm referring to this place here
+[2101.4-2108.3] yes yes yes so I was I just you know set my limit here put my stop somewhere I guess I think
+[2108.3-2114.6] to somewhere above above this high so somewhere right here it took you out yes price took me out
+[2114.6-2120.7] and then so that got me thinking more in terms of probably putting my stop above yes I mean you
+[2120.7-2125.3] know what he's always best see okay let's do it like this right because there are times there's the
+[2126.4-2131.6] the market is very funny because it's because of his dynamic nature as much as you can have
+[2131.6-2137.7] sniper entries you can also have sniper stop loss meaning that try to snipe your stop loss and
+[2137.7-2142.1] immediately start your stop loss it will start to dump so you're just going to know what happened so
+[2142.1-2145.9] the thing is one of the things we can do for ourselves is if my stop loss is supposed to be
+[2145.9-2151.7] above this high just had more peeps through it just had a little more peeps through it right so
+[2151.7-2156.8] stop loss is just just put your stop loss above the high add one more peeps to it or 0.5 peeps
+[2156.8-2162.7] so it's and we are good okay for real for real we are good any other question should I send
+[2162.7-2169.3] another link or we should just call it a night I'll see tomorrow we have about 30 seconds left for
+[2169.3-2181.4] this session to end okay let me let me end this one so that you can start converting for us

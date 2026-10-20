@@ -1,0 +1,319 @@
+[0.2-6.2] So let's start, so we want to talk about the entry model, right?
+[6.2-10.2] You know, remember, I'm going to keep everything as simple as possible, right?
+[10.2-15.2] I'm going to keep everything as simple as possible, right?
+[15.2-22.7] So entry models, let's talk about entry models.
+[22.7-28.7] So when we talk about entry models, we remember that whenever we are talking about structure, right?
+[28.7-30.7] Advanced market structure.
+[30.7-36.7] We said one of the things we want to see is that price would give to us a definition of a range.
+[36.7-39.7] A range is going to be first defined for us by a sweep and a break.
+[39.7-42.7] The price is going to create for us internal range liquidity.
+[42.7-44.7] Then we have an order flow to the downside.
+[44.7-47.7] So one of the things we always want to see to do is that number one,
+[47.7-53.7] we want to see price actually come to take out internal range liquidity like this, right?
+[53.7-58.7] So we want to see price take out internal range liquidity and go for external range liquidity, right?
+[58.7-65.7] So now there is a logic behind we knowing exactly which of these entries to actually play, right?
+[65.7-70.7] So sometimes you would see that one of the ways you can, one of the things we want to,
+[70.7-71.7] okay, let's start with this.
+[71.7-78.7] One of the things you should keep at the back of your mind is knowing fully well that there are two things that the market wants to do, right?
+[78.7-84.7] And that is number one, to rebalance and holding balance and to also attack liquidity, right?
+[84.7-89.7] So the liquidity that I want to see price attack is going to be the internal range liquidity.
+[89.7-95.7] And sometimes you will see that we could have like a QMR key level that is overlapping inside of an imbalance, right?
+[95.7-102.7] The moment we have a QMR that is overlapping in an imbalance, we know that that is where we are likely going to be considering to play, right?
+[102.7-106.7] So there are also times that you are not going to see something like this.
+[106.7-112.7] You are not going to see, there are times you're going to have like a Q, you are going to have like an internal range liquidity.
+[112.7-114.7] I mean a complete advanced market structure, right?
+[114.7-119.7] But you're not going to have like a key level that is actually overlapping inside of an imbalance, right?
+[119.7-126.7] Then there are times where you would see that even after you have the internal range liquidity that is resting here, right?
+[126.7-130.7] You will see that you could have like an open close, right?
+[130.7-135.7] We could sometimes have like an open close that is resting close to that internal range liquidity.
+[135.7-141.7] So what do price do? Price is most likely going to play out from that open close key level, right?
+[141.7-148.7] After taking out internal range liquidity, price would go and take out the open close key, take out the liquidity, play out the open close key level and continue to drop.
+[148.7-160.7] And also there are also times that, you know, there are also times that we'll see that what we have here, what could be actually overlapping with this particular imbalance that is resting here.
+[160.7-162.7] It might not be an A-shaped key level.
+[162.7-173.7] Many times we could have like an open close also that could actually be overlapping inside of this imbalance that could be overlapping with this imbalance.
+[173.7-179.7] So the two things we want to see happen is that price must take out internal range liquidity, then play out from a particular key level, right?
+[179.7-189.7] It could be a QMR key level, which is an A-shaped key level that is overlapping inside of an imbalance or it could be an open close key level that could be overlapping inside of an imbalance.
+[189.7-204.7] So another thing we need to also understand is that there are times that many of us, maybe for some of us, we might just like a confirmation entry because, you know, price, you might just be thinking that maybe price might just take out this internal range liquidity
+[204.7-213.7] and price will continue to move to the upside like this. Yes, it is possible for price to do something like that before price continues to, you know, go into your direction, right?
+[213.7-216.7] Or maybe price might just go against your own personal direction.
+[216.7-221.7] So for some of us who wants to wait for what we call the confirmation entry, right?
+[221.7-234.7] One of the things we now begin to now begin to understand and learn is that for the confirmation entry, the only thing you need to understand is that after price plays out from a particular key level and after taking out an internal range liquidity, right?
+[234.7-239.7] The next thing we want to see again is the counter closure, right? Many times we want to see the counter closure.
+[239.7-247.7] So let's say, for example, we have this type of advanced market structure like this algo structure, people call it algo structure, advanced market structure.
+[247.7-253.7] So let's say this is on the four hours time frame, right? So this is a four hours time frame and price.
+[253.7-263.7] What price has actually done is that price has come to take out the internal range liquidity on a four hours time frame and played out from a key level that is also overlapping with an imbalance, right?
+[263.7-270.7] So, you know, this is what we call the origin of a trade. Don't forget, right? We know we have what we call the origin of continuation.
+[270.7-276.7] So we know that the continuation of the trade is where we have this external range liquidity, which is going to serve as our V shape key level, right?
+[276.7-283.7] That is also overlapping with an imbalance, right? They want to see like most times want to see internal range liquidity created, right?
+[283.7-289.7] The price is going to take it out and we're going to catch the, you know, this continuation and I said something in the group some days ago, right?
+[289.7-295.7] For those of us that are just joining, right? I said something in the group, if you go to our previous messages last week, I said something.
+[295.7-301.7] I said that this continuation set up has over like a 70 to 80% win rate, right?
+[301.7-309.7] Because after price has taken out internal range liquidity, we have external range liquidity here that is going to be serving as our V shape key level, right?
+[309.7-316.7] You are going to see, one of the things you are going to see happen is that for that V shape key level, that is the external range liquidity to be taken.
+[316.7-321.7] It is price is going to break below it with an impulsive move to the downside, right?
+[321.7-328.7] The moment price breaks below it with an impulsive move to the downside. The next thing is that we are most likely not going to be expecting a very deep retracement.
+[328.7-340.7] We are not going to be expecting a deep retracement, right? So what we are going to be expecting is that we want to see price actually create for us an internal range liquidity, right?
+[340.7-345.7] Close to that V shape key level that got disrespected with an impulsive move to the downside, right?
+[345.7-355.7] And it's also overlapping with an imbalance. You want to play it from here. Like I said, 10 to 11 pips is enough. 1 to 3, 1 to 4, you are done, right?
+[355.7-361.7] And all of that. So we call this the origin of the set up. We call this the continuation, right?
+[361.7-370.7] And I said something for us that this continuation has a 70 to 80% win rate, right? And we have seen it over and over and over again, right?
+[370.7-376.7] So now when it comes to the origin of the set up, right? Just say, for example, we don't want to miss out on the continue.
+[376.7-385.7] You know, in fact, one of the things I've been doing lately, right? I was telling a friend of mine that I personally don't know how to stack trades, but I've seen myself having stacking trades,
+[385.7-394.7] especially when I catch a trade from this origin, right? It becomes very easy for me to add one more trade to this continuation.
+[394.7-404.7] In fact, I can add two more positions with this continuation. The moment I see certain conditions met and those conditions are what I want to share with us today, right?
+[404.7-410.7] So if you catch a trade from this origin, you can also catch a trade also from this continuation, right?
+[410.7-419.7] You can even catch two more opportunities from the continuation and all of that, right? So you can add more positions and you can just write the trade down to wherever it's going to.
+[419.7-426.7] So one of the things you need to begin to understand for those of us who are, those of us who like to wait for confirmation entries, right?
+[426.7-434.7] So one of the things we want to always wait for is that there are three things, right? I've said it before, but I want to reiterate it again, which is very important, right?
+[434.7-440.7] Because repetition is the model of learning, right? So there are three things we want to see price do, right?
+[440.7-446.7] After price takes out an internal range liquidity and plays out from a key level that is actually overlapping with an imbalance, right?
+[446.7-452.7] There are three things we want to see price do as a confirmation entry. Don't forget, we said this is a four hours time frame, right?
+[452.7-456.7] So we know that this is a four hours time frame. So there are three things we want to do, right?
+[456.7-466.7] The first thing we want to do is, since we know that this internal range liquidity was taken on the four hours and this key level was played on the four hours as well, we are going one time frame lower, right?
+[466.7-472.7] And I will always recommend one hour or 30 minutes time frame, right? The one hour or the 30 minutes, right?
+[472.7-478.7] So you are going one time frame lower the one hour or 30 minutes. So on the one hour or 30 minutes, you want to see three things happen, right?
+[478.7-485.7] Don't forget price has taken out internal range liquidity on the four hours and price has also played this QMR key level, right?
+[485.7-491.7] Now that price has played this QMR key level, we want to see how price is going to reject, but we are going one time frame lower.
+[491.7-496.7] So what we want to see happen one time frame lower are three things. It's not going to be more than these three things.
+[496.7-502.7] The first thing we want to see happen is that price is going to give to us something like this and engulf into the downside, right?
+[502.7-512.7] When we see price engulf like this, right? If you see that price has actually engulfed and you move to the line chart, you will see that what price has actually created for us is another A shape, right?
+[512.7-524.7] So there are three things that price is going to do. Number one, you see price do something like this. Price is going to engulf and after price engulfs, price is going to play a direct mitigation of that particular A shape key level, right?
+[524.7-533.7] Price is going to play that, you know, just come to mitigate that A shape key level, play that A shape key level and price will continue to move into our anticipated direction.
+[533.7-546.7] If price doesn't do this, the second thing that we are most likely going to see price do is that price is going to create for us what we call two consecutive up candles that is going to create for us an open close key level, right?
+[546.7-556.7] But overall, we are still going to see price going to engulf. So two things in this type of scenario waiting for a confirmation entry is that number one, we are going to see price engulf, but price will not just engulf.
+[556.7-572.7] Price is going to break below the two, the open close key levels that was created by these two consecutive up candles, right? So the second thing you are going to see price do is that price is going to create for us what we call an open close that is going to be broken, right?
+[572.7-580.7] Right? So these two consecutive up candles are going to create the open close key level, right? Now the key levels normally are supposed to be used for buying opportunities, right?
+[580.7-593.7] You want to see price continue to buy to the upside, but the moment we see it gets broken, right? So two things you want to pay attention to number one, we engulfed this particular candle, which was the last buy candle before the engulfing.
+[593.7-606.7] And also we broke below this particular open close. So which means that there is every possibility that price is going to do something like this. Come back to this open close key level that was broken and price will continue to drop.
+[606.7-616.7] Number four plus is just going to be a little bit above this particular high, right? So you are going to see price going to do what the first one want to see price do is that we're still talking about this origin, right?
+[616.7-626.7] From the origin of the setup. If you don't want to play directly, you just want to always wait for confirmation, right? One of the things you can always wait to see is that number one, you want to see price engulf after price engulfs, right?
+[626.7-636.7] If you play the V shape, the A shape key level that was created and price continues to move to the downside. If price doesn't do this, the second year likely going to see pay attention to the candle formation.
+[636.7-648.7] Price is going to give to us two consecutive candles to the upside before the engulfing. The two consecutive candles to the upside is going to create for us what we call an open close, which is an important key level, right?
+[648.7-658.7] The logic is not just in the open close being created. The logic is in a combination of number one, the engulfing that happened and also the breakout price broke below the open close.
+[658.7-666.7] So what we are likely going to expect price to do is that price is going to come to the open close that was broken and price is going to continue to move in our anticipated direction.
+[666.7-672.7] And number three, the last thing we want to see all you see price do is that we are going to see price going to engulf.
+[672.7-686.7] You know, don't forget this is from the four hours. So we move one hour or we moved one time familiar that is to the one hour or 30 minutes after price engulfs the next one hour or 30 minutes candle is going to trade very close to the V shape or the A shape key level, right?
+[686.7-692.7] But he's not going to tap into it, which means that this next one hour or 30 minutes candle is going to serve as our what internal range liquidity.
+[692.7-700.7] So what that means is that want to see price attack that liquidity play out from this particular key level and price will continue to move to the downside.
+[700.7-707.7] So if you are looking for confirmation entry, right, these are the three things that price is most likely going to do.
+[707.7-711.7] These are the three things that prices most likely going to do, right?
+[711.7-721.7] Is it a price gives you an engulfing and plays a direct mitigation of the A shape key level or price gives to you an engulfing and the next 30 minutes or one hour candle that is being created is going to serve as inducement liquidity,
+[721.7-732.7] which means that want to see price take out this, the next 30 minutes candle or the one hour candle which is going to serve as internal range liquidity and want to see price play out from this V shape key level.
+[732.7-738.7] And the third thing we want to see price do is that to consecutive up candles or down candles are going to create an open close, right?
+[738.7-744.7] Then price is going to break below the open close and also engulf the last buy candle that was actually created.
+[744.7-746.7] So which means that we want to see price do something like this.
+[746.7-753.7] We want to see price continue to run to that same open close key level that God is respected and price will continue to move to the downside.
+[753.7-759.7] As it is in the origin of a trade, so it is in this particular continuation, right?
+[759.7-772.7] So one of the ways you can actually approach the continuation as well is the same thing I'm also showing to you here that if you miss the origin of this trade and price begins to give to you a set up for the continuation, you know,
+[772.7-780.7] for the continuation on price as given to us this internal range liquidity price has played out from this key level that is also overlapping with this imbalance, right?
+[780.7-783.7] So the conditions of the market has now made fulfilled, right?
+[783.7-787.7] Sweep of liquidity rebalancing of an old imbalance at a particular key level.
+[787.7-793.7] So the next thing we want to see happen is that if you play this first continuation here, let's say you use 10 pips, right?
+[793.7-794.7] 10 to 11 pips.
+[794.7-798.7] You play the first continuation and price starts to go in your direction.
+[798.7-800.7] Now price has not really moved.
+[800.7-802.7] You can move on time frame lower.
+[802.7-805.7] Let's say you've got this on the one hour time frame, right?
+[805.7-807.7] Price has started going in your direction.
+[807.7-811.7] One of the ways you can add one more position is that move on time frame lower, right?
+[811.7-814.7] Since it's on the one hour time frame you've got the entry from.
+[814.7-820.7] You can move on time frame lower to the 30 minutes or the 15 minutes and you will look for all of these three that I just showed to you.
+[820.7-822.7] All of these three that I just showed to you.
+[822.7-825.7] Move on time frame lower, you'll see all of these three form, right?
+[825.7-828.7] So if you look at what we have here, right?
+[828.7-832.7] One of the things I want to even on the shores.
+[832.7-836.7] So if you look at what's price did here, right?
+[836.7-837.7] So you can see this.
+[837.7-839.7] This is gold on the.
+[839.7-842.6] Okay.
+[842.6-843.6] So this is gold.
+[843.6-844.6] Okay.
+[844.6-847.6] This is let me show something that happened yesterday, right?
+[847.6-849.6] I took a trade on gold.
+[849.6-852.6] I bought gold even though overall it's still sold, right?
+[852.6-854.6] So let me show us what happened on gold yesterday.
+[854.6-856.6] So I'm going to take this off.
+[856.6-862.5] So look at this before this massive drop that happened.
+[862.5-865.5] I was looking at, you can see this is the V shape killer.
+[865.5-868.5] We had a gold disrespected, got disrespected again, right?
+[868.5-870.5] Price came in and was playing around it.
+[870.5-873.5] So I was just, I was looking for buy continuation, right?
+[873.5-874.5] And all of those things, right?
+[874.5-885.8] So if you look at what happened here on the 30 minutes time frame, so you will see what we have here.
+[885.8-888.8] So if you look at what what price did here, right?
+[888.8-892.8] Let's look at for the buys ahead now and show you can see.
+[892.8-894.8] You can see what price did, right?
+[894.8-895.8] So you can see what price did.
+[895.8-897.8] We had to consecutive countries to the downside.
+[897.8-899.8] I created an open close, right?
+[899.8-904.8] You can see our price engulfed, broke above this particular open close, right?
+[904.8-908.8] So personally, I was expecting price to come here, but price didn't get here, right?
+[908.8-909.8] So look at where I bought.
+[909.8-911.8] I had my first buy from here.
+[911.8-913.8] This was where I had my first buy from, right?
+[913.8-918.8] I had my first buy from because the spreaders at yesterday was too much.
+[918.8-922.8] So if I put my limits here yesterday, it will not have picked it.
+[922.8-927.8] So I just played, let me see.
+[927.8-928.8] Okay. Yes.
+[928.8-929.8] Yes.
+[929.8-933.8] So this is where this was where I played from yesterday.
+[933.8-937.9] So this was where I played from yesterday.
+[937.9-941.9] So don't forget that is the yellow line is a four hour key level, right?
+[941.9-944.9] So can you see what price did on the 15 minutes?
+[944.9-946.9] I mean, just from here, look at where price played.
+[946.9-947.9] Let's look at this.
+[947.9-950.9] This is an open close key level that price, you know, see our price engulfed.
+[950.9-954.9] We also broke above the open close key level that was created.
+[954.9-957.9] So if you look at what price did, if we are going to just take,
+[957.9-962.9] let's say we are playing one to three and we are leaving that space.
+[962.9-963.9] So let's try this.
+[963.9-975.3] Let's play one to three from here, right?
+[975.3-976.3] Sorry, please.
+[976.3-1066.0] Excuse me.
+[1066.0-1069.0] So if you are going to play one to three, right?
+[1069.0-1071.0] From this, just by playing one to three,
+[1071.0-1072.0] you know where we are coming from.
+[1072.0-1073.0] This is the four hour key level, right?
+[1073.0-1076.0] So if you look at what price did on the four hours, right?
+[1076.0-1077.0] 15 minutes.
+[1077.0-1078.0] Look at this.
+[1078.0-1085.0] Ladies, one, two, three.
+[1085.0-1087.0] That's a one to three already done, right?
+[1087.0-1089.0] You can see where price came from.
+[1089.0-1091.0] The open close key level that got disrespected, right?
+[1091.0-1093.0] After engulfing, price came to take it off.
+[1093.0-1096.0] So because I didn't get on, in fact, this, okay,
+[1096.0-1098.0] it didn't go up to a one to four, right?
+[1098.0-1101.0] You can see, you can see where price started to reject from again, right?
+[1101.0-1102.0] This is a key level.
+[1102.0-1104.0] So I told us, remember the last time we met,
+[1104.0-1108.5] I told us that key levels can be used for entries.
+[1108.5-1110.5] Key levels can be used for entries and also can.
+[1111.5-1113.5] Also be used for exit as well, right?
+[1113.5-1115.5] So you can see where price did, right?
+[1115.5-1116.5] So did you notice anything here?
+[1116.5-1118.5] If you study price action here, right?
+[1118.5-1120.5] If you, when you are doing your personal studies,
+[1120.5-1121.5] you can see what happened here, right?
+[1121.5-1122.5] It makes a lot of sense.
+[1122.5-1125.5] The entire logic makes a whole lot of sense.
+[1125.5-1126.5] Look at this.
+[1126.5-1128.5] So what did we see that happened here?
+[1128.5-1130.5] We came from a four hour key level, right?
+[1130.5-1131.5] A four hour key level.
+[1131.5-1132.5] That was where we were coming from.
+[1132.5-1134.5] Then on the 15 minutes you can see how we engulfed,
+[1134.5-1137.5] broke above this particular open close that was being created.
+[1137.5-1139.5] Then you can see this next candle,
+[1139.5-1141.5] which is the next 15 minutes kind of soft as well,
+[1141.5-1142.5] internal range liquidity.
+[1142.5-1143.5] So what did you see price do?
+[1143.5-1145.5] Price came to sweep the liquidity,
+[1145.5-1147.5] play out the open close that was being created, right?
+[1147.5-1150.5] And you can see how prices continue to move to the upside
+[1150.5-1153.5] until we got to this open close here.
+[1153.5-1154.5] Then we started to reject.
+[1154.5-1158.5] So where I even gotten on that trade was this same open close.
+[1158.5-1161.5] I just decided to play the same open close, right?
+[1161.5-1163.5] I just wanted to play the same open close.
+[1163.5-1166.5] That was where I still played when price came back.
+[1167.5-1168.5] I played the same open close.
+[1168.5-1170.5] Then I got a second entry.
+[1170.5-1172.5] I want to show us where I got the second entry from.
+[1172.5-1173.5] Okay.
+[1173.5-1174.5] Yes.
+[1174.5-1176.5] So this was where my second entry was from.
+[1176.5-1185.0] So if you look at what price did here, right?
+[1185.0-1186.0] This was my second entry.
+[1186.0-1188.0] I use this as internal range liquidity.
+[1188.0-1191.0] Then I'm playing this open path open close, right?
+[1191.0-1193.0] So this was my second entry, right?
+[1193.0-1196.0] So first entry was from this particular place, right?
+[1196.0-1198.0] Stop loss was just below this particular low.
+[1198.0-1201.0] Stop loss was below this particular low, right?
+[1201.0-1204.0] Then I played this particular open close again.
+[1204.0-1207.0] My stop loss was just a little bit below this low, right?
+[1207.0-1208.0] So look at this.
+[1208.0-1216.9] So you can see how, no, there's no, so you can see.
+[1216.9-1224.3] So you can see, you can see this, right?
+[1224.3-1226.3] First entry was from here.
+[1226.3-1227.3] Yes.
+[1227.3-1228.3] This particular place.
+[1228.3-1230.3] Then the moment price run came back again.
+[1230.3-1231.3] I played this particular place.
+[1231.3-1234.3] My stop loss was, it was very close to taking me out.
+[1234.3-1236.3] Then you can see our price run, right?
+[1236.3-1239.3] First entry, second entry, both did a one to three.
+[1239.3-1241.3] But something happened yesterday.
+[1241.3-1243.3] I didn't even, I just went break even on the two.
+[1243.3-1246.3] I didn't even take partials or anything, didn't do anything,
+[1246.3-1249.3] only for me to come back and I saw that the trade took me out
+[1249.3-1251.3] and break even, right?
+[1251.3-1252.3] And all of those, right?
+[1252.3-1254.3] So you can see how this did a one to three,
+[1254.3-1257.3] over a one to three or one to four year, right?
+[1257.3-1259.3] This also did over a one to four year as well.
+[1259.3-1261.3] That's an eight hour overall, right?
+[1261.3-1265.3] So if you also look at what gold is actually doing currently,
+[1265.3-1266.3] right?
+[1266.3-1268.3] So look at what gold is doing.
+[1268.3-1273.4] Look at what gold is doing at the moment.
+[1273.4-1274.4] So look at this.
+[1274.4-1275.4] So look at this.
+[1275.4-1280.0] So, so you can see, we have to consecutive candidates to the
+[1280.0-1283.0] upside that has created an open close for us, right?
+[1283.0-1285.0] After it created an open close for us,
+[1285.0-1287.0] what else can you see inside of this place?
+[1287.0-1289.0] This current for our country is going to serve as internal
+[1289.0-1290.0] range liquidity.
+[1290.0-1292.0] So if you are going to pay attention to price of what is
+[1292.0-1294.0] happening here, you can almost see everything that is
+[1294.0-1295.0] happening here.
+[1295.0-1296.0] Open close was created.
+[1296.0-1299.0] This for our candle was going to serve as our what?
+[1299.0-1300.0] Internal range liquidity.
+[1300.0-1301.0] Price took it out.
+[1301.0-1302.0] Played out from the open close.
+[1302.0-1303.0] What can you see we did here?
+[1303.0-1305.0] Can do closures, right?
+[1305.0-1308.0] We tapped into the open close and we are closing above, right?
+[1308.0-1310.0] So which means that if we move on time from lower,
+[1310.0-1312.0] either to the 30 minutes or to the one hour timeframe,
+[1312.0-1314.0] what can you see that price did, right?
+[1314.0-1315.0] So look at this now.
+[1315.0-1317.0] Don't forget we are coming from the four hours.
+[1317.0-1320.0] So what did you notice that price did on the four hours,
+[1320.0-1321.0] right?
+[1321.0-1323.0] Price closed above after we tapped into that particular open
+[1323.0-1324.0] close, right?
+[1324.0-1326.0] So what did the 30 minutes do?
+[1326.0-1327.0] Look at what 30 minutes did.
+[1327.0-1330.0] We created two consecutive candles to the dance.
+[1330.0-1331.0] I created an open close.
+[1331.0-1334.0] We broke above and we also engulfed.
+[1334.0-1336.0] We broke above this particular open close,
+[1336.0-1338.0] but overall we engulfed, right?
+[1338.0-1340.0] Look at where price now came back to overlapping with us
+[1340.0-1342.0] in for our key level, right?
+[1342.0-1344.0] We have a V shaped key level that is created on the 30
+[1344.0-1345.0] minutes.
+[1345.0-1347.0] So look at what price did if we play one to three again
+[1347.0-1349.0] from here, right?
+[1349.0-1354.0] This, this, this, this thing is about to end.
+[1354.0-1356.0] So these are eight pit stops.
+[1356.0-1359.0] Let's play our one to three or one to four again, right?
+[1359.0-1362.0] So if you look at what price did here, look at this.
+[1362.0-1364.9] That's over.
+[1364.9-1366.9] I want to watch.
+[1366.9-1368.9] This is one to seven, right?
+[1368.9-1371.9] This is the one to seven already this morning.
+[1371.9-1372.9] This is one to seven.
+[1372.9-1373.9] You know what?
+[1373.9-1375.9] Let me send another link, right?
+[1375.9-1376.9] Let me send another link.
+[1376.9-1378.9] But I hope we are getting it, right?
+[1378.9-1379.9] It's very simple.
+[1379.9-1381.9] So let me send another link so each and every one of
+[1381.9-1382.9] you should join.
+[1382.9-1383.9] This one is about to end, right?
+[1383.9-1385.9] So we can start combatting.
