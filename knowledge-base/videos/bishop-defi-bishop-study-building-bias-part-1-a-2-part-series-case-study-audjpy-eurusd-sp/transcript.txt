@@ -1,0 +1,557 @@
+[3.4-8.4] Good morning and happy weekend to all of you.
+[8.4-11.4] How was your trading week personally?
+[11.4-18.4] It was hellish, but we are grateful for not ending in a loss.
+[18.4-25.4] Today we'll be talking about building bias with K levels.
+[25.4-29.4] We'll be talking about building bias basically over this week and next week.
+[29.4-32.4] What I plan on just making it a two-part series.
+[32.4-39.4] This week we'll talk about building bias with K levels and then next week we'll talk about building bias with liquidity.
+[39.4-43.4] Though both of them can happen.
+[43.4-47.4] Now, the basic knowledge of K levels.
+[47.4-57.4] There are basically decision points that a place where you want to see price come and they react either buy or sell.
+[57.4-60.4] Those are what K levels are.
+[60.4-66.4] Then we have what we call the V-shaped K level.
+[66.4-75.4] We have what we call the V-shaped K level which we would want to see price get in for a buy.
+[75.4-82.4] We want to see price get in for a buy which means we would want to see price come into this particular level.
+[82.4-88.4] Then once price gets into this level, price should push up to the upside.
+[88.4-97.4] Then we have our A-shaped K level which we would want to see price get into and then sell.
+[97.4-103.4] We want to see price eventually do something like this and then sell to the downside.
+[103.4-108.4] Then besides these two, we have what we call open-closed K levels.
+[108.4-109.4] There are two types.
+[109.4-111.4] We have open-closed K levels.
+[111.4-113.4] We can have something like this.
+[113.4-124.8] They are called open-closed K levels because what price basically did was price closed at this particular area and then opened again at this same level where it closed.
+[124.8-127.8] That's why they are called open-closed K levels.
+[127.8-135.8] This is what we would call the bullish open-closed K level.
+[135.8-142.8] We want to see price come get into this area and then buy.
+[142.8-146.8] We want to see price come into this area and buy.
+[146.8-163.6] Then this right here is our bearish open-closed K level whereby we would want to see price get into this particular zone and then sell.
+[163.6-167.6] We want to see price get into this zone and sell to the downside.
+[167.6-172.6] This area we would want to see price come get in here and then push up to the upside.
+[172.6-177.6] This is the basic idea or basic knowledge about K levels.
+[177.6-183.6] The same thing about K levels is that while they can be used for this, they can also be used for the opposite.
+[183.6-187.6] That happens in situations where you have price closed below.
+[187.6-192.6] Let's say you have a candle closed below this V-shaped K level like this.
+[192.6-197.6] In this situation now, this K level will no longer be used for buys.
+[197.6-201.6] Instead, this K level is going to be used for what?
+[201.6-204.6] For sales. We want to see price get in there and sell.
+[204.6-212.6] The same thing happens here. If price closes above your V-shaped K level, it's no longer going to be used for sales.
+[212.6-217.6] Instead, price is going to come here and then use this level for your buy.
+[217.6-223.6] The same idea still applies to your open-close K levels as well.
+[223.6-228.6] The same idea still applies to open-close K levels.
+[228.6-232.6] The moment you have something like this.
+[232.6-237.6] This was a bearish open-close K level.
+[237.6-242.6] We would have wanted to see price come in here and sell.
+[242.6-248.6] This is a bullish open-close K level in the sense that we want to see price come in here and buy.
+[248.6-251.6] This is the main idea.
+[251.6-254.6] Sorry, I mixed that up.
+[254.6-257.6] This is the main idea.
+[257.6-259.6] This is what the K level should be used for.
+[259.6-261.6] They get disrespected.
+[261.6-265.6] The moment they can't do now, it closes above this guy.
+[265.6-267.6] The moment they can't do closes above this guy.
+[267.6-270.6] Remember, this was supposed to be used for sales before.
+[270.6-272.6] They can't do closes above this guy.
+[272.6-275.6] That's why we now use it for a buy.
+[275.6-278.6] You can call it an engulfing.
+[278.6-288.6] This was supposed to be used for a sell, but the moment price does something like this.
+[288.6-293.6] This is now going to be used for a sell.
+[293.6-297.6] It's basically now going to be used for a sell.
+[297.6-302.6] This is just K levels 101.
+[302.6-310.6] Now, let's move on to the main topic of the day, which is building bias with K levels.
+[310.6-316.6] Now, why we want to build bias is because we want to know where the market is going to.
+[316.6-322.6] We want to know how to actually join that particular trend.
+[322.6-325.6] Now, let's say you have a key level.
+[325.6-327.6] Let's call this our weekly time frame.
+[327.6-331.6] Let's call this our day time frame.
+[331.6-334.6] Then, this is our four hours time frame.
+[334.6-337.6] Let's do something like this.
+[337.6-339.6] Something like this.
+[339.6-343.6] Calling this our weekly.
+[343.6-345.6] This can also be your monthly as well.
+[345.6-347.6] I'm just choosing to start from the weekly.
+[347.6-351.6] This is now our H4 time frame.
+[352.6-356.6] Basically, what you want to see is this.
+[356.6-358.6] You'd want to see something like this.
+[358.6-362.6] Let's say this level here.
+[362.6-366.6] Let's say this level right here was a V-shaped key level.
+[366.6-370.6] This level right here was a weekly V-shaped key level.
+[370.6-373.6] Which means you expect price to come here and buy.
+[373.6-377.6] But when you're building bias with key levels, you want to see one.
+[377.6-380.6] What you want to see?
+[380.6-383.6] One, you want to see a rejection.
+[383.6-385.6] Two, you want to see what?
+[385.6-387.6] Candle closure.
+[387.6-390.6] Then, three, you'd want to see what?
+[390.6-394.6] A breakout or a break of structure on the lower time frame.
+[394.6-400.1] On the next lower time frame.
+[400.1-405.3] This is basically what you want to see.
+[405.3-407.3] You want to see your breakout.
+[407.3-409.3] You want to see your rejection, your candle closure.
+[409.3-413.3] You break out a break of structure on the next time frame lower.
+[413.3-416.3] Let's say this is a weekly candle.
+[416.3-424.3] This weekly candle traded into this V-shaped key level and then rejected.
+[424.3-427.3] You can see that this candle must have closed.
+[427.3-430.3] The candle rejected and the candle has closed.
+[430.3-435.3] What do you want to see on your daily time frame for confirmation?
+[435.3-438.3] What you want to see is basically this.
+[438.3-443.3] Either you see your sweep of liquidity and your break of structure to the upside.
+[443.3-445.3] Or you want to see what?
+[445.3-448.3] Your breakout to the upside.
+[448.3-450.3] You want to see any of these two things.
+[450.3-456.3] This is what confirms this move that is happening on the weekly time frame.
+[456.3-466.9] Which means that you can now follow what is our external liquidity.
+[466.9-468.9] Since this is our external liquidity,
+[468.9-470.9] you want to see price eventually get here.
+[470.9-473.9] Which means your daily has confirmed this right.
+[473.9-484.9] On the fourth hour, all you want to do is follow either your bullish sweep and break or your breakout to the upside on your four hours time frame.
+[484.9-489.9] This is basically what you want to follow on your four hours time frame.
+[489.9-496.9] Bullish sweep of liquidity and breakout up till you get to where this external liquidity.
+[496.9-502.9] You just want to keep on following the bullish order flow.
+[502.9-505.9] You want to keep on following the bullish order flow.
+[505.9-508.9] This is basically it when it comes to building by a three key level.
+[508.9-510.9] This was the bullish scenario.
+[510.9-521.9] Let's say we also had an A shape key level which should be used for sales.
+[521.9-524.9] You have an A shape key level that should be used for sales.
+[524.9-526.9] What do you say we want to see?
+[526.9-531.9] Number one, we want to see what's handle rejection and handle closure.
+[531.9-533.9] Handle rejection and handle closure.
+[533.9-536.9] This is the first thing you want to see on this time frame.
+[536.9-539.9] This is the first thing you want to see on this time frame.
+[539.9-542.9] Handle rejection, handle closure.
+[542.9-548.9] The next thing you would want to see, let's call this our external liquidity.
+[548.9-555.0] We have something like this as our external liquidity.
+[555.0-558.0] This is our external liquidity right there.
+[558.0-560.0] What do you now want to see on your daily?
+[560.0-566.0] What confirms this move on your daily is what we call either your sweep and break,
+[566.0-570.0] which is your break of structure, or your breakout.
+[570.0-580.0] On the daily time frame, what we want to see is what we call either your sweep and break to the downside
+[580.0-584.0] or your breakout to the downside.
+[584.0-589.0] If you see any of this on your daily time frame, you know that this weekly sweep,
+[589.0-593.0] this weekly rejection has been confirmed right here,
+[593.0-599.0] meaning that you can now follow the story on your four-hour time frame,
+[599.0-602.0] which is still the same thing you want to look out for.
+[602.0-607.0] You want to look out for either your breakout or your bearish breakout,
+[607.0-611.0] or your bearish sweep and break.
+[611.0-615.0] You want to look for either your breakout or your bearish sweep and break
+[615.0-620.0] till you get to where this external liquidity right here, till you get here.
+[620.0-622.0] So that's basically that.
+[622.0-630.0] That's the first part of building bias with what we call your liquidity,
+[630.0-633.0] your key level, sorry.
+[633.0-635.0] That's the first part.
+[635.0-639.0] But there's also a kind of modification.
+[639.0-641.0] There's also a kind of modification.
+[641.0-645.0] Now what do I mean when I say there's a kind of modification?
+[645.0-651.0] When I say there's a kind of modification, what I mean is basically this.
+[651.0-653.0] So let's do something.
+[653.0-655.0] Should I push this up?
+[655.0-657.0] Okay.
+[657.0-658.0] I pushed this up.
+[658.0-664.0] So let's say that while we still had, you know, this was our weekly time frame,
+[664.0-669.6] this was our weekly, this was our weekly, right?
+[669.6-670.6] This was our weekly.
+[670.6-673.6] This was our daily time frame.
+[673.6-677.6] And then the next time frame was what's happening tonight.
+[677.6-678.6] Okay.
+[678.6-680.6] So this is our daily time frame, right?
+[680.6-682.6] This is our daily time frame right here.
+[682.6-688.6] And this was page four, the other one, for our time frame.
+[688.6-693.6] So now let's say that you had words.
+[693.6-702.6] Let's say you had what we call our V-shaped key level on the weekly time frame, right?
+[702.6-706.6] Our V-shaped key level on the weekly time frame to be used for buys, right?
+[706.6-713.6] So the weekly price came into this level and rejected and closed above.
+[713.6-717.6] So we've seen number one, we've seen number two.
+[717.6-719.6] Now we want to see what's number three,
+[719.6-723.6] which is a breakout or a break-up structure on the next lower time frame.
+[723.6-725.6] Which means that on the daily time frame,
+[725.6-728.6] we want to see what to see the breakout or break-up structure.
+[728.6-734.6] But then you come to your daily and daily.
+[734.6-739.6] So I think that's a good, bad, so that got cut off.
+[739.6-741.6] But I'll find a way to merge it.
+[741.6-745.6] So what I was saying was that there's a variation, right?
+[745.6-748.6] Not exactly a variation, but just a little room for flexibility
+[748.6-750.6] when you're building bias with key levels.
+[750.6-752.6] So we've talked about the major one.
+[752.6-755.6] Now we said we still have what a weekly time frame,
+[755.6-758.6] a weekly key level that price came into and rejected.
+[758.6-760.6] And on the daily time frame,
+[760.6-765.6] we are supposed to see what's our sweep and break or our breakout to the upside, right?
+[765.6-768.6] But then what happens when you don't see that?
+[768.6-772.6] What happens when you actually do not see any of that?
+[772.6-774.6] So what happens when you don't see that?
+[774.6-779.6] Now, when you do not see your breakout or your break-up structure
+[779.6-782.6] on your daily time frame, and instead you see,
+[782.6-789.6] let's say you can see one or two candles rejecting off their weekly key level,
+[789.6-791.6] that means the same place that we rejected.
+[791.6-794.6] Sometimes you see a daily candle, reject one or two daily candles,
+[794.6-798.6] reject off that same particular zone, right?
+[798.6-801.6] So in such a case, you can then start by saying,
+[801.6-806.6] okay, you can then start building your bias like you're building it from the daily, right?
+[806.6-811.6] You can then say, okay, daily is rejecting what's this weekly key level right now.
+[811.6-812.6] So it's still the same idea.
+[812.6-815.6] You're still using key levels rejection and do closure.
+[815.6-818.6] But the difference now is that you are now going to make sure
+[818.6-825.6] you absolutely see what your sweep and break or your breakout on the next time frame lower.
+[825.6-830.6] So you want to make sure you see this on what's on the next time frame,
+[830.6-834.6] which is your four hours time frame, which is your four hour time frame.
+[834.6-837.6] So if you don't see this and then you see this,
+[837.6-843.6] you want to see what you want to now see this on your four hour time frame,
+[843.6-847.6] either your breakout or your sweep or break to the upside.
+[847.6-853.6] So that is the caveat when it comes to building bias with key levels.
+[853.6-858.6] That's the caveat when it comes to building bias with key levels.
+[859.6-868.0] So let's let us go into the charts and try to, so we can do for ourselves.
+[868.0-871.0] So let us take everything off.
+[871.0-879.5] Let's start with AUDJPY.
+[879.5-883.5] So AUDJPY so far, right, on the monthly time frame so far,
+[883.5-886.5] this is the monthly you can see that what we are bullish,
+[886.5-888.5] right, we had a bullish breakout.
+[888.5-890.5] So let's go to the weekly time frame
+[890.5-896.5] and try to use key levels for our analysis.
+[896.5-901.5] So now, if you look below, we were bullish.
+[901.5-903.5] Right now, we broke short to the downside.
+[903.5-909.5] But overall, this was a retracement move towards to take out this internal liquidity.
+[909.5-912.5] But since we are not building reaction liquidity for now,
+[912.5-914.5] all we are going to say is this.
+[914.5-916.5] We had this price came in two ways.
+[916.5-919.5] Into this, remember this open close I talked about,
+[919.5-921.5] the bullish open close that was disrespected.
+[921.5-925.5] So supposed to be used for bias, price disrespected it once,
+[925.5-927.5] meaning it should be used for sales.
+[927.5-930.5] But then price disrespected it again, meaning it should be used for bias.
+[930.5-935.5] So you can see that is where price came to and did what and rejected.
+[935.5-940.5] And then so now we have what a weekly rejects weekly key level right here.
+[940.5-943.5] We had the weekly index weekly right here.
+[943.5-944.5] Now let's go to the daily.
+[944.5-945.5] What do you want to see?
+[945.5-947.5] A breakout to the upside.
+[947.5-950.5] You can see this was the level price rejected from.
+[950.5-953.5] This was the level price rejected from on the weekly.
+[953.5-955.5] This particular zone right here, this area,
+[955.5-957.5] where the rejections.
+[957.5-958.5] And what can you see?
+[958.5-962.5] Immediately after that, look at your line chart.
+[962.5-963.5] What do you have?
+[963.5-964.5] Boom.
+[964.5-965.5] You had a sweep and your break to where?
+[965.5-966.5] To the upside.
+[966.5-967.5] Sweep and break.
+[967.5-968.5] Your sweep of liquidity.
+[968.5-970.5] Your break of structure to the upside.
+[970.5-975.5] Indicating that we are now actively buying this guy.
+[975.5-978.5] We are now actively buying this guy.
+[978.5-981.5] So let's try and let's try and see what happens.
+[981.5-984.5] So we also broke again to the upside.
+[984.5-986.5] I see we also broke out again to the upside.
+[986.5-989.5] So what we had our break out, our break of structure.
+[989.5-991.5] And then we had our break out to the upside.
+[991.5-997.5] That it knows that we are fully bullish until our overall external liquidity is met.
+[997.5-1002.5] Now, let's do something from this zone right here.
+[1002.5-1003.5] Let me take all of this.
+[1003.5-1004.5] Okay.
+[1004.5-1006.5] Let's start from this zone now.
+[1006.5-1007.5] Right.
+[1007.5-1009.5] Let's start from this zone.
+[1009.5-1013.1] So let's say we had this price did what?
+[1013.1-1015.1] Rejected off this key level.
+[1015.1-1016.1] We are bullish.
+[1016.1-1017.1] Price came here and rejected.
+[1017.1-1019.1] So we have our daily reject.
+[1019.1-1020.1] Let's go to the flowers.
+[1020.1-1022.1] What do we want to see on the four hours?
+[1022.1-1025.1] A break out or a break of structure to the upside.
+[1025.1-1026.1] Right.
+[1027.1-1029.1] So let's check that.
+[1029.1-1030.1] Let's check that.
+[1030.1-1034.5] Where can we find that?
+[1034.5-1035.5] Hold on.
+[1035.5-1036.5] Okay.
+[1036.5-1042.5] So now this was the level where we rejected from this particular area right here.
+[1042.5-1044.5] I can see that from there.
+[1044.5-1045.5] What do we have?
+[1045.5-1046.5] Look at your line chart.
+[1046.5-1047.5] Look at your line chart.
+[1047.5-1049.5] Your line chart is your friend.
+[1049.5-1052.5] From there you can see once we had a break out to the upside.
+[1052.5-1055.5] A sweep and break actually from this zone.
+[1055.5-1057.5] A sweep and break to the upside.
+[1057.5-1063.5] And then you can see that from there price now came way into the extreme.
+[1063.5-1067.5] And then now rejected for what?
+[1067.5-1070.5] For another buy on the lower time frame.
+[1070.5-1072.5] So this was this guy.
+[1072.5-1075.5] So now let's go and check out another daily rejection.
+[1075.5-1079.5] Let's see if we had a flower break out from there.
+[1079.5-1082.5] So this was where we looked at last.
+[1082.5-1084.5] So now let's check.
+[1084.5-1088.5] Let's check for another rejection on the daily.
+[1088.5-1091.5] So you can see this was the daily A-shaped key level.
+[1091.5-1092.5] I want to use it properly.
+[1092.5-1097.5] So this was a daily A-shaped key level which is to be used for sales.
+[1097.5-1099.5] But price respected it.
+[1099.5-1102.5] And price came there multiple times and rejected.
+[1102.5-1103.5] Right.
+[1103.5-1107.5] So we want to see price buy off that level to take advantage of.
+[1107.5-1108.5] Right.
+[1108.5-1113.5] So I want to see price give us a break out on this zone on the flower time frame.
+[1113.5-1114.5] Let's check that out.
+[1114.5-1116.5] Did we have that 24 hours?
+[1116.5-1122.3] I think my network is a little slow after that.
+[1122.3-1124.3] So you can see this is where we rejected from.
+[1124.3-1125.3] Right.
+[1125.3-1127.3] So you can see we had multiple rejections of this level.
+[1127.3-1129.3] And then what confirmed it?
+[1129.3-1131.3] Boom. Our break out to the upside.
+[1131.3-1132.3] I can see that very clearly.
+[1132.3-1133.3] And you can see that.
+[1133.3-1139.3] Although price doesn't necessarily have to come to your break out or your break of structure level.
+[1139.3-1145.3] The aim of this and this is to validate your direction.
+[1145.3-1147.3] So it's not a must that price must come there.
+[1147.3-1151.3] Price can even just continue buying from there to the upside.
+[1151.3-1155.3] Right. So price must not necessarily come to your break out level.
+[1155.3-1157.3] So you can see here, price never go back here.
+[1157.3-1160.3] But you can see we continue buying to the upside.
+[1160.3-1162.3] So that was that for AEDJPY.
+[1162.3-1165.3] Let's look at another pair.
+[1166.3-1169.3] Let's look at another pair.
+[1169.3-1171.3] Let's look at another point.
+[1171.3-1175.2] Should we look at EU?
+[1175.2-1178.2] So let's start from the weekly time frame on EURUSD.
+[1178.2-1179.2] Right.
+[1179.2-1181.2] Weekly time frame on EURUSD.
+[1181.2-1184.2] Now if you look at the weekly time frame on EURUSD.
+[1184.2-1188.2] You can see that structurally we are worth, we are bearish because we've been having what?
+[1188.2-1190.2] We've been having breakouts to the downside.
+[1190.2-1193.2] Right. So we've been having breakouts to the downside.
+[1193.2-1196.2] So and I explained why that buy failed on EURUSD last week.
+[1196.2-1199.2] So we'll not be going that in depth into it.
+[1199.2-1202.2] Right. So you can as well see that we had what?
+[1202.2-1204.2] A previous.
+[1204.2-1205.2] Okay. Let's not use that.
+[1205.2-1208.2] Let's say we had a weekly reject weekly.
+[1208.2-1211.2] This is what a bearish open close key level.
+[1211.2-1212.2] Price used it for what?
+[1212.2-1214.2] Price got into this level and sold.
+[1214.2-1218.2] Right. So we had a weekly reject weekly.
+[1218.2-1221.2] And then this is our possible external liquidity.
+[1221.2-1225.2] Right. And this also is another possible external liquidity.
+[1225.2-1229.2] Right. Because we are assuming that price swaps a high somewhere around here.
+[1229.2-1233.2] We are assuming price swaps a high around here.
+[1233.2-1237.2] So now this is our possible draws on liquidity.
+[1237.2-1239.2] Right. Possible external liquidity.
+[1239.2-1241.2] So on the daily time frame we had what?
+[1241.2-1243.2] A weekly reject weekly right here.
+[1243.2-1246.2] Right. So what do we want to see on the daily time frame?
+[1246.2-1249.2] We want to see a breakout to the downside.
+[1249.2-1251.2] So let's go back to the weekly.
+[1251.2-1255.9] Let's look at this weekly reject weekly.
+[1255.9-1257.9] I remember I said what you want to see.
+[1257.9-1261.9] A breakout to the downside or your sweep and break to the downside.
+[1261.9-1264.9] Right. So on the daily time frame now.
+[1264.9-1271.9] You can see that this bullish breakout here was not in alignment with what the weekly was telling us.
+[1271.9-1276.9] Which meant that we should have actually ignored this particular guy right here.
+[1276.9-1281.9] As we should have ignored this guy right here and waited for it to align.
+[1281.9-1283.9] Now remember the caveat I mentioned.
+[1283.9-1285.9] That sometimes you might not have.
+[1285.9-1288.9] You might not have what your breakout here.
+[1288.9-1290.9] Because as at this time we did not have.
+[1290.9-1294.9] We just had a breakout to the downside that confirmed that move.
+[1294.9-1297.9] Right. But I also said that when you don't see your breakout.
+[1297.9-1301.9] And then you see that one or two candles come into your weekly level.
+[1301.9-1304.9] This was the same weekly key level if you check.
+[1304.9-1306.9] Let's check to be sure.
+[1306.9-1308.9] As you can see this was that same weekly level.
+[1308.9-1310.9] And on the daily time frame.
+[1310.9-1311.9] What do you have?
+[1311.9-1314.9] This candle, this first candle came here. Rejected.
+[1314.9-1315.9] Second candle came here.
+[1315.9-1318.9] Rejected and closed below.
+[1318.9-1320.9] Meaning that if we had paid attention we would have noticed that.
+[1320.9-1322.9] Okay we are bearish.
+[1322.9-1326.9] Which means from this level we can start looking for sales only for hours.
+[1326.9-1328.9] Saying we cannot start by saying.
+[1328.9-1332.9] By saying we have a daily rejecting this weekly key level.
+[1332.9-1334.9] Or still a daily rejecting daily.
+[1334.9-1336.9] Because we are bearish overall.
+[1336.9-1337.9] Right.
+[1337.9-1339.9] Let's check out the flower time frame.
+[1339.9-1340.9] From that zone now.
+[1340.9-1341.9] Where do we have.
+[1341.9-1342.9] This was where we rejected from.
+[1342.9-1343.9] Right.
+[1343.9-1344.9] So from that zone.
+[1344.9-1346.9] Where do we now have our power break out to the downside.
+[1346.9-1348.9] Look at the line charts.
+[1348.9-1350.9] How does that help you identify.
+[1350.9-1352.9] I would not like to use this.
+[1352.9-1354.9] I prefer to use any of these levels.
+[1354.9-1355.9] Right here.
+[1355.9-1358.9] You can see that this is where we finally had our breakout.
+[1358.9-1359.9] To the downside.
+[1359.9-1361.9] It was a breakout to the downside.
+[1361.9-1362.9] Right.
+[1362.9-1364.9] So you can see that.
+[1364.9-1365.9] Price broke below.
+[1365.9-1368.9] And price never broke above this particular point.
+[1368.9-1370.9] Right here.
+[1370.9-1373.9] Just telling me that price did not intend to buy at all.
+[1373.9-1375.9] Price never broke above this point.
+[1375.9-1376.9] Right here.
+[1376.9-1379.9] So instead we had a bearish breakout.
+[1379.9-1380.9] With liquidity.
+[1380.9-1383.9] Right with liquidity that price later came back for.
+[1383.9-1386.9] Like that price came back for that.
+[1386.9-1389.9] Doing a kind of advanced market structure thing.
+[1389.9-1391.9] Price came back for that liquidity.
+[1391.9-1393.9] And then sold to the downside.
+[1393.9-1395.9] Price came back for that liquidity.
+[1395.9-1397.9] And then sold to the downside.
+[1397.9-1400.9] And you can see that we've been selling ever since then.
+[1400.9-1402.9] So here we now had our awards.
+[1402.9-1403.9] Breakouts.
+[1403.9-1404.9] We had liquidity.
+[1404.9-1405.9] Price came there.
+[1405.9-1406.9] And sold.
+[1406.9-1407.9] Then eventually price came.
+[1407.9-1409.9] We used this as advanced.
+[1409.9-1410.9] Structure.
+[1410.9-1412.9] Came back into this breakout level.
+[1412.9-1413.9] And then sold.
+[1413.9-1415.9] And this is what I was watching out for last week.
+[1415.9-1416.9] Yesterday.
+[1416.9-1418.9] So after that price came.
+[1418.9-1420.9] It was a four hour breakout.
+[1420.9-1421.9] Liquidity.
+[1422.9-1424.9] And then price now came into this level.
+[1424.9-1425.9] Rejected.
+[1425.9-1427.9] And then continued selling.
+[1427.9-1428.9] And you can see our recent.
+[1428.9-1430.9] Power breakout is to the downside as well.
+[1430.9-1431.9] For now.
+[1431.9-1433.9] It's now that daily is confirming.
+[1433.9-1435.9] What daily is confirming our weekly.
+[1435.9-1436.9] Action.
+[1436.9-1438.9] So it's not that daily is actually confirming.
+[1438.9-1439.9] Our weekly action.
+[1439.9-1440.9] In a talk.
+[1440.9-1441.9] In a talk.
+[1441.9-1442.9] In a talk.
+[1442.9-1443.9] Good.
+[1443.9-1444.9] So you can see that now.
+[1444.9-1450.5] Now our daily has aligned with what our rejection.
+[1450.5-1452.5] So we now have this.
+[1452.5-1453.5] A daily breakout.
+[1453.5-1455.5] In the coming weeks.
+[1455.5-1457.5] We might see sales to take out all of these.
+[1457.5-1458.5] Liquidity.
+[1458.5-1459.5] So.
+[1459.5-1460.5] That's for now guys.
+[1460.5-1461.5] Is there anything.
+[1461.5-1462.5] SPX.
+[1462.5-1463.5] SPX.
+[1463.5-1464.5] Let's check.
+[1464.5-1465.5] Let's check this out.
+[1465.5-1466.5] So.
+[1466.5-1467.5] On SPX.
+[1467.5-1468.5] Right.
+[1468.5-1469.5] On SPX.
+[1469.5-1474.7] There was nothing releasing on SPX.
+[1474.7-1475.7] Apart from.
+[1475.7-1479.1] If you're looking at the structure.
+[1479.1-1480.1] The structure was what?
+[1480.1-1481.1] Structure.
+[1481.1-1482.1] Structure.
+[1482.1-1483.1] Structure.
+[1483.1-1484.1] Structure.
+[1484.1-1485.1] Structure.
+[1486.1-1487.1] Right.
+[1487.1-1489.1] So at the point it was something like this.
+[1489.1-1490.1] At the point.
+[1490.1-1491.1] Structure was bullish.
+[1491.1-1493.7] Right.
+[1493.7-1494.7] Then what happened next.
+[1494.7-1495.7] The next thing that the mafei did.
+[1495.7-1496.7] Was.
+[1496.7-1497.7] Price down.
+[1497.7-1500.7] It did something like this.
+[1500.7-1501.7] Right.
+[1501.7-1502.7] Price came.
+[1502.7-1505.7] And swept towards this previous week high.
+[1505.7-1508.7] If you look at it closely.
+[1508.7-1512.7] Price came and swept towards the previous week high.
+[1512.7-1513.7] And closed below.
+[1513.7-1514.7] So what happens then.
+[1514.7-1519.8] closed below so what i was expecting was that price would come probably come into this level
+[1520.3-1525.9] then use this for a continuation probably use any of these key levels for it buys right for the
+[1525.9-1532.3] buys to continue use any of this or this or this for the buys to continue so that's what i was
+[1532.3-1538.3] actually watching out for so it made sense to look for sales up onto this liquidity point
+[1538.3-1544.4] right here and now okay we're talking about video actually key levels on liquidity okay okay
+[1545.1-1551.9] so obviously price rejected no it's not i'll say that so there's just been completed on liquidity
+[1551.9-1556.6] so let's say we expected price to come here let's go into the daily and then see what happened
+[1559.4-1566.7] let's go into the daily and then see what happened right so for us to confirm any move
+[1566.8-1571.6] on the daily time frame we needed to see what a breakout to the downside which i have mentioned
+[1571.6-1578.3] continuously so we now had what's a breakout to a breakout to the downside and then eventually
+[1578.3-1583.6] price gave us what's liquidity and then what do we now have we can see price came into where
+[1583.6-1588.8] this bearish open close key level right price came into that bearish open close key level
+[1588.8-1594.5] rejected and closed below this our external liquidity was still standing so now we have
+[1594.5-1599.1] what you now have a daily reject daily right so that's why i said you can start reading your
+[1599.1-1604.8] past on the daily as well you have a daily rejecting there and before i want to see what
+[1604.8-1611.1] a bearish breakout from that point this was rejected from what can you see boom a bearish
+[1611.1-1615.3] breakout to the downside right and you can see price never actually came back to that
+[1615.3-1620.5] bearish breakout level so like i said price doesn't always need to come to that level
+[1620.5-1624.7] so and all you want to do to you get to your target is you want to follow what the bearish
+[1624.7-1631.2] order flow i can see bearish breakout if you want to keep following as price is taking our
+[1631.2-1638.1] liquidity you want to keep um following the just bearish order flow i just bearish order flow
+[1638.8-1645.7] so um i think there's something on btc i wanted to explain i think we're just going
+[1645.7-1657.2] to stop at btc right so i'm just going to stop at btc so i'm going to stop at btc now on btc
+[1657.2-1663.5] if you look at btc right if you remember i posted on my page that i was expecting to buy
+[1663.5-1670.3] but it did not fulfill all my criteria so watch this now btc recent structure is out
+[1670.3-1675.7] to the downside right recent breakout is to the downside meaning that everything we are
+[1675.7-1684.0] doing should be in alignment with the sales until we have a clear reason to buy so going into your
+[1684.0-1688.2] daily time frame you know that you're going to have what you're going to have buys even in
+[1688.2-1693.0] a cell environment right you're going to have buys even in cell environment so let me check
+[1693.0-1701.7] something out real quick on the weekly so this was the weekly key level right and we
+[1701.7-1708.6] were buying at some point on btc right because daily time frame always retrace right daily time
+[1708.6-1716.2] form always retraces to give you buys at some point but then at a point whereby daily gave us
+[1716.2-1721.7] what this bullish breakout here right we are bullish at some point here on the daily
+[1722.5-1729.3] right we're bullish up until this point so now daily gave us what a bullish breakout this is
+[1729.3-1734.3] the key level and a shape key level that was what's disrespected which is now used for what
+[1734.3-1740.8] you buy so price came here on thursday rejected and closed and this was when i made that post on
+[1740.8-1746.0] my page right i was expecting that price should buy into probably one of these levels
+[1746.0-1751.8] right here but let's check out the four hour time frame now what do we say we want to see
+[1751.8-1757.7] on the flower time frame we want to see what a breakout on the flowers time frame i want to
+[1757.7-1762.9] see a breakout on the four hour time frame but you can see that that never happened that's never
+[1762.9-1768.8] happened instead what the price the price came into this key level right and then rejected
+[1769.6-1775.0] and closed below telling us that btc was not ready to buy yet so there was no reason to have
+[1775.0-1780.5] engaged a buy because what the criterias were not complete we saw rejection and closure we saw
+[1780.5-1785.7] rejection we saw we saw closure we said we want to see what a breakout or a breakout
+[1785.7-1791.2] structure that did not happen that did not happen that never happened here so there was no
+[1791.2-1796.8] reason to actually buy what btc there was no reason to actually buy btc so i think i'm just
+[1796.8-1802.2] going to look at xau it's the last pair because something interesting is happening this
+[1802.2-1809.7] week right i'm seeing something interesting happen so now on btc on this xau sorry so
+[1809.9-1816.3] xau structurally look at this structurally we are what we are bearish right why because we have
+[1816.3-1821.7] this right here we have this bearish breakout right here and now currently what has this week
+[1821.7-1827.0] done this week has given us two things right this week came into this disrespected bearish
+[1827.0-1832.8] open close key level right and then eventually used it for sales again and has rejected and
+[1832.8-1838.6] closed where below this week has rejected and closed below right meaning that overall this can
+[1838.6-1843.8] be our possible external liquidity but now the same thing that's happening on btc is happening on
+[1843.8-1850.5] xau's daily time frame let's check let's check out this guy so we have what a weekly reject
+[1850.5-1856.5] weekly right here now we have a weekly rejection but what daily hasn't given us what a breakout
+[1856.5-1862.0] to the downside daily hasn't given us a breakout to the downside right but instead what
+[1862.0-1868.0] we can see on daily is what a bullish breakout on btc i see that this is not in alignment
+[1868.0-1873.2] with the weekly structure so for me personally i would be sticking with the sale bias right
+[1873.2-1880.8] i can also use this as what i would say what daily reject a daily key level daily reject daily
+[1880.8-1886.3] right now let's check out the four hour time frame let's check out the four hours time frame
+[1886.3-1890.5] what's for our time frame set for our time frame has given us what a bearish breakout
+[1890.5-1895.7] after that rejection so this is what i'm sticking with personally is what i'm personally sticking
+[1895.7-1900.6] with right so probably i'm going to see price come here and then give me a reaction for the
+[1900.6-1906.5] sales to continue as well but if that doesn't happen there's also another interesting thing
+[1906.5-1912.7] happening here how did the week close how did they close they closed like these key levels
+[1912.7-1918.6] right this is the respected open close key level price came here closed price came here
+[1918.6-1923.8] rejected and closed what's below so now do we have it for our bearish breakouts from this
+[1923.8-1932.3] level no so let's check right so let's check so now you can see that we came here we rejected
+[1932.3-1937.7] but there's no bearish breakout yet there's no bearish breakout yet so i would wait until xau
+[1937.7-1943.7] gives me was a bearish breakout before i engage i'm not saying these buys cannot be valid you
+[1943.7-1949.1] might see buys up until this point or wherever if i'm wrong i'm wrong i'm just giving my own
+[1949.7-1957.1] view so that is where we'll be calling it a day right on building bias so thank you
+[1957.1-1962.0] don't remember don't forget to get your account with equity edge as well i've been enjoying
+[1962.0-1966.8] trading with them so far like they have the two days minimum trading rule and the two days
+[1966.8-1972.6] actually doesn't have to be 0.5 percent right we just have to trade for two days that's all
+[1972.6-1980.5] rather than trading for five days and the rest of that so see you all in the next video thank you

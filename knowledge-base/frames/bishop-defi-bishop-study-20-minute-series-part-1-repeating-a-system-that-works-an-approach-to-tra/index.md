@@ -1,0 +1,88 @@
+# bishop-defi-bishop-study-20-minute-series-part-1-repeating-a-system-that-works-an-approach-to-tra
+
+Frame timestamps paired with what is being said over them.
+Times are seconds from the start; the same number is burned
+into the top-left of each frame.
+
+Contact sheets hold 25 frames each, in reading order:
+sheet_001 covers frames 1-25, and so on.
+
+| time | mm:ss | said over this frame |
+|---:|---|---|
+| 0 | 00:00 |  |
+| 20 | 00:20 | SLK a simple approach to trading SLK right so that's what we are going to be talking about today and I'm going to be using I'm going to be talking about |
+| 40 | 00:40 | the approach I use the approach I use all the time so when it comes to SLK there are a lot of ways to approach it that's why we have a lot of SLK traders they all have their own way of approaching the markets using the concept SLK which |
+| 60 | 01:00 | you how I approach the markets or more details on how I approach it so let's say we've built bias right we've built our bias from any time frame let's say |
+| 80 | 01:20 | with the weekly and the daily right so we know that okay these are our daily so in alignment with the weekly we know that our daily time frame is bullish right so now where do we now come in from the H4 you know |
+| 100 | 01:40 | your H4 has to give you your sweep of liquidity and break of structure to the upside or your what's your breakouts to the upside right now when you have any of this personally what I want to see is since this is what confirms my |
+| 120 | 02:00 | is a single candle to be used as liquidity right a single candle to be used as liquidity and then I now want to play the neck the closest key |
+| 140 | 02:20 | rejection from that particular key level then I look for confirmation entry on the lower time frame and I've mentioned that that confirmation entry can be either your sweep and break to the upside it can be your breakouts it |
+| 160 | 02:40 | this right here whereby you have something like this and the low of the candle is swept right the low of this candle is swept by this |
+| 180 | 03:00 | swept by this guy and then what the high is still standing right so this is now going to be your entry of choice this is going to be your entry |
+| 200 | 03:20 | engulfed open close key level right you have something like this engulfed open close key level so you want to see price close above this key level and |
+| 220 | 03:40 | upside right so now this particular entry model right here most times if you see this on the four-hour you see this and for our on your two hour time frame you're going to see this engulfing right here same thing if you |
+| 240 | 04:00 | like this this engulfing so now let us go into the charts to look for that let's go to the charts to look for that so remember I said I'm going to look for a single candle here and then I would now wait for a rejection like price |
+| 260 | 04:20 | this liquidity right and then I now want to see what a rejection and then on the lower time frame I want to see any of this right here any of this right here so now but despite the fact that I prefer to use single candle |
+| 280 | 04:40 | one candle sometimes you can have a series of candles let's say you can have another candle like this here as well and then I have the series not |
+| 300 | 05:00 | upside at this particular level so from there we can now you might not see price eventually come back down so it's not always going to be the next immediate single candle sometimes you're also going to be like |
+| 320 | 05:20 | never you have something like this right you have something like this right here you have something like this so by this too and I like me so price |
+| 340 | 05:40 | v-shaped key level. So this particular point might be a v-shaped key level. Either it breaks structure or it doesn't, but this is another form of liquidity right here. So you might see |
+| 360 | 06:00 | into your key level and boom, you buy. So still unconfirmation entries for me. So let us look at the charts. I'm going to be using examples. I used trades I took within the week. |
+| 380 | 06:20 | Yeah. So, so this, let's start with U.S. 30 demo three cents one. |
+| 400 | 06:40 | frame, you can see that we are, we are bullish on this guy, right? We've been having breakouts to the upside. So I know that my weekly is bullish, my daily, despite the fact that you can see that the recent breakout on the daily time frame was still to the upside. At no point |
+| 420 | 07:00 | have a situation whereby price did this. Price eventually came and rejected off this key level. So now we have daily reject daily in alignment with the structure. This is our |
+| 440 | 07:20 | You can see this is where, this is where we rejected this particular candle right here. So let me pick that off. So this is where the rejection came from. You can see it clearly. |
+| 460 | 07:40 | I don't want to see price come here. But that doesn't mean that this isn't an entry type. It's also a system, but it is not what I trade. So I now waited for another breakout. I can see |
+| 480 | 08:00 | case, a single candle liquidity, which you can see clearly here. So this was a single candle liquidity at this point. And then I was expecting price to actually get into this key level, but it didn't think it's, it also missed this key level by people. |
+| 500 | 08:20 | Right. So now I have, I've seen two things. My mentor says you want to see ABC, then you do XYZ. Right. So I've seen my breakout. I've seen liquidity price has come here and it's rejecting. Right. So time to look for it was a confirmation entry. So let's check. |
+| 520 | 08:40 | You can see here that from here, we had a 45 minute breakouts. So this was an opportunity to enter this trade later on, but this wasn't where I entered. You can see that from here, boom, you've gotten one entry. But my entry was on the 15, on the 30 minutes and engulfing. |
+| 540 | 09:00 | form of confirmation entry. We engulfed this bearish open close key level at this particular point here. So that's why we have that. So this is one opportunity. |
+| 560 | 09:20 | though we had the weekly bullish breakout, but following the following what happened, we had what a weekly rejects weekly and a previous weekly high swaps. So the best bet was to wait for something on the daily timeframe. |
+| 580 | 09:40 | breaking structure to the downside at this particular level right here. So from there, we know that daily had aligned. We were bearish now. So when I saw this, this is what I eventually saw. Price had bought up to this extreme and then rejected from this particular |
+| 600 | 10:00 | right? And this was our closest external liquidity right here. So going down to the four hours from this point, we want to see what a four hour breakouts that aligns four hour had confirmed. Now you can see that this was our single kind of liquidity, |
+| 620 | 10:20 | I would have waited for price to do a deep retracement, but price never actually came back to any of these levels. And it just eventually used this open close key level to start selling. So from here, this is where I will now start looking for my confirmation entry. |
+| 640 | 10:40 | and boom, there was an engulfing again. Can you see it? So there was also an engulfing at this particular level, and this is where your entry would have been. Stop loss just above here, or even just this key level. And it should have given you like a three hour or |
+| 660 | 11:00 | this as well. But yeah, that's how we went about that. So moving on to the next guy. Let's check out a UD card that everybody cuts. The card was quite beautiful, honestly. |
+| 680 | 11:20 | the recent breakouts were to the upside, right? Boom. So last week, we had the previous weekly low swept and a weekly reject weekly. This is our overall target. Go down to the daily time frame. What can you see? Daily now broke out, confirming that. Can you see daily broke |
+| 700 | 11:40 | the high was still standing, and we had a daily reject daily. So from here, this was I was looking for going out to the four hour time frame. This was the rejection and then dating |
+| 720 | 12:00 | remember, I said the next kind of a single kind of liquidity, which was this and then price eventually came to this extreme key level to reject. So after that, from there, |
+| 740 | 12:20 | right? So from there, we had what a one hour break out aligned. And that was a very beautiful trade setup. That was actually very, very beautiful. He appeared on almost all the time frame. Same thing with the two hour, same thing with the three hours. So there were a lot of |
+| 760 | 12:40 | if you wanted to take that directly from then. So that is for a UD card. Which guy should we look at next? Let's check. Here's the card. So on USD card now, I was actually |
+| 780 | 13:00 | external liquidity to be taken. Right. But now if you look at this structurally, you can see that there was a bullish, there was a bullish breakout right here, though. Well, okay. I |
+| 800 | 13:20 | bullish, quite bullish. So I was expecting this to go because this was swept right here. So going down to the daily, but at some point, we now had a weekly rejection. Price started rejecting. Remember what I said? Price started rejecting from here, this point right here. |
+| 820 | 13:40 | right? So if I was selling, I was actually going to target this guy. Well, now from here now, the four hour now broke out to the downside at this particular point. |
+| 840 | 14:00 | we can expect price to do a deep retracement into this level, but not all the time. So it's something to just watch out for. So that's why the fact that my single candle was at this particular level, I was just, I was, if price actually came here and rejected |
+| 860 | 14:20 | whereby price would tend to pull into a higher level, like to feel that imbalance. So from there now, you can see that price eventually came, same thing happened on US oil, |
+| 880 | 14:40 | not exactly before price reached the target. So, so yeah, so I'll keep this at just 15 minutes maximum, but let's see how that goes. Okay. That was for you as the card. I think I'm just going to explain US oil. So now there was a trade I took on US oil, |
+| 900 | 15:00 | from the daily timeframe where bearish, right? We had a breakout to the downside. Now on the four hour, four hour also did what broke out to the downside at this particular level right here. Right now. Remember what I said about, I don't think direct entry. So my system |
+| 920 | 15:20 | says wait for a rejection. There's even if my single candle is here. Yeah. I'm going to wait for price to actually reject to price countries to reject from here or price countries to go higher and reject. But my steps is until you see that rejection, there is no trade for you. |
+| 940 | 15:40 | Do you understand? So from here now, this was the next candle, right? This was the next candle right here. So I was expecting price to actually, okay, come and maybe reject from somewhere here, but price didn't do that. Instead price decided to trade higher into |
+| 960 | 16:00 | liquidity here too. So that is actually quite valid. Like I said, it's not always going to be the immediate single candle that price uses as liquidity for this. In this case, |
+| 980 | 16:20 | eventually came to this level. And then this was meant to be my first target. No, I think this was my target here. This was the previous daily low. So this was my target. And |
+| 1000 | 16:40 | remember that confirmation I talked about whereby the high swept, but the low is standing. You can see it here. The high was swept. The low was still standing right here. And then price now tapped into this key level right here, as you can see. I remember what I said, |
+| 1020 | 17:00 | So this was a possible entry, but I did not see that as I then, when I saw it, I think I saw it around here where this engulfing happened as well. So from there to here was also a very good ride. So I think I'll just look at this |
+| 1040 | 17:20 | more than 15 minutes, actually. So yeah. So on AUD USD, I think this is the last guy I'm going |
+| 1060 | 17:40 | looking for sales before, yeah, because the recent breakouts were still the downside, right? So it was bearish until this point whereby it gave a bullish break of structure, |
+| 1080 | 18:00 | a bullish breakout to the upside, right? And then eventually, price now decided to come into this key level, right? And then also sweep liquidity. So at that point, we had this high standing, |
+| 1100 | 18:20 | have to marry a bias. A bias can flip at any point in time. So now from here, we now have a daily reject daily and previous daily low sweeps. We want to see a four-hour breakout. So now you can |
+| 1120 | 18:40 | sometimes price is not going to use that immediate rejection. So despite the fact that price rejected from this zone, I wasn't even looking for an entry because I saw this key level right here and this, so I was actually waiting for any of these to get tapped first |
+| 1140 | 19:00 | before I look for something. So when price now eventually came into this level, price eventually came into this level and then rejected, though I wasn't interested in the |
+| 1160 | 19:20 | So you can see that price broke structure to the downside first. And if you were not solid about your bias, you actually feel bias has flipped or something. So let's check. So we had words. What do we have? Let's look at the checklist, breakout liquidity. And you can see |
+| 1180 | 19:40 | chart. This was a V-shaped key level. If you remember the diagram I drew at the start. So we had this, right? So price now eventually came back for that liquidity and then we had a rejection. So from there, I'm looking for confirmation. There was no exact confirmation on |
+| 1200 | 20:00 | the one hour, it was five minutes, either, on the 30 minutes too, actually. Except you actually went as low as the 15 minutes whereby you now give the words a sweep and break to the upside at this particular point. So this would have been your entry and then boom, |
+| 1220 | 20:20 | had the same representation. So price did not use the immediate single candle, but I was expecting price to get into this key level because what the daily had done, almost the same thing. Daily had done this, daily breakout liquidity, daily reject daily, previous daily |
+| 1240 | 20:40 | So all of these buys are possible all the way to this high right here. So you can see from here, was there a confirmation entry on the one hour? About the 35 minutes, 30 minutes. I don't know exactly. Same, we're still on the 15 minutes, |
+| 1260 | 21:00 | you would have been able to get an entry and I do that not all the time. I rarely do that actually. So yeah, we don't need to talk about this guy. Oh, it's still the same concept. It's |
+| 1280 | 21:20 | previous daily low swept this high was standing. We now had a daily reject daily. So on the four hour, we are looking forward to a breakout. This was the rejection. Price now broke out to the upside at this particular level. |
+| 1300 | 21:40 | But if you had gotten in on the first one, price will most likely have taken you out. Because this was like the first rejection before price now came back in. |
+| 1320 | 22:00 | breakout later on and you can see the bias, massive bias. So I think on this guy, yeah, this guy was also clean. This guy was also clean. So on euro, |
+| 1340 | 22:20 | you know, overall we are bearish, right? So this is a bearish structure. Price now swept a previous weekly was high. So we expect price to come into this low, and this is still valid even in the coming week. So from there, price was doing a lot of |
+| 1360 | 22:40 | this bullish breakout right here, because you know, your weekly is bearish and your daily did not give you a very solid breakout to the upside, right? So instead, you would have waited because this was a reversal phase of the market. So you wait for the expansion to cook. |
+| 1380 | 23:00 | right? So you now go to your four hour, what you want to see before our breakouts, which happened at this point, boom. So we now had what a single candle liquidity, single candle liquidity. And we now have this right here, price type to use this, |
+| 1400 | 23:20 | So you can see that from here now, this price would have tested your patients a lot of times, but only if you were able to stay solid, would you have been able to get entry. |
+| 1420 | 23:40 | what price might have taken you out unless you used the extreme and actually placed your stop loss above this particular point right here. But now look at this, look at this |
+| 1440 | 24:00 | right? The low was still standing. So you can see that price eventually came back and used that key level. So this was your only good entry. So you had a clean entry on your timeframe. And boom, let's check if it was an engulfing on the 30 minutes. Okay, it wasn't, |
+| 1460 | 24:20 | no, it wasn't. But it was on the 15 minutes. So you can see on the 30 minutes, it gave us the same representation, though not valid like that. But price actually tapped it before taking this out. So this was valid. And on the 15 minutes, it was an engulfing. |
+| 1480 | 24:40 | Have a nice week and have a nice weekend. And remember to just look for something that works and then make it yours. Everybody has their own approach, but I just chose this. |
+| 1500 | 25:00 | I just incorporate this and then I'm good to go. So if you're incorporating this, make sure you've studied it quite enough because you only have conviction in what you've studied and what |
+| 1520 | 25:20 | be, I think I'm going to make a wallpaper. Yeah, I just might. So yeah. Thank you guys for |

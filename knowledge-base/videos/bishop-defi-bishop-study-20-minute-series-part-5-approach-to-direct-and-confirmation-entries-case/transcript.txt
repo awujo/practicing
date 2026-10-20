@@ -1,0 +1,648 @@
+[3.4-8.3] Good afternoon and happy Sunday everyone.
+[8.3-11.3] So today we will be talking about entries
+[11.3-13.4] and confirmation entries, right?
+[13.4-16.5] Basically, we'll just be talking about what you do
+[16.5-18.0] after you've gotten your bias,
+[18.0-22.6] because you recall over the last two weekends,
+[22.6-25.0] we were talking about how to build your bias.
+[25.0-28.9] It's either your key levels or your liquidity, right?
+[28.9-32.6] And we explained everything here basically.
+[32.6-35.1] So now what we're talking about is
+[35.1-36.8] after you've gotten your bias, right?
+[36.8-39.2] What do you do next, right?
+[39.2-40.4] So what is the next step?
+[40.4-42.3] What are you going to do?
+[42.3-45.6] Now we know that a four hour breakouts,
+[45.6-47.6] a four hour sweep and break, right?
+[47.6-50.6] Or a four hour breakout is what confirms our bias
+[50.6-54.3] on a four hour timeframe, right?
+[54.3-59.3] So after we have this four hour breakout, right?
+[60.2-62.3] It means whatever we have on the daily
+[62.3-63.5] has been confirmed.
+[63.5-66.1] So now our next step is what's actually following up.
+[66.1-69.0] Let's say we have this external liquidity here
+[69.0-72.4] that we expect price to eventually get into.
+[72.4-74.4] So our job now is to find out
+[74.4-77.0] how to actually approach this guy
+[77.0-79.7] till he gets to this particular point, right?
+[79.7-82.2] So that's what we'll be talking about basically.
+[83.5-85.8] Now one approach to it, right,
+[85.8-89.2] is that when you have your four hour breakouts, right?
+[89.2-91.5] When you have your H4 breakouts,
+[91.5-94.3] when you have your H4 breakouts, right?
+[94.3-98.8] You can scale down to your H2 timeframe, right?
+[98.8-101.5] Looking for what's the liquidity, right?
+[101.5-104.0] Liquidity and the key level.
+[104.0-106.6] So it means that when you have your four hour breakouts,
+[106.6-109.0] after your four hour breakout can do as closed,
+[109.0-112.3] you can then scale down to what's your two hour timeframe.
+[112.3-114.4] Right, so let's say these are our H4.
+[114.4-116.2] These are our H4 timeframe, right?
+[116.2-118.4] So now we're scaling down to our two hour timeframe
+[118.4-121.2] to look for what a sweep and break with liquidity.
+[122.2-124.4] Right, so a breakout with liquidity.
+[124.4-127.2] So then from there, we can then take this guy,
+[127.2-130.0] this trade directly from two hour timeframe, right?
+[130.0-132.8] A key level closest to this guy and then boom,
+[132.8-135.5] we take out our X and our liquidity.
+[135.5-137.8] So that's one way to approach it.
+[137.8-139.9] That's one way to approach your entries.
+[139.9-143.7] Then another way to approach entries, right?
+[143.7-152.4] Another way to approach entries.
+[152.4-156.9] Another way to approach entries is basically by waiting.
+[156.9-159.7] Let's say this is still our four hour timeframe, right?
+[159.7-161.4] So what we can do on our four hour timeframe
+[161.4-165.1] is that we wait for either a single candle liquidity,
+[165.1-167.1] right, either we wait for single candle liquidity
+[167.1-169.6] on this four hour timeframe, right?
+[169.6-171.1] Either we wait for single candle liquidity
+[171.1-172.7] on this four hour timeframe.
+[172.7-175.1] Or that means if we're waiting for single candle
+[175.1-177.7] liquidity means you're waiting for something like this,
+[177.7-180.6] right, for price to come and sweep this guy.
+[180.6-182.3] And then your entry can be directly
+[182.3-185.6] at this particular key level right here, right?
+[185.6-187.2] Depending if that's the key level,
+[187.2-190.0] your key level of interest, basically.
+[190.0-191.7] So this is what you're going to be looking for.
+[191.7-194.4] If this is your liquidity, right,
+[194.4-196.9] it means you would be expecting something like this
+[196.9-198.5] to happen to your stop loss
+[198.5-201.4] just below this particular area right here.
+[202.3-206.1] Then, now this is the second approach
+[206.1-207.5] we've talked about, right?
+[207.5-209.3] Where by you're taking a direct entry
+[209.3-210.8] directly from this point,
+[210.8-212.1] which means you're expecting price
+[212.1-215.3] to take out this liquidity eventually coming to this level
+[215.9-218.5] and then what's to give you your expansion to the upside
+[218.5-221.2] or the downside as the case may be.
+[221.2-223.7] So we've talked about, this is the second approach.
+[223.7-225.9] Remember, for the first approach we said,
+[225.9-227.7] once you have a four hour breakout
+[227.7-230.1] or a four hour sweep and break, right?
+[230.1-233.7] You then scale down to your H2 timeframe, right?
+[233.7-235.7] Looking at the time you have these breakouts,
+[235.7-238.3] H2 also would have given you a breakout
+[238.3-240.5] or a sweep and break to the upside, right?
+[240.5-242.3] So what you're waiting for there is basically
+[242.3-244.5] what's either your single candle liquidity
+[244.5-246.7] or your structural liquidity.
+[246.7-248.1] Structural liquidity in the sense that
+[248.1-250.3] maybe you're seeing something like this.
+[251.3-252.2] Oh, how do I do this?
+[252.2-256.0] Maybe you're seeing price or something like this, right?
+[256.0-257.6] Which means that eventually you expect price
+[257.6-259.4] to come and take out this guy.
+[259.4-260.7] It might not be one single candle,
+[260.7-262.0] it might be a series of candles
+[262.0-263.9] but this is what you would be expecting.
+[263.9-265.3] One price to come take out this guy
+[265.3-267.4] and then go to the upside.
+[267.4-268.3] So this is what I mean when you see
+[268.3-270.9] your structural or engineered liquidity
+[270.9-273.8] or any of that or your single candle liquidity,
+[273.8-275.8] which is why sometimes I try to mention
+[275.8-277.5] that in as much as I prefer to wait
+[277.5-279.1] for single candle liquidity,
+[279.1-281.4] sometimes it might not always be
+[281.4-284.3] the immediate single candle that does that for us, right?
+[284.3-287.3] So sometimes that might not happen for us.
+[287.3-289.0] Then that means from here,
+[289.0-291.1] you're taking what's a direct entry
+[291.1-293.6] and the last kind of entry that I'll be talking about
+[293.6-296.8] is confirmation entries.
+[296.8-299.5] Now confirmation entries is basically the same thing.
+[299.5-301.2] You're waiting for a type of liquidity
+[301.2-303.6] on your four hour timeframe, right?
+[304.4-305.9] You're not setting your limit directly
+[305.9-307.4] at the four hour key level.
+[307.4-309.2] You're expecting price to trade
+[309.2-312.4] into your key level of interest, right?
+[312.4-315.8] And then start giving you a reaction from that key level.
+[315.8-318.0] Which means you're expecting price to come here
+[318.0-320.3] and start giving you some sort of reaction
+[320.3-322.3] that's this rejection right here.
+[322.3-324.2] Now it's your choice to wait
+[324.2-327.5] for the candle rejecting to close or not, right?
+[327.5-330.0] It's the highest personal preference
+[330.0-331.6] that's left totally up to you.
+[331.6-332.7] So you can choose to wait
+[332.7-334.6] for this guy to close or not.
+[334.6-335.9] But now when this guy comes here
+[335.9-337.6] and he's giving you a reaction,
+[337.6-340.7] what you're basically looking for on your lower timeframe.
+[340.7-341.7] When I say your lower timeframe,
+[341.7-346.5] I mean like your, even your H3, your H3, your H2, right?
+[346.5-349.1] And the rest of them are depending
+[349.1-350.3] on your preferred timeframe.
+[350.3-353.9] So you can either see this on your H3, H2,
+[355.3-357.9] H1, M30, M45, right?
+[357.9-360.5] M45, M30, right?
+[360.5-363.5] Even M15, even M5, right?
+[363.5-365.2] So it just depends on you.
+[366.6-368.1] Right, it just depends on you.
+[368.1-370.3] So what you're basically looking for
+[370.3-372.0] when you have this rejection
+[372.0-374.5] is that you're looking for one of four things
+[374.5-376.8] or three things as the case may be.
+[376.8-378.2] Now, the first thing you would be looking for
+[378.2-380.2] is your one price to give you
+[380.2-383.3] or a breakout from this level.
+[383.3-385.0] Which means from this level now,
+[385.0-387.9] you would want price to give you something like this.
+[387.9-389.9] Right, you want price to give you a breakout.
+[389.9-392.6] This is the level price is reacting from here, right?
+[392.6-394.9] So from here, you want to see something like this.
+[394.9-398.3] You want to see price give you a breakout to the upside.
+[398.3-401.5] Right, so it's surprise give you a breakout to the upside.
+[401.5-402.8] Another thing you would want to see
+[402.8-405.4] or you would love to see is something like this
+[405.4-408.3] whereby price gives you what is sweep of liquidity
+[408.3-410.0] and the break of structure, right?
+[410.0-412.2] Now, these are, if you said,
+[412.2-415.8] if you asked me which ones are likely the best,
+[415.8-417.7] personally, I will tell you these two.
+[417.8-420.9] I will tell you these two are very, very like,
+[420.9-422.6] if you have these two,
+[422.6-425.2] IFS, you might have a missed entry,
+[425.2-426.2] but you might take losses,
+[426.2-428.3] but your losses are going to be minimal
+[428.3-430.9] compared to other forms of confirmation entry.
+[430.9-433.8] Right, so now this basically is confirmation entry
+[433.8-435.0] that we're talking about.
+[435.0-437.1] We've talked about direct entries
+[437.1-439.1] on the two hour and the four hour, right?
+[439.1-441.1] So now we're talking about the third approach,
+[441.1-443.4] which is your confirmation entry,
+[443.4-445.6] which means you want to see either your breakouts,
+[445.6-448.1] your sweep and break to the upside.
+[448.1-453.1] You would want to also see price give you an engulfing.
+[454.3-457.9] Right, so you want to see price give you an engulfing
+[457.9-459.7] either to the upside or downside,
+[459.7-463.4] depending on what you are looking for, right?
+[463.4-465.4] Depending on what you're looking for.
+[465.4-470.0] So now, right, so in the case of a bullish engulfing,
+[470.0-473.2] since we are talking about a bullish scenario right here,
+[473.2-475.3] you would want to see price give you what's
+[476.1-479.3] two consecutive bearish candles that were disrespected.
+[479.3-480.3] Right, you're going to see price
+[480.3-482.6] do something like this, right?
+[482.6-484.9] Price is going to give you something like this.
+[484.9-488.6] This guy, this guy, right, two bearish candles.
+[488.6-492.2] That's with them are red, right?
+[492.2-493.7] Two bearish candles.
+[494.7-498.1] Right, this gives you a bearish open plus key level,
+[498.1-499.9] which means originally you're looking for price
+[499.9-503.1] to get in some way here and then sell, right?
+[503.1-507.5] But then, orders price to price disrespects this guy.
+[507.5-509.0] Right, price disrespects this guy
+[509.0-510.7] doing something like this.
+[510.7-511.5] Boom.
+[511.5-513.7] Now, it doesn't necessarily mean the candle will be above.
+[513.7-515.5] Sometimes the candle can be below.
+[515.5-518.5] But the idea is that this bearish open plus
+[518.5-520.2] has been invalidated.
+[520.2-522.7] Right, so we can call this a bullish candle.
+[522.7-524.7] Or we can call this a bullish candle.
+[524.7-527.5] Right here, meaning that these points right here
+[527.5-531.7] is your what's your engulfing, your bullish engulfing.
+[531.7-535.8] Right, so your bullish open plus key level.
+[535.8-537.8] So you're expecting price to come here
+[537.8-540.9] and then it will give you a reaction for a buy.
+[540.9-542.1] Right, for a buy.
+[542.1-544.1] Now, the opposite is the case for the sell.
+[544.1-546.6] Whereby, if I invert the charts now,
+[546.6-547.8] right, if I invert it now,
+[547.8-549.7] you see this is exactly what you have.
+[549.7-550.6] A bearish open plus.
+[550.6-553.0] You can see that everything still aligns.
+[553.0-554.6] You'd want to see a bearish break out,
+[554.6-558.7] a bearish super break or a bearish disrespected open plus.
+[558.7-561.7] So now, another kind of confirmation entry
+[561.8-562.9] that we're going to see is
+[562.9-565.0] from short amount of confirmation entry.
+[565.0-567.3] Right, whereby we have something like this.
+[567.3-570.4] Right, we have something like this.
+[570.4-574.0] And then this candle has a high and a low basically.
+[574.0-575.8] Like all candles do.
+[575.8-578.7] But this candle has a high and a low.
+[578.7-580.6] Right, this candle has a high and a low.
+[580.6-583.5] Now, what do you want to see in this guy?
+[583.5-585.7] Right, what's to make this guy valid
+[585.7-587.2] is there are a couple of things
+[587.2-589.2] we want to pay attention to.
+[589.3-591.9] So now, let's say this is this candle.
+[591.9-593.9] Right here, whether it's bullish or bearish,
+[593.9-595.7] it doesn't necessarily matter.
+[595.7-598.0] Right, but what you'll mostly see
+[598.0-600.6] is that you'll see price come and sweep out
+[600.6-602.6] the leg of this other candle.
+[602.6-605.0] Right, you're going to see something like this.
+[606.2-608.9] Right, but I think I'll just make this red.
+[608.9-610.3] Right, I think I'll just make this red.
+[610.3-612.5] So, now you're going to see something like this.
+[612.5-615.6] Price is going to come here and sweep out this guy.
+[615.6-618.8] Right, and then the high should be standing.
+[618.8-620.0] And the high should be standing.
+[620.0-622.4] This is what kind of validates this guy.
+[622.4-623.9] And then while the high is standing,
+[623.9-625.4] you're going to see that this is going to give you
+[625.4-627.5] what's the V-shaped key level.
+[627.5-629.1] Right, it's going to give you a V-shaped key level
+[629.1-631.1] which you're expecting price to come here
+[631.1-634.9] and then buy away to our external liquidity.
+[634.9-636.2] Right, so you're going to see price come
+[636.2-640.0] into our external liquidity right here.
+[640.0-642.5] So, you don't see this on any of these timeframes.
+[642.5-647.0] Right, well, this is a goodness actually.
+[647.0-649.7] Anyways, yeah, I think I can do something like this.
+[649.7-652.3] So, you want to see price coming to our external
+[652.3-657.3] liquidity right here at this point from this guy.
+[657.9-661.4] So, now this is exactly what you would want to see
+[661.4-664.5] when it comes to your confirmation entries on this guy.
+[664.5-667.9] Either you see your breakout, your breakout structure,
+[667.9-671.3] your engulfing, right, engulfed upon close key levels
+[671.3-674.6] or this whereby the low of this can do the swept
+[674.6-676.4] and the high is still standing,
+[676.4-679.0] giving you a V-shaped key level.
+[679.0-681.1] And majority of the time, right,
+[681.1-684.9] this particular pattern here, right, this pattern here,
+[684.9-687.5] let's say if this happens on the one hour, right,
+[687.5-691.2] if you check M30, right, you would mostly see this.
+[691.2-693.5] So, anytime you see this, you will most likely see this
+[693.5-696.1] but it doesn't always appear all the time.
+[696.1-697.6] It doesn't always appear all the time.
+[697.6-699.8] But if you see this on your four hour time frame,
+[699.8-700.6] right, if you see this, let's say,
+[700.6-702.2] the four hour time frame,
+[702.2-705.0] you'll most likely see this on your 12 hour time frame
+[705.0-706.2] or your three hour time frame.
+[706.2-708.1] So, you can use that to validate it
+[708.1-711.5] but I'm not saying it's something that occurs all the time.
+[711.5-713.4] I never said something that occurs all the time.
+[713.4-716.6] It doesn't happen all the time.
+[716.6-720.7] So, basically, these are likely,
+[720.7-723.7] these are the, what's the word?
+[723.7-726.0] These are the types of confirmation entries, right?
+[726.0-729.4] This is basically what you would want to see
+[729.4-730.5] on a day-to-day basis.
+[730.5-733.5] So, you can decide to pick one or two
+[733.5-734.6] or even all of them.
+[734.6-737.0] You can decide to pick all of them, right?
+[737.0-741.2] So, that choice is totally up to you.
+[741.2-743.0] Right, that choice is totally up to you.
+[743.0-745.3] So, anyone you decide to pick, just stick with it
+[745.3-747.2] and then, well, before you stick with it,
+[747.2-753.0] you can observe how it works over time.
+[753.0-755.2] You can observe how it works over time first
+[755.2-758.0] before you decide to commit to it.
+[758.0-760.1] So, before you decide to commit to it.
+[760.1-761.3] So, I think we are going to be looking
+[761.3-763.4] at our examples now.
+[763.4-766.1] Let's be looking at our examples now.
+[766.1-773.5] So, I'm going to be looking at our examples now.
+[808.2-812.7] So, now, something you need to know
+[812.7-814.2] that none of these confirmations
+[814.2-816.9] will stop you from taking stop-loss, first of all.
+[816.9-818.7] None of them are a guarantee
+[818.7-820.6] that you're trading not yourself.
+[820.6-823.1] Though, if it does, don't say that,
+[823.1-826.0] oh, so, so, so, so, so, so, person said,
+[826.0-829.2] if you take this, you're not going to hit stop-loss,
+[829.2-830.1] right?
+[830.3-835.3] None of these are an insurance from stop-loss.
+[837.0-842.8] Stop-loss is everybody's food, so I'm going to say a trader.
+[842.8-845.5] So, don't let that stop you.
+[845.5-849.2] So, now, let us just basically go into the charts, right?
+[849.2-851.5] So, let's go into the charts
+[851.5-853.4] and see what we can get.
+[853.4-854.2] Am I recording?
+[854.2-855.8] Okay, thank God.
+[855.8-858.4] So, I can pick some pairs, right?
+[858.4-859.9] Because I don't want to waste time.
+[859.9-862.8] Now, if you start from XAU, right,
+[862.8-865.2] as much as some people say the buys,
+[865.2-867.2] personally, I did not, I wasn't looking,
+[867.2-868.1] I wasn't very bullish.
+[868.1-870.5] And at the time, I was bullish pricing
+[870.5-873.5] and I didn't leave me the confirmation entry, right?
+[873.5-875.8] Because if you check the structure on this guy,
+[875.8-879.4] structurally, we were what we are bearish, right?
+[879.4-880.4] Structurally, we are bearish,
+[880.4-882.3] but if you pay attention to what happened here,
+[882.3-884.6] that's why every detail is important.
+[884.6-888.0] If you pay attention to what happened here on XAU,
+[888.0-891.2] this was a key level, a V-shaped key level.
+[891.2-893.4] You can see at this point, price is easy to buy
+[893.4-894.6] and it wasn't disrespected,
+[894.6-896.8] but it was tested multiple times.
+[896.8-899.7] Right, so now, as at last week or last two weeks,
+[899.7-902.6] price came here and rejected at this particular point,
+[902.6-905.1] right, this last reduction here.
+[905.1-906.5] Now, let's check out the daily.
+[906.5-909.2] What happened on the daily timeframe?
+[909.2-911.3] From that point, let's go back
+[911.3-913.4] and even mark out the week, right?
+[913.4-915.3] This was the week of that candle.
+[915.3-918.5] Let's go to the daily.
+[918.6-921.5] Like I said, this was the week of that candle, right?
+[921.5-924.7] And from there, we had a bullish breakouts.
+[924.7-926.8] We had a daily bullish breakouts,
+[926.8-929.6] which means our checklist on bias was complete,
+[929.6-933.5] technically, weekly rejection, daily breakouts, right?
+[933.5-935.5] Daily breakouts, so daily breakouts
+[935.5-940.1] and eventually came back into this key level for a buy.
+[940.1-942.0] So now, let's say we've already gotten our bias
+[942.0-946.0] for this guy, we now have a daily reject daily.
+[946.3-948.0] Going on to the four hours,
+[948.0-951.0] you can see as at, I think so I put the cell phone here,
+[951.0-953.0] but I was waiting for this bullish breakouts,
+[953.0-955.8] because when you have a daily rejection,
+[955.8-957.6] you're waiting for a four hours breakout, right?
+[957.6-961.6] So you can see we had a breakout to the upside first
+[961.6-965.1] here and then overall at this particular point right here,
+[965.1-967.9] sweep and break if you look at it totally.
+[967.9-971.0] I saw this guy around, yes, around seven,
+[971.0-973.8] this particular guy, you know, he came there around,
+[973.8-974.6] came there around 11,
+[974.6-978.3] I saw this before, I wanted to set my limit directly,
+[978.3-981.9] so bad, but I don't take direct entry, right?
+[981.9-983.7] So you can see that from here,
+[983.7-985.5] if you take direct entries,
+[985.5-988.2] this would have been your entry on this guy,
+[988.2-989.5] and this would have been your entry on this guy,
+[989.5-993.6] you can see the bloody R is still delivering
+[993.6-995.0] till now actually,
+[995.0-998.0] and your stop loss safely should have just been here.
+[998.0-1000.0] If you're not seeing tight stop loss,
+[1000.0-1002.5] this was a very good place to put it on here,
+[1003.0-1004.4] it made a lot of sense.
+[1005.3-1008.1] Right, so you can see this was the first entry type
+[1008.1-1009.3] we talked about, right?
+[1010.4-1012.3] Or one of the entry type further,
+[1012.3-1014.0] but then it was the way that trade direct entry
+[1014.0-1015.5] because I saw this guy and I saw this guy,
+[1015.5-1018.3] I was like, oh, he's already late anyways,
+[1018.3-1019.4] but then price came here,
+[1019.4-1022.2] so when we had this rejection now,
+[1022.2-1023.5] that is when we can start looking
+[1023.5-1027.0] for our confirmation entries on the lower timeframes.
+[1027.0-1029.5] Right, you can see here at this point,
+[1029.5-1032.2] the price did this, what can you see here?
+[1033.1-1036.6] Price engulfed at 2 a.m.
+[1036.6-1038.1] The price came there at 2 a.m.
+[1038.1-1040.4] I wasn't even home, even if I was home,
+[1040.4-1042.8] I might have taken it if I was home actually by 2 a.m.
+[1042.8-1044.6] So this would have been the first target
+[1044.6-1047.8] and then overall targets, right?
+[1047.8-1049.5] So you can see that price came here,
+[1049.5-1052.8] gave a very good confirmation entry and engulfing
+[1052.8-1054.3] and price peaked that level
+[1054.3-1057.8] and if you took this guy from here, right,
+[1057.8-1059.4] your stop loss would have been very small,
+[1059.4-1061.2] even here should have given you like
+[1061.2-1065.5] almost a 10 R, let's see, let's check.
+[1065.5-1067.1] Okay, just five sharp.
+[1067.1-1071.4] Well, here, it would have given you like eight,
+[1071.4-1073.8] so let's not even talk about what it is at currently,
+[1073.8-1076.4] that's like a 20, a 19.
+[1076.4-1079.0] So I see the body, so it's most logical place
+[1079.0-1080.8] to if you wanted to be conservative a little bit,
+[1080.8-1082.8] you could have just maybe adjusted the body
+[1082.8-1085.0] so it's the logical place to place your stop loss
+[1085.0-1085.8] on this guy.
+[1087.1-1089.0] So you can see there was an engulfing here,
+[1089.0-1091.0] all right, there was an engulfing here,
+[1091.0-1092.7] but I think there was also an entry
+[1092.7-1094.8] on the one hour timeframe.
+[1094.8-1096.3] You can see here we had the breakouts
+[1096.3-1098.3] but price never came back to it.
+[1098.3-1099.8] You can see we had the breakouts at this level,
+[1099.8-1103.4] price never came back to that guy, right,
+[1103.4-1105.9] even on the one hour as well.
+[1105.9-1107.9] So price, since the price used one of these levels,
+[1107.9-1109.5] what are the 30 minutes?
+[1109.5-1112.2] I think 30 minutes, there was something.
+[1112.2-1114.0] So you can see even there was a 45 minutes sweep
+[1114.0-1115.4] and break to the upside, right,
+[1115.4-1116.8] look at your line charts,
+[1116.8-1119.0] one of the ones I pointed out sweep and break
+[1119.0-1121.5] and you can see price, you know, actually come back.
+[1121.5-1123.4] I think on the 30 minutes,
+[1123.4-1125.9] yeah, there was a sweep and break on the 30 minutes
+[1125.9-1128.1] at this level as you can see,
+[1128.1-1130.9] you look at your line charts, another level, excuse me,
+[1130.9-1132.2] and you can see that price came there,
+[1132.2-1134.2] so your stop loss would have just been below
+[1134.2-1135.5] this particular point,
+[1136.5-1139.3] my chest up close below this point here
+[1139.3-1140.6] and it would have been good,
+[1140.6-1141.5] it would have been very good.
+[1141.5-1144.1] So it's quite an annoying buy to me still,
+[1144.1-1147.5] but there's always another setup, right,
+[1147.5-1150.1] there's always another setup.
+[1150.1-1153.4] So now, remember what I said about the other approach
+[1153.4-1155.7] that immediately you have your four hour breakouts,
+[1155.7-1157.1] you can then scale to the two hours
+[1157.1-1159.2] to look for something, your breakouts.
+[1159.2-1160.8] So now you can see we had a four hour breakout
+[1160.8-1162.1] at this point, right?
+[1162.1-1164.5] So another entry is to kind of go down
+[1164.5-1165.7] and you go down to the two hours,
+[1165.7-1168.9] you can see you also have a break to the upside
+[1168.9-1170.3] and then you can wait for liquidity.
+[1170.3-1171.7] So if you're waiting for price to come back
+[1171.7-1173.7] for this guy, waiting somewhere here,
+[1173.7-1175.7] you see that you would have probably missed
+[1175.7-1176.6] this particular trade,
+[1176.6-1180.4] but this is also another approach to it.
+[1180.4-1183.5] So let's check GU.
+[1183.5-1186.1] Okay, I had my limit here on GU,
+[1186.1-1189.5] but price never attacked me in, right?
+[1189.5-1191.6] Price never, okay, no, I don't think I set a limit.
+[1191.6-1193.8] I was just watching out for this guy.
+[1193.8-1194.6] So on GU,
+[1195.8-1197.2] yeah, daily is bullish, right?
+[1197.2-1200.0] Our recent breakout, let me take these guys off.
+[1200.0-1202.5] Our recent breakout was to the upside
+[1202.5-1205.5] even before price started retracing, right?
+[1206.5-1208.0] So, and you can see I've said that
+[1208.0-1210.9] if price trips the high we can do in a bullish environment,
+[1210.9-1213.2] we must not necessarily come for the low.
+[1213.2-1215.0] And so you can see, right?
+[1215.0-1218.8] Now, after we had a rejection somewhere,
+[1218.8-1220.2] price now gave us what I was waiting
+[1220.2-1222.8] at these points originally, I think,
+[1222.8-1226.1] before GU, since when GU started expanding.
+[1226.1-1228.1] I don't know what day it was that.
+[1228.1-1229.1] Okay, so somewhere here,
+[1229.1-1232.5] I think we had a daily rejection from somewhere here,
+[1232.5-1235.6] right, and then four hours gave a breakout to the upside.
+[1236.6-1237.9] So I was waiting here on this guy, right?
+[1237.9-1239.6] For price to get into this key level,
+[1239.6-1241.2] gave me that rejection,
+[1241.2-1242.9] and then I look for my confirmation
+[1242.9-1245.0] to this target right here.
+[1245.0-1245.9] I can see that price,
+[1245.9-1247.5] if you were taking it as entry price,
+[1247.5-1248.9] you don't have to have it in.
+[1248.9-1251.4] Let's see if we were using the two-hour approach as well.
+[1251.4-1253.0] Price wouldn't have tagged it in as well.
+[1253.0-1255.3] So you can see it's the same thing on your two hours,
+[1255.3-1257.2] a breakout in liquidity.
+[1257.2-1258.8] And boom, price used this key level,
+[1258.8-1260.2] but I think there was a key level
+[1260.2-1262.5] for those other prices actually.
+[1262.5-1264.0] Yeah, that doesn't matter.
+[1264.0-1266.0] So I can see price just switched to liquidity
+[1266.0-1267.2] and they moved.
+[1267.2-1270.2] Price switched to liquidity and they moved on this guy.
+[1270.2-1275.0] Right, so on to the next, guys, on to the next.
+[1275.0-1278.1] I think there was something interesting on EU as well.
+[1278.1-1280.1] At the beginning of the week, yes, there was.
+[1280.1-1281.8] Good, there I get a century.
+[1281.8-1284.5] I think for five minutes, let me check.
+[1284.5-1285.9] Or a bit, for bits.
+[1287.2-1289.8] Okay, let me check.
+[1289.8-1292.6] I want to be sure where I got this entry from.
+[1292.8-1294.3] It was on a lower timeframe.
+[1297.9-1300.0] Can't remember, but we'll figure it out.
+[1301.3-1305.0] Let me see, there was an engulfing somewhere.
+[1321.3-1324.3] Okay, anyways, let's get to it already.
+[1324.3-1327.2] So on the daily on EU as well,
+[1327.2-1331.1] we were bullish by three cents breakouts to the upside.
+[1331.1-1332.9] So moving to the four hours,
+[1332.9-1336.9] I think we had, where was that guy?
+[1336.9-1339.2] Okay, now moving to the four hours,
+[1339.2-1343.5] this was our target, our external liquidity right here.
+[1343.5-1347.0] Right, price gave a boy recalls to the upside
+[1347.0-1348.1] at this point.
+[1348.1-1349.4] One approach, like I said,
+[1349.4-1351.0] you wait for your single kind of liquidity
+[1351.0-1352.9] to be swept on the four hours.
+[1352.9-1355.7] I see price came there rejected from this guy, right?
+[1355.7-1357.1] So if you're taking a direct entry,
+[1357.1-1359.5] at least your stop flow should have been below here
+[1359.5-1362.3] a little bit, at least one more key level.
+[1362.3-1366.5] In cases whereby the structure is very weird.
+[1366.5-1368.1] So you can see price of liquidity
+[1368.1-1370.0] rejected from this point.
+[1370.0-1373.2] So now all we are looking for is confirmation entries.
+[1373.2-1375.7] So from here, you can see that price did was,
+[1375.7-1378.3] this was a price of liquidity rejected, right?
+[1378.3-1379.4] And then you can see we have,
+[1379.4-1381.5] we had was a breakout to the upside.
+[1381.5-1384.5] So this breakout also had liquidity.
+[1384.5-1387.0] So you can see if you took this guy from here,
+[1387.0-1389.3] targeting this guy, right?
+[1389.3-1391.9] Targeting this guy right here,
+[1391.9-1395.6] and then your stop flows at least just at this level,
+[1395.6-1396.9] just below this level at least.
+[1396.9-1400.1] So that's like a three points for each four hour.
+[1400.1-1401.6] I do that, that's a very,
+[1403.0-1404.8] personally, I would have done something like this.
+[1404.8-1407.0] I would have aimed for like a five hour.
+[1407.0-1408.3] So this is what I would have done.
+[1408.3-1410.7] At least I should have had a five hour from here.
+[1410.7-1413.5] So this is how I would have placed mine.
+[1413.5-1414.6] Right, this is how I would have placed mine.
+[1414.6-1418.2] And that's a very sweet five hour trade.
+[1418.2-1420.1] So you can see immediately the external liquidity
+[1420.1-1422.6] was taken, what the price did, price reversed.
+[1422.6-1424.8] The logic on liquidity, price moves from internal
+[1424.8-1426.8] to external, come back again.
+[1427.6-1430.3] So I see this is where we are currently.
+[1430.3-1432.0] It doesn't explain EU.
+[1433.3-1435.3] Euro-AUD as well, all right?
+[1435.3-1438.9] Euro-AUD, I know that we are bearish on Euro-AUD.
+[1438.9-1441.5] So there's recent breakout was to the downside.
+[1441.5-1443.4] Price gave single candle liquidity.
+[1443.4-1445.5] So I was waiting at this point, right?
+[1445.5-1447.9] And then I think I took a loss here once.
+[1449.2-1451.3] Yeah, I took a loss here because price broke out here,
+[1451.3-1454.1] gave me liquidity, and then there was a confirmation
+[1454.1-1457.4] but it started to go higher and come back.
+[1457.4-1459.3] I sweep all these securities and come back.
+[1459.3-1460.4] Let me check.
+[1460.4-1468.6] I know there was something interesting somewhere.
+[1468.6-1471.4] Anyways, so now you can see that we,
+[1471.4-1473.3] price came into this level, right?
+[1473.3-1476.8] Came into here, rejected, and then gave us a four hour
+[1476.8-1480.9] sweep and break to the downside on the four hours.
+[1480.9-1482.5] So now the first approach is to,
+[1482.5-1484.4] you can go down to, once you have your four hour
+[1484.4-1486.5] breakout, you can go to your two hours
+[1486.5-1488.1] to look for what's liquidity.
+[1488.1-1491.3] You can see here on the two hours we also had a breakout
+[1491.3-1493.8] and then price also gave us what's liquidity.
+[1493.8-1497.4] So you can see that when we had liquidity here,
+[1498.7-1505.3] when we had liquidity here,
+[1505.3-1508.1] so when we had liquidity here, right?
+[1508.1-1510.5] You can see price did what's,
+[1510.5-1511.7] came into this breakout level.
+[1511.7-1512.8] I was watching this guy as well.
+[1512.8-1514.6] Price came into this breakout level
+[1514.6-1517.0] and then started selling, right?
+[1517.0-1520.7] And this is one of the entries I talked about, right?
+[1520.7-1522.1] But for the second people,
+[1522.1-1524.4] you'd be waiting for price to come and take our liquidity,
+[1524.4-1526.9] but you can see that price has already moved, right?
+[1526.9-1529.7] So you can see here the people that trade the other type
+[1529.7-1531.9] have more advantage than you, right?
+[1531.9-1533.5] Because from here, our price has moved.
+[1533.5-1536.2] Our price might come back, but that will be later on.
+[1536.2-1538.1] Right, so from there, from the two hours,
+[1538.1-1540.1] that's the only place they had an entry,
+[1540.1-1542.7] right, down onto this section on liquidity.
+[1542.7-1544.7] Yes, so there were even two opportunities
+[1544.7-1546.2] for entries on this guy.
+[1547.2-1552.2] So, yeah, I think lastly, we'll be looking at JVP card.
+[1553.2-1555.0] We'll be looking at JVP card.
+[1556.8-1561.8] Okay, yeah, we'll be looking at JVP card.
+[1561.8-1564.8] So now, JVP card, right, JVP card
+[1564.8-1568.0] broke structure to the downside, right?
+[1568.0-1569.3] Before I started looking for sales,
+[1569.3-1571.8] it broke structure to the downside, right?
+[1571.8-1574.0] And when this guy broke to the downside,
+[1574.0-1575.6] I now went down to the flowers,
+[1575.7-1578.2] looking for if our bearish breakouts.
+[1578.2-1581.5] So eventually, price now broke out at this level, right?
+[1581.5-1584.3] There was a breakout here, if you look at your line charts.
+[1584.3-1586.5] There was a breakout, and then, for the people,
+[1586.5-1588.6] oh, let's check out the different types of entries
+[1588.6-1589.9] that have played out.
+[1589.9-1591.4] Immediately, you had your flower breakout.
+[1591.4-1592.6] You can scale to the two hours,
+[1592.6-1595.5] looking for what's a breakout with liquidity.
+[1595.5-1598.2] But unfortunately, that did not really happen here.
+[1598.2-1599.8] That did not really happen here.
+[1599.8-1601.1] But it happened later on, too,
+[1601.1-1603.4] where my price broke out here, right,
+[1603.5-1605.9] with liquidity at this point,
+[1605.9-1607.2] and then price came to sweep it.
+[1607.2-1609.2] So it happened later on.
+[1609.2-1611.6] But immediately, it did not happen.
+[1611.6-1612.8] So you can see price broke out,
+[1612.8-1614.2] but people that trade on the flowers,
+[1614.2-1615.8] they waited for liquidity.
+[1615.8-1618.0] And then, if you waited at this key level,
+[1618.0-1619.8] that would have been very fine.
+[1619.8-1620.9] Right, probably very fine.
+[1620.9-1624.4] You just take your entry from these points down here.
+[1624.4-1626.5] Right, so it's the first target.
+[1626.5-1627.6] So, but from here now,
+[1627.6-1629.4] let's say you use confirmation entry.
+[1629.4-1632.3] So you wait, price came here, rejected.
+[1632.3-1634.4] You can now start scaling down.
+[1634.4-1635.4] From this point now,
+[1635.4-1637.6] price gave you what's an engulfing at the two hours,
+[1637.6-1640.4] which you could have taken your confirmation entry from.
+[1640.4-1641.8] Let's check out the three hours.
+[1641.8-1644.8] Also an engulfing or a breakout with liquidity.
+[1644.8-1646.3] Let's check out the one hour as well.
+[1646.3-1648.9] Still what's a breakout with liquidity.
+[1648.9-1653.3] So you can see that this played out quite nicely as well.
+[1653.3-1656.4] So I think that's all we're calling it today.
+[1656.4-1660.3] Wishing you all a profitable week.
+[1660.3-1662.2] Happy Sunday once again.

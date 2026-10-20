@@ -1,0 +1,819 @@
+[3.0-11.6] Good morning and happy weekend everyone. Happy new month as well. So if you recall
+[11.6-16.9] last weekend we talked about we started the building bias series right and we talked about
+[16.9-24.3] building bias with key levels last time right for the first part right and we we went over
+[24.3-29.3] everything there so today we'll be talking about the second part which is building bias
+[29.3-37.5] with liquidity right building bias with liquidity and when building bias with liquidity we basically
+[37.5-45.3] want to see one we want to see a sweep right a sweep of liquidity or a higher time frame
+[46.5-51.9] then secondly we would want to see what can do closure remember we emphasized on
+[51.9-57.1] can do closure when we're talking about key levels as well so can do closure is
+[57.1-64.3] still very important and for the third part we would want to see rise give us what a breakout
+[66.4-70.3] a breakout or a breaker structure on the next time frame lower
+[74.2-128.1] on the next time frame lower right we'd want to see first a sweep of liquidity at your higher
+[128.1-133.6] time frame which can be your monthly or weekly which can be your monthly or weekly or your
+[133.6-139.3] daily time frame right then can do closure and then a breakout on the next lower time frame
+[139.9-147.7] right so that is basically the things we would want to see on the next lower time frame
+[148.3-154.1] so let's get into it now if we are familiar with the anatomic candlestick you know that
+[154.1-161.2] we have these candles have opening and closing prices right which let's say we have
+[161.3-166.4] a candle like this right and then we all know that the highs and lows of these candles
+[167.2-174.7] are liquidity points right they are points of liquidity as well so what's building bias
+[174.7-181.2] with liquidity tends to do is that it talks about how price reacts at these at these points
+[181.2-185.8] whereby these highs and the lows of this kind of work price does at this particular area
+[186.4-192.0] right so number one we said we want to see a sweep of liquidity which means we would want to see
+[192.0-197.8] price come into this level and then for a sweep you know that a sweep means price takes out
+[197.8-203.6] this high right and closes below right so this is what we mean when we talk about a sweep of
+[203.6-209.1] liquidity right now the candle can close anywhere but as long as this this high or this lower
+[209.2-215.7] swept that is what we are talking about and then from there we would now expect price to do what
+[215.7-222.7] to run into the next point of liquidity because the logical liquidity says that price moves from
+[222.7-229.8] internal liquidity to external liquidity and back again so it's a cycle price just moves
+[229.8-237.2] internal to external back to internal back towards external so depending on your market
+[237.2-242.8] scenario this can either be your internal liquidity or this can be your external liquidity
+[242.8-249.1] so you know that if we are bearish let's say well if we are bearish right if we are bearish
+[249.1-253.9] we're in a downtrend this high right here becomes our what's our internal liquidity
+[254.6-261.2] which means we expect price to run into our external liquidity right here which is this
+[261.3-268.3] we expect price runs our internal liquidity here now the opposite is the case when we are bullish
+[268.3-273.6] right so if we are bullish right if we are bullish let's say we were in an uptrend
+[274.6-281.0] if we're in an uptrend now this particular area would be our what's our internal liquidity
+[281.8-287.6] right and then this here will now be our external liquidity this here will be our
+[287.6-291.5] external liquidity meaning that this sweep we are talking about will be happening
+[292.2-296.1] somewhere below right this sweep will be happening below here
+[297.3-303.0] right this liquidity sweep is going to be happening at the bottom is taking out our
+[303.0-309.6] what's our internal liquidity and we are now supposed to move toward our external liquidity
+[310.2-314.0] right so let's get into it properly I just want to explain this clearly
+[314.7-321.2] right so now let's say we started onwards on the weekly time frame
+[322.7-327.4] let's say we started on the weekly time frame let's say we have this as our weekly time frame
+[328.1-334.0] this as our daily and then the next time frame is about four hours so let's say we have this guy
+[334.0-343.9] right here with this as our weekly the next one is our daily and then this is now our h4 time frame
+[344.5-352.4] right now what does that tell us right so I mean we want to see what the sweep of liquidity on
+[352.4-357.6] this time frame handle closure will now see a breakout on this time frame and then same
+[357.6-362.7] thing applies to this particular time frame right here so let's get to it so let's say
+[362.7-369.2] we had what this was a weekly candle this was a weekly candle here this is a weekly
+[369.2-376.3] candle at this point this candle definitely has a low and a high naturally right so this candle
+[376.3-387.6] has a low and it also has a high right now what are we now expecting we are now expecting
+[388.3-395.6] we're bullish so the price the price came and swept towards the loop of this handle right here
+[395.6-401.2] which means we have something like this now we have something like this down right
+[402.6-406.9] we have something like this where our price came here then swept the low of this candle
+[408.5-415.5] so after sweeping the low of this candle what we want to see as our confirmation and the
+[415.5-420.0] daily just because this lower swept doesn't mean that we are automatically going to run into this
+[420.0-425.2] high right just because this lower swept doesn't mean we automatically get to run into this high
+[425.2-430.9] we need to actually confirm this on our next time frame and this candle must have closed so
+[430.9-434.9] here on the weekly time frame you want to see your sweep of liquidity and your candle closure
+[434.9-438.7] on your daily time frame we now want to see what want to see price give you
+[439.6-445.3] what a break or structure that's a sweep and a break want to surprise give you a sweep of
+[445.3-451.6] liquidity and a break or structure to the upside or you want to see what a breakout to the
+[451.6-456.8] upside these are the two things you would want to see on your daily time frame the same logic
+[456.8-461.6] applies if you see this on your daily time frame you would also want to see this again
+[461.6-465.6] on your what on your four hours time frame you want to see what your sweep and your break
+[466.5-472.9] or your breakout to the upside right this is what confirms your liquidity sweep this is what
+[472.9-478.4] confirms your liquidity sweep so if you don't see this it is best to wait it out right it's
+[478.4-483.7] best to wait it out if you don't see if you don't see this on your daily time frame if you
+[483.7-488.7] see um liquidity sweep on your daily in line with structure you want to see this on your
+[488.7-495.2] four hours time frame this is what you want to see on your four hours time frame so now
+[498.9-509.9] come in excuse me so now this is what confirms it right the sweep of liquidity the break of
+[509.9-517.1] structure your breakout your breakout structure or your next time frame now let me also do
+[517.1-523.2] the same thing for the bearish scenario right it's basically the same thing
+[523.6-532.1] it's basically the same thing you just want to see the same thing all right so if this is your
+[532.1-536.4] weekly time frame right you know that i mean we are we are expecting that we are bearish this
+[536.4-541.4] time around so it means i would want to see what price sweep a previous weekly what
+[542.0-547.7] previous weekly high we expect price to run way into our previous weekly low so if this
+[547.7-552.0] is what you're seeing on your weekly time frame same logic you would want to see this
+[552.0-556.9] would want to see the same thing on your daily time frame as your confirmation
+[557.5-562.6] right you want to see the same thing on your daily time frame as your confirmation right you
+[562.6-567.3] would want to see price give you after this sweep right you would want to see price give
+[567.3-574.0] you what the breakout to the downside either price gives you a breakout to the downside
+[574.0-579.9] or price gives you what a sweep i don't know what's happening to this stuff the sweep and
+[579.9-582.0] and you break to the downside.
+[582.0-584.6] All right, this is exactly what you would want to see.
+[585.8-589.9] This is exactly what you would want to see.
+[589.9-592.3] Right, you'd want to see either your breakout
+[592.3-594.5] or your sweep and your break to the downside.
+[595.6-596.4] Want to see any of this.
+[596.4-597.6] Now, the same logic applies.
+[597.6-600.1] If you see this on your daily timeframe,
+[600.1-603.4] you also want to see what your breakout to the downside
+[603.4-605.8] on the four hour timeframe, right?
+[605.8-608.5] Your breakout to the downside
+[608.5-611.8] or your sweep and your break to the downside.
+[613.0-615.8] So these are the same things you would want to see
+[615.8-618.4] on any of these timeframes.
+[618.4-623.3] So now, this is basically the theoretical aspect of it.
+[623.3-625.5] Right, this is the theoretical aspect of it.
+[625.5-630.5] But now there is kind of a hard drive with it.
+[632.3-637.3] Okay, now let's say that we have
+[640.4-644.2] let's say we have price give us a bullish breakouts.
+[644.2-647.6] Right, let's say price give us a bullish breakouts
+[647.6-650.0] on our weekly timeframe.
+[650.0-652.2] Right, so this is the weekly timeframe.
+[652.2-655.6] Now, price now did something like this.
+[655.6-657.8] Right, price give us what's a single candle,
+[657.8-659.8] which is liquidity.
+[659.8-663.3] And then this candle now has what's a high.
+[663.3-668.0] This candle has a high and a low naturally.
+[668.0-669.6] Right, so this candle has a high and a low.
+[669.6-672.5] So this is our breakout level right here.
+[672.5-691.0] So now we say this is our breakout level
+[691.0-692.7] on the weekly timeframe.
+[692.7-696.1] Right, I should take all of this first, okay?
+[696.1-698.3] Let me take off the rest of this guy.
+[699.3-700.1] Should I?
+[701.3-707.1] I will just take these guys off.
+[707.1-710.8] So let's say that we have this on our weekly timeframe.
+[710.8-712.9] Price is bullish, but price give us
+[712.9-715.2] what is our bullish breakout level.
+[715.2-716.7] Saying is okay, we are bullish.
+[716.7-719.5] Structurally we are bullish on the weekly timeframe.
+[719.5-722.1] Let's say this is our weekly timeframe still.
+[722.1-723.7] Right, structurally we are bullish
+[723.7-725.2] on the weekly timeframe.
+[725.2-727.6] Price now give us what a single candle.
+[727.6-730.6] This is like, let's say last week closed like this.
+[730.6-733.0] Right, I know that this breakout candle
+[733.0-734.8] is going to be a candle itself.
+[734.8-737.4] So you're going to have something like this.
+[737.4-740.5] Now you're going to have something like this.
+[740.5-744.5] So let's say this was a bullish candle.
+[744.5-746.4] Right, so we know that we are bullish on this guy.
+[746.4-749.2] This is the candle that created our breakouts for us.
+[749.2-752.7] Right, so we are bullish, right?
+[752.7-753.9] Then you also know that this candle
+[753.9-756.3] would also have what a high and a low.
+[756.3-759.1] Definitely this candle is going to have a high and a low
+[759.1-760.7] because it's a candle,
+[760.7-765.1] so it's supposed to have a high and a low.
+[765.1-767.9] So let's say you have something like this.
+[767.9-770.3] Right, you have something like this.
+[770.3-774.2] What is this?
+[774.2-778.8] So let me shift this to the side a little bit.
+[778.8-779.7] Okay, good.
+[781.6-783.3] So now let's say this is the candle
+[783.3-785.1] that gave us our breakout.
+[785.1-787.5] Right, and then this particular candle
+[787.5-789.8] is our breakout candle right here.
+[789.8-794.5] So this candle has a high and this candle has a low.
+[796.3-797.2] This candle has a high
+[797.2-799.9] and this candle has a low, definitely.
+[799.9-802.6] Right, and then the next candle after your breakout,
+[802.6-805.3] we are still considering this as our breakout, right?
+[805.3-808.0] Now this is the high of this candle
+[808.0-809.5] and this is the low
+[809.5-811.9] of this particular candle right here.
+[811.9-813.2] But remember that's what he gave us
+[813.2-815.5] with a bullish breakout to the upside.
+[815.5-818.1] Now, something to note is that sometimes
+[818.1-820.6] this candle is going to come and sweep
+[820.6-822.9] your previous weekly high.
+[822.9-824.3] That's your breakout candle side.
+[824.3-826.7] It's going to sweep your breakout candle side.
+[826.7-827.9] It's meaning that, okay,
+[827.9-830.7] it makes sense for us to run into the low.
+[830.7-834.1] But note that structurally, we are bullish.
+[834.1-837.5] So price has every right to get into this level, right?
+[837.5-841.8] And then continue the buys,
+[841.8-845.2] which is more popular on your daily time frame.
+[845.2-847.4] But also happens on your weekly as well.
+[847.4-848.7] Price can sweep this guy.
+[848.7-851.9] And then some people might now be targeting,
+[851.9-853.5] let's say this is the daily,
+[853.5-855.5] everyone might be targeting this daily low,
+[855.5-858.5] forgetting that this guy can serve as liquidity
+[858.5-860.9] for this particular high level
+[860.9-864.0] for us to now have a buy continuation.
+[864.0-866.3] But they might not take note of that.
+[866.3-867.3] Instead, they'll just be like,
+[867.3-869.9] okay, we are stuck price run into this low,
+[869.9-872.1] forgetting the overall structure,
+[872.1-873.2] forgetting the overall structure
+[873.2-875.5] that price has every right to come here
+[875.5-877.1] and then continue to the upside.
+[878.5-879.7] So now, what do you do?
+[879.7-881.2] In situations like this,
+[881.2-884.0] let's say this was your weekly, right?
+[884.0-886.9] After this sweep, your daily confirmed results
+[886.9-889.8] and so they gave you a breakout to the downside.
+[889.8-892.9] Confirming this guy, confirming this sweep.
+[892.9-894.5] The best thing to do is that
+[894.5-896.0] if you're going to sell any sale
+[896.5-899.9] should end at this liquidity point, right?
+[899.9-901.3] Should end at this liquidity point.
+[901.3-902.7] Then from there, you watch out
+[902.7-905.2] what is happening at this liquidity
+[905.2-907.2] first before holding your sale
+[907.2-910.4] to probably any of this, to probably this low, right?
+[910.4-912.8] So your sale, your first exit for your sale
+[912.8-915.6] should be here because price can get in here,
+[915.6-918.1] react on this key level and then continue buying
+[918.1-920.2] and may never get into this point
+[920.2-922.5] because structurally, we are bullish.
+[922.5-924.7] In a bullish environment, when price sweeps your high,
+[924.7-926.7] it doesn't have to come for your low.
+[926.7-928.5] It doesn't have to come for that.
+[928.5-930.0] So I just wanted to point that out.
+[930.0-933.2] Let us go into the charts now.
+[934.6-935.7] All right, let's go into the charts.
+[935.7-946.9] So, yeah, let's go into the charts.
+[946.9-950.3] Now, this is an example on your euro card
+[950.3-953.5] of what I was pointing out right here, right?
+[953.5-956.3] Structurally on this guy, we are bearish, right?
+[956.3-959.0] We had a bearish breakout to the downside.
+[959.0-960.4] Now, what can you see?
+[960.5-964.3] You can see that price swiped a previous weekly low,
+[964.3-967.0] meaning that, okay, we should actually probably sell
+[967.0-970.7] into this high right here, right?
+[970.7-972.4] Our price eventually got there.
+[972.4-975.1] But then the safest point to have targeted first
+[975.1-977.7] was this particular liquidity here,
+[977.7-980.5] if at all your daily had compared to focusing here
+[980.5-981.6] because since we are bearish,
+[981.6-983.6] price had every right to come here
+[983.6-987.6] and then do what and then continue the sales.
+[987.6-989.3] We will probably not do that in this condition,
+[989.3-992.3] but let's check out what happened on the daily time frame.
+[992.3-993.6] So from here, we've had what?
+[993.6-995.7] The previous weekly low sweep,
+[995.7-999.4] what you see daily give us was the breakouts to confirm.
+[999.4-1001.4] Now, remember, this was that point.
+[1001.4-1004.5] This was that point on the where?
+[1004.5-1007.7] This was that point on the weekly time frame,
+[1007.7-1009.3] that liquidity, look at it.
+[1009.3-1011.6] This was that liquidity on the weekly time frame.
+[1011.6-1014.1] I see that this is what it was on the daily
+[1014.1-1017.5] and before then, daily had not confirmed that guy.
+[1017.5-1019.9] So after the sweep happened at this point,
+[1019.9-1022.7] we're expecting a breakout first, right?
+[1022.7-1024.2] We're expecting a breakout.
+[1024.2-1027.9] So before price got into that liquidity first,
+[1027.9-1028.7] and I remember what I said,
+[1028.7-1031.8] I said monitor what price does around that liquidity.
+[1031.8-1033.7] At this liquidity point, what did price do?
+[1033.7-1036.3] Price down gave us a bullish breakout
+[1036.3-1038.7] closing above this liquidity,
+[1038.7-1040.9] telling us that, okay, price is not going to sell
+[1040.9-1044.1] or price doesn't want to sell from this particular zone
+[1044.1-1045.3] because if it wanted to,
+[1045.3-1047.4] we should have swept this guy and then closed below,
+[1047.4-1049.5] something like this guy, like I said.
+[1049.5-1051.9] What instead he gave us was a sweep and break
+[1051.9-1053.5] to the upside currency.
+[1053.5-1056.9] The sweep and break to the upside indicating that,
+[1056.9-1059.0] okay, we might be starting a new trend
+[1059.0-1060.9] on this particular guy.
+[1060.9-1063.6] So after that, what do we do?
+[1063.6-1064.4] What do we have?
+[1064.4-1066.4] You can see price came here,
+[1066.4-1067.8] price came into this zone,
+[1067.8-1069.4] but was for this liquidity,
+[1069.4-1071.1] the single kind of liquidity
+[1071.1-1074.1] and then started buying the targets of this guy.
+[1074.1-1077.0] Now you can see that it makes sense to target this guy
+[1077.0-1080.1] instead of even, it makes sense to exit yourself here
+[1080.1-1081.8] because based on liquidity,
+[1081.8-1084.3] price can get here and then do what?
+[1084.3-1086.2] And then continue selling, right?
+[1086.2-1088.3] So I had the children of this guy yesterday
+[1088.3-1091.1] and this was my exit.
+[1091.1-1093.7] This particular liquidity was my exit, why?
+[1093.7-1094.9] Because we are bearish.
+[1095.9-1099.2] Weekly hasn't given us a bullish breakout yet.
+[1099.2-1101.4] Instead, price just followed liquidity.
+[1101.5-1104.3] Weekly low served, price went into the high
+[1104.3-1106.9] and it's possible for us to see rejects from any of here
+[1106.9-1110.3] because we are still bearish so far on the weekly.
+[1110.3-1113.5] But daily switched to bullish, right?
+[1113.5-1115.9] Possibly take out sort of internally liquidity
+[1115.9-1118.1] and then possibly start selling something.
+[1118.1-1120.7] So from here we had what the daily,
+[1120.7-1123.2] from here we were already bullish, right?
+[1123.2-1126.4] So I was waiting at four hours.
+[1126.4-1129.1] I was waiting at this four hour breakout level, right?
+[1129.9-1132.2] You can see price decided to come into the extreme,
+[1132.2-1135.2] use this as a structural liquidity, right?
+[1135.2-1137.0] I think there's something I've mentioned
+[1137.0-1139.9] that most times your single kind of liquidity,
+[1139.9-1141.9] since we are still talking about liquidity,
+[1141.9-1144.3] a single kind of liquidity on your daily
+[1144.3-1146.2] is going to be a structural liquidity
+[1146.2-1147.8] on your four hour buy frame,
+[1147.8-1151.7] which means this particular low right here, right?
+[1151.7-1154.6] It's going to be something like this.
+[1154.6-1160.1] Let's say you have this, right?
+[1160.1-1163.1] This particular low is this point
+[1163.1-1165.1] whereby either it is a structural liquidity,
+[1165.1-1167.8] meaning that we expect price to come back for this guy,
+[1167.8-1170.4] right, and then take out the new external liquidity.
+[1170.4-1172.5] So this particular single kind of here
+[1172.5-1174.2] is what this point is going to be
+[1174.2-1176.4] this point on the lower time frame.
+[1176.4-1179.8] So you can see this liquidity right here, right?
+[1179.8-1181.9] This liquidity right here.
+[1181.9-1184.1] Let me just, I'm going to just take this.
+[1184.1-1186.5] So this liquidity right here,
+[1186.5-1188.7] let's see what it looks like on the four hours.
+[1188.7-1189.8] Now look at it on four hours,
+[1189.8-1190.6] look at your line chart,
+[1190.6-1193.7] so you can see something like this.
+[1193.7-1194.9] So if you look to the upside,
+[1194.9-1197.6] price now uses this point as well.
+[1197.6-1199.0] Advanced market structure type one
+[1199.0-1201.4] then came back for it, right?
+[1201.4-1203.1] And then boom, we are now going forwards
+[1203.1-1204.6] for the external liquidity.
+[1204.6-1207.2] So it's exactly what we have here,
+[1207.2-1210.6] the same thing I drew at this particular point right here.
+[1210.6-1214.7] So you can see that that is what price used that place as,
+[1214.7-1216.7] and then there was not a rejection,
+[1216.7-1218.1] and then price now,
+[1218.1-1220.3] bought to the upside.
+[1220.3-1223.1] And so that's that for Euro card.
+[1223.1-1224.8] That's that for Euro card.
+[1224.8-1227.3] So I'm going to the next area looking at.
+[1227.3-1232.2] So that is 80 years deep.
+[1232.2-1241.2] So 80 years will be past price action though,
+[1241.3-1243.5] right, past price action.
+[1243.5-1247.7] Now I think I should say 80 years is sharp.
+[1247.7-1249.5] I think I'm not going to use 80 years.
+[1249.5-1252.3] The answer is no, it won't happen today.
+[1252.3-1254.7] So I think I'll be using SPX, MJ.
+[1257.9-1259.6] But now it's in 80, USD.
+[1261.1-1265.4] We are going to use SPX.
+[1265.4-1268.2] We are going to use what's SPX.
+[1268.2-1270.5] Now there's something I want to explain on SPX.
+[1270.5-1272.9] Now, see, okay.
+[1272.9-1274.5] So this wasn't a very good example,
+[1274.5-1277.3] but it shows we can still use it.
+[1277.3-1278.9] Now see what happened here.
+[1278.9-1280.6] All right, if you look at this guy structurally,
+[1280.6-1282.2] this wasn't the breakout candle.
+[1282.2-1283.7] This was the breakout candle.
+[1284.7-1286.1] This made sense, why?
+[1286.1-1288.7] Because we served with the previous weekly high.
+[1288.7-1290.4] So it makes sense for us to expect price
+[1290.4-1291.8] to come into this loop
+[1291.8-1294.1] and then use one of these key levels
+[1294.1-1296.6] to continue the move side, right?
+[1296.6-1297.9] And this was what I pointed out
+[1297.9-1301.3] to the people on my telegram channel, okay.
+[1301.3-1303.0] If price eventually,
+[1303.0-1305.8] looking at price, the sales on SPX, right?
+[1305.8-1308.6] I'm looking at it to end at this particular point.
+[1308.6-1309.5] And then from there,
+[1309.5-1311.2] we can just start having our expansion
+[1311.2-1312.0] to take out this guy
+[1312.0-1315.9] and possibly for this guy based off of liquidity.
+[1315.9-1316.8] This is what happened.
+[1316.8-1318.7] We served with this previous weekly high.
+[1318.7-1320.5] Let's check the daily timeframe.
+[1320.5-1321.4] We now had what?
+[1321.4-1322.3] What do we have?
+[1322.3-1324.8] A breakout to the downside.
+[1324.8-1326.0] We had a breakout to the downside
+[1326.0-1328.5] at this time confirming that weekly sale.
+[1328.5-1330.8] So the first place to have taken profit
+[1330.8-1333.9] at was this particular area right here,
+[1333.9-1336.3] which is why I said, for your liquidity,
+[1336.3-1339.8] if you look at it now, this is your liquidity, right?
+[1339.8-1341.0] This is your liquidity.
+[1342.3-1344.9] So it made sense to exit the sale
+[1344.9-1345.7] at this particular area.
+[1345.7-1349.0] And you can see the moment external liquidity is taken,
+[1349.0-1350.3] there is reversal to take out
+[1350.3-1354.0] of the new set of internal liquidities.
+[1354.0-1356.9] There's a reversal to take out of internal liquidity
+[1356.9-1360.2] again, before expanding to the upside
+[1360.2-1362.3] or to the downside all over again.
+[1362.3-1364.0] So that's how the cycle flows.
+[1364.0-1365.4] You can see that from there,
+[1365.4-1367.2] we had price, price came back.
+[1367.2-1370.3] It took out of internal liquidity at this point,
+[1370.3-1372.8] expanded to this particular level.
+[1372.8-1374.5] Then reversed.
+[1374.5-1377.2] After this, it gave us what a new external liquidity,
+[1377.2-1378.7] which was here, reversed,
+[1378.7-1381.5] took out towards internal liquidity.
+[1381.5-1383.7] And from there, we now had an expansion
+[1383.7-1386.5] to the downside, to take out for logistic.
+[1386.5-1388.1] So you can see price,
+[1388.1-1390.8] price spreads this guy in the same way.
+[1390.8-1392.7] Price actually spreads that guy.
+[1392.7-1394.4] And from there, it's rejected
+[1394.4-1397.0] because overall we are bullish.
+[1397.0-1398.7] So there's no reason for price to sell
+[1398.8-1400.9] into this particular low right here.
+[1400.9-1402.7] Next, price will move into a key level.
+[1402.7-1405.0] Let's check what it is on the console time frame.
+[1405.0-1406.5] Okay, nothing really interesting.
+[1406.5-1411.6] So instead, you can see now we have what a new,
+[1411.6-1416.6] we have a new bias with liquidity coming here.
+[1416.9-1419.0] Structurally, we are bullish.
+[1419.0-1423.5] Price has swept this low and closed above price.
+[1423.5-1424.4] And what you need to understand
+[1424.4-1425.2] is that you can build bias
+[1425.2-1427.8] to both key levels and liquidity at the same time.
+[1427.8-1429.3] So you can see price has swept this low
+[1429.3-1431.1] and also rejected from here.
+[1431.1-1432.7] On the daily, what are we looking for?
+[1432.7-1434.7] A breakout or a sweep and break to the upside.
+[1434.7-1435.9] And what do we have?
+[1435.9-1438.8] We have exactly a sweep and break to the upside.
+[1438.8-1449.1] So that guy is confirmed.
+[1449.1-1453.6] So this is what we have here.
+[1453.6-1455.2] You can see that for now on SPX,
+[1455.2-1457.4] we are back towards the bullish move,
+[1457.4-1459.2] we are back to the bullish expansion.
+[1459.2-1460.8] So possibly we are going to take out
+[1460.8-1463.5] this eventually in August and all of this, right?
+[1467.1-1469.7] So that is that for SPX, right?
+[1469.7-1471.4] So let me check out NZJPY.
+[1473.3-1476.2] Now among all the JPY pairs, maybe,
+[1476.2-1478.1] I would say this was the one that gave us
+[1478.1-1481.4] a little bit of idea for the sales, right?
+[1481.4-1483.7] A little bit of idea for the sales.
+[1483.7-1486.2] For the sales that happened on JPY pairs.
+[1486.2-1489.9] So if you look at what happened on this guy, right?
+[1489.9-1497.0] Last week closed, last week closed was the week,
+[1497.1-1501.3] yeah, last week it swept this particular weekly high.
+[1501.3-1503.0] I remember I said, it makes sense
+[1503.0-1504.4] for this to be your first target.
+[1504.4-1506.9] Monitor what price does around here first,
+[1506.9-1510.0] then you know, okay, we might sell into these key levels
+[1510.0-1513.1] or into these key levels for possible buy expansions,
+[1513.1-1513.9] right?
+[1513.9-1515.4] So let's see what the price do
+[1515.4-1516.9] at this particular liquidity.
+[1518.2-1520.7] So I see price closed below,
+[1520.7-1521.8] which means that, okay, we are not going
+[1521.8-1523.3] to be selling anymore.
+[1523.3-1524.9] We are not going to buy, we are not going to sell.
+[1524.9-1527.1] This liquidity no longer held.
+[1527.1-1529.1] So that's how you go about your buyer,
+[1529.1-1533.4] especially if you give a counter trend that is starting.
+[1533.4-1535.5] Now the counter trend trade that's starting
+[1535.5-1537.9] on the weekly is how you go about it, right?
+[1537.9-1539.4] So let's see what do we have here?
+[1539.4-1540.9] Price rejected from here as well.
+[1540.9-1543.5] Remember I said you can build bias in both of them.
+[1543.5-1546.0] Price also swept towards liquidity,
+[1546.0-1547.2] which means that, okay, it makes sense
+[1547.2-1549.2] for us to expect price to get into these levels
+[1549.2-1551.0] for possible buys.
+[1551.0-1553.4] Before you think about price taking out this low,
+[1553.4-1555.4] because overall we are bullish, right?
+[1555.4-1557.2] It doesn't need to take out this low, right?
+[1557.2-1560.3] So now let's say we're expecting price
+[1560.3-1563.1] to get in here before we buy, right?
+[1563.1-1565.3] After this, we want to see what the daily breakout
+[1565.3-1567.1] or the ship number to be down side.
+[1567.1-1568.3] So what can we see?
+[1568.3-1571.1] Amsterdam, New Carolina, Charles, boom.
+[1571.1-1572.9] Ship of liquidity, rate of structure.
+[1572.9-1574.4] So we are to be down side.
+[1574.4-1576.2] We did already give us indications
+[1576.2-1578.8] that we were going to sell for a long time.
+[1578.8-1581.1] Right, so it was still ranging around this area,
+[1581.2-1583.9] but the overall bias was clear.
+[1583.9-1586.7] Right, so eventually, price came into this zone,
+[1586.7-1590.1] swept out of these liquidities and dumped,
+[1590.1-1592.6] right, and then it dumped again.
+[1592.6-1596.3] So this was it on NZEGPY,
+[1596.3-1597.8] and this was it on NZEGPY.
+[1597.8-1599.7] So it was actually pretty clear,
+[1599.7-1601.6] but it was the four-hour following.
+[1601.6-1604.9] The four hours was also just ranging in between.
+[1604.9-1607.0] So you can see it's just until price goes here
+[1607.0-1611.8] for this at this level, four.
+[1611.8-1613.3] It's not bygones or bygones.
+[1613.3-1615.9] So now let's move on to German 40.
+[1617.2-1620.9] Right, so now on German 40,
+[1621.9-1624.0] let me take, these are markups I've typed.
+[1625.3-1626.6] German 40, let's start with,
+[1626.6-1629.1] using last two weeks' price action.
+[1629.1-1630.8] And so look, structurally,
+[1630.8-1632.6] we are able to abolish price.
+[1632.6-1635.0] Now, exactly, now this is a very good example
+[1635.0-1636.2] of what I was saying.
+[1636.2-1637.1] Now, you can see that here,
+[1637.2-1638.5] we swept out the previous,
+[1638.5-1640.5] we swept out the breakout candle,
+[1640.5-1642.1] so the candle that broke out,
+[1642.1-1644.1] we swept that breakout candle's high.
+[1644.1-1645.0] Some people might be saying
+[1645.0-1647.2] that hopefully we're meant to come into easy lows,
+[1647.2-1651.1] but that must not happen because we abolish.
+[1651.1-1652.3] So now, after that,
+[1652.3-1653.3] we click German 40,
+[1653.3-1656.0] weekly candle that can be used as liquidities
+[1656.0-1657.5] for price to continue to divide
+[1657.5-1659.4] from any of these levels.
+[1659.4-1660.2] So you can see,
+[1660.2-1662.5] this is exactly what I was explaining.
+[1662.5-1663.4] So it makes sense,
+[1663.4-1665.4] if you were targeting any cell,
+[1665.4-1668.9] at least this liquidity should have been your target,
+[1668.9-1670.3] then if you came into the new week,
+[1670.3-1672.0] there's no reason for it to not expect price
+[1672.0-1674.4] to still sell again when this had happened.
+[1674.4-1677.4] So best was to wait here, right?
+[1677.4-1678.4] Wait here.
+[1678.4-1680.5] And you can see the moment price came there,
+[1680.5-1681.9] price used that place as a liquidity
+[1681.9-1684.1] and then rejected from this key level.
+[1684.1-1685.5] So that starts with that.
+[1685.5-1688.9] I just want to explain something else right now.
+[1688.9-1692.4] So you can see that this particular candle swept,
+[1692.4-1694.6] I see this liquidity was swept,
+[1694.6-1696.2] you can zoom it out, right?
+[1696.2-1698.0] So we swept this liquidity,
+[1698.0-1700.1] this low was swept in line with the structure
+[1700.1-1703.3] we need at the level this high should go.
+[1703.3-1704.3] And to top it off,
+[1704.3-1705.8] we also rejected from where,
+[1705.8-1707.8] from this key level, right?
+[1707.8-1709.0] I think I posted this on X
+[1709.0-1710.9] about this particular house here.
+[1710.9-1712.3] So we swept the liquidity,
+[1712.3-1714.5] this is our external liquidity now.
+[1714.5-1715.9] Internal liquidity swept,
+[1715.9-1719.6] we expect an expansion to the external liquidity.
+[1719.6-1721.0] So now, what can we see,
+[1721.1-1722.3] what can we notice here?
+[1723.7-1725.6] Now what we'll notice is that from here,
+[1725.6-1726.5] we swept the liquidity,
+[1726.5-1728.6] so let's use the liquidity itself.
+[1728.6-1729.5] On the daily time frame,
+[1729.5-1731.5] we want a breakout to the upside,
+[1732.7-1734.1] or a sweep and break to the upside.
+[1734.1-1735.3] So you can see,
+[1735.3-1736.1] from this level,
+[1736.1-1738.6] we were still bearish until price gave us what?
+[1738.6-1739.4] A sweep and break,
+[1739.4-1740.7] sweep of liquidity,
+[1740.7-1743.3] break of structure to the upside.
+[1743.3-1744.6] Price broke above due time
+[1744.6-1747.1] and also broke above due time.
+[1747.2-1750.9] So we mean that daily had now switched to bullish,
+[1750.9-1752.8] daily had now switched to bullish.
+[1752.8-1753.9] So you can see that in the end,
+[1753.9-1756.2] price eventually came into this guy,
+[1756.2-1757.3] rejected,
+[1757.3-1759.5] and then we've been having our expansions
+[1759.5-1760.3] to the upside,
+[1760.3-1761.4] standing,
+[1761.4-1764.2] and this is a very tight smoke from,
+[1764.2-1768.2] a very tight set up as liquidity sweep expansion
+[1768.2-1769.4] to the upside.
+[1769.4-1772.8] So now, this is another good example, right?
+[1772.8-1774.9] Now you can see that this was the breakout handle,
+[1774.9-1777.1] this was the breakout handle's height.
+[1777.9-1779.4] So now, when we see a power bearish breakout,
+[1779.4-1780.5] let's check.
+[1780.5-1782.0] Okay, there's no bearish breakout yet
+[1782.0-1783.4] from this particular guy,
+[1783.4-1785.1] no bearish breakout on this guy.
+[1785.1-1787.3] But it makes sense for us,
+[1787.3-1789.4] instead of targeting this low,
+[1789.4-1792.4] now, you target this point for your buys,
+[1792.4-1794.2] instead, target this point,
+[1794.2-1795.3] because price can,
+[1795.3-1796.2] your sales,
+[1796.2-1798.5] if you manage to get a sale entry,
+[1798.5-1800.5] it should end at this particular liquidity,
+[1800.5-1803.3] because it's made sense for price to use it,
+[1803.3-1804.6] and then towards,
+[1804.6-1806.7] continue the bias to the upside.
+[1807.4-1808.7] This is a very good thing to work out for,
+[1808.7-1810.0] for next week.
+[1810.0-1810.9] But in surprise,
+[1810.9-1812.3] most not necessarily great,
+[1812.3-1814.0] I'm not saying price can not,
+[1814.0-1815.7] but logically, it shouldn't.
+[1815.7-1817.1] All right, and now let's see,
+[1817.1-1818.4] remember when you say,
+[1818.4-1819.4] this particular point,
+[1819.4-1821.4] your single candle will be your advanced butcher
+[1821.4-1822.8] on your lower time frame.
+[1822.8-1823.7] If you look at this guy,
+[1823.7-1825.2] what do you have here?
+[1825.2-1826.2] I think we have this,
+[1826.2-1827.7] we have sweep,
+[1827.7-1830.1] break, and then we now have this guy.
+[1830.1-1831.4] Yes, so which makes,
+[1831.4-1832.8] it makes sense for us to expect price,
+[1832.8-1834.3] but we take this guy out,
+[1834.3-1836.1] and then continue the bias,
+[1836.1-1838.7] or price can just continue the bias from here,
+[1838.7-1839.5] instead, right?
+[1839.5-1842.2] But both of those things are very, very possible.
+[1843.3-1845.9] So price at 140,
+[1845.9-1848.3] it's a good price to begin with, I think.
+[1848.3-1849.3] Same logic on,
+[1849.3-1850.2] AUS 200,
+[1850.2-1852.5] that's Australian index 200.
+[1852.5-1853.9] Now,
+[1853.9-1855.0] as you see that,
+[1855.0-1857.2] this is what I keep explaining.
+[1857.2-1858.7] We had a weekly bullish breakout,
+[1858.7-1861.8] but price swept towards the weekly high,
+[1861.8-1864.4] and also rejected from this scale,
+[1864.4-1865.7] but it doesn't mean that price
+[1866.2-1867.7] is going to get into this loop, right?
+[1867.7-1869.1] Instead, you can see price down,
+[1869.1-1871.2] used this point as liquidity,
+[1871.2-1872.0] swept it,
+[1872.0-1874.7] and then reacted from this key level.
+[1874.7-1876.5] Alright, so reacted from this key level,
+[1876.5-1878.5] and we now expect what buys.
+[1878.5-1879.7] So we have to take out what,
+[1879.7-1881.4] this was not our next target,
+[1881.4-1882.7] this was our next target.
+[1883.7-1886.4] Alright, so I remember posting this also,
+[1886.4-1888.5] and the price should get into this zone,
+[1888.5-1890.5] on AUS 200,
+[1890.5-1892.5] and then AUS 200 too.
+[1892.5-1894.3] You can see price down goes here.
+[1895.2-1896.2] Price goes here,
+[1896.2-1897.5] rejected, rejected, rejected,
+[1897.5-1898.6] but overall,
+[1898.6-1899.9] the direction was to the upside.
+[1899.9-1901.8] So let's check on the daily timeframe.
+[1901.8-1903.7] Did we have a bullish breakout
+[1903.7-1905.2] from this zone, right?
+[1905.2-1906.0] So we had,
+[1906.0-1908.3] the price was kind of consecutive here,
+[1908.3-1909.5] but overall,
+[1909.5-1911.3] we had a sweep of liquidity,
+[1911.3-1913.8] that was the object of structure.
+[1913.8-1915.5] Price broke above eventually,
+[1915.5-1916.6] after giving a low,
+[1916.6-1917.9] double,
+[1917.9-1919.2] in equal highs,
+[1919.2-1920.6] price now gave us,
+[1920.6-1922.5] even price gave a clearer one here,
+[1922.5-1925.0] the sweep downwards,
+[1925.0-1926.8] and the break to the upside,
+[1926.8-1928.7] right, so price now broke above to the upside,
+[1928.7-1932.8] indicating that we are now very, very set to buy.
+[1932.8-1934.9] Now, if you also look at another,
+[1934.9-1936.1] another scenario,
+[1936.1-1937.7] I played out here,
+[1937.7-1939.5] I look at another scenario that played out here,
+[1939.5-1941.5] I'm doing that.
+[1941.5-1943.2] Alright, on the daily timeframe,
+[1943.2-1944.1] we were bullish.
+[1945.4-1946.9] Now, what did price do?
+[1946.9-1947.7] Price now came,
+[1947.7-1949.3] swept liquidity,
+[1949.3-1950.4] right, meaning that,
+[1950.4-1952.3] we now expect price to take out what,
+[1953.3-1954.1] this guy,
+[1954.1-1954.9] so on the four hour timeframe,
+[1954.9-1957.4] we are looking for what's the bullish breakout.
+[1957.4-1963.4] So let's check the four hour timeframe.
+[1963.4-1964.2] So you can see,
+[1964.2-1965.1] this was our sweep,
+[1965.1-1967.2] and the four hour was what gave a bullish breakout
+[1967.2-1969.0] to the upside,
+[1969.0-1971.2] which is this guy from here,
+[1971.2-1972.6] all the way here,
+[1972.6-1973.4] you can see that,
+[1973.4-1974.5] a pretty,
+[1974.5-1976.0] pretty decent.
+[1976.0-1976.8] So,
+[1976.8-1977.8] you can see how,
+[1977.8-1979.4] the bias with liquidity does close,
+[1979.4-1980.4] both of them can happen,
+[1980.4-1982.7] but we just wanted to use the liquidity for now.
+[1982.7-1983.5] Now, lastly,
+[1983.5-1984.9] we'll be looking at the DCC.
+[1986.1-1988.6] Right, the DCC on the weekly timeframe.
+[1988.6-1989.5] Now,
+[1989.5-1990.5] I think I pointed out this outlook,
+[1990.5-1991.4] as you all know,
+[1991.4-1993.7] and it has played out quite as well.
+[1993.7-1994.7] For BTC,
+[1994.7-1995.7] structurally,
+[1995.7-1996.6] we are bearish,
+[1996.6-1998.7] look at the spread value of bearish.
+[1998.7-1999.5] Alright.
+[1999.5-2000.3] Now for me,
+[2000.3-2002.1] I don't really take note of how the candle closes,
+[2002.1-2003.2] whether bullish or bearish,
+[2003.2-2005.1] I'm just looking at liquidity sweep,
+[2005.1-2006.2] and rejections.
+[2006.2-2007.1] So you can see,
+[2007.1-2007.9] because you will see that last week,
+[2007.9-2009.7] candle closed was bullish,
+[2009.7-2011.0] but then in the end,
+[2011.0-2012.7] we swept liquidity,
+[2012.7-2013.6] right,
+[2013.6-2015.3] meaning that we expect that price should eventually,
+[2015.3-2016.8] get into this high.
+[2016.8-2017.7] And if you also see,
+[2017.7-2020.1] we also swept another previous weekly high,
+[2020.1-2022.7] meaning that logically we expect price to get here.
+[2022.7-2024.3] And if you look at it again,
+[2024.3-2026.2] we also swept on this high,
+[2026.2-2029.3] meaning logically price should actually get into this zone.
+[2029.3-2031.0] And it makes sense because what?
+[2031.0-2032.8] Because we are bearish,
+[2032.8-2033.7] as you mentioned.
+[2033.7-2034.5] So,
+[2034.5-2036.0] it makes sense to target,
+[2036.0-2036.8] what is,
+[2036.8-2039.2] 57k on BTC,
+[2039.2-2041.1] because we are very bearish on this now.
+[2041.1-2042.0] Right, so,
+[2043.1-2043.9] so now,
+[2046.0-2046.8] what will I explain?
+[2046.8-2047.7] Okay.
+[2047.7-2048.8] So now you can see that we had what,
+[2048.8-2051.4] a previous weekly high sweep,
+[2051.4-2054.4] now we want to see what a daily bearish break out,
+[2054.4-2055.5] what can we see?
+[2055.5-2057.1] You've got your line chart,
+[2057.1-2057.9] we had what,
+[2057.9-2059.1] the sweep of liquidity,
+[2059.1-2060.5] and the break of structure to it,
+[2060.5-2062.4] to the downside from this guy,
+[2062.4-2066.3] indicating that we are going to continue selling,
+[2066.3-2068.1] this particular guy,
+[2068.1-2070.3] and we're going to keep selling BTC,
+[2070.3-2071.5] we're going to keep selling BTC.
+[2071.5-2072.5] So,
+[2072.5-2073.4] you can see,
+[2073.4-2074.5] and that's where BTC has been going at,
+[2074.5-2076.0] the direction BTC,
+[2076.0-2077.5] has been going in,
+[2077.5-2078.9] so far.
+[2078.9-2080.4] And if you notice a pattern,
+[2080.4-2081.8] with this profile,
+[2081.8-2083.5] at any time we break out,
+[2083.5-2084.4] right,
+[2084.4-2086.1] it doesn't always sell immediately,
+[2086.1-2088.4] we would have some sort of retracement,
+[2088.4-2089.4] before we continue to sell,
+[2089.4-2090.9] same thing happened here,
+[2090.9-2092.5] it broke out,
+[2092.5-2093.3] right,
+[2093.3-2094.2] so it broke out.
+[2094.2-2095.0] Now, this is a,
+[2095.0-2096.9] and this is an example of a bearish scenario,
+[2096.9-2099.2] I've been using the bearish scenario so far.
+[2099.2-2101.9] Now, let's see what happened here.
+[2101.9-2103.5] Now, look at this guy,
+[2103.5-2105.7] we broke out bearish, right,
+[2105.7-2107.0] price also was swept,
+[2107.0-2108.5] the bearish candles,
+[2108.5-2110.2] the breakout candles low,
+[2110.2-2111.0] meaning that we might say,
+[2111.0-2112.3] okay, we are now bullish,
+[2112.3-2114.2] against the net into the high.
+[2114.2-2115.1] Now, I said,
+[2115.1-2117.1] watch out for your liquidity points,
+[2117.1-2119.4] it took a loss around this zone selling,
+[2119.4-2120.2] right,
+[2120.2-2121.1] because logically,
+[2121.1-2122.3] I expected price to come here,
+[2122.3-2124.2] and maybe as we start to reject it,
+[2124.2-2125.1] from this particular,
+[2125.1-2126.9] we are going to sell,
+[2126.9-2128.8] for price starting to still buy higher,
+[2128.8-2130.0] up to this point.
+[2130.0-2131.1] But you can see,
+[2131.1-2132.4] the main thing I pointed out is that,
+[2132.4-2134.8] price never got to this high,
+[2134.8-2136.4] because we have bearish,
+[2136.4-2138.5] price doesn't need to take out too high,
+[2138.5-2140.4] in bearish situation,
+[2140.4-2142.2] or bearish market condition.
+[2142.2-2143.1] So,
+[2144.4-2145.3] internal liquidity,
+[2145.3-2146.8] external liquidity was taken,
+[2146.8-2148.4] we now had the reversal,
+[2148.4-2149.2] right,
+[2149.2-2150.7] and this reversal did not get here,
+[2150.7-2152.0] instead we got here,
+[2152.0-2153.6] and price rejected,
+[2153.6-2154.7] and closed below,
+[2154.7-2157.2] giving us what we break out again,
+[2157.2-2158.8] I think we might say break out again,
+[2158.8-2161.1] meaning our new external liquidity was taken,
+[2161.2-2163.2] so we might have some sort of regular sales,
+[2163.2-2164.1] probably here,
+[2164.1-2164.9] I don't know,
+[2164.9-2166.8] or we might just keep selling again,
+[2166.8-2167.7] right,
+[2167.7-2168.5] because now,
+[2168.5-2170.4] this is our new external liquidity,
+[2170.4-2171.2] so from there,
+[2171.2-2172.7] we have old external liquidity,
+[2172.7-2173.6] right,
+[2173.6-2175.7] so this is basically what we are watching out for.
+[2175.7-2176.5] So,
+[2176.5-2177.4] that's it basically,
+[2177.4-2178.7] it's when it comes to,
+[2178.7-2181.2] dealing with our new liquidity,
+[2181.2-2182.3] and I've talked about liquidity,
+[2182.3-2183.6] very extensively here as well,
+[2183.6-2184.9] so,
+[2184.9-2185.7] happy weekends,
+[2185.7-2186.6] happy new ones,
+[2186.6-2187.4] thanks again,
+[2188.7-2189.6] peace out.
