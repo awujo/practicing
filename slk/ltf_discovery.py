@@ -8,8 +8,13 @@ slk.ltf_features columns, all measured from candles closed at the entry). Method
   3. A bucket is a CANDIDATE when on TRAIN it has >= MIN_N trades and its avg R beats the TRAIN baseline of the
      same entry TF / entry kind by >= MIN_LIFT R, for the outcome column (default R_3R: fixed 3R target).
   4. Candidates are then shown on TEST once. A rule "holds" when TEST n >= MIN_N_TEST, TEST avg R beats the TEST
-     baseline by >= MIN_LIFT / 2 and TEST avg R > 0 after costs.
+     baseline by >= MIN_LIFT and TEST avg R > 0 after costs.
   5. Pairs of two candidates (AND) are tried the same way (train-chosen, test-checked).
+  6. Chance level: the same screen on the same trades with the outcome shuffled within tf / entry / train-test
+     (CHANCE_SEEDS runs). Real "holds" well above that mean are worth a look; at or below it they are luck.
+Caveats (verifier agent 2026-10-20): rows overlap (one row per level and TF; ~half are within 24 h of another
+same-pair same-side row), so n overstates the independent sample; the flat cost (1.2 pips / stop) makes wide-stop
+buckets look better by construction; hours 20-23 UTC (rollover) have bid spikes the flat cost does not cover.
 Many buckets are tested, so some TRAIN winners are luck: only TEST decides, and even a TEST pass on 8 pairs is a
 lead for the full 28-pair run, not a rule. No ANN. Nothing here changes the live bot.
 
@@ -25,6 +30,7 @@ import pandas as pd
 MIN_N = 100
 MIN_N_TEST = 50
 MIN_LIFT = 0.10
+CHANCE_SEEDS = 10
 BOOL = ("fvg", "sweep", "h1_trend_agrees", "d_trend_agrees", "w_trend_agrees", "h4_break_agrees",
         "d_break_agrees", "w_break_agrees")
 CAT = ("session", "daily", "h4_story", "side", "stop_at", "dow")
@@ -69,7 +75,7 @@ def screen(df, split, out_col="R_3R"):
                      "train base": round(b_tr, 3), "test n": len(b),
                      "test avg R": round(b[out_col].mean(), 3) if len(b) else np.nan, "test base": round(b_te, 3)}
                 r["candidate"] = len(a) >= MIN_N and r["train avg R"] - b_tr >= MIN_LIFT
-                r["holds"] = bool(r["candidate"] and len(b) >= MIN_N_TEST and r["test avg R"] - b_te >= MIN_LIFT / 2
+                r["holds"] = bool(r["candidate"] and len(b) >= MIN_N_TEST and r["test avg R"] - b_te >= MIN_LIFT
                                   and r["test avg R"] > 0)
                 rows.append(r)
                 if r["candidate"]:
@@ -86,7 +92,7 @@ def screen(df, split, out_col="R_3R"):
                  "train avg R": round(a[out_col].mean(), 3), "train base": round(b_tr, 3), "test n": len(b),
                  "test avg R": round(b[out_col].mean(), 3) if len(b) else np.nan, "test base": round(b_te, 3)}
             r["candidate"] = r["train avg R"] - b_tr >= MIN_LIFT
-            r["holds"] = bool(r["candidate"] and len(b) >= MIN_N_TEST and r["test avg R"] - b_te >= MIN_LIFT / 2
+            r["holds"] = bool(r["candidate"] and len(b) >= MIN_N_TEST and r["test avg R"] - b_te >= MIN_LIFT
                               and r["test avg R"] > 0)
             picks.append(r)
     return pd.DataFrame(rows), pd.DataFrame(picks)
@@ -104,11 +110,33 @@ def best_target(df, split):
     return pd.DataFrame(rows)
 
 
-def report(df, split, out_col):
+def chance(df, split, out_col, seeds=CHANCE_SEEDS):
+    """Mean / max number of single and pair 'holds' with the outcome shuffled within tf / entry / train-test."""
+    part = (df["year"] >= split).astype(int)
+    res = []
+    for seed in range(seeds):
+        rng = np.random.default_rng(seed)
+        sh = df.copy()
+        sh[out_col] = sh.groupby([sh["tf"], sh["entry"], part])[out_col].transform(lambda x: rng.permutation(x.to_numpy()))
+        s, p = screen(sh, split, out_col)
+        res.append((int(s["holds"].sum()) if len(s) else 0, int(p["holds"].sum()) if len(p) else 0))
+    a = np.array(res)
+    return a.mean(0).round(1), a.max(0)
+
+
+def report(df, split, out_col, seeds=CHANCE_SEEDS):
     single, pairs = screen(df, split, out_col)
+    if seeds:
+        mean, mx = chance(df, split, out_col, seeds)
+        luck = (f"\n\nChance level ({seeds} shuffles of {out_col}): single holds mean {mean[0]} (max {mx[0]}), "
+                f"two-condition holds mean {mean[1]} (max {mx[1]}). Real: single "
+                f"{int(single['holds'].sum()) if len(single) else 0}, two-condition "
+                f"{int(pairs['holds'].sum()) if len(pairs) else 0}.")
+    else:
+        luck = ""
     txt = ("# Lower-TF discovery\n\n" + (__doc__ or "") +
            f"\n\nTrades: {len(df)}, {df['pair'].nunique()} pairs, years {df['year'].min()}-{df['year'].max()}; "
-           f"train < {split} <= test. Outcome: {out_col} (cost included).\n\n## Best fixed target\n\n" +
+           f"train < {split} <= test. Outcome: {out_col} (cost included)." + luck + "\n\n## Best fixed target\n\n" +
            best_target(df, split).to_markdown(index=False) + "\n")
     for name, t in (("Single conditions", single), ("Two conditions (AND)", pairs)):
         if t.empty:
@@ -128,10 +156,11 @@ def main(argv=None):
     ap.add_argument("--trades", required=True)
     ap.add_argument("--split", type=int, default=2023)
     ap.add_argument("--outcome", default="R_3R")
+    ap.add_argument("--seeds", type=int, default=CHANCE_SEEDS, help="chance-level shuffles (0 = off)")
     ap.add_argument("--out", default="")
     a = ap.parse_args(argv)
     df = pd.read_csv(a.trades)
-    txt, single, pairs = report(df, a.split, a.outcome)
+    txt, single, pairs = report(df, a.split, a.outcome, a.seeds)
     print(txt)
     if a.out:
         os.makedirs(a.out, exist_ok=True)

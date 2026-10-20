@@ -65,10 +65,32 @@ entries are from four hours or two hours", M15/M5 not used (research/KEVIN_LTF_C
    only 1 had an active same-side D story. The bot only alerts M/W/D stories, so it cannot show these. H4
    stories exist within 6-10 pips of his entry for EURAUD 17 Feb, EURGBP 2 Feb, USDJPY 12 Dec.
 
+### 28-pair results (Actions run 39412272945, 2018-2025, train < 2023 <= test; reports/TREND_REPORT.md,
+### reports/LTF_DISCOVERY.md, reports/pattern_trades.csv.gz with 105,442 rows)
+1. Blind limit at Kevin's line: H1 -0.29 .. -0.58 R, H2 -0.21 .. -0.43 R, H4 -0.18 .. -0.35 R per trade
+   (1R..5R targets). Same in train and test.
+2. H1-close confirmation entry: -0.08 .. -0.16 R on every TF, train and test. Clearly better than the limit, the
+   most stable finding of this study, but still negative after the 1.2-pip cost.
+3. Trend filters do not help: D+W trend agree -0.13 R, D/H4 in line -0.15 R, against the D trend -0.12 R
+   (confirmation entries, 3R target). Kevin's "with the trend" adds nothing on these mechanical levels.
+4. The impulsive-breakout-candle lead from the 8-pair run did NOT hold on 28 pairs.
+5. Discovery: 1 single condition held (dow=6 = entries closing on Sunday, n 152: market-open gaps, ignore);
+   11 two-condition rules held, all "session=late" + a wider stop on limit entries. By hour: the whole effect is
+   entries at 21-22 UTC (+0.43 / +0.35 R at 3R; every other hour negative) = the daily rollover, when spreads
+   widen and BID candles spike. Almost certainly an artefact of bid-only candles + a flat cost; needs ask-side
+   data or a rollover spread model before anyone believes it. Shuffled chance level is ~0 for these, but a
+   shuffle also removes this mechanical effect, so that does not make it real.
+6. Verifier agent (independent, 2026-10-20): no look-ahead (truncation test on 51 rows), 128 trades recomputed by
+   hand all match. Fixed after its report: h1_confirm stops capped at 25 pips, "holds" needs the full MIN_LIFT on
+   test, chance-level shuffles in the report, caveats in slk/ltf_discovery.py. Not fixed (noted): rows overlap
+   (~half within 24 h of another same-pair same-side row), _TF lacks the forming-last-bar guard (matters only
+   live), R_target picks the last H4 story in list order.
+
 ### Next steps (for whoever continues)
-- Read the 28-pair reports when the Actions run has committed them. A condition counts only if it holds on the
-  28-pair TEST years too; then add it as an entry setting (off by default) and paper-track it live first.
-- Cross-check agent findings: see the HANDOVER log entry of 2026-10-20 (look-ahead audit).
+- Conclusion so far: no mechanical lower-TF edge after costs. The confirmation entry is the one improvement
+  worth keeping in mind for the live entry alerts (owner decides).
+- To test the rollover lead: drop hours 20-23 UTC, or add a per-hour spread (IC Markets ask-bid) before trusting it.
+- De-duplicate overlapping rows (one trade per pair/side at a time) before any significance claim.
 - Ideas not built: overlap of the entry line with a fresh D/H4 level (cue 14), tap count before the break
   (cue 13), engulfing at the reaction (cue 11), choosing the entry TF with the best RR (cue 21), TP1 at the H1
   swing + TP2 at the next H4 level (cue 22), a real per-hour spread model (rollover).

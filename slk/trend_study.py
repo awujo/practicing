@@ -228,7 +228,7 @@ def pattern_trades(pair, h1, cfg=None, ecfg=None):
                         conf = j
                         break
                 entries = [("limit", f, line, path_limit(H, f, side, line, stop, tgt, pip))]
-                if conf is not None:
+                if conf is not None and abs(float(H["close"][conf]) - stop) / pip <= MAX_STOP:  # Kevin "15 to 20 pips plus"
                     entries.append(("h1_confirm", conf, float(H["close"][conf]),
                                     path(H, conf, side, float(H["close"][conf]), stop, tgt, pip)))
                 c1_h1 = int(np.searchsorted(H["t"], B["start"][p["c1"]], "left"))

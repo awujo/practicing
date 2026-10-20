@@ -35,8 +35,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - [ ] **Trend entries / Kevin gap / lower-TF discovery** (owner 2026-10-20): plan + results + next steps in
   `research/TREND_LTF_PLAN.md` (start there to continue). Code: slk/trend_study.py, ltf_features.py,
   ltf_discovery.py, kevin_gap.py; research-only story TF `H4` (H4 -> H1) in slk/story.py STORIES. 8-pair local
-  result: no edge; H1-candle confirmation after the touch beats the blind limit (-0.1R vs -0.4R). 28-pair run in
-  backtest.yml pending. Nothing live changed.
+  result confirmed on 28 pairs 2018-2025: no edge after costs; H1-close confirmation after the touch beats the
+  blind limit (about -0.12R vs -0.2..-0.58R); trend filters add nothing; the only "held" rule is a rollover-hour
+  (21-22 UTC) artefact. Independent verifier: no look-ahead, outcomes recomputed OK. Nothing live changed.
 - [x] Successive bias-target measurement: research/results/2026-10-20-bias-targets/ANALYSIS.md. Direct frozen target-1: D806/1393, W114/243; after another completed continuation break, target-2 D457/626 selected, W30/62. Missing target/confirmation and unfinished paths are separate; these are a native-derived research ladder, not previously broadcast target forecasts.
 - [x] Full-history review completed: research/results/2026-10-20/ANALYSIS.md. All 28 archives/560 ledgers analyzed; 30,760 events. Daily direction near neutral; post-stop recovery common, but no profitable tested entry variant. Weekly 24-real-hour entry clock misses next session; tiny-stop/rollover gap assumptions materially affect R. No live promotion.
 - [x] All 28 full-history studies succeeded in run 39296129468; only monolithic 60-minute database publication timed out. Resumable finalization now saves combined analysis first and self-dispatches short checkpointed publication slices, reusing saved archives and skipping existing records.
@@ -132,6 +133,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
   1/2/3/5R + MFE), slk/ltf_features.py (entry features from closed candles only), slk/ltf_discovery.py
   (train-chosen / test-checked screening), slk/kevin_gap.py -> reports/KEVIN_GAP.md. backtest.yml step runs the
   28-pair version. tests/test_trend_study.py.
+- 28-pair results + verifier-agent audit in research/TREND_LTF_PLAN.md. Fixes: h1_confirm stop cap 25 pips,
+  stricter "holds", chance-level shuffles in LTF_DISCOVERY.md.
 
 ### 2026-10-19 — next-phase research verified on GitHub
 - Corrected run 39251591881 succeeded end to end: frozen input restore, 55 tests, two-pair replay, entry experiments, artifacts and batched MySQL publication (575 records). Reports inspected: USDCHF 45 events and GBPCHF 36 over 90 H4 decision points each; one eligible confirmation each, four entry variants each. Discovery returned insufficient_data (8/11 baseline development units, below 30), no selected rule. These small exploratory results do not establish an edge. Run URL: https://github.com/awujo/practicing/actions/runs/39251591881 .
