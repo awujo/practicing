@@ -1,0 +1,305 @@
+{
+  "code_sha256": "2277192c0be887169870e759ad255147983ec6b249e92393a1f6fe1ad365a72b",
+  "confirmed_story_mode_records": 3272,
+  "counts": {
+    "D / after_continuation_close / all_bias / T1": {
+      "censored_gap": 15,
+      "ended_before_target": 521,
+      "reached": 806,
+      "unresolved_at_window_end": 51
+    },
+    "D / after_continuation_close / all_bias / T2": {
+      "censored_gap": 8,
+      "ended_before_target": 123,
+      "no_known_target_ahead": 127,
+      "no_new_continuation_close": 44,
+      "reached": 457,
+      "unresolved_at_window_end": 38,
+      "unresolved_waiting_continuation": 9
+    },
+    "D / after_continuation_close / all_bias / T3": {
+      "censored_gap": 11,
+      "ended_before_target": 58,
+      "no_known_target_ahead": 48,
+      "no_new_continuation_close": 14,
+      "reached": 277,
+      "unresolved_at_window_end": 32,
+      "unresolved_waiting_continuation": 17
+    },
+    "D / after_continuation_close / all_bias / T4": {
+      "censored_gap": 8,
+      "ended_before_target": 24,
+      "no_known_target_ahead": 38,
+      "no_new_continuation_close": 4,
+      "reached": 180,
+      "unresolved_at_window_end": 15,
+      "unresolved_waiting_continuation": 8
+    },
+    "D / after_continuation_close / all_bias / T5": {
+      "censored_gap": 9,
+      "ended_before_target": 21,
+      "no_known_target_ahead": 10,
+      "no_new_continuation_close": 2,
+      "reached": 116,
+      "unresolved_at_window_end": 13,
+      "unresolved_waiting_continuation": 9
+    },
+    "D / after_continuation_close / eligible_only / T1": {
+      "censored_gap": 14,
+      "ended_before_target": 394,
+      "reached": 586,
+      "unresolved_at_window_end": 38
+    },
+    "D / after_continuation_close / eligible_only / T2": {
+      "censored_gap": 5,
+      "ended_before_target": 85,
+      "no_known_target_ahead": 111,
+      "no_new_continuation_close": 27,
+      "reached": 326,
+      "unresolved_at_window_end": 24,
+      "unresolved_waiting_continuation": 8
+    },
+    "D / after_continuation_close / eligible_only / T3": {
+      "censored_gap": 9,
+      "ended_before_target": 39,
+      "no_known_target_ahead": 34,
+      "no_new_continuation_close": 12,
+      "reached": 198,
+      "unresolved_at_window_end": 25,
+      "unresolved_waiting_continuation": 9
+    },
+    "D / after_continuation_close / eligible_only / T4": {
+      "censored_gap": 8,
+      "ended_before_target": 15,
+      "no_known_target_ahead": 26,
+      "no_new_continuation_close": 2,
+      "reached": 129,
+      "unresolved_at_window_end": 12,
+      "unresolved_waiting_continuation": 6
+    },
+    "D / after_continuation_close / eligible_only / T5": {
+      "censored_gap": 7,
+      "ended_before_target": 13,
+      "no_known_target_ahead": 8,
+      "reached": 84,
+      "unresolved_at_window_end": 11,
+      "unresolved_waiting_continuation": 6
+    },
+    "D / after_target_touch / all_bias / T1": {
+      "censored_gap": 15,
+      "ended_before_target": 521,
+      "reached": 806,
+      "unresolved_at_window_end": 51
+    },
+    "D / after_target_touch / all_bias / T2": {
+      "censored_gap": 7,
+      "ended_before_target": 138,
+      "no_known_target_ahead": 128,
+      "reached": 498,
+      "unresolved_at_window_end": 34,
+      "unresolved_before_selection": 1
+    },
+    "D / after_target_touch / all_bias / T3": {
+      "censored_gap": 8,
+      "ended_before_target": 48,
+      "no_known_target_ahead": 42,
+      "reached": 373,
+      "unresolved_at_window_end": 27
+    },
+    "D / after_target_touch / all_bias / T4": {
+      "censored_gap": 9,
+      "ended_before_target": 36,
+      "no_known_target_ahead": 39,
+      "reached": 269,
+      "unresolved_at_window_end": 18,
+      "unresolved_before_selection": 2
+    },
+    "D / after_target_touch / all_bias / T5": {
+      "censored_gap": 7,
+      "ended_before_target": 25,
+      "no_known_target_ahead": 20,
+      "reached": 202,
+      "unresolved_at_window_end": 15
+    },
+    "D / after_target_touch / eligible_only / T1": {
+      "censored_gap": 14,
+      "ended_before_target": 394,
+      "reached": 586,
+      "unresolved_at_window_end": 38
+    },
+    "D / after_target_touch / eligible_only / T2": {
+      "censored_gap": 4,
+      "ended_before_target": 95,
+      "no_known_target_ahead": 112,
+      "reached": 354,
+      "unresolved_at_window_end": 21
+    },
+    "D / after_target_touch / eligible_only / T3": {
+      "censored_gap": 7,
+      "ended_before_target": 31,
+      "no_known_target_ahead": 29,
+      "reached": 267,
+      "unresolved_at_window_end": 20
+    },
+    "D / after_target_touch / eligible_only / T4": {
+      "censored_gap": 8,
+      "ended_before_target": 21,
+      "no_known_target_ahead": 27,
+      "reached": 193,
+      "unresolved_at_window_end": 16,
+      "unresolved_before_selection": 2
+    },
+    "D / after_target_touch / eligible_only / T5": {
+      "censored_gap": 5,
+      "ended_before_target": 20,
+      "no_known_target_ahead": 14,
+      "reached": 144,
+      "unresolved_at_window_end": 10
+    },
+    "W / after_continuation_close / all_bias / T1": {
+      "censored_gap": 12,
+      "ended_before_target": 72,
+      "reached": 114,
+      "unresolved_at_window_end": 45
+    },
+    "W / after_continuation_close / all_bias / T2": {
+      "censored_gap": 5,
+      "ended_before_target": 10,
+      "no_known_target_ahead": 37,
+      "no_new_continuation_close": 7,
+      "reached": 30,
+      "unresolved_at_window_end": 17,
+      "unresolved_waiting_continuation": 8
+    },
+    "W / after_continuation_close / all_bias / T3": {
+      "ended_before_target": 2,
+      "no_known_target_ahead": 7,
+      "no_new_continuation_close": 6,
+      "reached": 8,
+      "unresolved_at_window_end": 5,
+      "unresolved_waiting_continuation": 2
+    },
+    "W / after_continuation_close / all_bias / T4": {
+      "reached": 3,
+      "unresolved_at_window_end": 2,
+      "unresolved_waiting_continuation": 3
+    },
+    "W / after_continuation_close / all_bias / T5": {
+      "censored_gap": 1,
+      "no_known_target_ahead": 2
+    },
+    "W / after_continuation_close / eligible_only / T1": {
+      "censored_gap": 9,
+      "ended_before_target": 62,
+      "reached": 99,
+      "unresolved_at_window_end": 34
+    },
+    "W / after_continuation_close / eligible_only / T2": {
+      "censored_gap": 5,
+      "ended_before_target": 8,
+      "no_known_target_ahead": 32,
+      "no_new_continuation_close": 7,
+      "reached": 28,
+      "unresolved_at_window_end": 13,
+      "unresolved_waiting_continuation": 6
+    },
+    "W / after_continuation_close / eligible_only / T3": {
+      "ended_before_target": 2,
+      "no_known_target_ahead": 7,
+      "no_new_continuation_close": 6,
+      "reached": 8,
+      "unresolved_at_window_end": 4,
+      "unresolved_waiting_continuation": 1
+    },
+    "W / after_continuation_close / eligible_only / T4": {
+      "reached": 3,
+      "unresolved_at_window_end": 2,
+      "unresolved_waiting_continuation": 3
+    },
+    "W / after_continuation_close / eligible_only / T5": {
+      "censored_gap": 1,
+      "no_known_target_ahead": 2
+    },
+    "W / after_target_touch / all_bias / T1": {
+      "censored_gap": 12,
+      "ended_before_target": 72,
+      "reached": 114,
+      "unresolved_at_window_end": 45
+    },
+    "W / after_target_touch / all_bias / T2": {
+      "censored_gap": 3,
+      "ended_before_target": 13,
+      "no_known_target_ahead": 34,
+      "reached": 43,
+      "unresolved_at_window_end": 21
+    },
+    "W / after_target_touch / all_bias / T3": {
+      "censored_gap": 3,
+      "ended_before_target": 5,
+      "no_known_target_ahead": 10,
+      "reached": 19,
+      "unresolved_at_window_end": 6
+    },
+    "W / after_target_touch / all_bias / T4": {
+      "censored_gap": 1,
+      "ended_before_target": 1,
+      "no_known_target_ahead": 3,
+      "reached": 12,
+      "unresolved_at_window_end": 2
+    },
+    "W / after_target_touch / all_bias / T5": {
+      "censored_gap": 1,
+      "no_known_target_ahead": 5,
+      "reached": 3,
+      "unresolved_at_window_end": 3
+    },
+    "W / after_target_touch / eligible_only / T1": {
+      "censored_gap": 9,
+      "ended_before_target": 62,
+      "reached": 99,
+      "unresolved_at_window_end": 34
+    },
+    "W / after_target_touch / eligible_only / T2": {
+      "censored_gap": 3,
+      "ended_before_target": 11,
+      "no_known_target_ahead": 30,
+      "reached": 39,
+      "unresolved_at_window_end": 16
+    },
+    "W / after_target_touch / eligible_only / T3": {
+      "censored_gap": 2,
+      "ended_before_target": 5,
+      "no_known_target_ahead": 9,
+      "reached": 17,
+      "unresolved_at_window_end": 6
+    },
+    "W / after_target_touch / eligible_only / T4": {
+      "ended_before_target": 1,
+      "no_known_target_ahead": 3,
+      "reached": 11,
+      "unresolved_at_window_end": 2
+    },
+    "W / after_target_touch / eligible_only / T5": {
+      "censored_gap": 1,
+      "no_known_target_ahead": 5,
+      "reached": 3,
+      "unresolved_at_window_end": 2
+    }
+  },
+  "limitations": [
+    "New target ladder is a specified research rule; historical alerts did not record successive targets.",
+    "Window-end right censoring and missing-hour exclusions; shared stories/currencies are not independent.",
+    "Target touch uses H1 bid wick, not body confirmation or tradable entry performance.",
+    "Target touch and terminating origin close in same H1 candle is ambiguous, not a win.",
+    "No target available and no new confirmation are not target failures; percentages must specify denominators.",
+    "Only known native continuation-close events within each observation window are used.",
+    "Primary already consumed by confirmation is separated; not counted as a new forward target hit."
+  ],
+  "max_stage": 5,
+  "modes": [
+    "after_target_touch",
+    "after_continuation_close"
+  ],
+  "pairs": 28,
+  "selection_rule": "Frozen native primary target, then native ERL-first target beyond the consumed leg and all wicks already observed at decision; otherwise fresh origin/higher opposing KL. No live-rule change."
+}
