@@ -1,0 +1,70 @@
+# Leg backtest (structural stops; continuation after the target)
+
+Can the bias be traded with a structural stop, and is a continuation break AFTER the target a tradable new leg?
+(owner 2026-10-20, after the research reports: stopouts often reach the target later; after a target the next
+target is touched ~73% of the time with no stop.)
+
+Daily stories (slk.story.find_stories, code defaults). Every trade: entry at a closed candle's close, stop and
+target fixed at entry, walked on H1 (stop first when one H1 candle touches both), closed at market after
+MAX_DAYS. R = result / risk, minus COST_PIPS (spread + slippage) per trade.
+
+Trades:
+- "confirmation": entry at the D confirmation close, target = the story target (the bias trade of REPORT.md).
+- "after target, 1st break": the first H4 continuation break (slk.live.continuation_breaks) after the story's
+  target was hit and before the story line ends (slk.live.line_end); entry at that H4 close; target = the next
+  target by the native rule (story._Ctx.target mode 'leg': next known origin ERL swing beyond every wick already
+  seen since the confirmation, else the next fresh opposing key level) = the target ladder of
+  research_bias_targets. "every break" = each such break (overlapping, not independent).
+Stops: "tap wick" (story stop, confirmation only), "H4 swing N" = the highest high (sell) / lowest low (buy) of the
+last N H4 candles up to the entry candle + 2 pips, "min M pips" = at least M pips wide.
+
+    python -m slk.leg_backtest --start 2018 --end 2025 --out reports        # -> reports/LEG_REPORT.md
+    python -m slk.leg_backtest --csv data/debug/GBPJPY_H1_ctrader.csv.gz      # one local file
+
+
+Daily stories, 28 pairs. Cost 1.2 pips per trade.
+
+| trades                    | stop                     |     n |   win% |   stopped% |   avg_R |   total_R |   median risk pips |   median target pips |
+|:--------------------------|:-------------------------|------:|-------:|-----------:|--------:|----------:|-------------------:|---------------------:|
+| confirmation              | tap wick                 |  5296 |   57.9 |       37.6 |  -0.054 |    -288.2 |              86.3  |                47.5  |
+| confirmation              | H4 swing 6               |  5296 |   52.1 |       44.9 |  -0.067 |    -352.9 |              62.95 |                47.5  |
+| confirmation              | H4 swing 12              |  5296 |   57.7 |       38   |  -0.044 |    -232.4 |              84.2  |                47.5  |
+| confirmation              | H4 swing 6, min 10 pips  |  5296 |   52.1 |       44.9 |  -0.065 |    -343   |              62.95 |                47.5  |
+| confirmation              | H4 swing 12, min 15 pips |  5296 |   57.7 |       38   |  -0.044 |    -232.3 |              84.2  |                47.5  |
+| after target, 1st break   | H4 swing 6               |  2430 |   58.2 |       40.7 |  -0.039 |     -94.2 |              62.7  |                41.45 |
+| after target, every break | H4 swing 6               | 45149 |   40.5 |       55.6 |  -0.077 |   -3486.6 |              59.1  |                88.5  |
+| after target, 1st break   | H4 swing 12              |  2430 |   64.4 |       33.1 |  -0.024 |     -58.3 |              92.85 |                41.45 |
+| after target, every break | H4 swing 12              | 45149 |   44.5 |       49.7 |  -0.071 |   -3204.8 |              77.5  |                88.5  |
+| after target, 1st break   | H4 swing 6, min 10 pips  |  2430 |   58.2 |       40.7 |  -0.039 |     -94.2 |              62.7  |                41.45 |
+| after target, every break | H4 swing 6, min 10 pips  | 45149 |   40.5 |       55.6 |  -0.077 |   -3487   |              59.1  |                88.5  |
+| after target, 1st break   | H4 swing 12, min 15 pips |  2430 |   64.4 |       33.1 |  -0.024 |     -58.4 |              92.85 |                41.45 |
+| after target, every break | H4 swing 12, min 15 pips | 45149 |   44.5 |       49.6 |  -0.071 |   -3203.6 |              77.5  |                88.5  |
+
+## By year (stop H4 swing 12, min 15 pips)
+
+|                                       |   count |   mean |      sum |
+|:--------------------------------------|--------:|-------:|---------:|
+| ('after target, 1st break', '2018')   |     165 |  0.027 |    4.495 |
+| ('after target, 1st break', '2019')   |     293 |  0.007 |    2.139 |
+| ('after target, 1st break', '2020')   |     334 | -0.004 |   -1.328 |
+| ('after target, 1st break', '2021')   |     391 | -0.075 |  -29.305 |
+| ('after target, 1st break', '2022')   |     279 |  0.058 |   16.069 |
+| ('after target, 1st break', '2023')   |     328 | -0.051 |  -16.67  |
+| ('after target, 1st break', '2024')   |     324 | -0.024 |   -7.75  |
+| ('after target, 1st break', '2025')   |     316 | -0.083 |  -26.088 |
+| ('after target, every break', '2018') |    1809 |  0.119 |  214.583 |
+| ('after target, every break', '2019') |    4607 | -0.021 |  -98.135 |
+| ('after target, every break', '2020') |    6408 | -0.057 | -366.464 |
+| ('after target, every break', '2021') |    8321 | -0.06  | -496.367 |
+| ('after target, every break', '2022') |    4966 | -0.109 | -540.609 |
+| ('after target, every break', '2023') |    6931 | -0.077 | -536.169 |
+| ('after target, every break', '2024') |    5928 | -0.143 | -848.628 |
+| ('after target, every break', '2025') |    6179 | -0.086 | -531.783 |
+| ('confirmation', '2018')              |     541 | -0.05  |  -26.9   |
+| ('confirmation', '2019')              |     680 | -0.033 |  -22.285 |
+| ('confirmation', '2020')              |     676 | -0.004 |   -2.536 |
+| ('confirmation', '2021')              |     730 | -0.008 |   -6.103 |
+| ('confirmation', '2022')              |     667 | -0.138 |  -91.982 |
+| ('confirmation', '2023')              |     673 | -0.01  |   -6.953 |
+| ('confirmation', '2024')              |     691 | -0.11  |  -75.799 |
+| ('confirmation', '2025')              |     638 |  0     |    0.241 |
