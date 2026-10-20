@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-20)
+- [x] Full-history review completed: research/results/2026-10-20/ANALYSIS.md. All 28 archives/560 ledgers analyzed; 30,760 events. Daily direction near neutral; post-stop recovery common, but no profitable tested entry variant. Weekly 24-real-hour entry clock misses next session; tiny-stop/rollover gap assumptions materially affect R. No live promotion.
 - [x] All 28 full-history studies succeeded in run 39296129468; only monolithic 60-minute database publication timed out. Resumable finalization now saves combined analysis first and self-dispatches short checkpointed publication slices, reusing saved archives and skipping existing records.
 - [x] Expanded research scenarios and full frozen-history workflow implemented: post-stop 24/72h paths, re-entry, old/new native Daily/Weekly stories, confirmation delay, stops/targets/exits/cost/context alternatives. See research/SCENARIOS.md for actual coverage, limits and budgets. No M5 reconstruction/live changes.
 - [x] All 28 FX research pairs completed; full evidence review in research/results/2026-10-19/ANALYSIS.md. 828 events, 200 distinct completed baseline units, 18 new entry confirmations; negative descriptive directional results, all per-pair discovery screens insufficient. No winning policy/live change.
@@ -375,3 +376,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - Validation: 80 research tests passed, independent checker completed; real 90-day EURUSD native replay completed in ~41s (189 events), expanded sidecar in ~18s (243 records). Historical full-run completion/results are pending; do not infer all scenarios profitable or every date gap-free.
 
 - 2026-10-20: Owner noticed cancellation. Confirmed all 28 study matrix jobs succeeded, 28 archives saved; persist job hit configured 60-minute timeout, not a four-hour overall GitHub limit. Replaced monolithic finalizer with research-finalize.yml (15-minute jobs, 420-second/four-ledger work slices, immutable checkpoints, automatic next dispatch, two-error retry bound, storage-cap stop). Combined analysis is uploaded before DB work. Publisher now validates/skips existing hashes instead of reinserting every record. No studies rerun, no live changes.
+
+- 2026-10-20: Reviewed complete ~835-day D/W study independently of incomplete DB copying (406/560 at payload cap). Downloaded all archives, checked matched stops, post-stop paths, re-entry returns, ambiguity, calendar-year behaviour and every pair. Committed evidence and reproducible analyzer; no new study/live-rule changes.
