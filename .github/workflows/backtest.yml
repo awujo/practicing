@@ -2,7 +2,7 @@ name: SLK backtest
 on:
   push:
     branches: [claude-kevin-king]
-    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", "slk/store.py", "slk/leg_backtest.py", ".github/workflows/backtest.yml"]
+    paths: ["slk/story.py", "slk/structure.py", "slk/levels.py", "slk/candles.py", "slk/entry.py", "slk/backtest.py", "slk/entry_backtest.py", "slk/store.py", "slk/leg_backtest.py", "slk/trend_study.py", "slk/ltf_features.py", "slk/ltf_discovery.py", ".github/workflows/backtest.yml"]
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = all 28", default: ""}
@@ -101,6 +101,31 @@ jobs:
           rc=$?
           echo "exit=$rc" >> reports/leg_run.log
           tail -c 30000 reports/leg_run.log >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+      - name: Trend entries + lower-TF discovery (research/TREND_LTF_PLAN.md)
+        if: ${{ !cancelled() && steps.bt.outcome != 'skipped' }}
+        env:  # missing months come from IC Markets cTrader (Dukascopy fallback); refreshed tokens persist in the DB
+          CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+          CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+          CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+          CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+          CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+          CTRADER_ENV: demo
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: |
+          ARGS=(--start "$IN_START" --end "$IN_END" --out reports)
+          [ -n "$IN_PAIRS" ] && ARGS+=(--pairs "$IN_PAIRS")
+          set +e
+          python -m slk.trend_study "${ARGS[@]}" > reports/trend_run.log 2>&1
+          rc=$?
+          echo "exit=$rc" >> reports/trend_run.log
+          if [ -f reports/pattern_trades.csv.gz ]; then
+            python -m slk.ltf_discovery --trades reports/pattern_trades.csv.gz --split 2023 --out reports > reports/ltf_run.log 2>&1
+            echo "exit=$?" >> reports/ltf_run.log
+          fi
+          tail -c 20000 reports/trend_run.log >> "$GITHUB_STEP_SUMMARY"
           exit 0
       - name: Is the candle store complete?
         id: chk

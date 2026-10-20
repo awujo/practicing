@@ -21,9 +21,10 @@ from .candles import nominal_end, resample
 from .levels import Level, find_levels, run_levels, sweep_taps, touch_tol
 from .structure import SwingBook, pivots, structural_swings, swings, trend
 
-STORIES = {"M": ("M", "W"), "W": ("W", "D"), "D": ("D", "H4")}
-HIGHER = {"D": "W", "W": "M", "M": None}
-HIGHER_ALL = {"D": ("W", "M"), "W": ("M",), "M": ()}
+STORIES = {"M": ("M", "W"), "W": ("W", "D"), "D": ("D", "H4"),
+           "H4": ("H4", "H1")}  # H4: research only (slk/trend_study.py), not a live/Mini App story
+HIGHER = {"H4": "D", "D": "W", "W": "M", "M": None}
+HIGHER_ALL = {"H4": ("D", "W"), "D": ("W", "M"), "W": ("M",), "M": ()}
 
 DEFAULT = {
     "level_pivot": 1,       # A/V must be a close-line turning point of this order
