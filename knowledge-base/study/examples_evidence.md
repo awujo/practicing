@@ -66,3 +66,22 @@ The drawn price plans use differing structural risk distances. A fixed 10–11-p
 Pink/red and teal are **TradingView position-tool risk and reward boxes**. Their near/far edges equal the drawn entry/stop/target by construction. The apparent invariant “stop at the far edge of the pink zone” is therefore **not independent proof** that the box is an FVG or that every original stop was calculated from an imbalance boundary. To establish an FVG stop rule, inspect the underlying candles, identify the gap without reference to the position box, and check the actual gap boundary against the labelled stop. The inherited measurement note's broad “zero exceptions” conclusion goes beyond what price-box geometry alone demonstrates.
 
 Similarly, chart arrows and retrospective annotations do not automatically prove live fills, profits, or a profitable strategy. Fixture assertions should cover only what the source actually shows.
+
+## Native-video observations added (40 total source observations)
+
+Two additional entries-part-5 snapshots were independently extracted from the original MP4 at **native source PTS**, not trusted from the contact sheet's burned timestamp. `ffprobe` reports stream/format start0; `ffmpeg -copyts -ss 1065/1410 ... -vf showinfo` reports exact `pts_time:1065` and `pts_time:1410`. Native PNGs and MP4 SHA256 references are retained in the JSON/evidence directory.
+
+| Source PTS | Chart | Entry | Stop | Target | Source limits |
+|---|---|---:|---:|---:|---|
+| 1065 | XAUUSD H3 Saxo | 4079.56 | 4064.31 | 4165.88 | Tool RR5.66, risk15.25. Teacher changes the tool during explanation; this is one exact observed stage, not proof of actual filled trade. |
+| 1410 | EURUSD H2 FOREXCOM | 1.15330 | 1.15280 | 1.15589 | Transcript1403–1418: “personally I would have done something like this”, aim about5R; explicitly an illustrative placement. |
+
+At native1395 the EURUSD teacher is actively dragging the stop: the visible stop is **1.14920**, RR**0.63**, with target offscreen. A nearby contact-sheet tile or a transient tool value must not be mistaken for the final1410 plan. Likewise, another XAUUSD target seen at a different video stage must not be merged into the native1065 H3 plan. The source time at which a drawing is shown is not the historical time at which its trade would become observable.
+
+All40 observations remain full-replay **UNRESOLVED**. `bias`, `setup_time`, actual UTC `time`, and numerical tolerances stay null pending proper source/candle alignment. `mode:teacher_source_stop` states only that the source's own stop is preserved; it asserts no universal FVG-stop rule. `source_execution_status` distinguishes plans, the explicitly pending EURCHF broker order, and the XAGUSD open-position screenshot; `execution_status` remains unresolved for engine acceptance.
+
+The root reviewer independently opened PDFp8 and agreed **EURGBP entry0.85315 / stop0.85289 / target0.85447**. That second check covers only those three numeric labels. It does not sign off time, bias, FVG or replay correctness.
+
+The root reviewer also opened the retained native1410 PNG and confirmed the
+EURUSD2h FOREXCOM labels **entry1.15330 / stop1.15280 / target1.15589**. This is
+a second numeric-label check only; it does not establish a historical fill.

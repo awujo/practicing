@@ -1,5 +1,10 @@
 # Bishop Chart-Examples PDF: Pages 7-60 (completes the 60-page document)
 
+> Historical summary, not verified replay expectations. The 2026-10-20 direct
+> source review corrected several chart prices and found unresolved execution
+> times and geometry. Consult [the evidence ledger](../study/examples_evidence.md)
+> before using any exact value or interpreting a position-tool box as an FVG.
+
 Continuation of `bishop_visual_material.md` (which covered the 3 tweets and
 pages 1-6: EURCAD, EURJPY, EURCHF). This note covers the remaining 54
 pages — roughly 35-40 individual real trade examples, each following the

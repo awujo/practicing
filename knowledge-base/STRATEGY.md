@@ -158,9 +158,10 @@ A position box alone does not establish why its stop boundary was selected.
 A red/teal position-tool box's far red edge is the drawn stop **by construction**;
 that observation is not independent evidence that the stop is the far edge of an
 imbalance/FVG. Those underlying boundaries must be identified separately. A
-fixture labelled `teacher_zone_edge` is currently only an observed risk-box edge
-unless it carries independently verified zone geometry; the label must not be
-used as proof of a universal FVG-edge stop rule or a “35/35” source conclusion.
+fixture uses `teacher_source_stop` to preserve only the source's selected price;
+independently verified zone geometry is still required before asserting an
+FVG-edge stop rule. The earlier `teacher_zone_edge` label and “35/35” claim
+must not be used as proof of a universal rule.
 A fixed-stop experiment producing a different stop is a different policy result,
 not an exact teacher match. Report teacher-profile fidelity and owner-policy
 performance separately; do not alter source fixtures to reconcile them.

@@ -8,3 +8,4 @@ uvicorn
 httpx
 pyyaml
 requests
+Pillow

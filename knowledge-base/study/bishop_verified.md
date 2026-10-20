@@ -17,7 +17,7 @@ Times are seconds from video start. `[T]` means transcript; `[F]` means inspecte
   This is a targeted review, not a claim that every transcript sentence or every sheet was read.
 - Initial pictures inspected: bias-entries/sheet_001 (t0–480), bias1/sheet_002 (t500–980),
   entries5/sheet_001 (t0–480), entries5/sheet_003 (t1000–1480). Those references describe the
-  ORIGINAL 25-tile sheets; the replacement 4-tile indexes use different sheet numbers. Preserve the
+  ORIGINAL 25-tile sheets at commit`b4bb1d9`; the replacement 4-tile indexes use different sheet numbers. Preserve the
   timestamps as the stable citation. Drawings confirm the narrated cascade and distinct entry paths.
 - IMPORTANT: those original Bishop sheets are ~2100×1180, 25 tiles each (~420px per tile),
   sampled every20s. They are not the 1280px-tile re-extractions that exist for the core course.
@@ -91,7 +91,8 @@ claimed source instants.
 
 `extract_frames.py` now selects source frames without clock resampling, burns their actual
 source PTS, and records actual seconds in both index and timestamps.json. All Bishop outputs
-are being regenerated with the correction; see bishop_frame_manifest.json for completed scope.
+were regenerated with the correction: nine unique source videos,964frames244sheets; the duplicate
+Part3 asset folder mirrors its canonical source. See bishop_frame_manifest.json for completed scope.
 Retained core-course and plug-and-play sheets still have the old approximate output-clock
 labels until separately regenerated. Source videos are outside the repository.
 

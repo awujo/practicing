@@ -34,6 +34,11 @@ Observations are a JSON list with `pair`, `tf`, `mode`, timezone-aware ISO `time
 timezone-aware `setup_time` when the setup became available. Executed entries use `FILLED`;
 explicit evaluated no-trade decisions use `NO_TRADE`.
 
+This first checker supports executed trades and no-trade decisions. Teaching
+plans, pending orders and misses must retain their actual demonstrated state;
+they stay unresolved until a corresponding acceptance category is implemented.
+They must never be relabelled as filled trades to obtain a match.
+
 One filled observation must match all expected fields simultaneously, including
 timeframe and target. Tolerances must come from source measurement resolution.
 Empty/unresolved coverage or any mismatch returns nonzero. Never copy source
@@ -42,6 +47,12 @@ Teacher-demonstrated stops/targets and the aggressive operating preset remain
 separate; fixed 10–11-pip settings cannot replace different source stops.
 
 ## Evidence
+
+Frame sampling previously selected later video frames while burning earlier
+timestamps. The extractor now records actual source presentation times; corrected
+Bishop re-extraction is tracked in the frame manifest. Original course and
+plug-and-play sheets still require regeneration before their labels can support
+exact-time citations. Native timestamp-verified snapshots remain separate evidence.
 
 - [Strategy](knowledge-base/STRATEGY.md)
 - [Course ledger](knowledge-base/study/course_verified.md)

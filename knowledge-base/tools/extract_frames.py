@@ -48,11 +48,13 @@ Runs locally or in GitHub Actions; needs ffmpeg on PATH and nothing else.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 # "[3.4-7.9] Good afternoon" -- the format every transcript in
 # knowledge-base/videos/ uses.
@@ -113,19 +115,30 @@ def _hhmmss(t):
 
 
 def extract_interval(video, out_dir, interval, width, quality):
-    """One ffmpeg pass for the whole video, timestamp burned into each
-    frame. A tile in a contact sheet is useless without it -- you can see
-    that a chart is annotated but have no way to ask for that moment."""
+    """Select first source frame in each occupied interval bucket, preserving PTS."""
+    if interval <= 0:
+        raise ValueError("interval must be positive")
     os.makedirs(out_dir, exist_ok=True)
     label = (f"drawtext=fontfile={_font()}:" if _font() else "drawtext=")
-    label += (r"text='t\=%{eif\:n*" + str(interval) + r"\:d}s'"
+    label += (r"text='t\=%{pts\:flt}s'"
               ":x=12:y=12:fontsize=28:fontcolor=yellow:box=1:boxcolor=black@0.65")
-    vf = f"fps=1/{interval},scale={width}:-2,{label}"
-    subprocess.run(
-        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", video,
-         "-vf", vf, "-q:v", str(quality),
-         os.path.join(out_dir, "f_%05d.jpg")], check=True)
-    return sorted(f for f in os.listdir(out_dir) if f.startswith("f_"))
+    # fps rounds onto a new clock and may select a frame half an interval
+    # later than its output label. Keep the source presentation clock instead.
+    filters = ["setpts=PTS-STARTPTS", f"select='if(isnan(prev_selected_t),1,gt(floor(t/{interval}),floor(prev_selected_t/{interval})))'", "showinfo"]
+    if width:
+        filters.append(f"scale={width}:-2")
+    filters.append(label)
+    result = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-loglevel", "info", "-y", "-i", video,
+         "-vf", ",".join(filters), "-fps_mode", "vfr", "-q:v", str(quality),
+         os.path.join(out_dir, "f_%05d.jpg")], capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError(f"frame extraction failed: {result.stderr[-4000:]}")
+    times = [float(t) for t in re.findall(r"\bpts_time:([0-9.eE+\-]+)", result.stderr)]
+    files = sorted(f for f in os.listdir(out_dir) if f.startswith("f_"))
+    if len(files) != len(times):
+        raise RuntimeError(f"frame/time count mismatch: {len(files)} files vs {len(times)} timestamps")
+    return files, times
 
 
 def build_sheets(frame_dir, sheet_dir, cols, rows, tile_width, quality):
@@ -152,7 +165,7 @@ def write_index(path, name, times, cues, per_sheet=None):
         fh.write("|---:|---|---|\n")
         for t in times:
             said = text_at(cues, t, window=4.0).replace("|", "/")
-            fh.write(f"| {t} | {_hhmmss(t)} | {said} |\n")
+            fh.write(f"| {t:g} | {_hhmmss(t)} | {said} |\n")
 
 
 def main():
@@ -193,20 +206,29 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
 
     if args.mode == "sheets":
-        duration = probe_duration(args.video)
-        times = frame_times(duration, args.interval)
-        frame_dir = os.path.join(out_dir, "_frames")
-        files = extract_interval(args.video, frame_dir, args.interval,
-                                 args.width, args.quality)
-        # ffmpeg decides how many frames it actually produced; trust that
-        # over the arithmetic, or the index drifts against the sheets.
-        times = times[:len(files)]
-        sheets = build_sheets(frame_dir, os.path.join(out_dir, "sheets"),
-                              args.cols, args.rows, args.tile_width, args.quality)
-        write_index(os.path.join(out_dir, "index.md"), args.name, times, cues,
-                    per_sheet=args.cols * args.rows)
-        if not args.keep_frames:
-            shutil.rmtree(frame_dir)
+        # Stage all output so failed re-extraction preserves the previous bundle.
+        with tempfile.TemporaryDirectory(prefix=".extract-", dir=out_dir) as staging:
+            frame_dir = os.path.join(staging, "frames")
+            files, times = extract_interval(args.video, frame_dir, args.interval,
+                                           args.width, args.quality)
+            sheets = build_sheets(frame_dir, os.path.join(staging, "sheets"),
+                                  args.cols, args.rows, args.tile_width, args.quality)
+            write_index(os.path.join(staging, "index.md"), args.name, times, cues,
+                        per_sheet=args.cols * args.rows)
+            with open(os.path.join(staging, "timestamps.json"), "w") as fh:
+                json.dump({"selection": "first source frame in each occupied interval bucket; empty buckets skipped",
+                           "interval_seconds": args.interval, "actual_seconds": times}, fh)
+                fh.write("\n")
+            for name in ("sheets", "index.md", "timestamps.json"):
+                destination = os.path.join(out_dir, name)
+                if os.path.isdir(destination):
+                    shutil.rmtree(destination)
+                os.replace(os.path.join(staging, name), destination)
+            destination = os.path.join(out_dir, "_frames")
+            if os.path.isdir(destination):
+                shutil.rmtree(destination)
+            if args.keep_frames:
+                shutil.move(frame_dir, destination)
         print(f"{args.name}: {len(files)} frames -> {len(sheets)} sheets "
               f"({args.cols}x{args.rows}), index.md written")
     else:

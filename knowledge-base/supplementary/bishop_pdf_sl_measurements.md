@@ -1,5 +1,14 @@
 # Bishop chart-examples PDF -- page-by-page SL measurements
 
+> Historical extraction, superseded for exact prices. The 2026-10-20 direct PDF
+> review found multiple numeric errors; see
+> [the evidence ledger](../study/examples_evidence.md) and
+> [source observations](../../tests/bishop_examples.json). The PDF is now in
+> `source/bishops_trade_chart_examples.pdf`. A position-tool risk box necessarily
+> ends at its drawn stop; that alone is not independent proof of FVG boundaries
+> or a universal FVG-edge stop rule. Preserve the notes below as history, not
+> verified replay expectations.
+
 Raw measurements taken 2026-09-02 by reading all 60 pages of the
 chart-examples PDF as images (the PDF itself is NOT in this repo -- it
 was supplied directly in chat; see the process note at the end).
