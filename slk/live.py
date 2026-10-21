@@ -109,6 +109,7 @@ def to_row(s, status):
             "breakout_time": _dt(s.get("breakout_time")), "next_day": _flag(s.get("next_day")),
             "retrace": _flag(s.get("retrace")), "level_time": _dt(s.get("level_time")),
             "trend": s.get("trend"), "htf_trend": s.get("htf_trend"),
+            "_initial_target": s.get("initial_target"), "_preconfirm_extreme": s.get("preconfirm_extreme"),
             "level_src": s.get("level_src"), "level_candle": _dt(s.get("level_candle")),
             "chain": chain(s["story"], s["side"], s.get("htf_trend"))}
 
@@ -965,8 +966,10 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
     pl = ["\U0001f3af PLAN"]
     over = event in ("INVALIDATED", "ENDED_FLIP", "LINE_END")
     if r.get("no_trade") and r.get("no_trade_reason") == ERL_TAKEN:
-        pl.append(f"\u2022 NO_TRADE: a wick already took the external liquidity before the confirmation, so "
-                  f"{'selling' if sell else 'buying'} now is late. Wait for a pullback and a new story")
+        first = r.get("_initial_target")
+        initial = f"the initial liquidity target {fp(first)}" if first is not None else "the initial liquidity target"
+        pl.append(f"• NO_TRADE for entries: {initial} was reached before the {O} confirmation. "
+                  "The current entry rule requires a new confirmed story")
     elif r.get("no_trade"):
         pl.append(f"\u2022 NO_TRADE: {r.get('no_trade_reason') or 'filter'}")
     elif event == "TAPPED":
@@ -975,8 +978,11 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
         pl.append(f"• NO_TRADE: the {C} break has happened; wait for the {O} confirmation close {below} point B")
     if not over:
         if not done:
-            pl.append(f"\u2022 Target: {fp(r['target'])}" if r.get("target") is not None else
-                      "\u2022 Target: set when the story confirms")
+            replaced = (r.get("no_trade_reason") == ERL_TAKEN and r.get("_initial_target") is not None
+                        and r.get("target") is not None and r["_initial_target"] != r["target"])
+            label = "Replacement bias target" if replaced else "Target"
+            pl.append(f"• {label}: {fp(r['target'])}" if r.get("target") is not None else
+                      "• Target: set when the story confirms")
         pl.append(f"• Invalid if the {O} closes {above} {fp(r['invalidation'])}")
         if r.get("_closed_at_target"):
             pass

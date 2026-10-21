@@ -1,6 +1,9 @@
 """Continuation breaks after the external break (owner 2026-10-16, EURCHF 4h chart) + CONFIRMED announced even when
 the story ended between two runs + the target lies beyond the wick already traded (target_unswept)."""
 from datetime import datetime
+from pathlib import Path
+
+import pytest
 
 import pandas as pd
 
@@ -116,7 +119,7 @@ def test_same_break_on_two_stories_is_sent_once():
 def test_erl_taken_is_bias_but_no_trade():
     r = {**ROW, "no_trade": True, "no_trade_reason": live.ERL_TAKEN}
     assert live.filter_alerts([("CONFIRMED", r)]) == [("CONFIRMED", r)]  # still announced as bias
-    assert "selling now is late" in live.format_alert("CONFIRMED", r)
+    assert "initial liquidity target was reached before the D1 confirmation" in live.format_alert("CONFIRMED", r)
     assert live.entry_rows("EURCHF", None, [{**r, "_story": {}}], {}, finder=lambda *a, **k: 1 / 0) == []
 
 
@@ -156,3 +159,32 @@ def test_close_at_target_story_is_done():
                           pd.Timestamp("2026-10-15 22:00", tz="UTC"))[1] == []
     m = live.format_alert("TARGET_HIT", r)
     assert "this story is done" in m and "Story closed: no continuation alerts or entries" in m
+
+
+@pytest.mark.parametrize("side,first,target", [("SELL",1.578,1.57184),("BUY",.93,.94)])
+def test_replaced_target_warning_names_initial_level_without_unlocking_entries(side,first,target):
+    r={**ROW,"side":side,"target":target,"_initial_target":first,"no_trade":True,"no_trade_reason":live.ERL_TAKEN}
+    text=live.format_alert("CONTINUATION",r)
+    assert "initial liquidity target "+live.instruments.fmt(r['pair'],first) in text
+    assert "Replacement bias target: "+live.instruments.fmt(r['pair'],target) in text
+    assert "current entry rule requires a new confirmed story" in text
+    assert live.entry_rows(r['pair'],None,[{**r,"_story":{}}],{},finder=lambda *a,**k:1/0)==[]
+
+
+
+def test_eurcad_retargeted_bias_preserves_original_liquidity_evidence():
+    from slk.story import find_stories
+    path=Path(__file__).resolve().parents[1]/'data/debug/EURCAD_H1_ctrader.csv.gz'
+    h=pd.read_csv(path,index_col=0,parse_dates=True);h.index=pd.to_datetime(h.index,utc=True)
+    known=pd.Timestamp('2026-10-20T21:00Z')
+    h=h[h.index+pd.Timedelta(hours=1)<=known]
+    stories=find_stories('EURCAD',live.drop_forming(h,'D',known),'D',DEFAULT)
+    raw=next(s for s in stories if s['tap_time']=='2026-10-18 21:00')
+    assert raw['initial_target']==pytest.approx(1.57728)
+    assert raw['preconfirm_extreme']==pytest.approx(1.57404)
+    assert raw['target']==pytest.approx(1.57184) and raw['erl_taken']
+    assert raw['target']<raw['preconfirm_extreme']<raw['initial_target']
+    row=live.to_row(raw,'CONFIRMED');row.update(no_trade=True,no_trade_reason=live.ERL_TAKEN)
+    text=live.format_alert('CONFIRMED',row)
+    assert 'initial liquidity target 1.57728' in text
+    assert 'Replacement bias target: 1.57184' in text

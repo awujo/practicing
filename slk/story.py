@@ -614,6 +614,7 @@ class _Ctx:
         mode = "kl" if ov else "erl" if rule == "cadjpy" else ("leg" if cfg["target_mode"] == "leg" else "nearest")
         leg = None if ov else self.leg_extreme(lv, bar)
         target = self.target(sell, closed_o, t_conf, ref, mode, leg)
+        initial_target = target  # retain provenance if target_unswept replaces this level
         erl_taken = target is not None and ((sw <= target) if sell else (sw >= target))
         if erl_taken and cfg["target_unswept"] == "skip":
             return None
@@ -668,7 +669,7 @@ class _Ctx:
             "confirm_time": str(self.c_end[conf_k])[:16], "entry_ref": ref, "target": target, "stop": stop,
             "R": round(R, 2), "outcome": out, "result_R": round(res, 2), "kevin_outcome": inv,
             "stop_pips": round(risk / P, 1), "break_kind": kind, "rule": rule, "_busy": int(done_o),
-            "retrace": None if kind == "none" else self.retrace(sell, B, brk), "erl_taken": bool(erl_taken),
+            "retrace": None if kind == "none" else self.retrace(sell, B, brk), "erl_taken": bool(erl_taken), "initial_target": initial_target, "preconfirm_extreme": sw,
         }
         if inv == "ended_flip":
             _, fo, f, fB = fl

@@ -309,7 +309,7 @@ def test_rules_off_equal_v05_engine():
     off = {**G.PRE_EXAMPLES, "most_recent_level": False, "flip_end": False, "htf_targets": False,
            "overlap_rule": False, "alignment_start": False, "cadjpy_exception": False}
     gold = json.load(open(G.PATH_V05))
-    new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time", "level_src", "level_candle", "erl_taken")
+    new = ("rule", "end_reason", "end_time", "next_day", "retrace", "level_time", "level_src", "level_candle", "erl_taken", "initial_target", "preconfirm_extreme")
     for i in (0, 2, 3):
         pair, seed, hours, cfg = G.CASES[i]
         h1 = G.data(pair, seed, hours)

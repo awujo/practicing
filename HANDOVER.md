@@ -31,7 +31,8 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-20)
+## Status (2026-10-21)
+- [x] EURCAD NO_TRADE/target diagnostic: initial1.57728 taken before confirmation; displayed1.57184 is replacement. Preserve target provenance and label alert warning/replacement clearly, without changing entry eligibility. Read research/diagnostics/EURCAD_2026-10-21.md.
 - [ ] **Trend entries / Kevin gap / lower-TF discovery** (owner 2026-10-20): plan + results + next steps in
   `research/TREND_LTF_PLAN.md` (start there to continue). Code: slk/trend_study.py, ltf_features.py,
   ltf_discovery.py, kevin_gap.py; research-only story TF `H4` (H4 -> H1) in slk/story.py STORIES. 8-pair local
@@ -406,3 +407,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-20: `slk.leg_backtest` (backtest.yml step, reports/LEG_REPORT.md + leg_trades.csv): D stories traded with
   H4 swing stops (6/12 bars, min width) vs the tap-wick stop; and the 1st / every H4 continuation break after the
   target (entry H4 close, next target by the native ladder rule). 1.2 pip cost, stop first, 20-day cap.
+
+- 2026-10-21: Checked Claude pushes (close_at_target, leg/target research, trend studies), fast-forwarded branch and exported fresh EURCAD cTrader history. Reproduced owner story at 20Oct21UTC: initialtarget1.57728, preconfirmationlow1.57404, replacement1.57184. Fixed contradictory alert wording using label-only metadata. Existing erl_taken_no_trade rule remains; no live strategy change. Added BUY/SELL formatting and real EURCAD regressions; golden comparisons ignore only new metadata fields.
+
+- Validation for EURCAD warning fix: 57 targeted live/continuation/bias/golden/target tests passed, including the real exported EURCAD case. Strategy outcomes unchanged; only target provenance and alert wording added.
