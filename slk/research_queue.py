@@ -76,7 +76,7 @@ def main(existing=''):
         token = os.environ['GITHUB_RUN_ID'] + '-' + str(len(records))
         gh('workflow', 'run', 'research-study.yml', '--repo', repo, '--ref', branch,
            '-f', 'pairs=' + ','.join(batch), '-f', 'limit=4', '-f', 'offset=0',
-           '-f', 'queue_token=' + token, '-F', 'publish=true')
+           '-f', 'queue_token=' + token, '-F', 'publish=false')
         run_id = None
         for _ in range(18):
             runs = json.loads(gh('run', 'list', '--repo', repo, '--workflow',

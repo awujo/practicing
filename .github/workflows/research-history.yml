@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       pairs: {description: "CSV from the 28 frozen pairs; empty = all", default: ""}
+      publish: {description: "Explicitly publish results into MySQL after study (uses user database space)", type: boolean, default: false}
 permissions:
   contents: read
   actions: read
@@ -83,7 +84,7 @@ jobs:
           retention-days: 7
   finalize:
     needs: [plan, study]
-    if: ${{ !cancelled() && needs.study.result == 'success' }}
+    if: ${{ !cancelled() && inputs.publish && needs.study.result == 'success' }}
     permissions:
       contents: read
       actions: write

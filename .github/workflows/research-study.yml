@@ -9,7 +9,7 @@ on:
       limit: {description: "Pairs in this batch (1..4)", default: "2"}
       resume_run_id: {description: "Optional prior study run ID: reuse its frozen input and ledger", default: ""}
       fresh_replay: {description: "Reuse frozen inputs but discard old ledgers (after code changes)", type: boolean, default: false}
-      publish: {description: "Persist research-only records in existing MySQL", type: boolean, default: true}
+      publish: {description: "Explicitly persist research-only records in MySQL (uses user database space)", type: boolean, default: false}
 permissions:
   contents: read
   actions: read
