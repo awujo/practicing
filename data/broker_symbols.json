@@ -1,0 +1,1246 @@
+{
+  "provider": "IC Markets cTrader",
+  "environment": "demo",
+  "updated_at": "2026-10-22T08:13:42.528075+00:00",
+  "symbols": [
+    {
+      "key": "1000XPEPE",
+      "name": "1000xPEPE",
+      "symbol_id": 10220,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "1000XSHIB",
+      "name": "1000xSHIB",
+      "symbol_id": 10211,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "AAVEUSD",
+      "name": "AAVEUSD",
+      "symbol_id": 10119,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "ADAUSD",
+      "name": "ADAUSD",
+      "symbol_id": 10120,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "ASTERUSD",
+      "name": "ASTERUSD",
+      "symbol_id": 10218,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "AUDCAD",
+      "name": "AUDCAD",
+      "symbol_id": 18,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "AUDCHF",
+      "name": "AUDCHF",
+      "symbol_id": 23,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "AUDJPY",
+      "name": "AUDJPY",
+      "symbol_id": 11,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "AUDNZD",
+      "name": "AUDNZD",
+      "symbol_id": 20,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "AUDSGD",
+      "name": "AUDSGD",
+      "symbol_id": 1001,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "AUDUSD",
+      "name": "AUDUSD",
+      "symbol_id": 5,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "AUS200",
+      "name": "AUS200",
+      "symbol_id": 10000,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "AVXUSD",
+      "name": "AVXUSD",
+      "symbol_id": 10121,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "BCHUSD",
+      "name": "BCHUSD",
+      "symbol_id": 10028,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "BNBUSD",
+      "name": "BNBUSD",
+      "symbol_id": 10128,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "BTCUSD",
+      "name": "BTCUSD",
+      "symbol_id": 10026,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "CA60",
+      "name": "CA60",
+      "symbol_id": 10033,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "CADCHF",
+      "name": "CADCHF",
+      "symbol_id": 27,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "CADJPY",
+      "name": "CADJPY",
+      "symbol_id": 15,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "CHFJPY",
+      "name": "CHFJPY",
+      "symbol_id": 13,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "CHFSGD",
+      "name": "CHFSGD",
+      "symbol_id": 1002,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "CHINA50",
+      "name": "CHINA50",
+      "symbol_id": 10025,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "CHINAH",
+      "name": "CHINAH",
+      "symbol_id": 10039,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "DE30",
+      "name": "DE30",
+      "symbol_id": 10003,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "DE40",
+      "name": "DE40",
+      "symbol_id": 10046,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "DOGEUSD",
+      "name": "DOGEUSD",
+      "symbol_id": 10122,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "DOTUSD",
+      "name": "DOTUSD",
+      "symbol_id": 10129,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "ENAUSD",
+      "name": "ENAUSD",
+      "symbol_id": 10226,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "ES35",
+      "name": "ES35",
+      "symbol_id": 10009,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "ETCUSD",
+      "name": "ETCUSD",
+      "symbol_id": 10112,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "ETHUSD",
+      "name": "ETHUSD",
+      "symbol_id": 10029,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "EURAUD",
+      "name": "EURAUD",
+      "symbol_id": 14,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURCAD",
+      "name": "EURCAD",
+      "symbol_id": 17,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURCHF",
+      "name": "EURCHF",
+      "symbol_id": 10,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURDKK",
+      "name": "EURDKK",
+      "symbol_id": 1003,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURGBP",
+      "name": "EURGBP",
+      "symbol_id": 9,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURHKD",
+      "name": "EURHKD",
+      "symbol_id": 1004,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURJPY",
+      "name": "EURJPY",
+      "symbol_id": 3,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "EURNOK",
+      "name": "EURNOK",
+      "symbol_id": 33,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURNZD",
+      "name": "EURNZD",
+      "symbol_id": 26,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURPLN",
+      "name": "EURPLN",
+      "symbol_id": 1005,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURSEK",
+      "name": "EURSEK",
+      "symbol_id": 31,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURSGD",
+      "name": "EURSGD",
+      "symbol_id": 1006,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURTRY",
+      "name": "EURTRY",
+      "symbol_id": 1007,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURUSD",
+      "name": "EURUSD",
+      "symbol_id": 1,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "EURZAR",
+      "name": "EURZAR",
+      "symbol_id": 1008,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "F40",
+      "name": "F40",
+      "symbol_id": 10002,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "FILUSD",
+      "name": "FILUSD",
+      "symbol_id": 10111,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "FLOWUSD",
+      "name": "FLOWUSD",
+      "symbol_id": 10110,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "GALAUSD",
+      "name": "GALAUSD",
+      "symbol_id": 10070,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "GBPAUD",
+      "name": "GBPAUD",
+      "symbol_id": 16,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPCAD",
+      "name": "GBPCAD",
+      "symbol_id": 19,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPCHF",
+      "name": "GBPCHF",
+      "symbol_id": 40,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPDKK",
+      "name": "GBPDKK",
+      "symbol_id": 1009,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPJPY",
+      "name": "GBPJPY",
+      "symbol_id": 7,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "GBPNOK",
+      "name": "GBPNOK",
+      "symbol_id": 37,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPNZD",
+      "name": "GBPNZD",
+      "symbol_id": 25,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPSEK",
+      "name": "GBPSEK",
+      "symbol_id": 1010,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPSGD",
+      "name": "GBPSGD",
+      "symbol_id": 32,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPTRY",
+      "name": "GBPTRY",
+      "symbol_id": 10031,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GBPUSD",
+      "name": "GBPUSD",
+      "symbol_id": 2,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "GCG26",
+      "name": "GCG26",
+      "symbol_id": 10134,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "GCJ26",
+      "name": "GCJ26",
+      "symbol_id": 10135,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "GCM25",
+      "name": "GCM25",
+      "symbol_id": 10052,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "GCM26",
+      "name": "GCM26",
+      "symbol_id": 10136,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "GCQ26",
+      "name": "GCQ26",
+      "symbol_id": 10137,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "GLMUSD",
+      "name": "GLMUSD",
+      "symbol_id": 10123,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "GRTUSD",
+      "name": "GRTUSD",
+      "symbol_id": 10109,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "HBARUSD",
+      "name": "HBARUSD",
+      "symbol_id": 10071,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "HK50",
+      "name": "HK50",
+      "symbol_id": 10004,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "HYPEUSD",
+      "name": "HYPEUSD",
+      "symbol_id": 10108,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "ICPUSD",
+      "name": "ICPUSD",
+      "symbol_id": 10072,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "IMXUSD",
+      "name": "IMXUSD",
+      "symbol_id": 10107,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "INJUSD",
+      "name": "INJUSD",
+      "symbol_id": 10073,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "IOTAUSD",
+      "name": "IOTAUSD",
+      "symbol_id": 10106,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "IPUSD",
+      "name": "IPUSD",
+      "symbol_id": 10074,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "IT40",
+      "name": "IT40",
+      "symbol_id": 10005,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "JP225",
+      "name": "JP225",
+      "symbol_id": 10006,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "JTOUSD",
+      "name": "JTOUSD",
+      "symbol_id": 10105,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "JUPUSD",
+      "name": "JUPUSD",
+      "symbol_id": 10075,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "KAIAUSD",
+      "name": "KAIAUSD",
+      "symbol_id": 10204,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "KSMUSD",
+      "name": "KSMUSD",
+      "symbol_id": 10124,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "LDOUSD",
+      "name": "LDOUSD",
+      "symbol_id": 10104,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "LNKUSD",
+      "name": "LNKUSD",
+      "symbol_id": 10130,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "LTCUSD",
+      "name": "LTCUSD",
+      "symbol_id": 10030,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "MANAUSD",
+      "name": "MANAUSD",
+      "symbol_id": 10076,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "MORPHOUSD",
+      "name": "MORPHOUSD",
+      "symbol_id": 10103,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "MUSD",
+      "name": "MUSD",
+      "symbol_id": 10205,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "MYXUSD",
+      "name": "MYXUSD",
+      "symbol_id": 10215,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "MIDDE50",
+      "name": "MidDE50",
+      "symbol_id": 10045,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "MIDDE60",
+      "name": "MidDE60",
+      "symbol_id": 10035,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "NEARUSD",
+      "name": "NEARUSD",
+      "symbol_id": 10077,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "NETH25",
+      "name": "NETH25",
+      "symbol_id": 10036,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "NOKJPY",
+      "name": "NOKJPY",
+      "symbol_id": 1014,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "NOKSEK",
+      "name": "NOKSEK",
+      "symbol_id": 1011,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "NOR25",
+      "name": "NOR25",
+      "symbol_id": 10040,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "NZDCAD",
+      "name": "NZDCAD",
+      "symbol_id": 30,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "NZDCHF",
+      "name": "NZDCHF",
+      "symbol_id": 39,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "NZDJPY",
+      "name": "NZDJPY",
+      "symbol_id": 21,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "NZDUSD",
+      "name": "NZDUSD",
+      "symbol_id": 12,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "ONDOUSD",
+      "name": "ONDOUSD",
+      "symbol_id": 10102,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "OPUSD",
+      "name": "OPUSD",
+      "symbol_id": 10078,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "PENDLEUSD",
+      "name": "PENDLEUSD",
+      "symbol_id": 10207,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "PENGUUSD",
+      "name": "PENGUUSD",
+      "symbol_id": 10101,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "POLUSD",
+      "name": "POLUSD",
+      "symbol_id": 10131,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "PYTHUSD",
+      "name": "PYTHUSD",
+      "symbol_id": 10099,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "QNTUSD",
+      "name": "QNTUSD",
+      "symbol_id": 10208,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "RENDERUSD",
+      "name": "RENDERUSD",
+      "symbol_id": 10098,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "SA40",
+      "name": "SA40",
+      "symbol_id": 10041,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "SANDUSD",
+      "name": "SANDUSD",
+      "symbol_id": 10082,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SE30",
+      "name": "SE30",
+      "symbol_id": 10042,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "SEIUSD",
+      "name": "SEIUSD",
+      "symbol_id": 10227,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SEKJPY",
+      "name": "SEKJPY",
+      "symbol_id": 1015,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "SGDJPY",
+      "name": "SGDJPY",
+      "symbol_id": 1016,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "SOLUSD",
+      "name": "SOLUSD",
+      "symbol_id": 10132,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SPXUSD",
+      "name": "SPXUSD",
+      "symbol_id": 10083,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "STOXX50",
+      "name": "STOXX50",
+      "symbol_id": 10001,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "STRKUSD",
+      "name": "STRKUSD",
+      "symbol_id": 10221,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "STXUSD",
+      "name": "STXUSD",
+      "symbol_id": 10096,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SUIUSD",
+      "name": "SUIUSD",
+      "symbol_id": 10084,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SUSD",
+      "name": "SUSD",
+      "symbol_id": 10095,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "SWI20",
+      "name": "SWI20",
+      "symbol_id": 10037,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "SYRUPUSD",
+      "name": "SYRUPUSD",
+      "symbol_id": 10085,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TAOUSD",
+      "name": "TAOUSD",
+      "symbol_id": 10094,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "THETAUSD",
+      "name": "THETAUSD",
+      "symbol_id": 10086,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TIAUSD",
+      "name": "TIAUSD",
+      "symbol_id": 10093,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TONUSD",
+      "name": "TONUSD",
+      "symbol_id": 10087,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TRXUSD",
+      "name": "TRXUSD",
+      "symbol_id": 10231,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TWTUSD",
+      "name": "TWTUSD",
+      "symbol_id": 10214,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "TECDE30",
+      "name": "TecDE30",
+      "symbol_id": 10034,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "UK100",
+      "name": "UK100",
+      "symbol_id": 10011,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "UNIUSD",
+      "name": "UNIUSD",
+      "symbol_id": 10125,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "US2000",
+      "name": "US2000",
+      "symbol_id": 10012,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "US30",
+      "name": "US30",
+      "symbol_id": 10015,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "US500",
+      "name": "US500",
+      "symbol_id": 10013,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "USDCAD",
+      "name": "USDCAD",
+      "symbol_id": 8,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDCHF",
+      "name": "USDCHF",
+      "symbol_id": 6,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDCNH",
+      "name": "USDCNH",
+      "symbol_id": 1020,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDCZK",
+      "name": "USDCZK",
+      "symbol_id": 1018,
+      "digits": 4,
+      "pip_position": 3
+    },
+    {
+      "key": "USDDKK",
+      "name": "USDDKK",
+      "symbol_id": 36,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDHKD",
+      "name": "USDHKD",
+      "symbol_id": 1000,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "USDHUF",
+      "name": "USDHUF",
+      "symbol_id": 1017,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "USDJPY",
+      "name": "USDJPY",
+      "symbol_id": 4,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "USDMXN",
+      "name": "USDMXN",
+      "symbol_id": 24,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDNOK",
+      "name": "USDNOK",
+      "symbol_id": 22,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDPLN",
+      "name": "USDPLN",
+      "symbol_id": 35,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDSEK",
+      "name": "USDSEK",
+      "symbol_id": 29,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDSGD",
+      "name": "USDSGD",
+      "symbol_id": 28,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDTHB",
+      "name": "USDTHB",
+      "symbol_id": 1026,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "USDTRY",
+      "name": "USDTRY",
+      "symbol_id": 1012,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USDZAR",
+      "name": "USDZAR",
+      "symbol_id": 1013,
+      "digits": 5,
+      "pip_position": 4
+    },
+    {
+      "key": "USTEC",
+      "name": "USTEC",
+      "symbol_id": 10014,
+      "digits": 2,
+      "pip_position": 1
+    },
+    {
+      "key": "VETUSD",
+      "name": "VETUSD",
+      "symbol_id": 10203,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "VIRTUALUSD",
+      "name": "VIRTUALUSD",
+      "symbol_id": 10088,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "WIFUSD",
+      "name": "WIFUSD",
+      "symbol_id": 10089,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "WLDUSD",
+      "name": "WLDUSD",
+      "symbol_id": 10090,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "WLFIUSD",
+      "name": "WLFIUSD",
+      "symbol_id": 10213,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "XAGAUD",
+      "name": "XAGAUD",
+      "symbol_id": 10050,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "XAGEUR",
+      "name": "XAGEUR",
+      "symbol_id": 44,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "XAGUSD",
+      "name": "XAGUSD",
+      "symbol_id": 42,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "XAUAUD",
+      "name": "XAUAUD",
+      "symbol_id": 10032,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XAUCHF",
+      "name": "XAUCHF",
+      "symbol_id": 10047,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XAUEUR",
+      "name": "XAUEUR",
+      "symbol_id": 43,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XAUGBP",
+      "name": "XAUGBP",
+      "symbol_id": 10048,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XAUJPY",
+      "name": "XAUJPY",
+      "symbol_id": 10049,
+      "digits": 0,
+      "pip_position": 0
+    },
+    {
+      "key": "XAUUSD",
+      "name": "XAUUSD",
+      "symbol_id": 41,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XBRUSD",
+      "name": "XBRUSD",
+      "symbol_id": 10018,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "XLMUSD",
+      "name": "XLMUSD",
+      "symbol_id": 10133,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "XMRUSD",
+      "name": "XMRUSD",
+      "symbol_id": 10229,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XNGUSD",
+      "name": "XNGUSD",
+      "symbol_id": 10020,
+      "digits": 3,
+      "pip_position": 3
+    },
+    {
+      "key": "XPDUSD",
+      "name": "XPDUSD",
+      "symbol_id": 10016,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XPLUSD",
+      "name": "XPLUSD",
+      "symbol_id": 10210,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "XPTUSD",
+      "name": "XPTUSD",
+      "symbol_id": 10017,
+      "digits": 2,
+      "pip_position": 2
+    },
+    {
+      "key": "XRPUSD",
+      "name": "XRPUSD",
+      "symbol_id": 10126,
+      "digits": 4,
+      "pip_position": 4
+    },
+    {
+      "key": "XTIUSD",
+      "name": "XTIUSD",
+      "symbol_id": 10019,
+      "digits": 3,
+      "pip_position": 2
+    },
+    {
+      "key": "XTZUSD",
+      "name": "XTZUSD",
+      "symbol_id": 10127,
+      "digits": 5,
+      "pip_position": 5
+    },
+    {
+      "key": "ZECUSD",
+      "name": "ZECUSD",
+      "symbol_id": 10228,
+      "digits": 2,
+      "pip_position": 2
+    }
+  ]
+}

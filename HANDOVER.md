@@ -419,3 +419,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-22: Added broker-symbol search to keep expanded settings usable on phones. Catalogue refresh workflow also records its publication in this log.
 
 - 2026-10-22: First catalogue export authenticated and completed; publication hit ignored data/ path. Fixed publication to explicitly stage only the generated catalogue file.
+
+- Broker catalogue refresh: exported enabled cTrader account symbols; saved selections and live strategy unchanged.
