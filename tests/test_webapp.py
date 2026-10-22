@@ -210,7 +210,10 @@ def test_settings_schema_endpoint(client):
     by = {s["name"]: s for s in j["settings"]}
     assert "confirm_break" not in by  # no setting may change what confirms the bias (external break only)
     assert "Internal break = continuation entries only" in by["continuation_entries"]["help"]
-    assert by["max_wait"]["min"] == 1 and by["max_wait"]["max"] == 20 and len(by["pairs"]["choices"]) == 28
+    if "broker_catalogue" in j:
+        assert j["broker_catalogue"]["count"] == len(by["pairs"]["choices"])
+        assert {"USTEC", "US500", "UK100"} <= set(by["pairs"]["choices"])
+    assert by["max_wait"]["min"] == 1 and by["max_wait"]["max"] == 20 and set(webapp.S.PAIRS) <= set(by["pairs"]["choices"])
     assert client.get("/api/settings/schema", headers=hdr(make_init_data(tamper=True))).status_code == 403
 
 

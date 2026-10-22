@@ -421,3 +421,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-22: First catalogue export authenticated and completed; publication hit ignored data/ path. Fixed publication to explicitly stage only the generated catalogue file.
 
 - Broker catalogue refresh: exported enabled cTrader account symbols; saved selections and live strategy unchanged.
+
+- 2026-10-22: Broker refresh run39746126675 succeeded, exporting177 account symbols (USTEC/US500/UK100 confirmed). Updated former fixed28-choice UI regression to check catalogue count and preserved FX choices; web/settings suite passes with actual catalogue installed.
