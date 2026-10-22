@@ -121,3 +121,16 @@ def test_bad_symbol_never_gets_fx_fallback(tmp_path,monkeypatch):
     monkeypatch.setattr(deriv,'Feed',Missing)
     monkeypatch.setattr(store,'_update_standard_all',lambda *a,**kw:pytest.fail('no FX fallback'))
     assert 'DVBAD' in store.update_all(['DVBAD'],pd.Timestamp('2026-10-22T10:03Z'),days=1,root=str(tmp_path))
+
+
+def test_gap_across_final_and_current_month_rejected_and_retried(tmp_path):
+    class Gap(FakeFeed):
+        def bars(self,pair,lo,hi):
+            rows=super().bars(pair,lo,hi)
+            return rows[1:] if pd.Timestamp(lo,unit='s',tz='UTC').month==10 else rows
+    with pytest.raises(RuntimeError,match='hourly gap'):
+        store.update('DV1HZ100V',pd.Timestamp('2026-10-22T10:03Z'),days=45,root=str(tmp_path),feed=Gap())
+    p=store.Pair('DV1HZ100V',str(tmp_path))
+    assert '2026-09' not in p.done_m
+    repaired=store.update('DV1HZ100V',pd.Timestamp('2026-10-22T10:03Z'),days=45,root=str(tmp_path),feed=FakeFeed())
+    assert (repaired.df.index.to_series().diff().dropna()==3600).all()

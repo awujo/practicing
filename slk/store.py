@@ -475,6 +475,18 @@ def update(pair, now=None, since=None, days=None, root=None, source=None, feed=N
                 p.update_ctrader(feed,now,since)
                 sym=feed.info(pair)
                 latest=int(now.floor("h").timestamp())-3600
+                if sym.get("market") in ("synthetic_index","cryptocurrency") and len(p.df)>1:
+                    gaps=np.flatnonzero(np.diff(p.df.index.to_numpy())!=3600)
+                    if len(gaps):
+                        first=pd.Timestamp(int(p.df.index[gaps[0]]),unit="s",tz="UTC")
+                        month=f"{first.year}-{first.month:02d}"
+                        cutoff=int(pd.Timestamp(first.year,first.month,1,tz="UTC").timestamp())
+                        # Drop only the repair suffix, including current-month data whose
+                        # rolling refresh otherwise would never reach the old hole.
+                        p.df=p.df[p.df.index<cutoff]
+                        p.done_m={key for key in p.done_m if key<month}
+                        p.changed=True
+                        raise RuntimeError("Deriv continuous-market cache has an hourly gap; queued missing months for repair")
                 if sym.get("market") in ("synthetic_index","cryptocurrency") or sym.get("exchange_is_open"):
                     if p.last_time() is None or p.last_time()<latest:
                         raise RuntimeError("Deriv latest closed H1 is unavailable; skipping stale scan")
