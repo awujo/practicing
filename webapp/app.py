@@ -12,10 +12,12 @@ from urllib.parse import parse_qsl
 from fastapi import Body, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 import db  # also puts the repo root on sys.path
 from slk import settings as S  # stdlib only (no pandas)
 from slk import standing  # stdlib only
+from slk import tenancy
 from slk import terms as T  # stdlib only
 
 log = logging.getLogger("slk.webapp")
@@ -49,29 +51,36 @@ def validate_init_data(init_data: str, bot_token: str, allowed_user_id: str, max
     except ValueError:
         raise ValueError("bad auth_date") from None
     now = time.time() if now is None else now
-    if auth_date <= 0 or now - auth_date > max_age:
+    if auth_date <= 0 or now - auth_date > max_age or auth_date > now + 60:
         raise ValueError("expired")
     try:
         user = json.loads(data.get("user", "{}"))
     except json.JSONDecodeError:
         raise ValueError("bad user") from None
-    if str(user.get("id")) != str(allowed_user_id).strip():
+    if allowed_user_id != "*" and str(user.get("id")) != str(allowed_user_id).strip():
         raise ValueError("user not allowed")
+    if not isinstance(user.get("id"), int) or isinstance(user["id"], bool) or user["id"] <= 0:
+        raise ValueError("invalid user id")
     return user
 
 
-def require_user(request: Request) -> dict:
+async def require_user(request: Request) -> dict:
     init_data = request.headers.get("X-Telegram-Init-Data", "")
     if not init_data:
         auth = request.headers.get("Authorization", "")
         if auth.lower().startswith("tma "):
             init_data = auth[4:]
     try:
-        return validate_init_data(
-            init_data, os.environ.get("TELEGRAM_BOT_TOKEN", ""), os.environ.get("TELEGRAM_CHAT_ID", "")
-        )
+        user = validate_init_data(init_data, os.environ.get("TELEGRAM_BOT_TOKEN", ""), "*")
     except ValueError as e:
         raise HTTPException(status_code=403, detail=f"forbidden: {e}") from None
+    if os.environ.get("DATABASE_URL"):
+        # Registration is global; all subsequent DB operations run inside the authenticated scope.
+        with tenancy.scope(None):
+            await run_in_threadpool(_db, db.execute, "INSERT IGNORE INTO app_users (user_id) VALUES (%s)", (user["id"],))
+    with tenancy.scope(user["id"]):
+        yield user
+
 
 
 # ---------------------------------------------------------------- app
@@ -102,7 +111,7 @@ def healthz():
 @app.get("/version")
 def version():
     return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown"),
-            "settings_validation": "flip-age-bounds-v1"}
+            "settings_validation": "flip-age-bounds-v1", "multiuser": True}
 
 
 @app.get("/")
@@ -134,7 +143,9 @@ def me(user: dict = Depends(require_user)):
 
 @app.get("/api/bias")
 def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 200, user=Depends(require_user)):
-    where, args = [], []
+    vals = S.load(_db(db.get_settings))
+    pairs = vals["pairs"] or S.PAIRS
+    where, args = ["pair IN (" + ",".join(["%s"] * len(pairs)) + ")"], list(pairs)
     if pair:
         where.append("pair = %s")
         args.append(pair.upper())
@@ -221,6 +232,12 @@ def send_eligible(user=Depends(require_user)):
             text = ""
         text += line + "\n"
     chunks.append(text)
+    cooldown = int(time.time())
+    _db(db.execute, "INSERT IGNORE INTO settings (k,v) VALUES (%s,%s)", ("digest_last_sent", "0"))
+    claimed = _db(db.execute, "UPDATE settings SET v=%s WHERE k=%s AND CAST(v AS UNSIGNED) < %s",
+                  (str(cooldown), "digest_last_sent", cooldown - 30))
+    if not claimed:
+        raise HTTPException(429, "Please wait 30 seconds before requesting another digest.")
     for text in chunks:
         send_private_digest(user["id"], text)
     return {"ok": True, "count": len(rows), "scan_at": stamp.isoformat()}
@@ -236,7 +253,8 @@ def bias_state(user=Depends(require_user)):
                + ", ".join(["%s"] * len(watched)) + ")", watched)
     by_pair, trends = {}, {}
     for r in rows:
-        by_pair.setdefault(r["pair"], []).append(r)
+        if r["pair"] in (vals["pairs"] or S.PAIRS):
+            by_pair.setdefault(r["pair"], []).append(r)
     try:  # structure trend per pair/TF from the last live run (table added 2026-10-15)
         for t in _db(db.query, "SELECT pair, story, trend FROM tf_state", ()):
             trends[(t["pair"], t["story"])] = t["trend"]
@@ -332,8 +350,14 @@ def settings_schema(user=Depends(require_user)):
         for field in schema["settings"]:
             if field["name"] == "pairs":
                 field["choices"] = choices
-                field["help"] = "IC Markets account symbols. Select only markets you want scanned. Empty = default 28 FX pairs."
+                field["help"] = ("IC Markets account symbols. Select markets you want scanned. "
+                                 + ("Empty = default 28 FX pairs." if user["id"] == tenancy.owner_id() else "Up to 30 markets. Empty restores your three starter pairs."))
         schema["broker_catalogue"] = {"updated_at": data["updated_at"], "count": len(choices)}
+    if user["id"] != tenancy.owner_id():
+        for field in schema["settings"]:
+            if field["name"] == "auto_trade":
+                field["choices"] = ["off"]
+                field["help"] = "Alerts and paper tracking only. Broker trading is unavailable for this account."
     return schema
 
 
@@ -352,6 +376,14 @@ def clean_settings(body) -> dict:
 @app.post("/api/settings")
 def post_settings(body: dict = Body(...), user=Depends(require_user)):
     changes = clean_settings(body)
+    if user["id"] != tenancy.owner_id():
+        if changes.get("auto_trade", "off") != "off":
+            raise HTTPException(422, "Broker trading is unavailable for this account; leave auto_trade off.")
+        if "pairs" in changes and len(changes["pairs"].split(",")) > 30:
+            raise HTTPException(422, "Select up to 30 markets per watchlist.")
+        # Empty = no surprise expansion to the legacy owner's 28-market watchlist.
+        if "pairs" in changes and not changes["pairs"]:
+            changes["pairs"] = tenancy.STARTER["pairs"]
     for k, v in changes.items():
         _db(db.set_setting, k, v)
     return get_settings(user)
@@ -359,6 +391,8 @@ def post_settings(body: dict = Body(...), user=Depends(require_user)):
 
 @app.post("/api/entries/{entry_id}/approve")
 def approve(entry_id: int, user=Depends(require_user)):
+    if user["id"] != tenancy.owner_id():
+        raise HTTPException(403, "Broker order approval is available only to the account owner.")
     st = S.load(_db(db.get_settings))  # invalid stored values -> defaults (off)
     if st["auto_trade"] != "confirm":
         raise HTTPException(409, "auto_trade is not 'confirm'")

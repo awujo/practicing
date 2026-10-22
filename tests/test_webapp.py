@@ -76,10 +76,10 @@ def test_bias_shows_only_watched_stories(client):
     client.store["stories"] = "D,W"
     client.get("/api/bias", headers=hdr(make_init_data()))
     sql, args = [c for c in client.calls if "FROM bias" in c[0]][-1]
-    assert "story IN (%s, %s)" in sql and args[:2] == ["D", "W"]
+    assert "story IN (%s, %s)" in sql and args[len(webapp.S.PAIRS):len(webapp.S.PAIRS)+2] == ["D", "W"]
     client.get("/api/bias?story=M", headers=hdr(make_init_data()))
     sql, args = [c for c in client.calls if "FROM bias" in c[0]][-1]
-    assert "story = %s" in sql and "story IN" not in sql and args[0] == "M"
+    assert "story = %s" in sql and "story IN" not in sql and args[len(webapp.S.PAIRS)] == "M"
 
 
 def test_bias_state_keeps_bias_after_target(client, monkeypatch):
@@ -115,8 +115,8 @@ def test_wrong_bot_token(client):
     assert client.get("/api/bias", headers=hdr(make_init_data(token="999:other"))).status_code == 403
 
 
-def test_wrong_user(client):
-    assert client.get("/api/bias", headers=hdr(make_init_data(user_id=42))).status_code == 403
+def test_other_authenticated_user_allowed(client):
+    assert client.get("/api/bias", headers=hdr(make_init_data(user_id=42))).status_code == 200
 
 
 def test_expired(client):

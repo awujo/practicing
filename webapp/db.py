@@ -56,7 +56,10 @@ def connect():
     return _local_connect()
 
 
+from slk import tenancy
+
 def query(sql, args=None):
+    sql = tenancy.scoped_sql(sql)
     conn = connect()
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cur:
@@ -67,6 +70,7 @@ def query(sql, args=None):
 
 
 def execute(sql, args=None):
+    sql = tenancy.scoped_sql(sql)
     conn = connect()
     try:
         with conn.cursor() as cur:
@@ -91,7 +95,8 @@ def ensure_schema():
     conn = connect()
     try:
         with conn.cursor() as cur:
-            for stmt in split_sql(schema_path().read_text()):
+            source = schema_path().read_text()
+            for stmt in split_sql(source) + tenancy.schema_sql(source):
                 cur.execute(stmt)
         conn.commit()
     finally:
@@ -99,7 +104,8 @@ def ensure_schema():
 
 
 def get_settings():
-    return {r["k"]: r["v"] for r in query("SELECT k, v FROM settings")}
+    return {**(tenancy.STARTER if tenancy.tenant_id() else {}),
+            **{r["k"]: r["v"] for r in query("SELECT k, v FROM settings")}}
 
 
 def set_setting(k, v):

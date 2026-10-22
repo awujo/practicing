@@ -113,3 +113,21 @@ Python helper for DB access: `slk/db.py` (`connect()`, `upsert_bias(row)`, `get_
 ## Research isolation
 
 Manual `research-study.yml` uses `research_records` (created only by `slk.research_publish`) in the existing MySQL instance: composite PK `(run_id,kind,record_id)`, SHA-256 payload checksum, LONGTEXT JSON payload, creation time. Kinds include manifest, events, observations, decisions, entry_trials, discovery and checkpoint. Per-event records are immutable; aggregate/checkpoint IDs are content hashes, so partial/resumed snapshots append without overwriting. It never calls live apply_schema or modifies bias/entries/orders/settings. Broker collection can refresh cTrader auth tokens using the existing client. Raw candles remain in expiring artifacts, not MySQL. See research/STATUS.md before enabling recurring research or relying on backup/retention.
+
+## Multiuser scope (2026-10-22)
+
+Telegram initData identifies the user; never accept a client-supplied recipient/tenant ID. Owner ID is
+TELEGRAM_CHAT_ID (fallback1410229777), and keeps existing tables. Other users use tenant_bias,
+tenant_entries, tenant_orders, tenant_tf_state, tenant_settings, tenant_runs keyed/scoped by user_id.
+app_users records authenticated registrations. slk.tenancy.ContextVar scopes SQL in both DB adapters;
+async auth dependency resets it after each request. Composite bias/entry foreign keys enforce ownership.
+Run schema installation outside user scopes. Never issue raw tenant-table queries in request code.
+New users start EURUSD,GBPUSD,USDJPY / D,W / auto_trade=off. Each watchlist supports30 selected markets;
+empty restores starter selection. Preferences and notification clocks are private. Broker approvals and
+non-off auto_trade remain owner-only; no shared brokerage authority is granted by Mini App access.
+Hourly downloads use union of saved pairs, not the complete broker catalogue. Computations with identical
+inputs/configs share immutable cached results; reconciliation receives independent copies. Owner processes
+first, other users rotate after12min budget; UI/digests show completed-scan freshness rather than promise
+an account scan every hour under overload. Each profile's settings snapshot stays fixed during a batch.
+Run local integration only against a disposable database via SLK_TEST_MYSQL; tests/test_multiuser_mysql.py
+checks MySQL8 DDL/FKs, concurrent API reads/settings isolation and digest routing without sending messages.

@@ -252,6 +252,7 @@ def test_main_flow_with_fake_db(monkeypatch, capsys, tmp_path):
     monkeypatch.setenv("DATABASE_URL", "mysql://u:p@h/db")
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     monkeypatch.setattr(db, "apply_schema", lambda: None)
+    monkeypatch.setattr(db, "query", lambda *a: [])
     monkeypatch.setattr(db, "start_run", lambda job, pl, st: runs.setdefault(1, {"job": job, "planned": pl, "started": st}) and 1)
     monkeypatch.setattr(db, "finish_run", lambda i, ok, note: runs[i].update(ok=ok, note=note))
     monkeypatch.setattr(db, "get_setting", lambda k, d=None: settings.get(k, d))

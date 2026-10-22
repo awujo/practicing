@@ -96,13 +96,17 @@ def _c():
     return _conn
 
 
+from slk import tenancy
+
 def query(sql, args=None):
+    sql = tenancy.scoped_sql(sql)
     with _c().cursor() as cur:
         cur.execute(sql, args)
         return cur.fetchall()
 
 
 def execute(sql, args=None):
+    sql = tenancy.scoped_sql(sql)
     with _c().cursor() as cur:
         cur.execute(sql, args)
         return cur.lastrowid
@@ -115,15 +119,21 @@ def apply_schema(path=SCHEMA):
         if stmt:
             execute(stmt)
     migrate()
+    for stmt in tenancy.schema_sql(text):
+        execute(stmt)
 
 
 def migrate():
     """Add MIGRATIONS columns that are missing (MySQL 8 has no ADD COLUMN IF NOT EXISTS)."""
-    for table, col, ddl in MIGRATIONS:
-        n = query("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
-                  "AND TABLE_NAME = %s AND COLUMN_NAME = %s", (table, col))
-        if not n[0]["n"]:
-            execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
+    for original, col, ddl in MIGRATIONS:
+        for table in (original, "tenant_" + original):
+            if table != original and not query(
+                    "SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s", (table,))[0]["n"]:
+                continue
+            n = query("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+                      "AND TABLE_NAME = %s AND COLUMN_NAME = %s", (table, col))
+            if not n[0]["n"]:
+                execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
 
 
 def get_setting(k, default=None):
@@ -133,7 +143,8 @@ def get_setting(k, default=None):
 
 def get_settings():
     """All rows of table `settings` as {k: v}."""
-    return {r["k"]: r["v"] for r in query("SELECT k, v FROM settings")}
+    return {**(tenancy.STARTER if tenancy.tenant_id() else {}),
+            **{r["k"]: r["v"] for r in query("SELECT k, v FROM settings")}}
 
 
 def set_setting(k, v):
@@ -217,6 +228,6 @@ def update_entry_result(eid, old_status, fields):
     Returns the number of rows changed (0 or 1)."""
     cols = [c for c in RESULT_COLS if c in fields]
     with _c().cursor() as cur:
-        return cur.execute(f"UPDATE entries SET {', '.join(f'{c}=%s' for c in cols)} "
-                           "WHERE id=%s AND status=%s AND closed_at IS NULL",
+        return cur.execute(tenancy.scoped_sql(f"UPDATE entries SET {', '.join(f'{c}=%s' for c in cols)} "
+                           "WHERE id=%s AND status=%s AND closed_at IS NULL"),
                            [fields[c] for c in cols] + [eid, old_status])

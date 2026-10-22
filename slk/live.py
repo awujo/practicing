@@ -1047,7 +1047,8 @@ def summary_due(now, last_sent):
 
 def send_telegram(text, token=None, chat=None):
     token = token or os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat = chat or os.environ.get("TELEGRAM_CHAT_ID")
+    from .tenancy import USER
+    chat = chat or USER.get() or os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat:
         print("[telegram off]\n" + text + "\n", flush=True)
         return False
@@ -1090,6 +1091,9 @@ def _load_settings(db):
     try:
         return db.get_settings()
     except Exception as e:  # settings unreadable -> code defaults
+        from . import tenancy
+        if tenancy.tenant_id() is not None:
+            raise  # fail closed: never expand a tenant watchlist after a DB error
         print(f"settings read failed ({type(e).__name__}); using code defaults", flush=True)
         return {}
 
@@ -1198,7 +1202,68 @@ def planned_time(now, event):
     return slot if now >= slot else slot - timedelta(hours=1)
 
 
-def main(argv=None):
+def shared_compute(jobs, cache=None):
+    """Reuse identical strategy calculations while keeping reconciliation rows mutable per user."""
+    import copy
+    if cache is None:
+        return compute_all(jobs)
+    keys = [pickle.dumps(job) for job in jobs]
+    missing = {key: job for key, job in zip(keys, jobs) if key not in cache}
+    if missing:
+        for key, result in zip(missing, compute_all(list(missing.values()))):
+            cache[key] = result
+    return [copy.deepcopy(cache[key]) for key in keys]
+
+
+def run_user_watchlists(argv, args, started):
+    """Fetch the union once; reconcile and notify in independent user scopes.
+
+    Shared candle files are read-only during user processing. Different strategy
+    preferences are computed independently, never reconciled against another user's rows.
+    """
+    from . import db, tenancy
+    db.apply_schema()
+    owner = tenancy.owner_id()
+    clock_start = time.monotonic()
+    others = sorted({int(r["user_id"]) for r in db.query("SELECT user_id FROM app_users")} - {owner})
+    cursor = int(db.get_setting("user_scan_cursor", "0") or "0")
+    others = [u for u in others if u > cursor] + [u for u in others if u <= cursor]
+    users = [owner, *others]
+    watchlists, snapshots = {}, {}
+    for uid in users:
+        with tenancy.scope(uid):
+            from . import settings as user_settings
+            snapshots[uid] = db.get_settings()
+            vals = user_settings.load(snapshots[uid])
+            selected = vals["pairs"] or (list(PAIRS) if uid == owner else tenancy.STARTER["pairs"].split(","))
+            requested = [p.strip().upper() for p in args.pairs.split(",") if p.strip()]
+            watchlists[uid] = ([p for p in requested if p in selected or uid == owner]
+                              if requested else selected)
+    union = sorted({p.strip().upper() for pairs in watchlists.values() for p in pairs if p.strip()})
+    print(f"{len(users)} users, {len(union)} distinct watched markets (one download per market)", flush=True)
+    failures = prepare_candles(union, started)
+    codes, computed = [], {}
+    scan_now = datetime.now(timezone.utc)
+    for uid in users:
+        if not watchlists[uid]:
+            continue
+        if uid != owner and time.monotonic() - clock_start >= 12 * 60:
+            print("User scan budget reached; remaining users rotate first next run", flush=True)
+            break
+        try:
+            with tenancy.scope(uid):
+                codes.append(main(argv, _profile=uid, _prepared=failures, _computed=computed, _scan_now=scan_now,
+                                  _snapshot=snapshots[uid], _watch_pairs=watchlists[uid]))
+        except Exception:
+            traceback.print_exc()
+            codes.append(1)
+        if uid != owner:
+            db.set_setting("user_scan_cursor", str(uid))
+    return int(any(codes))
+
+
+def main(argv=None, _profile=None, _prepared=None, _computed=None, _scan_now=None,
+         _snapshot=None, _watch_pairs=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs", default="")
     ap.add_argument("--stories", default="")
@@ -1239,12 +1304,14 @@ def main(argv=None):
     if not (os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID")):
         print("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set: alerts will only be printed in the log.")
 
-    from . import db
-    db.apply_schema()
+    from . import db, tenancy
+    if _profile is None:
+        return run_user_watchlists(argv, a, started)
+
     event = os.environ.get("GITHUB_EVENT_NAME", "manual")
     planned = planned_time(started, event)
     run_id = db.start_run(JOB, naive(planned), naive(started))
-    if os.environ.get("GITHUB_OUTPUT"):
+    if os.environ.get("GITHUB_OUTPUT") and _profile == tenancy.owner_id():
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"run_id={run_id}\n")
     print(f"run {run_id}: planned {planned:%H:%M} started {started:%H:%M:%S} UTC "
@@ -1253,15 +1320,17 @@ def main(argv=None):
     errors, sent, by_pair, pairs, note = [], 0, {}, [], ""
     early_sent, early_dirty = {}, False
     try:
-        cfg, ecfg, vals = build_cfg(_load_settings(db), overrides)  # re-read every run
+        cfg, ecfg, vals = build_cfg(_snapshot if _snapshot is not None else _load_settings(db), overrides)  # re-read every run
         tz = vals["display_tz"]
         try:
             early_sent = json.loads(db.get_setting("early_alerts_sent") or "{}")
         except (ValueError, TypeError):
             early_sent = {}
-        pairs = [p.strip().upper() for p in a.pairs.split(",") if p.strip()] if a.pairs else (vals["pairs"] or list(PAIRS))
+        pairs = _watch_pairs if _watch_pairs is not None else (vals["pairs"] or list(PAIRS))
         stories = [s.strip().upper() for s in a.stories.split(",") if s.strip().upper() in STORIES] if a.stories \
             else [s for s in vals["stories"] if s in STORIES]
+        if _profile != tenancy.owner_id():
+            stories = [s for s in stories if s in vals["stories"]]
         kill = "on" if vals["kill_switch"] == "on" else "off"
         auto = vals["auto_trade"]
         weekend = weekend_close_day(started)
@@ -1273,13 +1342,13 @@ def main(argv=None):
             return 0
 
         t_dl = time.monotonic()
-        dl_err = prepare_candles(pairs, started)
+        dl_err = {p: e for p, e in (_prepared or {}).items() if p in pairs}
         errors += [f"{p}: download: {e}" for p, e in dl_err.items()]
-        now = datetime.now(timezone.utc)
+        now = _scan_now or datetime.now(timezone.utc)
         t_cpu = time.monotonic()
         todo = [p for p in pairs if p not in dl_err]
-        results = compute_all([(p, now, state_stories(stories, cfg), stories, cfg, ecfg,
-                                vals["continuation_entries"]) for p in todo])
+        results = shared_compute([(p, now, state_stories(stories, cfg), stories, cfg, ecfg,
+                                vals["continuation_entries"]) for p in todo], _computed)
         t_db = time.monotonic()
         for res in results:
             p = res["pair"]
