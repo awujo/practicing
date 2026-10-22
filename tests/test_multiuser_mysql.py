@@ -69,3 +69,26 @@ def test_real_multiuser_isolation(monkeypatch):
         assert client.post("/api/bias/send-eligible",headers=headers(users[0])).status_code==429
         assert sent[1][0]==users[1] and "GBPCHF" in sent[1][1] and "EURJPY" not in sent[1][1]
     assert T.USER.get() is None
+
+
+def test_news_delivery_claims_are_atomic(monkeypatch):
+    from datetime import datetime,timezone
+    from slk import db,news
+    monkeypatch.setenv('DATABASE_URL',os.environ['SLK_TEST_MYSQL'])
+    db._conn=None
+    db.apply_schema()
+    uid=int(time.time())*100+9
+    delivered=[]
+    class Adapter:
+        def __init__(self):self.conn=db.connect()
+        def _c(self):return self.conn
+        def execute(self,sql,args):
+            with self.conn.cursor() as c:return c.execute(sql,args)
+    def run(_):
+        adapter=Adapter()
+        try:
+            return news.deliver(adapter,uid,'test-atomic','hi',lambda text,chat:delivered.append(chat) or True,datetime.now(timezone.utc))
+        finally:adapter.conn.close()
+    with ThreadPoolExecutor(2) as pool:
+        result=list(pool.map(run,range(2)))
+    assert sum(r is True for r in result)==1 and delivered==[uid]

@@ -1,0 +1,30 @@
+name: Economic calendar reminders
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      preview: {description: "Refresh calendar only; send no messages", type: boolean, default: true}
+permissions:
+  contents: read
+concurrency: {group: slk-news, cancel-in-progress: false}
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '1410229777' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pymysql tzdata
+      - name: Calendar refresh or scheduled reminders
+        env:
+          PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.preview && 'true' || 'false' }}
+        run: |
+          if [ "$PREVIEW" = "true" ]; then python -u -m slk.news --refresh-only; else python -u -m slk.news; fi

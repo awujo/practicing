@@ -346,8 +346,18 @@
     }).join("") : empty("No runs yet");
   }
 
+  async function loadNews() {
+    const data = await api("/api/news");
+    $("#news-list").innerHTML = `<div class="card"><p>Source: <a href="${esc(data.source_url)}" target="_blank" rel="noopener">${esc(data.source)}</a></p>
+      <p>${data.stale ? "Cached calendar: refresh unavailable. " : ""}Updated ${dt(new Date(data.fetched_at * 1000).toISOString())}</p>
+      <p>Telegram news alerts: ${data.alerts_enabled ? "on" : "off"}. Times ${esc(data.timezone)}. Scheduled times can change.</p></div>` +
+      (data.events.length ? data.events.map((e) => `<div class="card"><div class="top"><strong>${esc(e.currency)} · ${esc(e.impact.toUpperCase())}</strong></div>
+        <p>${esc(e.title)}</p><p>${dt(e.time)}</p><p>Forecast: ${esc(e.forecast || "—")} · Previous: ${esc(e.previous || "—")}</p></div>`).join("") :
+        `<div class="card">${data.covered ? "No matching events for today in the available calendar." : "Calendar for the current week is not available yet."}</div>`);
+  }
+
   // ---------------- Tabs
-  const loaders = { bias: loadBias, entries: loadEntries, orders: loadOrders, settings: loadSettings, status: loadRuns };
+  const loaders = { news: loadNews, bias: loadBias, entries: loadEntries, orders: loadOrders, settings: loadSettings, status: loadRuns };
   let current = "bias";
   async function show(tab) {
     current = tab;

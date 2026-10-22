@@ -32,6 +32,8 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-22)
+- [x] User explicitly requested public calendar integration: News tab + personal currency/impact filters, daily local-hour summary and ~60min reminders, configurable shared FF weekly JSON cache. Independent5min news.yml and secret-protected /cron/news endpoint; same-secret external1–5min timer recommended because GH schedules are best-effort. Atomic per-user delivery claims, stale/week-coverage safeguards,80s fair batch budget,30day receipt retention, preview-only manual runs. Owner defaults enabled; new users opt in. No AI calls or live strategy rule changes.
+- [ ] Deriv live data/scanner adapter remains unimplemented; public endpoint probe is diagnostic only. News work does not add Deriv symbols to IC Markets watchlists.
 - [x] Future research publication is opt-in: study/history defaults and automatic queue keep research results out of MySQL unless explicitly requested.
 - 2026-10-22: Future study workflow defaults and automatic research queue now keep MySQL publication off. Historical replay only launches DB finalization when publish is explicitly selected. This prevents unattended research re-filling user database capacity after archival.
 - [x] Archive publication synchronizes the branch before recording its manifest, avoiding handover append conflicts during concurrent documentation updates.
@@ -440,3 +442,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - Research SQL archive research/archive/database-39749790360: 440 experiments, 196161 records, 134194219 payload bytes. SQL fully restored/verified in disposable MySQL before publication; pruning is a separate subsequent workflow step.
 
 - Research archive cleanup completed: 196161 archived records removed; 0 research rows remain. Live/user tables untouched. Empty research table file reclaimed: True.
+
+- 2026-10-22: Owner directed building news from public calendar rather than blocking on source permission. Added slk/news.py, shared news_cache and per-user news_deliveries, authenticated News tab/API, news preference schema, 5min workflow and /cron/news using existing secret. Public feed fetched successfully (86 events). Independent reviewer checked time zones, tenants, dedupe, stale data, sender import/threading, receipt retention and bounded current-time checks. Tests mock all message delivery; manual production verification uses refresh-only mode. Deriv has not been added to live scanning.

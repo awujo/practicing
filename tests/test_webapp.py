@@ -339,3 +339,28 @@ def test_digest_refuses_stale_scan(client, monkeypatch):
         [{"finished_at": datetime.now(timezone.utc) - timedelta(hours=3)}])
     monkeypatch.setattr(webapp, "send_private_digest", lambda *a: pytest.fail("must not send stale digest"))
     assert client.post("/api/bias/send-eligible", headers=hdr(make_init_data())).status_code == 409
+
+
+def test_news_view_uses_personal_currency_filters(client,monkeypatch):
+    from slk import news
+    from datetime import datetime,timezone
+    client.store['news_currencies']='JPY'
+    at=datetime.now(timezone.utc).isoformat()
+    monkeypatch.setattr(news,'calendar',lambda db:dict(events=[
+        dict(currency='JPY',impact='high',time=at,title='JPY news'),
+        dict(currency='USD',impact='high',time=at,title='USD news')],covered=True,fetched_at=0,stale=False))
+    r=client.get('/api/news',headers=hdr(make_init_data()))
+    assert r.status_code==200 and [e['currency'] for e in r.json()['events']]==['JPY']
+    assert client.get('/api/news').status_code==403
+
+
+def test_news_cron_secret(client,monkeypatch):
+    from slk import news
+    calls=[]
+    monkeypatch.setenv('CRON_SECRET','test-news-secret')
+    monkeypatch.setattr(news,'tick',lambda:calls.append(1) or {'ok':True})
+    assert client.get('/cron/news').status_code==403
+    assert client.get('/cron/news?key=bad').status_code==403
+    assert calls==[]
+    assert client.get('/cron/news?key=test-news-secret').status_code==200
+    assert calls==[1]

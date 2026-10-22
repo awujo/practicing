@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import time
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import parse_qsl
@@ -111,7 +112,7 @@ def healthz():
 @app.get("/version")
 def version():
     return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown"),
-            "settings_validation": "flip-age-bounds-v1", "multiuser": True}
+            "settings_validation": "flip-age-bounds-v1", "multiuser": True, "news": True}
 
 
 @app.get("/")
@@ -139,6 +140,22 @@ def _clamp(limit: int, hi: int = 500) -> int:
 @app.get("/api/me")
 def me(user: dict = Depends(require_user)):
     return {"id": user.get("id"), "first_name": user.get("first_name"), "username": user.get("username")}
+
+
+@app.get("/api/news")
+def news_calendar(user=Depends(require_user)):
+    from slk import news
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+    vals=S.load(_db(db.get_settings))
+    data=_db(news.calendar,db)
+    tz=ZoneInfo(vals["display_tz"])
+    today=datetime.now(timezone.utc).astimezone(tz).date()
+    data["events"]=[e for e in news.selected(data["events"],vals)
+                    if datetime.fromisoformat(e["time"]).astimezone(tz).date()==today]
+    data["timezone"]=vals["display_tz"]
+    data["alerts_enabled"]=vals["news_enabled"]
+    return data
 
 
 @app.get("/api/bias")
@@ -481,3 +498,22 @@ def cron_tick(request: Request):
         raise HTTPException(status_code=502, detail=f"GitHub answered {status}")
     _last_tick["t"] = now
     return {"ok": True, "started": True}
+
+
+_news_lock = threading.Lock()
+
+
+@app.api_route("/cron/news", methods=["GET", "POST"])
+def news_tick(request: Request):
+    secret=os.environ.get("CRON_SECRET", "")
+    got=request.headers.get("X-Cron-Secret") or request.query_params.get("key") or ""
+    if not secret or not hmac.compare_digest(got.encode(),secret.encode()):
+        raise HTTPException(403,"forbidden")
+    # Run in-process on Render; no need to start a GitHub job for each external tick.
+    from slk import news
+    if not _news_lock.acquire(blocking=False):
+        return {"ok":True,"skipped":"news tick already running"}
+    try:
+        return _db(news.tick)
+    finally:
+        _news_lock.release()

@@ -11,6 +11,7 @@
   <header>
     <nav id="tabs">
       <button data-tab="bias" class="on">Bias</button>
+      <button data-tab="news">News</button>
       <button data-tab="entries">Entries</button>
       <button data-tab="orders">Orders</button>
       <button data-tab="settings">Settings</button>
@@ -33,6 +34,11 @@
       <p id="eligible-feedback" role="status" aria-live="polite"></p>
       <div id="bias-state"></div>
       <div id="bias-list" class="list"></div>
+    </section>
+
+    <section id="news" hidden>
+      <p>Scheduled economic events for your selected currencies and impact levels. Preferences are in Settings → Alerts.</p>
+      <div id="news-list" class="list"></div>
     </section>
 
     <section id="entries" hidden>
@@ -61,6 +67,6 @@
 
     <section id="status" hidden><div id="runs-list" class="list"></div></section>
   </main>
-  <script src="/static/app.js?v=eligible-1"></script>
+  <script src="/static/app.js?v=news-1"></script>
 </body>
 </html>

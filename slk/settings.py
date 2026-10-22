@@ -25,6 +25,12 @@ def _s(name, type_, default, group, help_, **kw):
 # type: bool ("on"/"off"), int, float, choice (one of choices), multi (subset of choices, CSV),
 # pairs (CSV of symbols, `choices` = suggestions), ladder ("D=H4,H2;W=D,H4;M=W,D"), tz (IANA time zone name)
 SCHEMA = [
+    _s("news_enabled", "bool", "on", "Alerts", "Economic calendar Telegram alerts. News tab remains available when off."),
+    _s("news_currencies", "multi", "USD,EUR,GBP", "Alerts", "Currencies for calendar view and news alerts.", choices=["USD","EUR","GBP","JPY","AUD","NZD","CAD","CHF","CNY","ALL"]),
+    _s("news_impact", "multi", "high", "Alerts", "Event impact levels to display and notify.", choices=["high","medium","low","holiday"]),
+    _s("news_daily", "bool", "on", "Alerts", "Daily economic-calendar summary in your display time zone."),
+    _s("news_summary_hour", "int", "7", "Alerts", "Daily news summary hour (0–23) in your display time zone.", min=0,max=23),
+    _s("news_reminders", "bool", "on", "Alerts", "Reminder about one hour before scheduled news. Timer delays may affect delivery."),
     _s("pairs", "pairs", "", "Markets", "Pairs the bot watches. Empty = all 28.", choices=PAIRS),
     _s("stories", "multi", "D,W,M", "Markets", "Story timeframes shown and alerted: Monthly, Weekly, Daily. Untick M if you don't use monthly: it then "
        "plays no part at all (no M/W conflict filter, no monthly trend or levels for W stories, no MN1 in labels).",

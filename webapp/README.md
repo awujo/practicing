@@ -88,3 +88,26 @@ GitHub's own schedule fires the "hourly" live workflow only every 4-5 hours. An 
 3. cron-job.org (free) → Create cronjob: URL `https://<your-render-app>.onrender.com/cron/tick?key=<CRON_SECRET>`,
    every hour at minute 2. The server starts `live.yml` (input tick=1: FX weekend hours are skipped like a
    scheduled run). Ticks within 10 minutes of the last one start nothing.
+
+## Economic calendar
+
+News tab shows today's scheduled events from the cached public weekly calendar, filtered by each user's
+`news_currencies` and `news_impact`. Settings → Alerts also controls `news_enabled`, daily summary,
+local `news_summary_hour`, and reminders approximately60min before release. Owner defaults on; new users
+opt in (news_enabled off in starter settings). No AI calls, entry-rule changes or actual-release-value claims.
+The feed's supplied UTC offsets are respected, then rendered in the user's display time zone.
+
+`news.yml` checks every5min independently of the hourly strategy job. GitHub schedules are best-effort,
+so configure the existing external timer service for reliable checks: GET or POST `/cron/news` every1–5min,
+with the same existing CRON_SECRET via X-Cron-Secret or `?key=...`. This endpoint sends directly from Render,
+without dispatching an Actions job. It works alongside GH ticks: atomic user/event receipts prevent duplicates.
+For private repositories the external timer avoids frequent Actions minute usage; disable the news schedule
+once external checks are confirmed if desired. Never paste the cron secret into a public issue.
+
+Public weekly JSON: https://nfs.faireconomy.media/ff_calendar_thisweek.json . Source/cache is configurable
+server-side with NEWS_CALENDAR_URL, NEWS_CALENDAR_SOURCE, NEWS_CALENDAR_SOURCE_URL (same event JSON schema).
+One shared cache refresh per30min; unavailable/current-week-missing data is labelled, and caches over6h do
+not generate alerts. Unknown/naive times are rejected. Daily summaries are due in the selected local hour;
+reminders are due55–60min before the scheduled time. Delayed timers can miss that window; reminders are
+not sent as if an already-released event were upcoming. Receipts, including failures, expire after30days.
+Manual Actions run defaults to preview: refresh+validate only, no messages.

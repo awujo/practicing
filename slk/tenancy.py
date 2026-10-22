@@ -6,7 +6,7 @@ import re
 
 USER = ContextVar("slk_user", default=None)
 TABLES = {"bias", "entries", "orders", "tf_state", "settings", "runs"}
-STARTER = {"pairs": "EURUSD,GBPUSD,USDJPY", "stories": "D,W", "auto_trade": "off"}
+STARTER = {"pairs": "EURUSD,GBPUSD,USDJPY", "stories": "D,W", "auto_trade": "off", "news_enabled": "off"}
 
 
 def owner_id():
