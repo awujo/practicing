@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from . import instruments
-from .candles import nominal_end, resample
+from .candles import nominal_end, resample, market_function
 from .levels import Level, find_levels, run_levels, sweep_taps, touch_tol
 from .structure import SwingBook, pivots, structural_swings, swings, trend
 
@@ -139,6 +139,7 @@ def pip(pair):
     return instruments.pip(pair)
 
 
+@market_function(lambda a,k:a[0] if a else k["pair"])
 def find_stories(pair, h1, story, cfg=None):
     cfg = {**DEFAULT, **(cfg or {})}
     X = _Ctx(pair, h1, story, cfg)
@@ -774,6 +775,7 @@ def tf_trend(h1, story, cfg=None):
     return trend(sb.at(len(ob) - 1), float(ob["close"].iloc[-1]))
 
 
+@market_function(lambda a,k:a[0] if a else k["pair"])
 def current_tap(pair, h1, story, cfg=None):
     """Live 'current state': the latest tap-reject-close on a fresh, trend-agreeing level that has NOT broken
     out yet and is still within max_wait origin bars (STRATEGY §2 step 3, no-trade rule 1). Same rules as

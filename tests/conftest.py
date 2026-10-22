@@ -10,7 +10,9 @@ def _no_live_candle_sources(monkeypatch):
     monkeypatch.delenv("SLK_FEED_OWNER", raising=False)
     monkeypatch.setattr(store, "_FEED", {})
 
-    def no_network():
+    def no_network(*args,**kwargs):
         raise RuntimeError("tests must not open a cTrader connection")
 
     monkeypatch.setattr(store, "_open_client", no_network)
+    from slk import deriv
+    monkeypatch.setattr(deriv,"_open_socket",no_network)

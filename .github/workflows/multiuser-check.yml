@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [claude-kevin-king]
-    paths: ['slk/news.py', 'tests/test_news.py', 'slk/tenancy.py', 'slk/db.py', 'slk/live.py', 'webapp/**', 'db/schema.sql', 'tests/test_multiuser_mysql.py', 'tests/test_tenancy.py', '.github/workflows/multiuser-check.yml']
+    paths: ['slk/deriv.py', 'slk/candles.py', 'slk/store.py', 'tests/test_deriv.py', 'slk/news.py', 'tests/test_news.py', 'slk/tenancy.py', 'slk/db.py', 'slk/live.py', 'webapp/**', 'db/schema.sql', 'tests/test_multiuser_mysql.py', 'tests/test_tenancy.py', '.github/workflows/multiuser-check.yml']
 permissions:
   contents: read
 jobs:
@@ -26,5 +26,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: pip install pytest pandas pymysql fastapi httpx requests 'protobuf>=3.20'
-      - run: python -m pytest -q tests/test_news.py tests/test_multiuser_mysql.py tests/test_tenancy.py tests/test_webapp.py tests/test_settings.py tests/test_live.py tests/test_continuation.py
+      - run: pip install pytest pandas pymysql fastapi httpx requests websocket-client 'protobuf>=3.20'
+      - run: python -m pytest -q tests/test_deriv.py tests/test_news.py tests/test_multiuser_mysql.py tests/test_tenancy.py tests/test_webapp.py tests/test_settings.py tests/test_live.py tests/test_continuation.py

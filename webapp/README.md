@@ -111,3 +111,12 @@ not generate alerts. Unknown/naive times are rejected. Daily summaries are due i
 reminders are due55–60min before the scheduled time. Delayed timers can miss that window; reminders are
 not sent as if an already-released event were upcoming. Receipts, including failures, expire after30days.
 Manual Actions run defaults to preview: refresh+validate only, no messages.
+
+Cron-job.org news timer: use GET every minute at
+`https://slk-backtest-viewer.onrender.com/cron/news?key=YOUR_EXISTING_CRON_SECRET`, replacing only the
+placeholder with the same private secret used by the hourly tick. Alternatively use the URL without its query
+and supply X-Cron-Secret in Advanced → Headers. The news endpoint does not start the hourly strategy job.
+
+Deriv markets are selectable in Settings → Markets → Pairs under their human names with Deriv labels.
+Select desired markets and save; the next hourly run will download and scan them. See ../DERIV.md for source,
+UTC candle conventions, available history, weekend coverage and signal-only order restrictions.

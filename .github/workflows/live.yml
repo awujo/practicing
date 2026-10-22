@@ -5,7 +5,7 @@ name: SLK live bias
 # fails or its secrets are missing (a ::warning:: annotation says so).
 on:
   schedule:
-    - cron: "7 * * * 0-5"   # hourly, no Saturday (UTC) = FX closed; best effort: GitHub may start some minutes late
+    - cron: "7 * * * *"   # hourly, no Saturday (UTC) = FX closed; best effort: GitHub may start some minutes late
   workflow_dispatch:
     inputs:
       pairs: {description: "Comma list, empty = settings 'pairs' or all 28", default: ""}
@@ -44,21 +44,8 @@ jobs:
             echo "::warning::Missing repo secrets:$missing. Add them in Settings > Secrets and variables > Actions. Skipping run."
             echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          # FX weekend = Fri 17:00 -> Sun 17:00 New York. Scheduled runs then stop, except Fri 17:00-19:59 NY
-          # (the final run: last bars + daily summary; slk/live.py runs it once per weekend).
-          dow=$(TZ=America/New_York date +%u); hr=$(TZ=America/New_York date +%H); hr=$((10#$hr))
-          closed=false
-          { [ "$dow" = 5 ] && [ "$hr" -ge 20 ]; } && closed=true
-          [ "$dow" = 6 ] && closed=true
-          { [ "$dow" = 7 ] && [ "$hr" -lt 17 ]; } && closed=true
-          sched=false
-          { [ "$GITHUB_EVENT_NAME" = "schedule" ] || [ "${{ inputs.tick }}" = "1" ]; } && sched=true
-          if [ "$sched" = true ] && [ "$closed" = true ]; then
-            echo "FX market closed (New York $(TZ=America/New_York date '+%a %H:%M')): nothing to do."
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          fi
+          # Python checks the saved watchlists: FX pauses on weekends, Deriv continues.
+          echo "ok=true" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         if: steps.s.outputs.ok == 'true'
       - uses: actions/setup-python@v5
@@ -68,7 +55,7 @@ jobs:
           cache: pip
           cache-dependency-path: .github/workflows/live.yml
       - if: steps.s.outputs.ok == 'true'
-        run: pip install -q pandas pymysql "protobuf>=3.20" requests
+        run: pip install -q pandas pymysql "protobuf>=3.20" requests websocket-client
       - name: Restore candle store
         if: steps.s.outputs.ok == 'true'
         uses: actions/cache/restore@v4

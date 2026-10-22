@@ -34,7 +34,7 @@ Public:
 import numpy as np
 import pandas as pd
 
-from .candles import nominal_end, resample
+from .candles import nominal_end, resample, market_function, UTC_MARKET
 from .story import DEFAULT as STORY_DEFAULT, STORIES, pip
 from .structure import pivots
 
@@ -481,7 +481,7 @@ def find_entry(px, story):
 def _horizon(H, f, tf, cfg):
     """(last H1 index of the holding time, still_open) for a fill on H1 bar f: the trade is held
     max_trade_bars bars of its entry TF; still_open = the data ends before that time (no timeout yet)."""
-    t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * TF_HOURS[tf]), "h")
+    t_cap = H["start"][f] + np.timedelta64(int(cfg["max_trade_bars"] * (168 if tf=="W" and UTC_MARKET.get() else TF_HOURS[tf])), "h")
     j = int(np.searchsorted(H["start"], t_cap, "left"))  # first H1 bar past the holding time
     last = min(j, len(H["close"])) - 1
     return last, bool(j >= len(H["close"]) and H["end"][last] < t_cap)
@@ -576,6 +576,7 @@ def paper_track(row, h1, cfg=None):
     return out
 
 
+@market_function(lambda a,k:a[0] if a else k["pair"])
 def find_entries(pair, h1, stories, cfg=None, story_cfg=None, sim=True):
     """Entry row per story (only CONFIRMED story rows, as from slk.story.find_stories)."""
     cfg = {**DEFAULT, "entry_tfs": ENTRY_TFS, **(cfg or {})}

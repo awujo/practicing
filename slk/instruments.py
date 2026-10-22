@@ -36,6 +36,10 @@ def norm(pair):
 def static(pair):
     """(pip, decimals) from the table (no broker info)."""
     p = norm(pair)
+    if is_deriv(p):
+        for row in deriv_symbols():
+            if row["key"]==p:return row["pip"],row["digits"]
+        raise ValueError("Deriv pip metadata unavailable")
     for pre, v in METALS.items():
         if p.startswith(pre):
             return v
@@ -88,3 +92,27 @@ def dukascopy(pair):
     if p in DUKASCOPY:
         return DUKASCOPY[p]
     return p, (1e3 if p.endswith("JPY") else 1e5)
+
+
+def is_deriv(pair):
+    return norm(pair).startswith("DV")
+
+
+def deriv_symbols():
+    import json
+    from pathlib import Path
+    path=Path(__file__).resolve().parents[1]/"data"/"deriv_symbols.json"
+    return json.loads(path.read_text())["symbols"] if path.exists() else []
+
+
+def label(pair):
+    if is_deriv(pair):
+        for row in deriv_symbols():
+            if row["key"]==norm(pair):return "Deriv · "+row["name"]
+        return "Deriv · "+str(pair)
+    return str(pair)
+
+
+def deriv_continuous(pair):
+    return any(r["key"]==norm(pair) and r.get("market") in ("synthetic_index","cryptocurrency")
+               for r in deriv_symbols())

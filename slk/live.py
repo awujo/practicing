@@ -29,6 +29,7 @@ from . import instruments
 from . import settings as S
 from . import store as candles_store
 from .backtest import PAIRS
+from . import candles
 from .candles import _key, nominal_end, resample
 from .structure import pivots
 from .entry import DEFAULT as ENTRY_DEFAULT
@@ -76,11 +77,11 @@ def drop_forming(h1, tf, now):
         return h1
     keys = _key(h1.index, tf)
     last = keys[-1]
-    now_shift = now.tz_convert("America/New_York").tz_localize(None) + pd.Timedelta(hours=7)
+    now_shift = candles.wall_time(pd.DatetimeIndex([now]))[0]
     if tf == "M":
         end = last + pd.offsets.MonthBegin(1)
     else:
-        end = last + BAR_LEN[tf]
+        end = last + (pd.Timedelta(days=7) if tf=="W" and candles.UTC_MARKET.get() else BAR_LEN[tf])
     if now_shift >= end:
         return h1
     return h1[keys != last]
@@ -185,6 +186,7 @@ def engine_rows(pair, h, st, cfg, memo=None):
     return stories, tap
 
 
+@candles.market_function(lambda a,k:a[0] if a else k["pair"])
 def pair_state(pair, h1, now, stories, cfg, memo=None):
     """All bias rows the engine sees now for one pair (closed bars only). `memo` (dict, optional) caches the
     engine output per story between runs (see engine_rows)."""
@@ -644,7 +646,7 @@ def format_result_alert(event, e, fields):
     if event == "SL_AFTER_TP1":
         tail = f"{fmt_r(-1)} on the TP2 leg (TP1 {fmt_r(fields.get('result_r') or e.get('result_r') or 0)} kept)"
     model = MODEL_NAMES.get(e.get("model") or "continuation", e.get("model"))
-    return "\n".join([f"{RESULT_HEAD[event]} \u00b7 {e['pair']} {e.get('tf') or ''} {e.get('side') or ''} \u00b7 {tail}",
+    return "\n".join([f"{RESULT_HEAD[event]} \u00b7 {instruments.label(e['pair'])} {e.get('tf') or ''} {e.get('side') or ''} \u00b7 {tail}",
                       f"{model} \u00b7 entry {fmt_price(e['pair'], e['entry'])} \u00b7 paper result (signal), not a broker trade"])
 
 
@@ -660,10 +662,12 @@ def format_entry_alert(event, e, auto_trade="off"):
     sp = e.get("stop_pips")
     if sp is None:
         sp = round(abs(e["entry"] - e["stop"]) / pip(p), 1)
-    lines = [f"{p} | {e['tf']} | {e['side']} | {MODEL_NAMES.get(model, model)} | {head}",
+    lines = [f"{instruments.label(p)} | {e['tf']} | {e['side']} | {MODEL_NAMES.get(model, model)} | {head}",
              f"Entry {fp(e['entry'])}  Stop {fp(e['stop'])} ({sp} pips)",
              f"TP1 {fp(e['tp1'])}  TP2 {fp(e['tp2'])}"]
-    if event == "ENTRY_PENDING" and str(auto_trade).lower() == "confirm":
+    if instruments.is_deriv(p):
+        lines.append("Deriv public feed · signal only · no broker order execution")
+    if event == "ENTRY_PENDING" and str(auto_trade).lower() == "confirm" and not instruments.is_deriv(p):
         lines.append("Confirm in Mini App to place the order.")
     return "\n".join(lines)
 
@@ -807,6 +811,7 @@ ICON = {"TAPPED": "\U0001f440", "BREAKOUT": "⏳", "CONFIRMED": "✅", "RETRACE"
         "ENDED_FLIP": "\U0001f504", "LINE_END": "⛔"}
 
 
+@candles.market_function(lambda a,k:(a[1] if len(a)>1 else k["r"])["pair"])
 def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
     """Telegram BIAS message (never an entry), in sections a person can read (owner 2026-10-16):
     headline (what happened, in words) / KEY LEVEL (shape A / V / OC, price, its candle, flipped?) / STORY SO FAR
@@ -854,7 +859,7 @@ def format_alert(event, r, tz=DISPLAY_TZ, detail="short"):
             "ENDED_FLIP": "An opposite key level was rejected and broken: watch for that story's own alert.",
             "LINE_END": f"After the target, the {O} closed back {above} the key level. There is no "
                         f"{STORY_NAME[r['story']].lower()} bias now: wait for the next confirmed story."}.get(event)
-    top = [f"{ICON.get(event, '')} {'SELL' if sell else 'BUY'} {p} · {STORY_NAME[r['story']]} story "
+    top = [f"{ICON.get(event, '')} {'SELL' if sell else 'BUY'} {instruments.label(p)} · {STORY_NAME[r['story']]} story "
            f"· {r.get('chain') or chain(r['story'], r['side'], r.get('htf_trend'))}".strip(), head]
     if what:
         top.append(what)
@@ -1022,8 +1027,8 @@ def summary_line(pair, rows, close_at_target=False):
         if b["side"] and b["state"] != "story active":
             parts.append(f"{st} {standing.WORD[b['side']]} bias ({b['state']})")
     if not parts:
-        return f"{pair}: NO_TRADE (no story)"
-    line = f"{pair}: " + ", ".join(parts)
+        return f"{instruments.label(pair)}: NO_TRADE (no story)"
+    line = f"{instruments.label(pair)}: " + ", ".join(parts)
     m, w = (stand.get(x, {}).get("side") for x in ("M", "W"))
     if m and w and m != w:
         line += " -> NO_TRADE (M/W disagree)"
@@ -1121,6 +1126,7 @@ def _save_memo(pair, memo):
         print(f"memo {pair}: not saved ({e})", flush=True)
 
 
+@candles.market_function(lambda a,k:(a[0] if a else k["job"])[0])
 def compute_pair(job):
     """Engine work of one pair (runs in a worker process): bias rows + entry rows. No DB access."""
     pair, now, engine_stories, stories, cfg, ecfg, entries_on = job
@@ -1215,6 +1221,11 @@ def shared_compute(jobs, cache=None):
     return [copy.deepcopy(cache[key]) for key in keys]
 
 
+def weekend_paused(now):
+    ny=_ts(now).tz_convert("America/New_York")
+    return candles_store.fx_closed(now) and not (ny.dayofweek==4 and ny.hour<20)
+
+
 def run_user_watchlists(argv, args, started):
     """Fetch the union once; reconcile and notify in independent user scopes.
 
@@ -1239,8 +1250,13 @@ def run_user_watchlists(argv, args, started):
             requested = [p.strip().upper() for p in args.pairs.split(",") if p.strip()]
             watchlists[uid] = ([p for p in requested if p in selected or uid == owner]
                               if requested else selected)
+            if weekend_paused(started):
+                watchlists[uid]=[p for p in watchlists[uid] if instruments.deriv_continuous(p)]
     union = sorted({p.strip().upper() for pairs in watchlists.values() for p in pairs if p.strip()})
     print(f"{len(users)} users, {len(union)} distinct watched markets (one download per market)", flush=True)
+    if not union:
+        print("No watched markets to scan during the FX closure",flush=True)
+        return 0
     failures = prepare_candles(union, started)
     codes, computed = [], {}
     scan_now = datetime.now(timezone.utc)
@@ -1334,7 +1350,7 @@ def main(argv=None, _profile=None, _prepared=None, _computed=None, _scan_now=Non
         kill = "on" if vals["kill_switch"] == "on" else "off"
         auto = vals["auto_trade"]
         weekend = weekend_close_day(started)
-        if weekend and event == "schedule" and db.get_setting("weekend_done") == weekend:
+        if weekend and not any(instruments.is_deriv(p) for p in pairs) and event == "schedule" and db.get_setting("weekend_done") == weekend:
             # FX closed and the final run after the Friday close (bars + daily summary) is done: nothing can change
             note = f"weekend: market closed since {weekend} 17:00 NY, skipped"
             print(note)
@@ -1357,44 +1373,45 @@ def main(argv=None, _profile=None, _prepared=None, _computed=None, _scan_now=Non
                 print(res.get("trace", ""), flush=True)
                 continue
             try:
-                h1 = recent(p, HISTORY_DAYS)
-                new = res["rows"]
-                old = [r for r in db.get_bias(p) if r["story"] in stories]
-                writes, alerts = reconcile(new, old, now, h1, cfg)
-                for r in writes:
-                    db.upsert_bias(r)
-                bias_notes(alerts, old, writes, res.get("trends"), cfg.get("close_at_target", False))
-                for st, t in (res.get("trends") or {}).items():
-                    if st in stories:
-                        db.upsert_tf_state(p, st, t)
-                for ev, r in alerts_enabled(filter_alerts(alerts), vals):
-                    sent += send_telegram(format_alert(ev, r, tz, vals["alert_detail"]))
-                if vals["early_breakout_alert"]:
-                    early, early_sent = early_alerts(new, early_sent, now)
-                    for ev, r in early:
+                with candles.market(p):
+                    h1 = recent(p, HISTORY_DAYS)
+                    new = res["rows"]
+                    old = [r for r in db.get_bias(p) if r["story"] in stories]
+                    writes, alerts = reconcile(new, old, now, h1, cfg)
+                    for r in writes:
+                        db.upsert_bias(r)
+                    bias_notes(alerts, old, writes, res.get("trends"), cfg.get("close_at_target", False))
+                    for st, t in (res.get("trends") or {}).items():
+                        if st in stories:
+                            db.upsert_tf_state(p, st, t)
+                    for ev, r in alerts_enabled(filter_alerts(alerts), vals):
                         sent += send_telegram(format_alert(ev, r, tz, vals["alert_detail"]))
-                        early_dirty = True
-                by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
-                ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}
-                ents = res["entries"]
-                for e in ents:
-                    e["bias_id"] = ids.get(e.pop("_key", None))
-                ew, ea = reconcile_entries(ents, db.get_entries(p)) if vals["continuation_entries"] else ([], [])
-                for e in ew:
-                    db.upsert_entry(e)
-                for ev, e in ea if vals["alert_entry"] else []:
-                    sent += send_telegram(format_entry_alert(ev, e, auto))
-                stored = db.get_entries(p)  # after the writes above
-                bstat = {r.get("id"): r["status"] for r in by_pair[p]}
-                for e, f in cancel_entries(stored, bstat):
-                    db.update_entry_result(e["id"], e["status"], f)
-                closed = drop_forming(h1, "H1", now)  # closed H1 bars only (no look-ahead)
-                for e, f, evs in track_entries(stored, closed, ecfg):
-                    if db.update_entry_result(e["id"], e["status"], f) and vals["alert_entry"]:  # write first, then
-                        for ev in evs:                                                           # alert once
-                            sent += send_telegram(format_result_alert(ev, e, f))
-                print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts, "
-                      f"{len(ew)} entries written", flush=True)
+                    if vals["early_breakout_alert"]:
+                        early, early_sent = early_alerts(new, early_sent, now)
+                        for ev, r in early:
+                            sent += send_telegram(format_alert(ev, r, tz, vals["alert_detail"]))
+                            early_dirty = True
+                    by_pair[p] = [r for r in db.get_bias(p) if r["story"] in stories]
+                    ids = {(r["story"], r["tap_time"]): r.get("id") for r in by_pair[p]}
+                    ents = res["entries"]
+                    for e in ents:
+                        e["bias_id"] = ids.get(e.pop("_key", None))
+                    ew, ea = reconcile_entries(ents, db.get_entries(p)) if vals["continuation_entries"] else ([], [])
+                    for e in ew:
+                        db.upsert_entry(e)
+                    for ev, e in ea if vals["alert_entry"] else []:
+                        sent += send_telegram(format_entry_alert(ev, e, auto))
+                    stored = db.get_entries(p)  # after the writes above
+                    bstat = {r.get("id"): r["status"] for r in by_pair[p]}
+                    for e, f in cancel_entries(stored, bstat):
+                        db.update_entry_result(e["id"], e["status"], f)
+                    closed = drop_forming(h1, "H1", now)  # closed H1 bars only (no look-ahead)
+                    for e, f, evs in track_entries(stored, closed, ecfg):
+                        if db.update_entry_result(e["id"], e["status"], f) and vals["alert_entry"]:  # write first, then
+                            for ev in evs:                                                           # alert once
+                                sent += send_telegram(format_result_alert(ev, e, f))
+                    print(f"{p}: {len(new)} stories, {len(writes)} written, {len(alerts)} alerts, "
+                          f"{len(ew)} entries written", flush=True)
             except Exception as e:  # one bad pair must not stop the others
                 errors.append(f"{p}: {type(e).__name__}: {e}")
                 traceback.print_exc()
@@ -1405,7 +1422,7 @@ def main(argv=None, _profile=None, _prepared=None, _computed=None, _scan_now=Non
                 db.set_setting("last_summary", _ts(started).tz_convert("America/New_York").strftime("%Y-%m-%d"))
         if early_dirty:
             db.set_setting("early_alerts_sent", json.dumps(early_sent, sort_keys=True))
-        if weekend and by_pair and not errors:
+        if weekend and by_pair and not errors and not any(instruments.is_deriv(p) for p in pairs):
             db.set_setting("weekend_done", weekend)
             note = "Market closed: this was the last run until Sunday 17:00 NY."
     except Exception as e:

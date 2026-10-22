@@ -1,0 +1,22 @@
+name: Deriv public feed checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude-kevin-king]
+    paths: ['slk/deriv.py', 'tests/test_deriv.py', '.github/workflows/deriv-check.yml']
+permissions:
+  contents: read
+jobs:
+  public-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SLK_STORE: data/deriv-validation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pandas pymysql requests websocket-client pytest 'protobuf>=3.20'
+      - run: python -m pytest -q tests/test_deriv.py
+      - name: Real public H1 history and native bias engine, no database or Telegram
+        run: python -u -m slk.deriv --probe --pair DV1HZ100V --days 366

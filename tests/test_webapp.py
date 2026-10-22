@@ -364,3 +364,13 @@ def test_news_cron_secret(client,monkeypatch):
     assert calls==[]
     assert client.get('/cron/news?key=test-news-secret').status_code==200
     assert calls==[1]
+
+
+def test_deriv_catalogue_labels_and_orders_are_signals_only(client,monkeypatch):
+    response=client.get('/api/settings/schema',headers=hdr(make_init_data()))
+    pairs=next(f for f in response.json()['settings'] if f['name']=='pairs')
+    assert 'DV1HZ100V' in pairs['choices']
+    assert 'Volatility 100' in pairs['labels']['DV1HZ100V']
+    monkeypatch.setattr(webapp.db,'query',lambda *a:[{'pair':'DV1HZ100V'}])
+    r=client.post('/api/entries/5/approve',headers=hdr(make_init_data()))
+    assert r.status_code==409 and 'signals only' in r.json()['detail']

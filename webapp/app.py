@@ -18,6 +18,7 @@ from starlette.concurrency import run_in_threadpool
 import db  # also puts the repo root on sys.path
 from slk import settings as S  # stdlib only (no pandas)
 from slk import standing  # stdlib only
+from slk import instruments
 from slk import tenancy
 from slk import terms as T  # stdlib only
 
@@ -112,7 +113,7 @@ def healthz():
 @app.get("/version")
 def version():
     return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown"),
-            "settings_validation": "flip-age-bounds-v1", "multiuser": True, "news": True}
+            "settings_validation": "flip-age-bounds-v1", "multiuser": True, "news": True, "deriv": True}
 
 
 @app.get("/")
@@ -238,7 +239,7 @@ def send_eligible(user=Depends(require_user)):
     lines = ["Eligible confirmed biases", f"Scan: {stamp:%Y-%m-%d %H:%M} UTC",
              "Based on your saved pairs and story timeframes. Bias only; wait for an entry signal."]
     for row in rows:
-        lines.append(f"{row['side']} {row['pair']} · {row['story']} · Target {row.get('target') or '—'}")
+        lines.append(f"{row['side']} {instruments.label(row['pair'])} · {row['story']} · Target {row.get('target') or '—'}")
     if not rows:
         lines.append("No eligible confirmed biases in this scan.")
     # Keep each Telegram message below its limit, including for large watchlists.
@@ -370,6 +371,15 @@ def settings_schema(user=Depends(require_user)):
                 field["help"] = ("IC Markets account symbols. Select markets you want scanned. "
                                  + ("Empty = default 28 FX pairs." if user["id"] == tenancy.owner_id() else "Up to 30 markets. Empty restores your three starter pairs."))
         schema["broker_catalogue"] = {"updated_at": data["updated_at"], "count": len(choices)}
+    deriv=instruments.deriv_symbols()
+    for field in schema["settings"]:
+        if field["name"]=="pairs":
+            field["choices"]=sorted(set(field["choices"])|{r["key"] for r in deriv})
+            field["labels"]={r["key"]:"Deriv · "+r["name"]+" ("+r["key"]+")" for r in deriv}
+            field["help"]+=" Deriv labels use its public API and UTC candles; broker order execution is unavailable for these markets."
+    if "broker_catalogue" in schema:
+        schema["broker_catalogue"]["count"]=len(next(f for f in schema["settings"] if f["name"]=="pairs")["choices"])
+        schema["broker_catalogue"]["deriv_count"]=len(deriv)
     if user["id"] != tenancy.owner_id():
         for field in schema["settings"]:
             if field["name"] == "auto_trade":
@@ -415,6 +425,9 @@ def approve(entry_id: int, user=Depends(require_user)):
         raise HTTPException(409, "auto_trade is not 'confirm'")
     if st["kill_switch"] == "on":
         raise HTTPException(409, "kill switch is on")
+    owned=_db(db.query,"SELECT pair FROM entries WHERE id=%s",(entry_id,))
+    if owned and instruments.is_deriv(owned[0]["pair"]):
+        raise HTTPException(409,"Deriv markets provide signals only; broker order execution is unavailable.")
     n = _db(db.execute, "UPDATE entries SET status = 'APPROVED' WHERE id = %s AND status = 'PENDING'", (entry_id,))
     if not n:
         raise HTTPException(409, "entry not found or not PENDING")

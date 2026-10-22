@@ -5,6 +5,7 @@
   let settings = {};
 
   const $ = (s) => document.querySelector(s);
+  const marketLabel = (pair) => (schema?.settings?.find((s) => s.name === "pairs")?.labels?.[pair]) || pair;
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (v) => (v === null || v === undefined || v === "" ? "–" : Number(v).toFixed(Number(v) > 500 ? 2 : Number(v) > 20 ? 3 : 5));  // gold/indices 2, JPY/silver 3, FX 5
   // Times from the API are UTC. Shown in the display_tz setting (else the phone's zone) with a friendly day near
@@ -120,9 +121,9 @@
     $("#bias-state").innerHTML = rows.length ? `
       <div class="card summary">
         <div class="top"><span class="title">Current bias</span><span class="tag">${esc(rows.filter((b) => b.side).length)} pairs/TFs</span></div>
-        ${rows.map((b) => `<div class="bias-row"><span><b>${esc(b.pair)}</b> · ${esc(b.chain || b.story)}</span>
+        ${rows.map((b) => `<div class="bias-row"><span><b>${esc(marketLabel(b.pair))}</b> · ${esc(b.chain || b.story)}</span>
           <span class="${esc(b.side || "")}">${esc(b.bias)}</span>
-          <span class="muted">${b.side ? `since ${esc(candleDay(b.since, "D").replace(" (D1 candle)", ""))}${b.stories > 1 ? ` · ${esc(b.stories)} stories` : ""} · ${esc(b.state)}` : esc(b.state)}</span></div>`).join("")}
+          <span class="muted">${b.side ? `since ${esc((b.pair.startsWith("DV") ? dt(b.since) : candleDay(b.since, "D").replace(" (D1 candle)", "")))}${b.stories > 1 ? ` · ${esc(b.stories)} stories` : ""} · ${esc(b.state)}` : esc(b.state)}</span></div>`).join("")}
         <div class="muted">A bias stays after its target is reached (Kevin: "we are still bearish ... price is not ready to buy yet"). It changes only when a story the other way confirms, or a close back through the level invalidates it.</div>
       </div>` : "";
   }
@@ -134,22 +135,22 @@
     const sel = $("#f-pair");
     const known = new Set([...sel.options].map((o) => o.value));
     const pairs = new Set([...(settings.pairs || "").split(",").filter(Boolean), ...rows.map((r) => r.pair)]);
-    [...pairs].sort().forEach((p) => { if (!known.has(p)) sel.add(new Option(p, p)); });
+    [...pairs].sort().forEach((p) => { if (!known.has(p)) sel.add(new Option(marketLabel(p), p)); });
     $("#bias-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
-        <div class="top"><span class="title"><span class="${esc(r.side)}">${esc(r.side)}</span> · ${esc(r.pair)} · ${esc(r.chain || r.story)}</span>
+        <div class="top"><span class="title"><span class="${esc(r.side)}">${esc(r.side)}</span> · ${esc(marketLabel(r.pair))} · ${esc(r.chain || r.story)}</span>
           <span>${Number(r.no_trade) ? `<span class="tag notrade" title="${esc(r.no_trade_reason || "")}">NO_TRADE</span> ` : ""}<span class="tag">${esc(r.status)}</span></span></div>
         ${Number(r.no_trade) ? `<div class="muted">No trade: ${esc(r.no_trade_reason || "filter")}</div>` : ""}
         ${(r.trend === "up" || r.trend === "down") && (r.side === "BUY") !== (r.trend === "up") ? `<div class="muted">↩ Pullback: against the ${esc({ D: "D1", W: "W1", M: "MN1" }[r.story] || r.story)} structure (${esc(r.trend === "up" ? "bullish" : "bearish")}), a retracement inside it, not a bias change</div>` : ""}
         <div class="grid">
           ${field("Level", `${num(r.level)} ${kl(r)}`)}${field("Point B", num(r.point_b))}
-          ${r.level_candle ? field("KL candle", candleDay(r.level_candle, r.story)) : ""}
+          ${r.level_candle ? field("KL candle", (r.pair.startsWith("DV") ? dt(r.level_candle) : candleDay(r.level_candle, r.story))) : ""}
           ${field("Target", num(r.target))}${field("Invalid", num(r.invalidation))}
-          ${field("Tap candle", candleDay(r.tap_time, r.story))}${field("Confirm", dt(r.confirm_time))}
+          ${field("Tap candle", (r.pair.startsWith("DV") ? dt(r.tap_time) : candleDay(r.tap_time, r.story)))}${field("Confirm", dt(r.confirm_time))}
           ${field("Rule", r.rule || "standard")}${field("Updated", dt(r.updated_at))}
           ${r.breakout_time ? field("Breakout (open)", dt(r.breakout_time)) : ""}
           ${r.next_day == null ? "" : field("Next Day Rule", Number(r.next_day) ? "✅ next day" : "⚠ same day")}
-        </div>${contBreaks(r).length ? `<div class="muted">Continuation breaks (after point B):<br>${contBreaks(r).map(esc).join("<br>")}</div>` : ""}${Number(r.retrace) ? `<div class="muted">⚠ Retrace: closed back beyond point B on the breakout day</div>` : ""}${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}${r.line_end ? `<div class="muted">Story line ended after the target: ${esc(candleDay(r.line_end, r.story))} closed back through the level</div>` : (r.status === "TARGET_HIT" ? `<div class="muted">After the target: watching for the next break (continues) or a close back through the level (ends)</div>` : "")}</div>`).join("") : empty("No stories");
+        </div>${contBreaks(r).length ? `<div class="muted">Continuation breaks (after point B):<br>${contBreaks(r).map(esc).join("<br>")}</div>` : ""}${Number(r.retrace) ? `<div class="muted">⚠ Retrace: closed back beyond point B on the breakout day</div>` : ""}${r.end_reason ? `<div class="muted">Ended: ${esc(r.end_reason)}</div>` : ""}${r.line_end ? `<div class="muted">Story line ended after the target: ${esc((r.pair.startsWith("DV") ? dt(r.line_end) : candleDay(r.line_end, r.story)))} closed back through the level</div>` : (r.status === "TARGET_HIT" ? `<div class="muted">After the target: watching for the next break (continues) or a close back through the level (ends)</div>` : "")}</div>`).join("") : empty("No stories");
   }
 
   // ---------------- Entries (+ paper results of filled signals: slk.entry.paper_track, not broker trades)
@@ -182,7 +183,7 @@
     const canApprove = settings.auto_trade === "confirm" && settings.kill_switch !== "on";
     $("#entries-list").innerHTML = rows.length ? rows.map((r) => `
       <div class="card">
-        <div class="top"><span class="title">${esc(r.pair)} ${esc(r.tf || "")} <span class="${esc(r.side)}">${esc(r.side)}</span> ${esc(r.model === "qmr" ? "QMR" : "Continuation")}</span>
+        <div class="top"><span class="title">${esc(marketLabel(r.pair))} ${esc(r.tf || "")} <span class="${esc(r.side)}">${esc(r.side)}</span> ${esc(r.model === "qmr" ? "QMR" : "Continuation")}</span>
           <span class="tag ${esc(OUTCOME[r.status] || "")}">${esc(r.status)}</span></div>
         <div class="grid">
           ${field("Entry", num(r.entry))}${field("Stop", num(r.stop))}
@@ -257,7 +258,7 @@
       input = `<input type="number" id="${id}" value="${esc(v)}" min="${s.min}" max="${s.max}" step="${step}" inputmode="decimal">`;
     } else if (s.type === "multi" || s.type === "pairs") {
       const on = new Set(csv(v));
-      const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(String(c).toUpperCase()) ? "checked" : ""}> ${esc(c)}</label>`).join("");
+      const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(String(c).toUpperCase()) ? "checked" : ""}> ${esc(s.labels?.[c] || c)}</label>`).join("");
       const extra = s.type === "pairs" ? `<input type="text" id="${id}-x" placeholder="other symbols, comma separated" autocapitalize="characters" value="${esc([...on].filter((x) => !s.choices.map((c) => String(c).toUpperCase()).includes(x)).join(","))}">` : "";
       return `<div class="col"><span>${esc(label)}</span>${s.type === "pairs" ? `<input type="search" class="symbol-search" placeholder="Search broker symbols" aria-label="Search symbols">` : ""}<div class="chips">${chips}</div>${extra}</div><p class="hint">${esc(s.help)}</p>`;
     } else if (s.type === "ladder") {

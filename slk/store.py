@@ -40,7 +40,7 @@ DIR = os.environ.get("SLK_STORE", os.path.join(os.environ.get("SLK_CACHE", "data
 COLS = ("open", "high", "low", "close")
 MONTH, DAY, TICK = 3, 2, 1
 CUR = DAY  # cTrader bars of the current (unfinished) month: refreshed every run, replaced once the month is final
-SOURCES = ("ctrader", "dukascopy")
+SOURCES = ("ctrader", "dukascopy", "deriv")
 REFRESH = pd.Timedelta(days=3)  # cTrader: the last few stored days of the current month are fetched again
 _locks = {}
 _glock = threading.Lock()
@@ -228,7 +228,7 @@ class Pair:
                 meta = json.loads(str(z["meta"]))
                 self.done_m, self.done_d = set(meta.get("m", [])), set(meta.get("d", []))
                 self.src = meta.get("src") or ("dukascopy" if len(self.df) else None)  # v2 files: Dukascopy
-                self.sym = meta.get("sym") if self.src == "ctrader" else None
+                self.sym = meta.get("sym") if self.src in ("ctrader", "deriv") else None
                 if self.sym:
                     instruments.register(pair, self.sym.get("pip_position"), self.sym.get("digits"))
             except Exception as e:  # broken file: start again
@@ -462,6 +462,26 @@ def update(pair, now=None, since=None, days=None, root=None, source=None, feed=N
     now = _utc(now)
     since = _utc(since) if since is not None else now - pd.Timedelta(days=days or 30)
     src = source or default_source()
+    if instruments.is_deriv(pair):
+        since=max(since,now-pd.Timedelta(days=366))  # bounded public-feed warmup; retain actual available history
+        if feed is None:
+            from .deriv import Feed
+            with Feed() as public:
+                public.prefetch([pair])
+                return update(pair,now,since=since,root=root,source="deriv",feed=public)
+        with _lock(pair):
+            p=Pair(pair,root,source="deriv")
+            try:
+                p.update_ctrader(feed,now,since)
+                sym=feed.info(pair)
+                latest=int(now.floor("h").timestamp())-3600
+                if sym.get("market") in ("synthetic_index","cryptocurrency") or sym.get("exchange_is_open"):
+                    if p.last_time() is None or p.last_time()<latest:
+                        raise RuntimeError("Deriv latest closed H1 is unavailable; skipping stale scan")
+            finally:p.save()
+            _drop_overlay(pair,root)
+            return p
+    if src=="deriv":raise ValueError("Deriv source requires a DV-prefixed market key")
     with _lock(pair):
         if src == "ctrader":
             feed = feed or get_feed()  # before touching the file: no connection = file left as it is
@@ -518,7 +538,7 @@ def _fallback_note(failed):
          f"{' ...' if len(failed) > 6 else ''}): {first}. Using Dukascopy for them.")
 
 
-def update_all(pairs, now=None, days=30, threads=8, root=None, source=None):
+def _update_standard_all(pairs, now=None, days=30, threads=8, root=None, source=None):
     """update() for many pairs. cTrader: one connection, pairs in turn; pairs that fail (or all, when cTrader
     cannot connect) fall back to Dukascopy (threads). Returns {pair: error text} for pairs that got nothing."""
     pairs = list(pairs)
@@ -549,6 +569,28 @@ def update_all(pairs, now=None, days=30, threads=8, root=None, source=None):
     return errors
 
 
+def update_all(pairs,now=None,days=30,threads=8,root=None,source=None):
+    """One public Deriv connection plus existing IC Markets connection; feeds never mix."""
+    pairs=list(dict.fromkeys(pairs))
+    dv=[p for p in pairs if instruments.is_deriv(p)]
+    regular=[p for p in pairs if not instruments.is_deriv(p)]
+    if regular and (source or default_source())=="deriv":
+        errors={p:"Deriv source requires a DV-prefixed market key" for p in regular}
+    else:
+        errors=_update_standard_all(regular,now,days,threads,root,source) if regular else {}
+    if dv:
+        from .deriv import Feed
+        try:
+            with Feed() as feed:
+                feed.prefetch()
+                for pair in dv:
+                    try:update(pair,now,days=days,root=root,source="deriv",feed=feed)
+                    except Exception as exc:errors[pair]="Deriv: "+_safe(exc)
+        except Exception as exc:
+            for pair in dv:errors.setdefault(pair,"Deriv: "+_safe(exc))
+    return errors
+
+
 def recent(pair, days, now=None, root=None):
     """Engine candles: hourly OHLC from now - days up to the last closed hour in the store (+ this run's
     Dukascopy fallback overlay after the last cTrader bar)."""
@@ -575,6 +617,23 @@ def hourly(pair, start_year, end_year, root=None, now=None, source=None, feed=No
     fails, a cTrader file is used as it is and only an empty / Dukascopy file is filled from Dukascopy."""
     now = _utc(now)
     src = source or default_source()
+    if instruments.is_deriv(pair):
+        if feed is None:
+            from .deriv import Feed
+            with Feed() as public:
+                public.prefetch([pair])
+                return hourly(pair,start_year,end_year,root,now,source="deriv",feed=public)
+        with _lock(pair):
+            p=Pair(pair,root,source="deriv")
+            p.sym=feed.info(pair)
+            instruments.register(pair,p.sym.get("pip_position"),p.sym.get("digits"))
+            try:p.ctrader_months(feed,_months(start_year,end_year,now))
+            finally:p.save()
+            df=p.frame(min_q=MONTH)
+            df=df[(df.index.year>=start_year)&(df.index.year<=end_year)]
+            if df.empty:raise RuntimeError(f"no data for {pair}")
+            return df
+    if src=="deriv":raise ValueError("Deriv source requires a DV-prefixed market key")
     with _lock(pair):
         p = None
         if src == "ctrader":
@@ -612,6 +671,14 @@ def months_all(pairs, start_year, end_year, threads=3, root=None, now=None, sour
     """Download missing final months for many pairs (before a backtest): cTrader over one connection, Dukascopy
     (threads) for the pairs where cTrader failed."""
     pairs = list(pairs)
+    dv=[p for p in pairs if instruments.is_deriv(p)]
+    if dv:
+        from .deriv import Feed
+        with Feed() as feed:
+            feed.prefetch()
+            for pair in dv:hourly(pair,start_year,end_year,root,now,source="deriv",feed=feed)
+        pairs=[p for p in pairs if not instruments.is_deriv(p)]
+    if not pairs:return
     src = source or default_source()
     if src == "ctrader":
         failed = _ctrader_each(pairs, lambda p, feed: Pair(p, root, source="ctrader").ctrader_months(
@@ -649,7 +716,7 @@ def complete(pairs, start_year, root=None, now=None, max_age_days=10, source=Non
     for p in pairs:
         s = Pair(p, root)
         d = s.df
-        if d.empty or d.index[0] > first_ok or d.index[-1] < last_ok or (source and s.src != source):
+        if d.empty or d.index[0] > first_ok or d.index[-1] < last_ok or (source and s.src != ("deriv" if instruments.is_deriv(p) else source)):
             bad.append(p)
     return not bad, bad
 

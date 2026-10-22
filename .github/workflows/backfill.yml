@@ -39,7 +39,7 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: .github/workflows/backfill.yml
-      - run: pip install -q pandas pymysql "protobuf>=3.20" requests
+      - run: pip install -q pandas pymysql "protobuf>=3.20" requests websocket-client
       - name: Restore candle store (cTrader store or this workflow's unfinished progress; never the v2 Dukascopy caches)
         uses: actions/cache/restore@v4
         with:
