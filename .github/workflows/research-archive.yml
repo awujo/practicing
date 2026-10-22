@@ -1,0 +1,95 @@
+name: Archive research SQL and free database space
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: slk-research-publication
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local-test-only
+          MYSQL_DATABASE: archive_verify
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -plocal-test-only"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      ARCHIVE_DIR: research/archive/database-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: claude-kevin-king, fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pymysql pytest pandas==2.2.3
+      - run: python -m pytest -q tests/test_research_archive.py
+        env:
+          SLK_ARCHIVE_TEST_MYSQL: "1"
+      - name: Export research table only
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+        run: python -u -m slk.research_archive export "$ARCHIVE_DIR"
+      - name: Restore exported SQL into disposable MySQL and compare every field
+        run: python -u -m slk.research_archive restore-verify "$ARCHIVE_DIR"
+      - name: Commit verified archives before any deletion
+        id: publish
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path(os.environ['ARCHIVE_DIR']);m=json.loads((root/'manifest.json').read_text())
+          p=Path('HANDOVER.md');s=p.read_text()
+          s+='\n- Research SQL archive '+str(root)+': '+str(len(m['files']))+' experiments, '+str(m['rows'])+' records, '+str(m['payload_bytes'])+' payload bytes. SQL fully restored/verified in disposable MySQL before publication; pruning is a separate subsequent workflow step.\n'
+          p.write_text(s)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$ARCHIVE_DIR" HANDOVER.md
+          git commit -m "Archive verified experiment SQL before research database cleanup"
+          git pull --rebase origin claude-kevin-king
+          git push origin HEAD:claude-kevin-king
+          git fetch origin claude-kevin-king
+          git merge-base --is-ancestor HEAD origin/claude-kevin-king
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Delete only records matching the published archive
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_CA: ${{ secrets.DATABASE_CA }}
+          ARCHIVE_COMMIT: ${{ steps.publish.outputs.commit }}
+        run: |
+          test -n "$ARCHIVE_COMMIT"
+          git fetch origin claude-kevin-king
+          git merge-base --is-ancestor "$ARCHIVE_COMMIT" origin/claude-kevin-king
+          git diff --exit-code "$ARCHIVE_COMMIT" -- "$ARCHIVE_DIR"
+          python -u -m slk.research_archive prune "$ARCHIVE_DIR"
+      - name: Record cleanup outcome
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads(Path('research-prune-result.json').read_text())
+          root=Path(os.environ['ARCHIVE_DIR']);(root/'cleanup-result.json').write_text(json.dumps(r,indent=2)+'\n')
+          p=Path('HANDOVER.md');p.write_text(p.read_text()+'\n- Research archive cleanup completed: '+str(r['deleted_rows'])+' archived records removed; '+str(r['remaining_research_rows'])+' research rows remain. Live/user tables untouched. Empty research table file reclaimed: '+str(r['empty_table_reclaimed'])+'.\n')
+          PY
+          git add "$ARCHIVE_DIR/cleanup-result.json" HANDOVER.md
+          git commit -m "Record verified research database cleanup result"
+          git pull --rebase origin claude-kevin-king
+          git push origin HEAD:claude-kevin-king
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-archive-${{ github.run_id }}
+          path: |
+            research/archive/database-${{ github.run_id }}
+            research-prune-result.json
+          if-no-files-found: warn
+          retention-days: 30

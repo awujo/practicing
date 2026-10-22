@@ -46,6 +46,9 @@ def publish(path, connection_factory=None, max_total_bytes=None, deadline=None):
         remote=connection_factory()
         try:
             with remote.cursor() as c:
+                c.execute("SELECT GET_LOCK('slk_research_records',10) AS acquired")
+                if c.fetchone()['acquired'] != 1:
+                    raise TimeoutError('research archive/publication lock unavailable')
                 c.execute('''CREATE TABLE IF NOT EXISTS research_records (
                     run_id CHAR(64) NOT NULL, kind VARCHAR(16) NOT NULL, record_id CHAR(64) NOT NULL,
                     payload_sha256 CHAR(64) NOT NULL, payload LONGTEXT NOT NULL,

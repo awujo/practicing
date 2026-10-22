@@ -51,6 +51,7 @@ class Cursor:
         if sql.startswith('SELECT'):self.selected=args
     def executemany(self,sql,rows):
         for row in rows:self.execute(sql,row)
+    def fetchone(self):return {"acquired":1}
     def fetchall(self):
         run,*ids=self.selected
         return [{'kind':kind,'record_id':rid,'payload_sha256':v} for (runid,kind,rid),v in self.data.items() if runid==run and (not ids or rid in ids)]
@@ -86,7 +87,7 @@ def test_scenario_publication_budget_is_checked_before_inserts(tmp_path):
         def execute(self,sql,args=None):
             if sql.startswith('INSERT IGNORE') and args[:3] not in self.data:self.bytes+=len(args[4].encode())
             super().execute(sql,args)
-        def fetchone(self):return {'bytes':self.bytes}
+        def fetchone(self):return {'bytes':self.bytes,'acquired':1}
     remote=Remote();remote.c=BudgetCursor()
     with pytest.raises(ValueError,match='storage budget'):
         p.publish(path,lambda:remote,max_total_bytes=1)
