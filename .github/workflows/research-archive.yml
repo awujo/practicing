@@ -42,6 +42,7 @@ jobs:
       - name: Commit verified archives before any deletion
         id: publish
         run: |
+          git pull --ff-only origin claude-kevin-king
           python - <<'PY'
           import os,json
           from pathlib import Path
@@ -73,6 +74,7 @@ jobs:
           python -u -m slk.research_archive prune "$ARCHIVE_DIR"
       - name: Record cleanup outcome
         run: |
+          git pull --ff-only origin claude-kevin-king
           python - <<'PY'
           import json,os
           from pathlib import Path
