@@ -417,3 +417,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-22: Added requested private eligible-bias snapshot button and IC Markets symbol catalogue exporter/workflow. No manual Telegram message sent during implementation; delivery happens only on authenticated button POST. 69 web/settings tests passed, including recipient isolation, stale-scan rejection and no resurrection of ended/blocked stories. Broker discovery is account-specific, not an assurance every listed instrument has sufficient candle history or validated strategy performance.
 
 - 2026-10-22: Added broker-symbol search to keep expanded settings usable on phones. Catalogue refresh workflow also records its publication in this log.
+
+- 2026-10-22: First catalogue export authenticated and completed; publication hit ignored data/ path. Fixed publication to explicitly stage only the generated catalogue file.

@@ -36,7 +36,8 @@ jobs:
           s += "\n- Broker catalogue refresh: exported enabled cTrader account symbols; saved selections and live strategy unchanged.\n"
           p.write_text(s)
           PYCODE
-          git add data/broker_symbols.json HANDOVER.md
+          git add -f data/broker_symbols.json
+          git add HANDOVER.md
           git diff --cached --quiet && exit 0
           git commit -m "Refresh IC Markets account symbol catalogue"
           git pull --rebase origin claude-kevin-king
