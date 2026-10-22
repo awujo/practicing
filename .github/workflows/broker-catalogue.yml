@@ -1,0 +1,36 @@
+name: IC Markets symbol catalogue
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: {group: broker-catalogue, cancel-in-progress: false}
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_REFRESH_TOKEN: ${{ secrets.CTRADER_REFRESH_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: claude-kevin-king}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install "protobuf>=3.20" pandas requests pymysql
+      - run: python -m slk.broker_catalogue
+      - name: Publish catalogue
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/broker_symbols.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh IC Markets account symbol catalogue"
+          git pull --rebase origin claude-kevin-king
+          git push origin HEAD:claude-kevin-king

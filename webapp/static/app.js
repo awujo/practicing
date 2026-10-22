@@ -375,5 +375,15 @@
     msg("Open this page from the Telegram bot (Mini App). Direct browser access is not allowed.", true);
     return;
   }
+  $("#send-eligible").addEventListener("click", async () => {
+    const button = $("#send-eligible"), feedback = $("#eligible-feedback");
+    button.disabled = true;
+    feedback.textContent = "Sending…";
+    try {
+      const result = await api("/api/bias/send-eligible", {method: "POST"});
+      feedback.textContent = `Sent to your Telegram: ${result.count} eligible biases. Latest completed scan; bias only.`;
+    } catch (e) { feedback.textContent = e.message; }
+    finally { button.disabled = false; }
+  });
   loadSettings().catch(() => {}).finally(() => show(current));
 })();

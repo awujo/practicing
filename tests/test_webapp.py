@@ -306,3 +306,33 @@ def test_dispatch_live_request():
     assert webapp.dispatch_live("tok", opener) == 204
     assert seen["url"].endswith("/repos/awujo/practicing/actions/workflows/live.yml/dispatches")
     assert seen["body"] == {"ref": "claude-kevin-king", "inputs": {"tick": "1"}} and seen["auth"] == "Bearer tok"
+
+
+def test_eligible_does_not_resurrect_old_or_blocked():
+    vals = webapp.S.load({"pairs": "EURUSD,GBPUSD", "stories": "D"})
+    rows = [dict(pair="EURUSD", story="D", status="TARGET_HIT"),
+            dict(pair="EURUSD", story="D", status="CONFIRMED"),
+            dict(pair="GBPUSD", story="D", status="CONFIRMED", no_trade=1),
+            dict(pair="USDJPY", story="D", status="CONFIRMED")]
+    assert webapp.eligible_biases(rows, vals) == []
+
+
+def test_digest_private_and_filtered(client, monkeypatch):
+    from datetime import datetime, timezone
+    sent = []
+    monkeypatch.setattr(webapp, "send_private_digest", lambda uid, text: sent.append((uid, text)))
+    monkeypatch.setattr(webapp.db, "query", lambda sql, args=None:
+        [{"finished_at": datetime.now(timezone.utc)}] if "FROM runs" in sql else
+        [dict(pair="EURUSD", story="D", side="SELL", status="CONFIRMED", target=1.1)])
+    r = client.post("/api/bias/send-eligible", headers=hdr(make_init_data()))
+    assert r.status_code == 200 and r.json()["count"] == 1
+    assert sent[0][0] == OWNER and "EURUSD" in sent[0][1]
+    assert client.post("/api/bias/send-eligible").status_code == 403
+
+
+def test_digest_refuses_stale_scan(client, monkeypatch):
+    from datetime import datetime, timezone, timedelta
+    monkeypatch.setattr(webapp.db, "query", lambda *a:
+        [{"finished_at": datetime.now(timezone.utc) - timedelta(hours=3)}])
+    monkeypatch.setattr(webapp, "send_private_digest", lambda *a: pytest.fail("must not send stale digest"))
+    assert client.post("/api/bias/send-eligible", headers=hdr(make_init_data())).status_code == 409

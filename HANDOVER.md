@@ -31,7 +31,9 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-21)
+## Status (2026-10-22)
+- [x] Mini App private eligible-bias digest button: authenticated recipient only; saved pairs/stories, avoid-pair and NO_TRADE filters, latest-story selection, successful-scan timestamp and two-hour freshness limit. Existing owner-only authentication/shared settings remain; no multiuser preference claim.
+- [x] Manual broker-catalogue.yml exports enabled IC Markets demo-account cTrader symbols and broker metadata into data/broker_symbols.json; Mini App pair choices use catalogue when present. Empty selection remains default 28; discovery does not enable every market. Deriv remains a future separate adapter, not connected.
 - [x] EURCAD NO_TRADE/target diagnostic: initial1.57728 taken before confirmation; displayed1.57184 is replacement. Preserve target provenance and label alert warning/replacement clearly, without changing entry eligibility. Read research/diagnostics/EURCAD_2026-10-21.md.
 - [ ] **Trend entries / Kevin gap / lower-TF discovery** (owner 2026-10-20): plan + results + next steps in
   `research/TREND_LTF_PLAN.md` (start there to continue). Code: slk/trend_study.py, ltf_features.py,
@@ -411,3 +413,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-21: Checked Claude pushes (close_at_target, leg/target research, trend studies), fast-forwarded branch and exported fresh EURCAD cTrader history. Reproduced owner story at 20Oct21UTC: initialtarget1.57728, preconfirmationlow1.57404, replacement1.57184. Fixed contradictory alert wording using label-only metadata. Existing erl_taken_no_trade rule remains; no live strategy change. Added BUY/SELL formatting and real EURCAD regressions; golden comparisons ignore only new metadata fields.
 
 - Validation for EURCAD warning fix: 57 targeted live/continuation/bias/golden/target tests passed, including the real exported EURCAD case. Strategy outcomes unchanged; only target provenance and alert wording added.
+
+- 2026-10-22: Added requested private eligible-bias snapshot button and IC Markets symbol catalogue exporter/workflow. No manual Telegram message sent during implementation; delivery happens only on authenticated button POST. 69 web/settings tests passed, including recipient isolation, stale-scan rejection and no resurrection of ended/blocked stories. Broker discovery is account-specific, not an assurance every listed instrument has sufficient candle history or validated strategy performance.

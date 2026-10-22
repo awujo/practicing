@@ -29,6 +29,8 @@
           <option>TARGET_HIT</option><option>INVALIDATED</option><option>ENDED_FLIP</option><option>CANCELLED</option><option value="all">All</option>
         </select>
       </div>
+      <button id="send-eligible" type="button">Send eligible biases to my Telegram</button>
+      <p id="eligible-feedback" role="status" aria-live="polite"></p>
       <div id="bias-state"></div>
       <div id="bias-list" class="list"></div>
     </section>
@@ -59,6 +61,6 @@
 
     <section id="status" hidden><div id="runs-list" class="list"></div></section>
   </main>
-  <script src="/static/app.js?v=run-status-3"></script>
+  <script src="/static/app.js?v=eligible-1"></script>
 </body>
 </html>

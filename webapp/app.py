@@ -160,6 +160,72 @@ def bias(pair: str = "", story: str = "", status: str = "active", limit: int = 2
     return _db(db.query, sql, args + [_clamp(limit)])
 
 
+def eligible_biases(rows, vals):
+    """Newest confirmed story per market/timeframe; never resurrect an older ended story."""
+    watched = set(vals["pairs"] or S.PAIRS)
+    seen, out = set(), []
+    for row in rows:
+        key = (row["pair"], row["story"])
+        if key in seen:
+            continue
+        seen.add(key)
+        if (row["pair"] in watched and row["story"] in vals["stories"]
+                and row["pair"] not in vals["avoid_pairs"]
+                and row["status"] == "CONFIRMED" and not row.get("no_trade")):
+            out.append(row)
+    return out
+
+
+def send_private_digest(chat_id, text):
+    import urllib.request
+    req = urllib.request.Request(
+        "https://api.telegram.org/bot" + os.environ["TELEGRAM_BOT_TOKEN"] + "/sendMessage",
+        data=json.dumps({"chat_id": chat_id, "text": text}).encode(),
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            if not json.load(response).get("ok"):
+                raise ValueError("Telegram refused message")
+    except Exception:
+        raise HTTPException(502, "Telegram delivery failed. Please try again.") from None
+
+
+@app.post("/api/bias/send-eligible")
+def send_eligible(user=Depends(require_user)):
+    from datetime import datetime, timezone
+    vals = S.load(_db(db.get_settings))
+    completed = _db(db.query, "SELECT finished_at FROM runs WHERE job = 'live' AND ok = 1 "
+                    "AND finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1")
+    if not completed:
+        raise HTTPException(409, "No completed live scan yet.")
+    stamp = completed[0]["finished_at"]
+    if isinstance(stamp, str):
+        stamp = datetime.fromisoformat(stamp)
+    stamp = stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp
+    if (datetime.now(timezone.utc) - stamp).total_seconds() > 7200:
+        raise HTTPException(409, "Latest completed scan is over two hours old. Wait for a fresh scan.")
+    rows = _db(db.query, "SELECT * FROM bias WHERE confirm_time IS NOT NULL "
+               "ORDER BY confirm_time DESC, id DESC")
+    rows = eligible_biases(rows, vals)
+    lines = ["Eligible confirmed biases", f"Scan: {stamp:%Y-%m-%d %H:%M} UTC",
+             "Based on your saved pairs and story timeframes. Bias only; wait for an entry signal."]
+    for row in rows:
+        lines.append(f"{row['side']} {row['pair']} · {row['story']} · Target {row.get('target') or '—'}")
+    if not rows:
+        lines.append("No eligible confirmed biases in this scan.")
+    # Keep each Telegram message below its limit, including for large watchlists.
+    chunks, text = [], ""
+    for line in lines:
+        if len(text) + len(line) + 1 > 3500:
+            chunks.append(text)
+            text = ""
+        text += line + "\n"
+    chunks.append(text)
+    for text in chunks:
+        send_private_digest(user["id"], text)
+    return {"ok": True, "count": len(rows), "scan_at": stamp.isoformat()}
+
+
 @app.get("/api/bias/state")
 def bias_state(user=Depends(require_user)):
     """Standing bias per pair and watched story TF (slk.standing): the direction stays after a target is reached and
@@ -258,7 +324,17 @@ def runs(limit: int = 30, user=Depends(require_user)):
 
 @app.get("/api/settings/schema")
 def settings_schema(user=Depends(require_user)):
-    return S.schema_json()
+    schema = S.schema_json()
+    catalogue = Path(__file__).resolve().parents[1] / "data" / "broker_symbols.json"
+    if catalogue.exists():
+        data = json.loads(catalogue.read_text())
+        choices = sorted({r["key"] for r in data["symbols"] if 3 <= len(r["key"]) <= 12})
+        for field in schema["settings"]:
+            if field["name"] == "pairs":
+                field["choices"] = choices
+                field["help"] = "IC Markets account symbols. Select only markets you want scanned. Empty = default 28 FX pairs."
+        schema["broker_catalogue"] = {"updated_at": data["updated_at"], "count": len(choices)}
+    return schema
 
 
 @app.get("/api/settings")
