@@ -438,3 +438,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-22: User authorized archiving experiments to GitHub then removing only their DB copies to reserve user capacity. Added research_archive.py + manual bounded archive workflow, independent reviewer, SQL-byte-preserving hex dumps and disposable-MySQL roundtrip proof, remote commit barrier before any prune, immutable row SHA guards and shared publication lock. Calendar/Deriv request researched only: Forex Factory weekly exports exist but redistribution requires written consent; per-user calendar summaries/reminders need licensed source and frequent timer. Public Deriv symbol/candle data generally requires no private token; market choice/API surface still to identify.
 
 - Research SQL archive research/archive/database-39749790360: 440 experiments, 196161 records, 134194219 payload bytes. SQL fully restored/verified in disposable MySQL before publication; pruning is a separate subsequent workflow step.
+
+- Research archive cleanup completed: 196161 archived records removed; 0 research rows remain. Live/user tables untouched. Empty research table file reclaimed: True.
