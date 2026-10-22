@@ -259,7 +259,7 @@
       const on = new Set(csv(v));
       const chips = s.choices.map((c) => `<label><input type="checkbox" class="${id}-c" value="${esc(c)}" ${on.has(String(c).toUpperCase()) ? "checked" : ""}> ${esc(c)}</label>`).join("");
       const extra = s.type === "pairs" ? `<input type="text" id="${id}-x" placeholder="other symbols, comma separated" autocapitalize="characters" value="${esc([...on].filter((x) => !s.choices.map((c) => String(c).toUpperCase()).includes(x)).join(","))}">` : "";
-      return `<div class="col"><span>${esc(label)}</span><div class="chips">${chips}</div>${extra}</div><p class="hint">${esc(s.help)}</p>`;
+      return `<div class="col"><span>${esc(label)}</span>${s.type === "pairs" ? `<input type="search" class="symbol-search" placeholder="Search broker symbols" aria-label="Search symbols">` : ""}<div class="chips">${chips}</div>${extra}</div><p class="hint">${esc(s.help)}</p>`;
     } else if (s.type === "ladder") {
       const l = ladder(v);
       input = ["D", "W", "M"].map((k) => `<label class="row"><span>${k}</span><input type="text" id="${id}-${k}" value="${esc(l[k] || "")}" autocapitalize="characters"></label>`).join("");
@@ -365,7 +365,14 @@
     if (b) approve(b.dataset.id, b);
   });
   $("#settings-form").addEventListener("submit", saveSettings);
-  $("#settings-fields").addEventListener("input", () => {
+  $("#settings-fields").addEventListener("input", (ev) => {
+    if (ev.target.classList.contains("symbol-search")) {
+      const query = ev.target.value.trim().toUpperCase();
+      ev.target.parentElement.querySelectorAll(".chips label").forEach((label) => {
+        label.hidden = !label.textContent.toUpperCase().includes(query);
+      });
+      return;
+    }
     settingsDirty = true;
     settingsFeedback("Unsaved changes — tap Save settings to apply.");
     $("#settings-save").textContent = "Save settings";
