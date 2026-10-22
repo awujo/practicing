@@ -194,11 +194,13 @@ def test_every_setting_roundtrips(client):
 
 def test_schema_split():
     stmts = webapp.db.split_sql((Path(webapp.__file__).parent / "schema.sql").read_text())
-    assert len(stmts) == 11 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:6])
+    assert len(stmts) == 13 and all(s.upper().startswith("CREATE TABLE IF NOT EXISTS") for s in stmts[:6])
+    assert "CREATE TABLE IF NOT EXISTS news_cache" in stmts[11]
+    assert "CREATE TABLE IF NOT EXISTS news_deliveries" in stmts[12]
     assert stmts[6].upper().startswith("INSERT IGNORE INTO SETTINGS")  # same defaults as db/schema.sql
     # entries.model for tables created before it existed: guarded ALTER via a prepared statement
     assert stmts[7].startswith("SET @slk_add_model") and "ADD COLUMN model" in stmts[7]
-    assert [s.split()[0] for s in stmts[8:]] == ["PREPARE", "EXECUTE", "DEALLOCATE"]
+    assert [s.split()[0] for s in stmts[8:11]] == ["PREPARE", "EXECUTE", "DEALLOCATE"]
     assert "model       VARCHAR(16)  NOT NULL DEFAULT 'continuation'" in stmts[1] + stmts[2]
 
 

@@ -1,5 +1,4 @@
--- Fallback copy of db/schema.sql (used only when db/schema.sql is missing). Keep the two files identical
--- apart from these header lines (tests/test_review_fixes.py checks it).
+-- SLK database schema (MySQL 8). See CONTRACT.md. Idempotent: safe to run on every job start.
 CREATE TABLE IF NOT EXISTS bias (
   id            BIGINT AUTO_INCREMENT PRIMARY KEY,
   pair          VARCHAR(16)  NOT NULL,
@@ -109,3 +108,18 @@ SET @slk_add_model = (SELECT IF(COUNT(*) = 0,
 PREPARE slk_add_model_stmt FROM @slk_add_model;
 EXECUTE slk_add_model_stmt;
 DEALLOCATE PREPARE slk_add_model_stmt;
+
+-- Shared public economic calendar cache and per-user notification receipts.
+CREATE TABLE IF NOT EXISTS news_cache (
+ id TINYINT PRIMARY KEY,
+ payload LONGTEXT NOT NULL,
+ fetched_at BIGINT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS news_deliveries (
+ user_id BIGINT NOT NULL,
+ event_key VARCHAR(96) NOT NULL,
+ created_at BIGINT NOT NULL,
+ claimed_at BIGINT NOT NULL DEFAULT 0,
+ sent_at BIGINT NULL,
+ PRIMARY KEY (user_id,event_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

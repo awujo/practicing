@@ -1250,7 +1250,7 @@ def run_user_watchlists(argv, args, started):
             requested = [p.strip().upper() for p in args.pairs.split(",") if p.strip()]
             watchlists[uid] = ([p for p in requested if p in selected or uid == owner]
                               if requested else selected)
-            if weekend_paused(started):
+            if weekend_paused(started) and os.environ.get("GITHUB_EVENT_NAME") == "schedule":
                 watchlists[uid]=[p for p in watchlists[uid] if instruments.deriv_continuous(p)]
     union = sorted({p.strip().upper() for pairs in watchlists.values() for p in pairs if p.strip()})
     print(f"{len(users)} users, {len(union)} distinct watched markets (one download per market)", flush=True)

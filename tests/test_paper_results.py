@@ -298,7 +298,7 @@ def test_api_entries_summary(monkeypatch):
     monkeypatch.setattr(webapp.db, "query", lambda sql, args=None: calls.append((sql, args)) or rows)
     with TestClient(webapp.app) as c:
         assert c.get("/api/entries/summary").status_code == 403
-        assert c.get("/api/entries/summary", headers=hdr(make_init_data(user_id=42))).status_code == 403
+        assert c.get("/api/entries/summary", headers=hdr(make_init_data(user_id=42, token="wrong-token"))).status_code == 403
         assert calls == []
         s = c.get("/api/entries/summary", headers=hdr(make_init_data())).json()
         assert s["label"] == "Paper results (signals)"

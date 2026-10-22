@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-22)
+- [x] Deriv real-feed and MySQL isolation Actions passed; production live run39757696620 succeeded. News fallback deployment schema now matches canonical schema; legacy regression fixtures updated for multiuser discovery/auth and weekend no-work behavior.
 - [x] User explicitly requested public calendar integration: News tab + personal currency/impact filters, daily local-hour summary and ~60min reminders, configurable shared FF weekly JSON cache. Independent5min news.yml and secret-protected /cron/news endpoint; same-secret external1–5min timer recommended because GH schedules are best-effort. Atomic per-user delivery claims, stale/week-coverage safeguards,80s fair batch budget,30day receipt retention, preview-only manual runs. Owner defaults enabled; new users opt in. No AI calls or live strategy rule changes.
 - [x] Deriv public feed integrated into selected-only hourly bias+entry pipeline:89 human-labelled choices, DV keys/files and source/pip metadata, UTC closed candles + seven-day week, continuous synthetic/crypto weekend scanning, no cross-provider fallback or broker order approval. Bounded366day warmup uses actual history. Read DERIV.md.
 - [x] Future research publication is opt-in: study/history defaults and automatic queue keep research results out of MySQL unless explicitly requested.
@@ -450,3 +451,9 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-22: User explicitly ordered Deriv scanner integration and requested cron-job.org URL. Added slk/deriv.py public WS feed and89-symbol catalogue, isolated DV namespace/store/source, bounded small historical requests, broker units, full UTC market scope through bias/entry/reconciliation/paper tracking/alerts. Selected watchlist union only, existing defaults preserved. Continuous Deriv weekend scans; FX/noncontinuous markets retain closure filter. Real public endpoint probe found1000-response cap and old-range fallback behaviour; fixed request sizing/range/partial-hour/gap/freshness checks. Local validation:8759 closed H1 bars without gaps, full D/W/M bias+entry pipeline ran, UTC H4 OHLC exactly matched native API over same aligned range. No DB writes/Telegram in probe. Human labels and signal-only order block in Mini App. News timer URL documented with existing private cron secret placeholder.
 
 - Deriv cache hardening: continuous hourly-gap check spans month boundaries; affected final months are unmarked for repair on the next run. Missing latest closed hours and gaps skip scans rather than emitting stale confirmations.
+
+- 2026-10-22: Full-suite validation caught missing news tables in webapp fallback schema and stale single-user test fixtures. Synchronized schema, mocked user discovery in fake DB, corrected migration metadata mock, retained invalid-signature rejection and weekend no-download assertion. Added explicit cron-job.org GET URL/setup to README.
+
+- Preserved manual workflow scans during FX weekends; only scheduled runs filter closed markets from the shared watchlist union.
+
+- Final local regression suite:432 passed,3 skipped (77.62s). Dedicated Actions public-feed and real MySQL checks passed before final schema/manual-weekend cleanup.

@@ -97,6 +97,7 @@ def test_weekend_watchlist_union_only_continuous_deriv(monkeypatch):
     from argparse import Namespace
     from slk import db,tenancy
     monkeypatch.setenv('TELEGRAM_CHAT_ID','1')
+    monkeypatch.setenv('GITHUB_EVENT_NAME','schedule')
     monkeypatch.setattr(db,'apply_schema',lambda:None)
     monkeypatch.setattr(db,'query',lambda *a:[])
     monkeypatch.setattr(db,'get_setting',lambda *a:'0')
@@ -106,6 +107,9 @@ def test_weekend_watchlist_union_only_continuous_deriv(monkeypatch):
     monkeypatch.setattr(live,'main',lambda *a,**kw:0)
     live.run_user_watchlists([],Namespace(pairs='',stories=''),pd.Timestamp('2026-10-24 12:00Z'))
     assert got==[['DV1HZ100V']]
+    monkeypatch.setenv('GITHUB_EVENT_NAME','workflow_dispatch')
+    live.run_user_watchlists([],Namespace(pairs='',stories=''),pd.Timestamp('2026-10-24 12:00Z'))
+    assert got[-1]==['DV1HZ100V','DVFRXEURUSD','EURUSD']
     assert tenancy.USER.get() is None
 
 

@@ -86,6 +86,7 @@ def _fake_db(monkeypatch, settings):
     monkeypatch.setenv("DATABASE_URL", "mysql://u:p@h/db")
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     monkeypatch.setattr(db, "apply_schema", lambda: None)
+    monkeypatch.setattr(db, "query", lambda *a: [])
     monkeypatch.setattr(db, "start_run", lambda job, pl, st: runs.setdefault(len(runs) + 1, {}) is not None and len(runs))
     monkeypatch.setattr(db, "finish_run", lambda i, ok, note: runs[i].update(ok=ok, note=note))
     monkeypatch.setattr(db, "get_setting", lambda k, d=None: settings.get(k, d))
@@ -125,7 +126,7 @@ def test_main_weekend_skip_and_status(monkeypatch, tmp_path):
     assert "bot alive" in sent[-1] and "Market closed" in sent[-1] and "Pending entries: 3" in sent[-1]
     n = len(sent)
     _Clock.T = ny("2026-10-17 10:07")  # Saturday: skipped before any download, no message
-    assert live.main([]) == 0 and len(downloads) == 1 and len(sent) == n and "weekend" in runs[2]["note"]
+    assert live.main([]) == 0 and len(downloads) == 1 and len(sent) == n and len(runs) == 1
     _Clock.T = ny("2026-10-18 17:07")  # Sunday open: runs again
     assert live.main([]) == 0 and len(downloads) == 2
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")  # manual run on a weekend is never skipped
@@ -172,7 +173,7 @@ def test_upsert_bias_writes_no_trade(monkeypatch):
 
 def test_migrate_adds_missing_columns(monkeypatch):
     have, ddl = {"no_trade"}, []
-    monkeypatch.setattr(db, "query", lambda sql, args: [{"n": int(args[1] in have)}])
+    monkeypatch.setattr(db, "query", lambda sql, args: [{"n": int(len(args) == 2 and args[1] in have)}])
     monkeypatch.setattr(db, "execute", lambda sql, args=None: ddl.append(sql))
     db.migrate()
     assert ddl[:7] == ["ALTER TABLE bias ADD COLUMN no_trade_reason VARCHAR(64) NULL AFTER no_trade",
