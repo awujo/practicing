@@ -6,8 +6,9 @@ work. No code, source expectations, or replay tolerances are changed here.
 All nine unique canonical medium-model session transcripts have been read from
 beginning to end in this pass. This does not mean every ASR sentence is correct:
 references such as “this level” must be resolved visually, and unsupported
-numerical precision is not inferred. The complete available visual audit is
-still underway; the exact sheets inspected are listed below. A 15-second frame
+numerical precision is not inferred. The combined sampled visual pass is now complete, using the additional
+`full_session_b2_routine_visual_supplement.md`; this reader's own exact
+ranges remain listed below. A 15-second frame
 sample is not the entire native video and cannot prove an intrabar fill clock.
 
 ## Canonical inventory and coverage
@@ -25,9 +26,9 @@ and supplementary prose are secondary locators, not extra independent sources.
 | WN | bishop-defi-bishop-study-10-minute-series-part-2-if-you-have-ever-thought-what-next-after-gettin | All 2.4–966.9 | 001–017, all 17 |
 | RS | bishop-defi-bishop-study-20-minute-series-part-1-repeating-a-system-that-works-an-approach-to-tra | All 4.4–1538.1 | 001–026, all 26 |
 | T2 | bishop-defi-bishop-study-20-minute-series-part-2-trades-breakdown-case-study-usdchf-gbpjpy-n | All 3.0–1368.6 | 001–023, all 23 |
-| T3 | bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb | All 3.0–1735.3 | 009, 012, 019, 023, 029 of 29 |
-| E5 | bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case | All 3.4–1662.2 | 003, 006, 011, 018 of 28 |
-| B1 | bishop-defi-bishop-study-building-bias-part-1-a-2-part-series-case-study-audjpy-eurusd-sp | All 3.4–1980.5 | 004, 008, 014, 016, 023, 030, 033 of 34 |
+| T3 | bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb | All 3.0–1735.3 | 001–029, all 29 |
+| E5 | bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case | All 3.4–1662.2 | 001–028, all 28 |
+| B1 | bishop-defi-bishop-study-building-bias-part-1-a-2-part-series-case-study-audjpy-eurusd-sp | All 3.4–1980.5 | 001–034, all 34 |
 | B2 | bishop-defi-bishop-study-building-bias-part-2-a-2-part-series-case-study-eurcad-spx500-nz | All 3.0–2189.6 | 004, 008, 015, 018, 023, 029, 035 of 37 |
 | DR | bishop-defi-bishop-study-daily-routine-x-trade-breakdown-how-do-i-manage-trading-multiple-pairs-wha | All 0–2242.8 | 007, 017, 025, 028, 032, 037 of 38 |
 
@@ -36,9 +37,12 @@ video SHA256 is identical to canonical T3. Its independently produced ASR text
 is not identical. It is not a tenth independent teaching session and examples
 must not be double counted. Canonical T3 is the version without `-1`.
 
-Visual audit so far: 107/244 unique sheets, covering all source samples in the
-first four sessions and selected samples in the other five. Remaining 137 sheets
-must be inspected before calling the session visual study complete. Several
+Visual audit by this reader: 182/244 unique sheets: all seven sessions BE, WN,
+RS, T2, T3, E5 and B1, plus the listed B2/DR selections. The remaining62 B2/DR
+sheets were assigned to another reader; their actual coverage and findings
+are recorded in `full_session_b2_routine_visual_supplement.md`. That report
+closes the combined 244/244 session position pass;
+it does not expand this reader's personal182-sheet coverage. Several
 intro/outro tiles are black or portraits rather than teaching charts.
 
 ## Rules reconstructed from the sessions
@@ -179,6 +183,14 @@ intro/outro tiles are black or portraits rather than teaching charts.
     part of the described pattern; entry geometry still needs explicit
     matched candle mapping. WN T814.0–827.6 attributes the bearish mirror to
     fourth man. Do not call every such pattern an engulfing on the same TF.
+    **Unresolved source contrast:** supplementary PDF p8 explicitly labels an
+    H2 EURGBP LONG “High swept, Low standing, V-shaped KL, 4th man’s CE”.
+    Thus the WN bearish illustration is not permission to derive universal
+    buy/sell direction solely from the literal swept-side label. Referenced
+    candle pair and surrounding structure must be mapped; this remains open.
+    BE EURGBP frames show May14 2026, whereas PDF p8 shows July2026, so
+    those are not the same dated example. Credit to fourth man does not alone
+    prove a separate algorithm.
 24. Cross-TF engulfing appearance is **often, not always**. RS
     T217.4–230.1; E5 T679.0–716.6; DR T2151.8–2184.0 explicitly checks a
     CADCHF case and says it was not engulfing on lower TF. Therefore mandatory
@@ -573,9 +585,9 @@ or broker fill is inferred from crosshair/position-tool anchors.
 
 ## Interpretation boundaries and work remaining
 
-- Complete sampled-sheet audit pending for T3,E5,B1,B2,DR; inventory will be
-  updated as sheets actually inspected. This document does not label the
-  complete source study finished until that is done.
+- This reader completed all sampled sheets in BE/WN/RS/T2/T3/E5/B1.
+  Remaining B2/DR sheets are assigned independently; consult the supplementary
+  visual report before describing combined coverage as complete.
 - Exact numerical reproduction is a separate later step. Dates on crosshairs
   and order-tool anchors are not broker fill timestamps; economic-news icons,
   chart right-edge clocks and local timezone displays must not be conflated.
@@ -593,3 +605,126 @@ or broker fill is inferred from crosshair/position-tool anchors.
 - Actual losses, no-trade criteria failures, passed otherwise-valid patterns,
   missed limits, cancelled orders, partial human exits and still-open trades
   are all part of the teacher examples. They must survive later replay design.
+
+## Additional observations from completed T3/E5/B1 visual pass
+
+All previously unreviewed T3, E5 and B1 sheets were opened and inspected in
+source order on 2026-10-20; their table ranges now reflect actual inspection.
+
+- T3 F390–450 GBPCAD position tool changes from about2.07R during initial
+  placement to6R then5.86R. T3 NZDCHF is visually confirmed at F690 onward;
+  the H2 journal entry and loss at F870–885 reinforce keeping the loss.
+  USDCAD F1605–1710 adjusts tools repeatedly (5.04R, then a new lower-TF
+  tool initially1.57R and later6.1R); this is not evidence of separate fills.
+- E5 F105 explicitly types “H4 BREAKOUT - SCALE TO H2 - LIQ +KL”.
+  F180–285 distinguishes anticipating H4 liquidity sweep/direct placement
+  from H2 route. The drawn theoretical stop changes while illustrating
+  placement (e.g. F285 stop28.5pips); it is not a universal stop setting.
+- E5 F495–540 draws consecutive bearish bodies then a bullish candle
+  disrespecting their OC. F585–645 separately develops the wick sweep with
+  opposite high intact. F660–705 groups the four alternatives under ERL
+  and compares the fourth drawing with half-TF engulf appearance. The
+  figures are schematic; exact wick/body inequalities are not numerical.
+- E5 XAU F960–1170 shows H4/H3/H2/H1/M45/M30 comparisons of the same
+  opportunity. H3 tool at F1080 reaches about19.22R because it has been
+  dragged against the later rally; this must not overwrite the narrated
+  missed status or establish19R realised. GU F1185 risk box likewise does
+  not overturn the teacher's explicit correction that no order was set.
+- E5 EURUSD F1290–1425 changes H1/M45/H3/H4/H2 views and stop tool
+  (including temporary40.9pip stop at F1395). This supports preserving
+  uncertainty about the remembered execution TF and distinguishing
+  structural-stop illustration from exact personal trade accounting.
+- B1 F390–465 displays rejection, candle closure, BO/BOS on next LTF
+  checklist; F720–855 shows lower daily rejection candles at an existing
+  weekly level followed by H4 confirmation. This visually supports the
+  origin-TF fallback described in rule5, not immediate unclosed rejection.
+- B1 AUDJPY F960–1080 uses line charts then candles to map KL and break
+  structure; F1110–1155 maps a later Daily KL onto H4. This supports
+  distinguishing candle-body/line KL from wick extrema used as liquidity.
+- B1 EURUSD F1200–1470 progresses W→D fallback→H4 and then the later
+  Daily bearish close. SPX F1500–1635 uses TradingView replay to inspect
+  previous Weekly/Daily context before returning current H4. These are
+  contextual demonstrations, not newly recorded personal order fills.
+- B1 BTC F1680–1800 has a bullish Daily counteridea at a bearish Weekly
+  context but no completing H4 bullish sequence. Gold F1830–1980 ends
+  with Weekly/Daily bearish context and H4 waiting for renewed confirmation;
+  no completed extra entry is inferred from the eventual falling candles.
+
+## Independent synthesis review — 2026-10-23
+
+Read `FULL_SOURCE_SYNTHESIS.md` in full against the nine-session reconstruction
+above. Its explicit open study gate, alternative routes, pending/fill separation,
+model-specific closure clocks, counterweekly permission and uncertain numerical
+geometry are consistent with these sessions. It does not establish readiness to
+implement every described shape. The following refinements should accompany its
+later conversion into a specification:
+
+1. **“Higher-TF reaction” is not universally a completed reaction candle.**
+   The synthesis correctly qualifies this later in the entry table. Preserve
+   that qualifier anywhere the table is converted into sequential logic:
+   E5 direct H4 may anticipate a liquidity sweep; E5 H2 direct waits for the
+   breakout H4 candle close; E5 lower-TF confirmation can precede H4 reaction
+   close. These are three distinct availability paths, not one accelerated
+   version of a single checklist.
+2. **“Closed H4 breakout, H2 structure/liquidity/KL conditions” is a study
+   description, not a complete numerical H2 direct algorithm.** E5 distinguishes
+   H2 direct from waiting for H4 reaction then CE. It does not license arbitrary
+   engine swing spans, wick equality tolerances or a new H2 confirmation gate.
+3. **“Engulf/direct A/V mitigation” cannot collapse the four session CE shapes.**
+   E5 explicitly separates BO, sweep+BOS, engulfed OC, and swept/standing-extreme
+   examples. RS often sees a half-TF engulf, while DR CADCHF explicitly does
+   not. The table acknowledges conceptual overlap; future code must retain
+   provenance and decline unsupported equivalence between these families.
+4. **Swept-side labels alone cannot define trade direction.** Synthesis properly
+   leaves exact mapping open, but should explicitly carry the PDF p8 LONG
+   labelled high-swept/low-standing contrast to session E5 low-swept/high-standing
+   V-buy. WN bearish illustration is not a universal mirror law. Attribution to
+   fourth man does not resolve it. Exact referenced pair remains unresolved;
+   neither a new pattern nor a context explanation is inferred to reconcile it.
+5. **Nearest ERL is a preference supported by specific trades, not every
+   model's mandatory TP.** BE/RS/T2 often select a nearer external high/low;
+   T3 GBPCAD fronts a nearer H1 obstacle, USDJPY exits manually around2R,
+   GU has separate accounts with different protected stops. A later fixed-R
+   operating choice must remain distinct from source-selected targets.
+6. **An H4 contrary break need not reverse Daily direction**, but this is not
+   permission to ignore all H4 bearish changes while continuing buys. T3
+   USDCAD explicitly cancels a planned H2 buy and seeks fresh nested evidence.
+   DR EURNZD admits Daily ambiguity. Preserve these decision histories alongside
+   the synthesis's correct statement that a stopped trade does not alone flip
+   the story. Similarly NZDCHF loss is retained with the teacher's stated need
+   for a fresh Daily break, without inventing an automatic universal veto.
+7. **Continuation is not automatic re-entry after every stop.** BE US30 obtains
+   a new H4 breakout/liquidity/confirmation; RS EURAUD discusses a losing early
+   opportunity versus cleaner later confirmation. Losing, missed, and replaced
+   examples supply causal sequences, not a rule to keep placing until a win.
+8. **Unretested BO still supplies direction in narrated examples.** Retest is
+   required for the described limit's fill, not universally for accepting bias.
+   B1 AUDJPY and WN BTC explicitly distinguish these roles. Never backdate a
+   later Daily confirmation into the earlier Daily-fallback trade context.
+
+### Worked-example catalogue completeness check
+
+The nine session sections above catalogue every substantive pair segment read:
+BE4, WN5, RS9, T2 ten segments (including repeated USDCHF states, abandoned
+USOIL and US30 outlook), T3 seven, E5 five, B1 five, B2 seven (including abandoned
+AUDUSD), and DR nine pairs with revisits merged by pair. This is61 pair/story
+segments, not61 separate filled orders. Diagram-only lessons are recorded in
+rules and the B1/B2/E5 introductions; RS's closing teaching boundary is not a
+trade. Repeated drawings/timeframes or alternate missed opportunities remain
+within their original segment rather than inflating the count.
+
+Catalogue completion is narrative coverage, not completed executable fixtures.
+Individual entry/reaction/bias candle indices, causal availability at each
+choice, broker/order history, feed timezone, and candle-pair mapping for the
+ambiguous PDF p8 illustration still require evidence before exact replay.
+The remaining B2/DR visual review is independently assigned; its saved ledger
+must be incorporated before combined244-sheet coverage is asserted. No engine
+or acceptance fixture has been changed by this review.
+
+## Combined visual coverage closure — 2026-10-23
+
+`full_session_b2_routine_visual_supplement.md` now records all62 complementary
+B2/DR sheets actually inspected. Together with this reader's182 unique sheets,
+all244 sourcePTS session-sheet positions are covered. The reader split and
+individual ranges above are preserved; this is not independent double review
+or numerical replay acceptance.

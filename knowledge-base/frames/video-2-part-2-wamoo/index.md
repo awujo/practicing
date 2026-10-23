@@ -121,3 +121,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1635 | 27:15 | what any of it is. So get a personal journal. See, cut out distractions. We are in for, we are going to be in for a nice time to get there. |
 | 1650 | 27:30 | So have a wonderful day. See you. I'll drop the recording. Okay, it means market prodigy. Thank you. |
 | 1665 | 27:45 | Well, I'll drop the recording for the welcome address so that others can watch it as well. Have a wonderful evening. If you are in Nigeria, I hope you are able to cope with the new strike |
+| 1680 | 28:00 | above the economic situation, right? And that is the confidence that we have. Let's all have a wonderful evening. Bye. |

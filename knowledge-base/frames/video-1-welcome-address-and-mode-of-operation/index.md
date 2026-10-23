@@ -119,3 +119,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1605 | 26:45 | assuring you right and I'm telling you with full confidence that that's your trip to Maldives it is going to happen I mean I'm assuring you |
 | 1620 | 27:00 | that it's going to happen right just roll your sleeves put on the work put in the work and let's let's just watch the magic happen itself right it's an assurance |
 | 1635 | 27:15 | and answers to people but we have three minutes more on this zoom so I'm going to send another link now I will end this call now send another link so we can have time for questions |
+| 1650 | 27:30 | Tuesday so I want to send another link now so we can leave this one let me send another link immediately |

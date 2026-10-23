@@ -1,0 +1,178 @@
+{
+  "input": "course08_1170_1260.wav",
+  "input_sha256": "4ae374179eb3f3e0eea4ef056d8831b2a4156e2c1385c7c1ef3b889ccc97cf36",
+  "source_offset_seconds": 1170,
+  "model": "medium.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "cpu_threads": 2,
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 1170.0,
+      "end": 1180.12,
+      "text": "I think when you have a kill-able, when you have a kill-able, when you have a kill-able",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1180.12,
+      "end": 1192.65,
+      "text": "and you have maybe half two kill-ables, you have a Raffortman, can he hear you sir?",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1192.65,
+      "end": 1193.65,
+      "text": "Okay yes I can.",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1193.65,
+      "end": 1194.65,
+      "text": "Hello?",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1194.65,
+      "end": 1195.65,
+      "text": "Yes I can.",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1195.65,
+      "end": 1196.65,
+      "text": "Yeah, yeah, there you go.",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1196.65,
+      "end": 1203.61,
+      "text": "I say when you have a kill-able, there is an imbalance above it, but we need that",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1203.61,
+      "end": 1205.85,
+      "text": "imbalance and another kill-able within it.",
+      "avg_logprob": -0.5181289181627077,
+      "no_speech_prob": 0.43714094161987305
+    },
+    {
+      "start": 1205.85,
+      "end": 1211.33,
+      "text": "I think in most cases the one that is above has an imbalance usually owed than the first",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1211.33,
+      "end": 1212.33,
+      "text": "throw you have.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1212.33,
+      "end": 1213.69,
+      "text": "I don't know if you get my question.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1213.69,
+      "end": 1214.69,
+      "text": "Yes, I get.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1214.69,
+      "end": 1215.69,
+      "text": "Yes.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1215.69,
+      "end": 1225.07,
+      "text": "There are some times when you have a killer who is above and he induced me.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1225.07,
+      "end": 1226.87,
+      "text": "I think his network is breaking.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1226.87,
+      "end": 1231.98,
+      "text": "My network is breaking.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1231.98,
+      "end": 1235.94,
+      "text": "Can you call his entremes for that one?",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1235.94,
+      "end": 1236.94,
+      "text": "Okay.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1236.94,
+      "end": 1237.94,
+      "text": "Thank you.",
+      "avg_logprob": -0.5087321770411951,
+      "no_speech_prob": 0.048202741891145706
+    },
+    {
+      "start": 1237.94,
+      "end": 1245.94,
+      "text": "I think you get my point. I think it's fine to see the one with an imbalance.",
+      "avg_logprob": -0.3244840657269513,
+      "no_speech_prob": 0.3744789659976959
+    },
+    {
+      "start": 1245.94,
+      "end": 1249.94,
+      "text": "We own more better than the one that does not. I think that does not take our time.",
+      "avg_logprob": -0.3244840657269513,
+      "no_speech_prob": 0.3744789659976959
+    },
+    {
+      "start": 1249.94,
+      "end": 1256.94,
+      "text": "Yes. When we get to the point where I think Dixon even treats more of that set up a lot.",
+      "avg_logprob": -0.3244840657269513,
+      "no_speech_prob": 0.3744789659976959
+    },
+    {
+      "start": 1256.94,
+      "end": 1259.94,
+      "text": "I made mention of it in the welcome address.",
+      "avg_logprob": -0.3244840657269513,
+      "no_speech_prob": 0.3744789659976959
+    }
+  ]
+}

@@ -144,3 +144,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1980 | 33:00 | that got disrespected, right? Even though we engulfed this particular candle, it is most likely that we will see price play something like this. Come to this open close key level |
 | 1995 | 33:15 | So, meanwhile, you are there waiting for this V-shaped key level, but you will see that we had this open close key levels that got disrespected, right? |
 | 2010 | 33:30 | I hope we are following it, right? So, let me send another link. We have a couple of seconds left. |
+| 2025 | 33:45 | Let me send another link, right? So, I'm going to end this one so I can start converting. So, I'll send another link. |

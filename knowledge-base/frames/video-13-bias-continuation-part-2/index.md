@@ -154,3 +154,4 @@ sheet_001 covers frames 1-4, and so on.
 | 2130 | 35:30 | the market is very funny because it's because of his dynamic nature as much as you can have sniper entries you can also have sniper stop loss meaning that try to snipe your stop loss and |
 | 2145 | 35:45 | immediately start your stop loss it will start to dump so you're just going to know what happened so the thing is one of the things we can do for ourselves is if my stop loss is supposed to be above this high just had more peeps through it just had a little more peeps through it right so |
 | 2160 | 36:00 | stop loss is just just put your stop loss above the high add one more peeps to it or 0.5 peeps so it's and we are good okay for real for real we are good any other question should I send another link or we should just call it a night I'll see tomorrow we have about 30 seconds left for |
+| 2175 | 36:15 | this session to end okay let me let me end this one so that you can start converting for us |

@@ -145,3 +145,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1995 | 33:15 | So just give me a minute. |
 | 2010 | 33:30 | Okay, are we still together? Can we hear me? I need to confirm if we can hear me clearly. |
 | 2025 | 33:45 | I'll share another link, right? Let's have one more link. It's like we are not going, we are going to use the entire thing to do, right? We must use the entire thing. |
+| 2040 | 34:00 | If you are not too tired, you can join us, right? So I'm going to share the next link right now. |

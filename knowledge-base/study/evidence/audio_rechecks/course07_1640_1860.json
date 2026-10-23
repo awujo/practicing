@@ -1,0 +1,296 @@
+{
+  "input": "course07_1640_1860.wav",
+  "input_sha256": "08688ecd8b25a7d37f477cbe4a530a2be6c9c7a8e402e933f11c3ac202c5ad73",
+  "source_offset_seconds": 1640,
+  "model": "small.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 1640.0,
+      "end": 1647.2,
+      "text": "not a break. Will our new strong high still be valid? Okay, I think I understand what he's trying",
+      "avg_logprob": -0.21747391242680586,
+      "no_speech_prob": 0.6129906177520752
+    },
+    {
+      "start": 1647.2,
+      "end": 1651.84,
+      "text": "to say. I understand the question. So he's saying something like this. So let's just quickly",
+      "avg_logprob": -0.21747391242680586,
+      "no_speech_prob": 0.6129906177520752
+    },
+    {
+      "start": 1651.84,
+      "end": 1656.48,
+      "text": "run up. So he's saying, what if we have a, for example, we have a rain sakura that starts with",
+      "avg_logprob": -0.21747391242680586,
+      "no_speech_prob": 0.6129906177520752
+    },
+    {
+      "start": 1656.48,
+      "end": 1661.44,
+      "text": "a strong high, right? And price begins to give to rest on other flow to the downside like this,",
+      "avg_logprob": -0.21747391242680586,
+      "no_speech_prob": 0.6129906177520752
+    },
+    {
+      "start": 1661.44,
+      "end": 1668.24,
+      "text": "right? We're seeing that other flow and like this. So we have, don't forget, this is our",
+      "avg_logprob": -0.21747391242680586,
+      "no_speech_prob": 0.6129906177520752
+    },
+    {
+      "start": 1668.24,
+      "end": 1672.64,
+      "text": "weak low right now price comes to the last resort liquidity which is the last",
+      "avg_logprob": -0.19126142984555092,
+      "no_speech_prob": 0.12815065681934357
+    },
+    {
+      "start": 1672.64,
+      "end": 1677.28,
+      "text": "internal range liquidity close to the weak the strong high and he said what if we",
+      "avg_logprob": -0.19126142984555092,
+      "no_speech_prob": 0.12815065681934357
+    },
+    {
+      "start": 1677.28,
+      "end": 1686.08,
+      "text": "we tap we sweep this weak low and not break like not break below it right what if we sweep",
+      "avg_logprob": -0.19126142984555092,
+      "no_speech_prob": 0.12815065681934357
+    },
+    {
+      "start": 1686.08,
+      "end": 1694.32,
+      "text": "this weak low and not break below it okay will our new strong high still valid yes if we sweep",
+      "avg_logprob": -0.19126142984555092,
+      "no_speech_prob": 0.12815065681934357
+    },
+    {
+      "start": 1694.32,
+      "end": 1699.92,
+      "text": "this if we just sweep for example we do something like this we do something like this",
+      "avg_logprob": -0.10688963447782127,
+      "no_speech_prob": 0.3145170509815216
+    },
+    {
+      "start": 1701.12,
+      "end": 1705.2,
+      "text": "so let me show you what we're talking about so don't forget this becomes our weak low right",
+      "avg_logprob": -0.10688963447782127,
+      "no_speech_prob": 0.3145170509815216
+    },
+    {
+      "start": 1707.28,
+      "end": 1712.48,
+      "text": "so this becomes our weak low so what we did what price actually did for us was that instead of",
+      "avg_logprob": -0.10688963447782127,
+      "no_speech_prob": 0.3145170509815216
+    },
+    {
+      "start": 1712.48,
+      "end": 1718.8,
+      "text": "breaking below it and closing below it as a body right it now swept it closed above it as a weak",
+      "avg_logprob": -0.10688963447782127,
+      "no_speech_prob": 0.3145170509815216
+    },
+    {
+      "start": 1718.8,
+      "end": 1726.52,
+      "text": "right in I'm close above it as a week like this so after sweeping it's close",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1726.52,
+      "end": 1730.84,
+      "text": "above it as a week so now what happened here was that we swept the external",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1730.84,
+      "end": 1734.8,
+      "text": "range liquidity but we did not close we did not break below it so there's every",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1734.8,
+      "end": 1738.6,
+      "text": "tendency just like it's a which is a very very beautiful question there's",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1738.6,
+      "end": 1742.72,
+      "text": "every tendency that because if you move to the line chart as long as this week",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1742.72,
+      "end": 1746.8,
+      "text": "low now follow what I'm saying carefully as long as this weekly was not broken",
+      "avg_logprob": -0.1935125638597778,
+      "no_speech_prob": 0.6631882190704346
+    },
+    {
+      "start": 1746.8,
+      "end": 1755.0,
+      "text": "right? It was only swept. There's every possibility now that this strong high is still valid, but",
+      "avg_logprob": -0.1898506400228917,
+      "no_speech_prob": 0.5543110966682434
+    },
+    {
+      "start": 1755.0,
+      "end": 1760.64,
+      "text": "this strong high, this one, this strong high is still valid, right? But this particular",
+      "avg_logprob": -0.1898506400228917,
+      "no_speech_prob": 0.5543110966682434
+    },
+    {
+      "start": 1760.64,
+      "end": 1766.64,
+      "text": "strong high is low probability. Because what happens is that there's every possibility",
+      "avg_logprob": -0.1898506400228917,
+      "no_speech_prob": 0.5543110966682434
+    },
+    {
+      "start": 1766.64,
+      "end": 1771.6,
+      "text": "that price is going to use, right? There's a 90% chance that price is going to use this",
+      "avg_logprob": -0.1898506400228917,
+      "no_speech_prob": 0.5543110966682434
+    },
+    {
+      "start": 1771.6,
+      "end": 1776.88,
+      "text": "particular high as our next liquidity before price moves in this direction so we are likely",
+      "avg_logprob": -0.12462913746444079,
+      "no_speech_prob": 0.2808636426925659
+    },
+    {
+      "start": 1776.88,
+      "end": 1781.76,
+      "text": "going to see something like this price will take out this high then continue to drop to the downside",
+      "avg_logprob": -0.12462913746444079,
+      "no_speech_prob": 0.2808636426925659
+    },
+    {
+      "start": 1781.76,
+      "end": 1786.88,
+      "text": "until this liquidity is taken because if we only had a sweep we did not have a break when you move",
+      "avg_logprob": -0.12462913746444079,
+      "no_speech_prob": 0.2808636426925659
+    },
+    {
+      "start": 1786.88,
+      "end": 1791.52,
+      "text": "to the line chart you will see that this low is still your external range liquidity that has not",
+      "avg_logprob": -0.12462913746444079,
+      "no_speech_prob": 0.2808636426925659
+    },
+    {
+      "start": 1791.52,
+      "end": 1799.04,
+      "text": "been broken right this new strong high is invalid it becomes invalid right it still becomes invalid",
+      "avg_logprob": -0.12462913746444079,
+      "no_speech_prob": 0.2808636426925659
+    },
+    {
+      "start": 1799.04,
+      "end": 1804.56,
+      "text": "the price can use it as our next liquidity point, as our next internal range liquidity that needs",
+      "avg_logprob": -0.18294190938493846,
+      "no_speech_prob": 0.48441511392593384
+    },
+    {
+      "start": 1804.56,
+      "end": 1809.6,
+      "text": "to be taken before price continues to move in its direction. But if it closes below it as a body,",
+      "avg_logprob": -0.18294190938493846,
+      "no_speech_prob": 0.48441511392593384
+    },
+    {
+      "start": 1810.4,
+      "end": 1815.36,
+      "text": "we know that our new strong highs move from this to this particular. But if it sweeps above it,",
+      "avg_logprob": -0.18294190938493846,
+      "no_speech_prob": 0.48441511392593384
+    },
+    {
+      "start": 1816.0,
+      "end": 1822.96,
+      "text": "if it just sweeps it and it closes above it, this new strong high becomes very low, very,",
+      "avg_logprob": -0.18294190938493846,
+      "no_speech_prob": 0.48441511392593384
+    },
+    {
+      "start": 1822.96,
+      "end": 1828.0,
+      "text": "very low probability because price is likely going to come back to use it as our last internal",
+      "avg_logprob": -0.18294190938493846,
+      "no_speech_prob": 0.48441511392593384
+    },
+    {
+      "start": 1828.0,
+      "end": 1832.72,
+      "text": "range liquidity close to the struggle and drop. When you begin to go through, I don't know if I",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1832.72,
+      "end": 1837.36,
+      "text": "made mention of this during our, when we're talking about advanced market structure, I told us that",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1837.36,
+      "end": 1842.32,
+      "text": "there are two major price deliveries in advanced market structure. We have this ABC, where price",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1842.32,
+      "end": 1846.88,
+      "text": "takes out the B leg, internal range liquidity and moves to the A leg, right? Then the second one is",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1846.88,
+      "end": 1851.52,
+      "text": "the second type of price delivery is what is just something similar to this, which is something",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1852.32,
+      "end": 1856.48,
+      "text": "Mr. David Aak, which is very good, something like this price begins to give to you and other",
+      "avg_logprob": -0.19063075963598097,
+      "no_speech_prob": 0.5236867070198059
+    },
+    {
+      "start": 1856.48,
+      "end": 1860.0,
+      "text": "airflow to the outside, price will trade lower but it will not take out.",
+      "avg_logprob": -0.39563088354311493,
+      "no_speech_prob": 0.5441902875900269
+    }
+  ]
+}

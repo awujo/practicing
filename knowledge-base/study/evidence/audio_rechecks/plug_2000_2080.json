@@ -1,0 +1,107 @@
+{
+  "input": "plug_2000_2080.wav",
+  "input_sha256": "910b814e171521613b506b5b8fde9e88a6b965635fa6950ddaa556c112200ac1",
+  "source_offset_seconds": 2000,
+  "model": "small.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 2000.0,
+      "end": 2006.0,
+      "text": "liquidity made inside this particular company. So for me it was a very easy one to know. I just",
+      "avg_logprob": -0.38757913352036083,
+      "no_speech_prob": 0.6815983653068542
+    },
+    {
+      "start": 2006.0,
+      "end": 2011.52,
+      "text": "placed my unit here, I placed my unit at the point you can close, then internal range liquidity",
+      "avg_logprob": -0.38757913352036083,
+      "no_speech_prob": 0.6815983653068542
+    },
+    {
+      "start": 2011.52,
+      "end": 2016.96,
+      "text": "is resting here. That is going to serve as my internal range liquidity, that's the market",
+      "avg_logprob": -0.38757913352036083,
+      "no_speech_prob": 0.6815983653068542
+    },
+    {
+      "start": 2018.64,
+      "end": 2024.64,
+      "text": "so I came up, checked it in the morning, I saw that price, I moved, okay price, as you understand,",
+      "avg_logprob": -0.38757913352036083,
+      "no_speech_prob": 0.6815983653068542
+    },
+    {
+      "start": 2024.64,
+      "end": 2029.6,
+      "text": "I'm moving to the least entry. It's simple, I just came straight to the 30 minutes. So okay,",
+      "avg_logprob": -0.38757913352036083,
+      "no_speech_prob": 0.6815983653068542
+    },
+    {
+      "start": 2029.6,
+      "end": 2032.96,
+      "text": "let's pay attention to the 30 minutes if we find anything. So this is where I go to",
+      "avg_logprob": -0.38131182563715965,
+      "no_speech_prob": 0.3047487437725067
+    },
+    {
+      "start": 2032.96,
+      "end": 2038.88,
+      "text": "my own intro. So on the 30 minutes time frame you'll find out that we have an A-shaped key level that",
+      "avg_logprob": -0.38131182563715965,
+      "no_speech_prob": 0.3047487437725067
+    },
+    {
+      "start": 2038.88,
+      "end": 2047.2,
+      "text": "got disrespected to the upside. A-shaped key level that got disrespected to the upside",
+      "avg_logprob": -0.38131182563715965,
+      "no_speech_prob": 0.3047487437725067
+    },
+    {
+      "start": 2047.2,
+      "end": 2052.08,
+      "text": "closed up of it as a body. This is this one does this level now because also in the sale",
+      "avg_logprob": -0.38131182563715965,
+      "no_speech_prob": 0.3047487437725067
+    },
+    {
+      "start": 2052.08,
+      "end": 2057.36,
+      "text": "prices is disrespected. The woman price came to that level. I had to use market execution",
+      "avg_logprob": -0.38131182563715965,
+      "no_speech_prob": 0.3047487437725067
+    },
+    {
+      "start": 2057.36,
+      "end": 2064.72,
+      "text": "exactly the same here, but my stuff is just really slow, and just for you to go and see how good you",
+      "avg_logprob": -0.5634375602479965,
+      "no_speech_prob": 0.13554522395133972
+    },
+    {
+      "start": 2065.44,
+      "end": 2071.84,
+      "text": "are, you know, making profit has been healed. So, but I'm taking those back to something,",
+      "avg_logprob": -0.5634375602479965,
+      "no_speech_prob": 0.13554522395133972
+    },
+    {
+      "start": 2071.84,
+      "end": 2074.32,
+      "text": "right? Back to the daily on the road.",
+      "avg_logprob": -0.5634375602479965,
+      "no_speech_prob": 0.13554522395133972
+    }
+  ]
+}

@@ -1,9 +1,11 @@
-# Full-source synthesis — working study, not implementation approval
+# Full-source synthesis — source pass complete, build contracts next
 
 The owner directed complete study before further detector construction. This
-working synthesis joins the source-reader findings; it is **not a completed
-rulebook** while systematic visual coverage, contradictory wording and example
-reconstruction remain open. The existing engine is not ground truth.
+synthesis joins the source-reader findings and preserves source qualifications.
+The transcript/sampled-picture pass is complete across all 28 unique videos;
+actual old/corrected versions are recorded in the ledgers. Low-confidence
+speech, unspecified numerical choices and historical example reconstruction
+remain explicit. The existing partial engine is not ground truth.
 
 Detailed evidence is in `full_course_01_08.md`, `full_bias_story_study.md`,
 `full_entry_study.md`, `full_session_study.md`, `full_supplement_study.md`,
@@ -37,11 +39,12 @@ range begins with sweep plus break. Major and nested minor structures coexist.
 IRL taken suggests expansion toward ERL; ERL taken suggests retracement/reversal,
 but confirmation of a new major story is a separate event.
 
-Course7's candidate-strong-high example uses inconsistent valid/invalid/low-
-probability wording. Its reliable distinction is that a wick-only weak-low sweep
-cannot be treated as a confidently protected replacement origin; explicit body
-break is shown for confident migration. Do not silently choose one sentence
-and claim the ambiguity disappeared. See independent verification section1.
+Dense native-frame review substantially resolves course7's apparent wording
+conflict: valid refers to the OLD higher protected high; low-probability/invalid
+refers to the NEW lower candidate. A wick-only weak-low sweep keeps the old
+protected reference, while the new candidate can supply liquidity. Body-close
+break is the explicit contrasting migration case. See independent verification
+section1 and the retained native evidence; no numerical pivot algorithm follows.
 
 ## Levels are not interchangeable geometries
 
@@ -128,10 +131,21 @@ the teacher explicitly lets the student retain it. Plug describes night fills.
 No numerical universal news blackout, pending TTL or holding cap is established
 by the cited source passages. These choices must not be invented as doctrine.
 
-## Still required before implementation resumes
+## Source pass and handoff to the build specification
 
-Complete the visual ledgers and exact source-time corrections, finish all
-worked-example narratives, reconcile genuinely conflicting ASR/wording with
-native source where possible, and separate unsupported numerical choices from
-teacher-defined facts. Independent targeted checks are recorded; they are not
-full all-source certification. The study gate remains open.
+Every unique canonical transcript and sampled sheet position now has a reader
+ledger; source-time corrections are published and worked examples have narrative
+catalogues. Dense native/alternate-ASR checks resolved the material course7
+old/new-high referent issue. Network-broken speech, plug sponsorship negation,
+and uncertain historical clock/feed/candle-pair facts remain explicitly bounded.
+They do not justify fabricating a hard filter or changing expected source values.
+
+The final independent consistency review accepts the declared source coverage
+and handoff; it does not certify the implementation. Before coding, each automated numerical
+choice needs a named contract: structural initialization and ties, imbalance
+geometry, level competition, event availability, liquidity grouping and
+instrument/calendar/execution conventions. Where the teacher did not uniquely
+define it, record our policy rather than claim the source supplied a number.
+
+The existing partial engine was unchanged throughout this study phase.
+Next is contract definition, then the complete build in the owner's sequence. No all-example match, profitable result or live readiness is claimed.

@@ -1,9 +1,14 @@
 # Bishop bot rebuild
 
-Branch: `claude-bishop-aggressive`. Current stage: an initial offline causal
-engine, paper execution simulator and source verification. The full Bishop bot
-and live deployment remain unfinished. Passing unit tests does not mean teaching
-examples match.
+Branch: `claude-bishop-aggressive`. The full source-study pass covers all 28
+unique transcripts, sampled visuals, the 60-page PDF and four release images.
+The earlier partial offline engine is paused while the complete specification
+and explicit automation contracts are finalized. The full bot is not built.
+
+See [study coverage and qualifications](knowledge-base/study/FULL_STUDY_PROGRESS.md),
+[the source specification](knowledge-base/STRATEGY.md) and
+[the build handoff](knowledge-base/study/IMPLEMENTATION_HANDOFF.md).
+Passing engineering tests does not establish teaching-example fidelity.
 
 ## Development
 
@@ -84,9 +89,11 @@ separate; fixed 10–11-pip settings cannot replace different source stops.
 
 Frame sampling previously selected later video frames while burning earlier
 timestamps. The extractor now records actual source presentation times; corrected
-Bishop re-extraction is tracked in the frame manifest. Original course and
-plug-and-play sheets still require regeneration before their labels can support
-exact-time citations. Native timestamp-verified snapshots remain separate evidence.
+sets are published for all 28 unique videos: 3,445 sampled frames / 874 sheets.
+Course/plug and Bishop manifests record source hashes and counts. Old course
+image citations refer to Gitcommit `dd91b14`; reader ledgers distinguish versions.
+Dense native cursor checks and alternate ASR are retained separately, with
+uncertainty stated. Sampled pictures do not prove exact intrabar fill times.
 
 - [Strategy](knowledge-base/STRATEGY.md)
 - [Course ledger](knowledge-base/study/course_verified.md)

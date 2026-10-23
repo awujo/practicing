@@ -260,13 +260,12 @@ mechanics back to primary transcripts/frames being studied by the other readers.
 
 No engine code, fixtures, tolerances or replay expectations changed in this study.
 
-## Follow-on individual-detail study (in progress)
+## Follow-on individual-detail study — completed
 
 The initial overview was insufficient to close full visual study. This section
 records the subsequent 2,400px page renders, cropped only to remove white page
-margins. No content inside the chart was cropped away. Individually opened so
-far: **pages1–19,24–25,31**. The preceding O/D ledger describes the first pass;
-this follow-on list supersedes its coverage count as work proceeds.
+margins. No content inside the chart was cropped away. First detailed batch opened **pages1–19,24–25,31**. Later batches below
+completed all60pages. The preceding ledger now marks O+D for every page.
 
 ### Detailed structural sequences, pages1–19
 
@@ -556,3 +555,33 @@ several chart/broker timeframe mismatches. None requires an engine code change
 to recognize. Exact fourthman-pattern mapping, original broker stops, discretionary
 selection, feed/timezone alignment and unlabeled model classification remain
 explicit source limitations. This does not promote the forty replay observations.
+
+
+## Independent cross-check of new reader reports
+
+Read `full_entry_study.md`, `full_primary_crosscheck.md` and
+`full_study_verification.md` in full at their current working versions. Read
+`full_session_study.md` substantive sections with some tool-output truncation;
+this is a targeted report review, not a claim of rereading every source session.
+Foundation/bias ledgers were keyword-indexed for universal-rule and coverage
+claims, not independently reread in full in this cross-check.
+
+- Entry, primary and verifier independently agree that p8 attribution alone
+  does not define a standalone fourth-man algorithm. This is supported by the
+  original image, rather than agreement among secondary summaries alone.
+- Requested correction to entry report's phrase 'source PDF imbalance-zone
+  stops': source shows drawn stop spans, not independently proved FVG geometry.
+- Flagged session confirmation-family mirror wording against p8's **long**
+  explicitly labelled **high swept/low standing/V**. This may refer to a
+  different context or candle pair; the difference must be mapped rather than
+  silently changing the source annotation to match a general mirrored rule.
+- At that interim checkpoint the reports honestly retained incomplete
+  course/session coverage; the later supplemental ledgers now close it.
+  This supplementary collection's completed visual pass does not certify
+  completion of the larger video collection or resolve native audio garbles.
+- Supplemental source supports the verifier's protective-liquidity stop finding
+  and source-specific fixed-stop style distinction. Neither universal fixed11
+  nor universal FVG-edge stop is established by the combined evidence.
+
+No source rule was changed simply because multiple reader reports agreed;
+primary passages/pictures retain priority, and ambiguity remains visible.

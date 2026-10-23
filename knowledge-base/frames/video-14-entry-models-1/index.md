@@ -101,3 +101,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1335 | 22:15 | I created an open close. We broke above and we also engulfed. We broke above this particular open close, but overall we engulfed, right? Look at where price now came back to overlapping with us |
 | 1350 | 22:30 | So look at what price did if we play one to three again from here, right? This, this, this, this thing is about to end. So these are eight pit stops. |
 | 1365 | 22:45 | So if you look at what price did here, look at this. That's over. I want to watch. This is one to seven, right? This is the one to seven already this morning. |
+| 1380 | 23:00 | Let me send another link. But I hope we are getting it, right? It's very simple. So let me send another link so each and every one of you should join. This one is about to end, right? So we can start combatting. |

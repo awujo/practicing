@@ -152,3 +152,4 @@ sheet_001 covers frames 1-4, and so on.
 | 2100 | 35:00 | So what we'll do is hopefully we can have a class tonight by 12 a.m. Right. Let's do some chat work by 12 a.m. Let's do 12 to 1 again in the middle of the night. |
 | 2115 | 35:15 | Okay, guys. So the recording is going to be shared with us later tonight. See you later tonight by 12 o'clock. Have a wonderful day ahead. |
 | 2130 | 35:30 | Okay, sessions. How many minutes do we have left? Jesus. |
+| 2145 | 35:45 | in the middle of the night. So the recording will be shared with us later tonight. Thank you. |

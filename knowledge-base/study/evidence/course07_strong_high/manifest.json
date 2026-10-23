@@ -1,0 +1,113 @@
+{
+  "source_asset": "7.Defined.Ranges.Range.Cycle.mp4",
+  "source_url": "https://github.com/awujo/practicing/releases/download/remaining-videes/7.Defined.Ranges.Range.Cycle.mp4",
+  "source_sha256": "1982e5d8e331ae6f3f0450d1c4ae1abdda520099089587dfc98d8cdd8ef23941",
+  "method": "existing extract_frames.py frames mode; native-size PNG, requested source-zero seek time encoded in filename; no burned timestamp and no independent decoded-PTS assertion",
+  "frames": [
+    {
+      "filename": "t_01740.png",
+      "requested_source_seek_seconds": 1740,
+      "sha256": "bc865f653300e20033df1258f1717c1e25217a03792d33ac58ac988420c663f9"
+    },
+    {
+      "filename": "t_01743.png",
+      "requested_source_seek_seconds": 1743,
+      "sha256": "dbef026d2842e02ca4fdefc5b6ecbbb89bcfadf8b80e62c653294a7212ec24b9"
+    },
+    {
+      "filename": "t_01746.png",
+      "requested_source_seek_seconds": 1746,
+      "sha256": "f7ee8768dbb10de125187ceee47db034e7f4684370c33ecfe18c9721a6ab7b26"
+    },
+    {
+      "filename": "t_01749.png",
+      "requested_source_seek_seconds": 1749,
+      "sha256": "adec32fcee1c707d5293048378445b80245eb8d403cdd0f6856049a543356a42"
+    },
+    {
+      "filename": "t_01752.png",
+      "requested_source_seek_seconds": 1752,
+      "sha256": "8aef0d34abf5cae1266df81db019bf443fb34a23dfbc262f1e712267772a3e11"
+    },
+    {
+      "filename": "t_01755.png",
+      "requested_source_seek_seconds": 1755,
+      "sha256": "ae13e3adf0b390bb2eab6e4b5cd28c5d20089336de2e47af8a921405499ec556"
+    },
+    {
+      "filename": "t_01758.png",
+      "requested_source_seek_seconds": 1758,
+      "sha256": "d3ee646b34ddff95fbacf3d53a5b0e1297b79ba558941f2c2d22e532c9558016"
+    },
+    {
+      "filename": "t_01761.png",
+      "requested_source_seek_seconds": 1761,
+      "sha256": "4eef533473438d7834922a87b91e3410ea939cf5737026743518f522d94c6bde"
+    },
+    {
+      "filename": "t_01764.png",
+      "requested_source_seek_seconds": 1764,
+      "sha256": "9c408b187c9b749ff9b9f164530e5abc541e00f40a0f8ee3f4f6065647d469b1"
+    },
+    {
+      "filename": "t_01767.png",
+      "requested_source_seek_seconds": 1767,
+      "sha256": "66d89d8b4f9e7032e8d595982d0150a14ef3cb1223da403321f803df3eea50a6"
+    },
+    {
+      "filename": "t_01770.png",
+      "requested_source_seek_seconds": 1770,
+      "sha256": "335a65922c4b4698f434392672c1611a50a0d51e8b07917c6f66e72488530449"
+    },
+    {
+      "filename": "t_01790.png",
+      "requested_source_seek_seconds": 1790,
+      "sha256": "ff36cd91dcc6b19ded50ee2fad1211fde32576071aadb8cbf18cd36435f8e058"
+    },
+    {
+      "filename": "t_01793.png",
+      "requested_source_seek_seconds": 1793,
+      "sha256": "15b052d3ccec7a466461b97b225ac8e999eb517aea881cf279af8b95a9a77b41"
+    },
+    {
+      "filename": "t_01796.png",
+      "requested_source_seek_seconds": 1796,
+      "sha256": "656268108f75683975997fb49008cc8c8d97c516c324f566d90886cb8c1236c7"
+    },
+    {
+      "filename": "t_01799.png",
+      "requested_source_seek_seconds": 1799,
+      "sha256": "c2891d245b2a76caf304cf3e15e5c894f780fe8826cb69244219fdb2fae8d20e"
+    },
+    {
+      "filename": "t_01802.png",
+      "requested_source_seek_seconds": 1802,
+      "sha256": "b16bf5c26f06ef7adfc0d6de5e26b68fa053bf9c272a00ca940a9372b9c82f5b"
+    },
+    {
+      "filename": "t_01805.png",
+      "requested_source_seek_seconds": 1805,
+      "sha256": "3a588cc2e27dd7d0939ba560c8718ba5b226092b5546bf27faf8666707b4fef6"
+    },
+    {
+      "filename": "t_01808.png",
+      "requested_source_seek_seconds": 1808,
+      "sha256": "7d0954ba9fcda581ed118cda76067e832e81cf523cb23ad2f0614ff0a29506bf"
+    },
+    {
+      "filename": "t_01811.png",
+      "requested_source_seek_seconds": 1811,
+      "sha256": "10fe8913345f9a700df6f0791aabf51c07327146f02281ab7bbf3cf279fe0cbf"
+    },
+    {
+      "filename": "t_01814.png",
+      "requested_source_seek_seconds": 1814,
+      "sha256": "c6afd35749dc131eca0e69b970420f143495edfec967fdf35c848c5c8bde9600"
+    },
+    {
+      "filename": "t_01817.png",
+      "requested_source_seek_seconds": 1817,
+      "sha256": "c6ea51e0a613f6955e7e07fdb61c252e0e493be38841ae8d19735f35e35dc77d"
+    }
+  ]
+}

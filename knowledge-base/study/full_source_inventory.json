@@ -4,11 +4,11 @@
   "unique_lesson_duration_hours_approx": 14.28,
   "unique_lesson_sheet_count": 866,
   "notes": [
-    "18 course lessons,9 unique Bishop sessions,1 plug-and-play lesson",
-    "Part3 duplicate shares original video bytes; transcript variants retained",
-    "13oldertranscriptions are alternate ASR evidence,not13additional lessons",
-    "Course/plug sheets pending corrected sourcePTS regeneration; current old sheet labels approximate",
-    "All28canonical transcripts now have end-to-end reader ledgers; visual completion is tracked separately and remains incomplete."
+    "28unique lessons:18course,9Bishop sessions,1plug; Part3duplicate excluded.",
+    "13older ASR renderings are alternate text, not additional lessons.",
+    "All course/plug and Bishop sampled frames now use actual sourcePTS; output publication and hashes verified.",
+    "All28canonical transcripts and all874sampled sheet positions have reader coverage; exact old/corrected/mixed versions are recorded in ledgers.",
+    "Source coverage is not continuous native-video viewing, implementation acceptance or historical trade replay certification."
   ],
   "transcripts": [
     {
@@ -74,8 +74,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 12,
+      "current_published_frames": 47,
+      "source_video_sha256": "c2fa554d45f7518cc12898be78216caf6c84064ac557195efc85bd9e78f507e4",
+      "source_duration_seconds": 696.426667
     },
     {
       "slug": "bishop-defi-bishop-study-10-minute-series-part-2-if-you-have-ever-thought-what-next-after-gettin",
@@ -88,8 +92,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 17,
+      "current_published_frames": 65,
+      "source_video_sha256": "948c49ef178666fa7f3dfe754496be5e5c70f8de6b5b59fd5c5c551b266e0a2d",
+      "source_duration_seconds": 971.776
     },
     {
       "slug": "bishop-defi-bishop-study-20-minute-series-part-1-repeating-a-system-that-works-an-approach-to-tra",
@@ -102,8 +110,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 26,
+      "current_published_frames": 103,
+      "source_video_sha256": "0aec1e4d87d2f62825631c75dedfebb699b3dad886d7b3895c530d27a69f2d01",
+      "source_duration_seconds": 1541.013333
     },
     {
       "slug": "bishop-defi-bishop-study-20-minute-series-part-2-trades-breakdown-case-study-usdchf-gbpjpy-n",
@@ -116,8 +128,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 23,
+      "current_published_frames": 92,
+      "source_video_sha256": "07f4b078dfb94c1cc637f03a1db9592cf890c86e60273780256a1c23712fca0b",
+      "source_duration_seconds": 1368.661333
     },
     {
       "slug": "bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb",
@@ -130,8 +146,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 29,
+      "current_published_frames": 116,
+      "source_video_sha256": "ee73e7118df31d1f30524a204ffe5393bbfc05b87197f935fe01bd4687d45004",
+      "source_duration_seconds": 1739.498667
     },
     {
       "slug": "bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb-1",
@@ -157,8 +177,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 28,
+      "current_published_frames": 111,
+      "source_video_sha256": "85012b57574f2f7d42f5256a36e48bec2efaa6fec89ad1899f8fc1a38097597a",
+      "source_duration_seconds": 1663.722667
     },
     {
       "slug": "bishop-defi-bishop-study-building-bias-part-1-a-2-part-series-case-study-audjpy-eurusd-sp",
@@ -171,8 +195,12 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 34,
+      "current_published_frames": 133,
+      "source_video_sha256": "3554572405a43fe2dc0a53abd7aee49c2d254372854500d74e6dcf04d27448ad",
+      "source_duration_seconds": 1980.662132
     },
     {
       "slug": "bishop-defi-bishop-study-building-bias-part-2-a-2-part-series-case-study-eurcad-spx500-nz",
@@ -185,8 +213,13 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 37,
+      "current_published_frames": 147,
+      "source_video_sha256": "84db7aed8b689859561fcbc9f838140557dd85ace7c2e54197923031bc223263",
+      "source_duration_seconds": 2193.301333,
+      "visual_supplement": "full_session_b2_routine_visual_supplement.md"
     },
     {
       "slug": "bishop-defi-bishop-study-daily-routine-x-trade-breakdown-how-do-i-manage-trading-multiple-pairs-wha",
@@ -199,8 +232,13 @@
       "source_pts_manifest": true,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_session_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_session_study.md",
+      "current_published_sheets": 38,
+      "current_published_frames": 150,
+      "source_video_sha256": "c3d9163eb56e783e8abfd96e71077c6a824cc77df40de11045653994993e9c5d",
+      "source_duration_seconds": 2239.125333,
+      "visual_supplement": "full_session_b2_routine_visual_supplement.md"
     },
     {
       "slug": "bishop-entries-part5",
@@ -239,8 +277,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_entry_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_entry_study.md",
+      "current_published_sheets": 53,
+      "current_published_frames": 209,
+      "source_video_sha256": "f1463a44edabed160da795a4c2aae23b808cf569bdeafa33bf3d2dd62c75ac3d",
+      "source_duration_seconds": 3124.616417
     },
     {
       "slug": "bishop-trades-breakdown-2",
@@ -331,8 +373,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 28,
+      "current_published_frames": 111,
+      "source_video_sha256": "978cdc33c7c9940bb6cf6dc8f08c09207c791415f69255956966e26f1aff94d9",
+      "source_duration_seconds": 1652.608
     },
     {
       "slug": "video-10-part-2-bias",
@@ -345,8 +391,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 34,
+      "current_published_frames": 133,
+      "source_video_sha256": "dd7e3af687765271b4fdcde835ae16143a168da283c96a4022108367cb8b9de4",
+      "source_duration_seconds": 1987.424
     },
     {
       "slug": "video-11-key-levels-1",
@@ -359,8 +409,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 38,
+      "current_published_frames": 152,
+      "source_video_sha256": "8965615b15156d6b88aa8929e7e62425f105a874f22ae54398af78eaa7629011",
+      "source_duration_seconds": 2270.592
     },
     {
       "slug": "video-12-bias-continuation-part-1",
@@ -373,8 +427,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 34,
+      "current_published_frames": 136,
+      "source_video_sha256": "8554a5632004d55f200dd20d91f2bddc2e773839953243244c8bdf80c9f6d581",
+      "source_duration_seconds": 2025.152
     },
     {
       "slug": "video-13",
@@ -400,8 +458,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 37,
+      "current_published_frames": 146,
+      "source_video_sha256": "4f7ee16aa7f2a243567c38e18dd4d8203016dd04f0fe2bbe51d519df27e30c9c",
+      "source_duration_seconds": 2178.848
     },
     {
       "slug": "video-14-entry-models-1",
@@ -414,8 +476,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_entry_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_entry_study.md",
+      "current_published_sheets": 24,
+      "current_published_frames": 93,
+      "source_video_sha256": "7166ec8e147a97f4ec331fe92fc36c6146576d5ba71097ccdbc5e8dec417ff56",
+      "source_duration_seconds": 1385.408
     },
     {
       "slug": "video-15-entry-models-2",
@@ -428,8 +494,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_entry_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_entry_study.md",
+      "current_published_sheets": 36,
+      "current_published_frames": 144,
+      "source_video_sha256": "5ff8d33346e833281b4a02ab44414226c65e46cff6a0b4e5396330ad8c28314f",
+      "source_duration_seconds": 2146.24
     },
     {
       "slug": "video-16-storyline-1",
@@ -442,8 +512,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 30,
+      "current_published_frames": 117,
+      "source_video_sha256": "54830f72ce94b40e086d807c627c709df3ec013c58c1f3251a91112cae6730ca",
+      "source_duration_seconds": 1746.56
     },
     {
       "slug": "video-17-storyline-2",
@@ -456,8 +530,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 35,
+      "current_published_frames": 137,
+      "source_video_sha256": "23fa2c82622720a08b451b790d20cf48f17e7e613b20f443e3066503a41dd2b3",
+      "source_duration_seconds": 2041.632
     },
     {
       "slug": "video-18-logic-x-gold-study",
@@ -470,8 +548,13 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 28,
+      "current_published_frames": 109,
+      "source_video_sha256": "2c7e964adef51b90445f6aecdf1dbf35fb0588fc24742d381f94eee95b08a4c4",
+      "source_duration_seconds": 1630.378667,
+      "visual_supplement": "full_course_09_18_visual_supplement.md"
     },
     {
       "slug": "video-2-part-2-wamoo",
@@ -484,8 +567,13 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 29,
+      "current_published_frames": 113,
+      "source_video_sha256": "7fd26c93188653c01802e95d78afb4f23d18198de21c952a993087d0554b7f00",
+      "source_duration_seconds": 1686.944,
+      "visual_final_sheet_supplement": "full_primary_crosscheck.md"
     },
     {
       "slug": "video-3-all-you-need-to-know-about-structure",
@@ -498,8 +586,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 33,
+      "current_published_frames": 130,
+      "source_video_sha256": "6af430cb38d69c7396526987c820fa741ffd9d71acfbcb081e169363d2bcfdff",
+      "source_duration_seconds": 1949.696
     },
     {
       "slug": "video-4-part-2-structure",
@@ -512,8 +604,13 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 39,
+      "current_published_frames": 153,
+      "source_video_sha256": "e8f52ea41928bdd28a1a8984730ad774cb4e49de30fd1c08c3258c2b83c69eed",
+      "source_duration_seconds": 2287.296,
+      "visual_supplement": "full_course_04_06_visual_supplement.md"
     },
     {
       "slug": "video-5-liquidity-types-n-forms",
@@ -526,8 +623,13 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 26,
+      "current_published_frames": 101,
+      "source_video_sha256": "30222f2769a49366a1186e4a3402e13d6ebf65d9455ea41019004a23f5701b99",
+      "source_duration_seconds": 1506.336,
+      "visual_supplement": "full_course_04_06_visual_supplement.md"
     },
     {
       "slug": "video-6-part-2-liquidity",
@@ -540,8 +642,13 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 23,
+      "current_published_frames": 91,
+      "source_video_sha256": "06c47cc76afa369343198f895d0e36331a7b612d97c761a497da90ede9cda7a1",
+      "source_duration_seconds": 1359.616,
+      "visual_supplement": "full_course_04_06_visual_supplement.md"
     },
     {
       "slug": "video-7-defined-ranges-range-cycle",
@@ -554,8 +661,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 35,
+      "current_published_frames": 138,
+      "source_video_sha256": "1982e5d8e331ae6f3f0450d1c4ae1abdda520099089587dfc98d8cdd8ef23941",
+      "source_duration_seconds": 2059.488
     },
     {
       "slug": "video-8-part-2-range",
@@ -568,8 +679,12 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_course_01_08.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_course_01_08.md",
+      "current_published_sheets": 37,
+      "current_published_frames": 147,
+      "source_video_sha256": "4de58d586d546fbaee8ce73f6b61098e4c5770902ed0790db81041aa135ff815",
+      "source_duration_seconds": 2198.304
     },
     {
       "slug": "video-9-bias-storyline",
@@ -582,8 +697,26 @@
       "source_pts_manifest": false,
       "classification": "canonical_retranscription_with_frames",
       "transcript_review_status": "read_end_to_end_per_reader_ledger",
-      "visual_review_status": "consult_exact_ranges_in_reader_ledger_study_in_progress",
-      "review_ledger": "full_bias_story_study.md"
+      "visual_review_status": "complete_sampled_position_pass_with_versions_recorded_in_ledgers",
+      "review_ledger": "full_bias_story_study.md",
+      "current_published_sheets": 31,
+      "current_published_frames": 121,
+      "source_video_sha256": "6929f3da980414c7fe17a99ef981e2fc24d4f6bb5ac982366e9971826759f0da",
+      "source_duration_seconds": 1809.088,
+      "visual_supplement": "full_course_09_18_visual_supplement.md"
     }
+  ],
+  "source_pass_completed_date": "2026-10-23",
+  "current_unique_sampled_frames": 3445,
+  "current_unique_sheet_positions": 874,
+  "unique_source_duration_hours": 14.289,
+  "coverage_qualification": "All28unique transcripts and all874sampled sheet positions have reader coverage; old/corrected/mixed versions are explicitly identified. Not every current corrected image was reread, no continuous native-video viewing or full source truth certification.",
+  "historical_checkpoint_notes": [
+    "18 course lessons,9 unique Bishop sessions,1 plug-and-play lesson",
+    "Part3 duplicate shares original video bytes; transcript variants retained",
+    "13oldertranscriptions are alternate ASR evidence,not13additional lessons",
+    "Course/plug sheets pending corrected sourcePTS regeneration; current old sheet labels approximate",
+    "All28canonical transcripts now have end-to-end reader ledgers; visual completion is tracked separately and remains incomplete.",
+    "Full sampled-source pass completed across readers; see source-specific version ledgers and targeted native/ASR followups. Historical numerical replay readiness remains separate."
   ]
 }

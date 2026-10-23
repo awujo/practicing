@@ -1,9 +1,13 @@
-# Bishop SLK — verified specification v0.1
+# Bishop SLK — source specification v0.2
 
-2026-10-20. **Targeted first-pass source verification; trading implementation and
-all-example replay acceptance remain unfinished.** This document specifies the
-source-backed behavior reviewed so far. It does not certify a profitable system
-or claim every source sentence/frame has been reviewed.
+2026-10-23. All 28 unique canonical video transcripts have end-to-end study
+ledgers. Systematic visual coverage, the full-source synthesis and independent
+cross-checks are recorded below; their exact coverage is authoritative. Further
+engine implementation has remained paused during the owner's study-first phase.
+Independent review now accepts the declared source-coverage pass and handoff to
+named implementation contracts. The existing partial engine is not a source of
+trading rules or a certified replication; remaining source uncertainty and
+automation choices stay explicit.
 
 The unchanged prior rulebook is preserved as
 [STRATEGY_LEGACY.md](study/STRATEGY_LEGACY.md), SHA256
@@ -13,41 +17,37 @@ superseded by the explicit coverage below.
 
 ## 1. Evidence, scope and acceptance contract
 
-Study ledgers hold the detailed citations and actual visual coverage:
+Full-study ledgers distinguish actual source coverage from interpretation:
 
-- [Core course](study/course_verified.md): targeted passages across videos 1–18;
-  six contact sheets actually opened. Not exhaustive frame/transcript coverage.
-- [Bishop sessions](study/bishop_verified.md): targeted passages across nine
-  unique supplementary sessions. The ten release assets include duplicate Part3
-  content. Initial legacy contact sheets are too small for exact numeric labels;
-  re-extraction and example verification are separate work.
-- [Plug-and-play](study/plug_verified.md): technical transcript sections and 13
-  specified contact sheets, with taken/missed/hypothetical examples distinguished.
-- [Independent source cross-check](study/source_crosscheck.md): a second reader
-  verified direct-style stop quotes, confirmation timing, engulfing/flip scope,
-  H2 direct execution and Bishop's ERL target. Additional FVG/session checks were
-  communicated during review; this is not certification of every rule below.
+- [Inventory and progress](study/FULL_STUDY_PROGRESS.md),
+  [hashed source inventory](study/full_source_inventory.json) and
+  [working synthesis](study/FULL_SOURCE_SYNTHESIS.md).
+- [Course 1–8](study/full_course_01_08.md), plus
+  [course 4–6 visual supplement](study/full_course_04_06_visual_supplement.md).
+- [Bias/story course 9–13,16–18](study/full_bias_story_study.md), plus
+  [course 9/18 visual supplement](study/full_course_09_18_visual_supplement.md).
+- [Entry 14–15 and plug](study/full_entry_study.md).
+- [Nine Bishop sessions](study/full_session_study.md), plus
+  [BuildingBias2/routine visual supplement](study/full_session_b2_routine_visual_supplement.md).
+- [All supplementary notes,60PDFpages and four original images](study/full_supplement_study.md).
+- [Independent targeted verification](study/full_study_verification.md) and
+  [primary cross-check](study/full_primary_crosscheck.md).
 
-Status vocabulary in the tables: **confirmed** = checked in cited source;
-**corrected** = narrower/different than prior draft or a proposed Kevin import;
-**new** = newly explicit source branch. These are source-review statuses, not
-engine replay passes or independent-review certification. Cross-check work must
-record disagreements rather than overwrite them silently.
+The earlier `course_verified.md`, `bishop_verified.md`, `plug_verified.md` and
+`source_crosscheck.md` remain first-pass evidence ledgers, not full-study
+certificates. `C01…C27`/`B01…B15` below retain those original citation IDs; full
+ledgers provide expanded rules, source qualifications and chronological examples.
+Confirmed/corrected/new are source-review labels, not engine replay passes.
 
-Citations `C01…C27` refer to the core ledger; `B01…B15` to the Bishop ledger;
-`P@seconds` refers to the new plug-and-play transcript. `vN@seconds` refers to
-new descriptive core-video slugs. Ledger frame citations refer only to images
-actually inspected; timestamps remain stable if contact sheets are replaced.
-
-**Frame-time caution:** the original ffmpeg `fps` sampling can select a frame
-around 7.5 seconds later than its burned `n*15` label. Transcript segment times
-are unaffected. Core sheets have not yet been regenerated with the corrected
-extractor; treat their burned times as approximate visual locators. Broad source
-ranges remain useful, but an exact chart fixture must use native-time extraction
-and verify the actual image state rather than infer candle completion from a
-mislabelled contact-sheet timestamp. The nine unique Bishop sessions have been
-regenerated with recorded actual source timestamps; the core and plug sheets
-still need timestamp-correct regeneration.
+All course/plug and Bishop frame sets now use actual sourcePTS timestamps.
+[Course manifest](study/course_frame_manifest.json) records 19 assets, 2,481 frames
+and 630 sheets; [Bishop manifest](study/bishop_frame_manifest.json) records nine
+unique sessions, 964 frames/244 sheets plus the duplicate Part3. Total unique
+coverage available is 3,445 sampled frames/874 sheets across 28 videos.
+Old course-image citations refer to Gitcommit`dd91b14`; oldfps pictures could
+be around 7.5 seconds later than burned labels. Reader ledgers explicitly
+distinguish versions actually viewed. Corrected publishing does not certify
+continuous native-video inspection or exact intrabar fill times.
 
 **Hard acceptance requirement (owner): every verified teaching example must
 match its documented model.** A full match includes directional context, setup
@@ -82,8 +82,8 @@ not proof that Weekly direction itself has been confirmed.
 
 | Rule | Status | Required sequence | Evidence |
 |---|---|---|---|
-| D01 | confirmed | Origin-TF KL rejection and candle close, then next-lower-TF breakout OR sweep+break/BOS in the proposed direction. A wick reaction alone is unconfirmed. Main ladders include M→W, W→D and D→H4. | C09,C14; v9@76–151,574–672; B02; P@547–601,744–756 |
-| D02 | confirmed | Alternative origin: sweep previous candle high/low, close appropriately, then next-lower-TF breakout OR sweep+BOS. Do not require a KL rejection AND a prior-candle sweep for every case. | B04; bias2@408.5–478.4,536.4–615.8; P@618–650,696–738 |
+| D01 | confirmed | Origin-TF KL rejection and candle close; check the next lower TF for a related positive breakout OR sweep+break/BOS in the proposed direction, observable before eligibility. A wick reaction alone is unconfirmed. Main ladders include M→W, W→D and D→H4. | C09,C14; v9@76–151,574–672; B02; P@547–601,744–756 |
+| D02 | confirmed | Alternative origin: sweep previous candle high/low, close appropriately, and check for related next-lower-TF breakout OR sweep+BOS observable before eligibility. Do not require a KL rejection AND a prior-candle sweep for every case. | B04; bias2@408.5–478.4,536.4–615.8; P@618–650,696–738 |
 | D03 | corrected | Earlier course passages permit an engulfing pathway. Later clarification: W rejection→D engulf is context; descend further and require H4 breakout or sweep+break for synchronization. Do not treat engulfing alone as a completed structural flip. | C24; v17@1133–1191,1280–1318 |
 | D04 | new | If W rejection never gets its D breakout, a D rejection from that same W level can anchor a Daily story, requiring H4 breakout/sweep+break. Plug-and-play specifically describes at least two D rejections; do not silently generalize that count to every earlier example. | B03; bias1@774.6–847.6; P@1482–1504,1538–1564,1603–1629 |
 | D05 | corrected | Same-day OR next-day lower-TF breakout can confirm a D rejection. Do not port Kevin's next-day-only default. | C25; v17@1248–1272 |
@@ -92,6 +92,9 @@ not proof that Weekly direction itself has been confirmed.
 Candle completion is attached to each event's own timeframe. A closed H1 bar
 cannot establish that its enclosing H4/D/W candle has closed. The engine must
 never use future closes or a pivot before its confirmation becomes observable.
+Narrative “then check the lower TF” does not impose that its confirming pattern
+starts strictly after the origin candle closes; preserve same-day source
+allowance and separate occurrence, relation-to-reaction and availability clocks.
 
 ## 4. Continuing and ending a story
 
@@ -116,6 +119,7 @@ source evidence settles it; it must not silently masquerade as a teaching event.
 | `engulf_retest` | confirmed | Core course: engulfing forms new A/V, then direct retest. H4 setup may confirm on H1/M30. | C18; v14@456–533,616–636 |
 | `oc_break_retest` | confirmed | Two consecutive counter-direction candles form OC; engulfing/body close disrespects OC; retest broken OC. It need not engulf both earlier bodies. | C13,C18; v11@348–406; v14@533–658 |
 | `engulf_irl_retest` | confirmed | Engulfing, next candle approaches new A/V WITHOUT tapping it (becomes IRL), then sweep that candle and tap level. This is an alternative to direct retest, not an extra condition imposed on every entry. | C18; v14@666–753 |
+| `candle_sweep_retest` | confirmed family, exact mapping open | Bishop describes low-swept/high-standing with V-level buy; bearish mirror described separately. Do not require standard same-TF engulfing or mandatory half-TF engulfing. | RS@153.6–230.1; E5@589.3–716.6; DR@2151.8–2184.0; full session ledger21–24 |
 | `aggressive_direct` | confirmed | Core alternative: valid KL overlapping imbalance may be entered without waiting for inducement/confirmation. Approximate 10–11-pip breathing-room stop is described. Keep this distinct from Bishop's H4/H2 liquidity-specific examples. | C05; v3@1002–1078 |
 
 Corrections needed to avoid silently excluding teaching examples:
@@ -138,9 +142,12 @@ Corrections needed to avoid silently excluding teaching examples:
   staying with it (C20). Store model choice and eligibility, rather than choosing
   whichever past trade looks profitable.
 
-Prior price sponsorship is a preferred continuation clue (P@841–983), but
-P@2049–2053's M30 example says “does not sponsor any sale.” Audio/frame resolution
-must settle that wording before sponsorship becomes a global hard filter.
+Prior price sponsorship is a preferred continuation clue (P@841–983). The
+canonical ASR at P@2049–2053 renders the M30 example as “does not sponsor any
+sale,” but the alternate transcript and forced-English small/medium rechecks
+do not reliably resolve that negation. This is neither a proven exception nor
+a justification for a universal hard filter; retain the disputed phrase and
+the source's broader preference separately.
 
 ## 6. Stops, trade targets and owner operating profile
 
@@ -152,7 +159,7 @@ an arbitrary operating default.
 | Core origin structural stop | confirmed | Beyond strong sweep high/low; lower-TF confirmation uses relevant wick; 0.5 or 1 pip padding explicitly discussed. A 5-pip near-miss is acknowledged. | C21; v13@307–332,1717–1936,2142–2157 |
 | Core fixed-stop alternative | confirmed | Approximate 10–11p for aggressive direct style and continuation personal preference; not every historical trade's exact stop. | C05,C16,C21; v3@1022–1078; v13@1924–1936; v14@345–355 |
 | Bishop structural protection | confirmed | Stops beyond indicated high/KL or nearby liquidity+KL because a normal sweep may precede the move. Exact zone construction still needs chart derivation. | B14; trades3@1287.7–1348.1; repeat@638.7–648.3; bias-entries@208.8–224.2 |
-| Bishop nearest ERL target | corrected | Nearest external liquidity is personally selected; R is resulting target distance/risk, not always fixed 3R. Counter-structure guard uses nearer liquidity. Freeze target once eligible. | B12–B13; bias-entries@319.4–337.6; repeat@593.6–648.3; trades3@430.6–456.5 |
+| Bishop nearest ERL target | corrected | Nearest external liquidity is personally selected; R is resulting target distance/risk, not always fixed 3R. Counter-structure guard uses nearer liquidity. Record the initially stated plan and any later observable management changes separately. | B12–B13; bias-entries@319.4–337.6; repeat@593.6–648.3; trades3@430.6–456.5 |
 | Core routine RR | confirmed | 3R is routine; 4R also mentioned. Keep separate from structural story destination and source-specific ERL target. Win-rate quotes are claims, not measured bot results. | C22; v4@126–194; v14@295–370 |
 | Owner operating preset | owner choice / not historical truth | Aggressive/direct default, fixed approximately 10–11p stop retained per handoff. Zone-edge/structural alternative selectable and backtested separately. Exact fixed default value, zone construction and fixed-vs-ERL target policy remain explicit configuration choices. | HANDOVER; owner conversation; source distinctions above |
 
@@ -227,7 +234,7 @@ Before calling Bishop “built and matching,” all of the following must be con
    Historical costs and feed limitations are explicit; paper operation is validated
    before activating delivery or broker paths.
 
-**Current status:** first-pass evidence specification only. The engine, complete
+**Current status:** full-source consolidation with explicit interpretation gaps. The engine, complete
 numeric historical fixtures, independent verification of all rules/examples,
 full replay and multi-pair backtests are not certified by this document.
 
@@ -241,7 +248,7 @@ before eligibility are retired; the frozen destination is an opposing origin-TF
 KL, explicitly not Bishop's nearest ERL.
 
 `bishop/setups.py` implements `engulf_retest` and `oc_break_retest` formation,
-with source-style structural-wick and separate fixed-stop profiles. The default
+with declared wick-based and separate fixed-stop profiles. The default
 exact-junction policy is preserved; explicit `close_reference` uses the first
 close across an opening gap without averaging it or fitting a tolerance.
 
@@ -256,3 +263,31 @@ remain unranked candidates, not a position-selection or exposure policy.
 execution, the remaining §5 models, weekly fallback/alignment, source-specific
 ERL selection and full lifecycle remain open. Retained teacher observations
 are unchanged; no exact historical match has been promoted by these additions.
+
+## 11. Full-study corrections that constrain the eventual build
+
+- A/V are source closing-price/line shapes; OC has explicit consecutive-candle
+  open/close language. The old engine's opposite-colour/exact-junction or
+  first-close-across-gap rules are provisional policies, not established
+  definitions of every taught A/V. See independent verification§3.
+- A high/low-standing candle pattern is not automatically same-TF engulfing.
+  PDFp8 is a LONG/V labelled high-swept/low-standing; attribution and this
+  referent must be reconstructed before applying a simple directional mirror.
+  “4thman's CE” alone is not a separately defined algorithm. The prior zero-setup
+  explanation based on a missing named fourth-man route was too strong.
+- Core v16 says a small Daily KL breach alone does not establish continued
+  buying and prefers momentum/context; Bishop accepts a small H4 break after
+  Daily bearish context. Neither supplies a universal impulse threshold.
+- Course14's two Gold entries are narrated as break-even exits after favourable
+  excursions, not realized3R/4R wins. Session trades include stops, manual2R
+  exit, misses, cancellation and nested replacement. PDF charts and broker
+  positions sometimes differ in TF, count, fills and exits.
+- Plug's M30 sponsored-sales negation is disputed across ASR versions. Treat
+  prior sponsorship as source-described preference with that sentence unresolved;
+  do not assert a proven exception from corrupt wording.
+- Dense native-frame review resolves v7's old/new-high referents: OLD protected
+  high remains after a wick-only weak-low sweep; NEW lower candidate is liquidity,
+  with migration illustrated after body-close break. Numeric major/local
+  selection, equality/plateau rules and displacement thresholds remain unspecified.
+
+No fixture expectations or engine outputs are changed by these study corrections.

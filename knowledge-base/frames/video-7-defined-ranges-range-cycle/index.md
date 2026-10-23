@@ -146,3 +146,4 @@ sheet_001 covers frames 1-4, and so on.
 | 2010 | 33:30 | you will see that this external range liquidity has not been broken, right? It's still very intact, although it has been swept, but this external range liquidity has not been broken. What that means is that the lowest low, |
 | 2025 | 33:45 | is what price is going to take out as your internal range liquidity on T, we break up both this external range liquidity. Mr. David Berry, did I answer your question? |
 | 2040 | 34:00 | Yes sir, yes sir, thank you so much. Mr. Fortmah, can I have the question? Yes, you asked, okay, you know what? Hold on, we have used another 40 minutes already, |
+| 2055 | 34:15 | Everybody can join so we can take your questions from there. |

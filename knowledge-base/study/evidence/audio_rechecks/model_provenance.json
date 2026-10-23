@@ -1,0 +1,20 @@
+{
+  "faster_whisper_version": "1.2.1",
+  "models": [
+    {
+      "model": "small.en",
+      "repository": "Systran/faster-whisper-small.en",
+      "snapshot_revision": "d1d751a5f8271d482d14ca55d9e2deeebbae577f",
+      "model_bin_sha256": "62b2a45b05ee59acb4a5341b33ee35e041395d378d418a18acfe4c9e768ee37a",
+      "bytes": 483545366
+    },
+    {
+      "model": "medium.en",
+      "repository": "Systran/faster-whisper-medium.en",
+      "snapshot_revision": "a29b04bd15381511a9af671baec01072039215e3",
+      "model_bin_sha256": "11b220779aea4c6f3ce9d2549c8a95ea869ed84066864b999531ef53e594fe5b",
+      "bytes": 1527904330
+    }
+  ],
+  "qualification": "Alternate ASR only, not human listening or independent source truth"
+}

@@ -141,3 +141,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1935 | 32:15 | You get some kind of motivation where you will get from your family and your bank balance. No motivation has pick up, it gives you. You can't find it anywhere. Okay, so yes, think about GLE. |
 | 1950 | 32:30 | to have each and every one of us on the call, right? This is just to remind you that you can be, you can do, you can have anything that you desire to have. |
 | 1965 | 32:45 | but you can be that person who doesn't have everything, but putting the work to get everything that he desires, right? So it's all peace, love, abundance and creativity from here. |
+| 1980 | 33:00 | Dixon, yeah, I'll message you. I'll message you. Good night, everybody. The recording will be shared by, let me catch up with my friend, Dixon. |

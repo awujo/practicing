@@ -125,3 +125,4 @@ sheet_001 covers frames 1-4, and so on.
 | 1695 | 28:15 | or he gives to us a breakout and price trades into a weekly key level and it rejects and it closes above, right? And we move to the daily again and from the daily, |
 | 1710 | 28:30 | until we target the nearest weekly key level. Do we get what I'm saying? Are we getting it now? Are we seeing how key levels, |
 | 1725 | 28:45 | How we can see that storylines can start and end, right? So let me, we have like less than a minute, |
+| 1740 | 29:00 | Let me, we've not even spoken about entries, right? So using the storyline on entries. So I'm going to stop this one so that we can start converting everybody can join again. |

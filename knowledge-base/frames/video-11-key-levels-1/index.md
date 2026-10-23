@@ -160,3 +160,4 @@ sheet_001 covers frames 1-4, and so on.
 | 2220 | 37:00 | The next day we are going to be looking For selling opportunities Right And you can see how momentum kicked in Right The next day Right Even though we continue to buy But if you took these sales |
 | 2235 | 37:15 | So So that is that about the basics That is that about the basics of key leverage Right So we are going to meet later tonight |
 | 2250 | 37:30 | So we can still continue our series On key levels Right We have less than a minute left But this recording is going to be shared With each and every one of us Just after it is done converting |
+| 2265 | 37:45 | By 1130 or 12th So you can come with your questions as well Yes If the momentum is right Key level If the key level is right Momentum will kick in |

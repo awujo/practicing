@@ -1,0 +1,149 @@
+{
+  "input": "course08_1170_1260.wav",
+  "input_sha256": "4ae374179eb3f3e0eea4ef056d8831b2a4156e2c1385c7c1ef3b889ccc97cf36",
+  "source_offset_seconds": 1170,
+  "model": "small.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 1170.0,
+      "end": 1180.16,
+      "text": "I think when you have a kill level, when you have a kill level, when you have a kill level",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1180.16,
+      "end": 1192.61,
+      "text": "and you have maybe half, two kill levels, that's what I thought was my grandiose one.",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1192.61,
+      "end": 1193.57,
+      "text": "Okay. Yes, I can.",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1193.57,
+      "end": 1195.41,
+      "text": "Your net, yes, I can.",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1196.61,
+      "end": 1202.69,
+      "text": "Yeah. Yeah. I think when you have a kill level that has an imbalance above it,",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1202.69,
+      "end": 1205.73,
+      "text": "but we need an imbalance around that kill level we didn't need.",
+      "avg_logprob": -0.5878468785645827,
+      "no_speech_prob": 0.5716654658317566
+    },
+    {
+      "start": 1205.73,
+      "end": 1210.61,
+      "text": "I think in most cases the one that is above us and in balance is really old",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1210.61,
+      "end": 1213.65,
+      "text": "than the festival you have. Don't you get my question?",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1213.65,
+      "end": 1214.29,
+      "text": "Yes, I get.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1216.29,
+      "end": 1219.33,
+      "text": "There are sometimes when you have a killer who is above an inducement.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1225.07,
+      "end": 1226.51,
+      "text": "I think his network is breaking.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1229.26,
+      "end": 1230.38,
+      "text": "My network is breaking.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1232.94,
+      "end": 1235.18,
+      "text": "He called his entry bank for that one.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1235.18,
+      "end": 1237.1,
+      "text": "Okay, thank you.",
+      "avg_logprob": -0.4928442721671246,
+      "no_speech_prob": 0.18268969655036926
+    },
+    {
+      "start": 1237.1,
+      "end": 1244.86,
+      "text": "I think you get my point. I don't have my question. I think it's fine to see the one",
+      "avg_logprob": -0.423799369794627,
+      "no_speech_prob": 0.08095747977495193
+    },
+    {
+      "start": 1244.86,
+      "end": 1249.26,
+      "text": "without an imbalance. We hold more better than the one that does not. I think that's just",
+      "avg_logprob": -0.423799369794627,
+      "no_speech_prob": 0.08095747977495193
+    },
+    {
+      "start": 1249.26,
+      "end": 1250.46,
+      "text": "not the kind of thing.",
+      "avg_logprob": -0.423799369794627,
+      "no_speech_prob": 0.08095747977495193
+    },
+    {
+      "start": 1250.46,
+      "end": 1256.46,
+      "text": "Yes. Well, when we get to the points where I think Dixin even trades more of that setup",
+      "avg_logprob": -0.423799369794627,
+      "no_speech_prob": 0.08095747977495193
+    },
+    {
+      "start": 1256.46,
+      "end": 1259.9,
+      "text": "a lot, I made mention of it in the welcome address that.",
+      "avg_logprob": -0.423799369794627,
+      "no_speech_prob": 0.08095747977495193
+    }
+  ]
+}

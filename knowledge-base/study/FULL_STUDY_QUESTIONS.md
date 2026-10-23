@@ -26,3 +26,24 @@ It labels EURGBP H2 FOREXCOM, “H2 High swept, Low standing / V-shaped kl /
 illustrated geometry, not a separately defined entry taxonomy, exact order
 clock or broker execution. The earlier milestone's “unsupported fourth-man
 route” explanation needs this source check before being treated as established.
+
+## Source-pass resolutions — 2026-10-23
+
+- Range migration: dense cursor frames and alternate ASR distinguish OLD valid
+  protected high from NEW lower candidate; the apparent same-high contradiction
+  is substantially resolved. See verifier section1 and retained native frames.
+- Engulfing context versus endpoint flip, model-specific closure clocks,
+  counterweekly permissions and distinct stop/target styles are reconciled in
+  the synthesis with source references. They are not universal AND conditions.
+- Fourth-man label is attribution, not proof of a distinct algorithm. PDFp8's
+  exact candle pair/reference remains an example-reconstruction question; no
+  unsupported missing-route explanation is retained.
+- All primary lessons have transcript and sampled visual coverage. Mathematical
+  pivot/tie/impulse/proximity/FVG choices not uniquely stated in the material
+  remain explicit automation decisions, not unfinished source reading.
+- Alternate forced-English ASR recovers course8's garbled opening and corroborates
+  one-point break sufficiency/nested ranges. Its network-broken question and
+  plug's sponsorship negation remain low-confidence; no rule is inferred from
+  them. Original canonical text is preserved.
+- Historical fill clocks/feed mapping and risk-tool-versus-broker differences
+  remain reconstruction work for the later example-validation phase.

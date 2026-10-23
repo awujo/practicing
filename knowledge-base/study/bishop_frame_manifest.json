@@ -2,7 +2,7 @@
   "generated_utc": "2026-10-20",
   "timestamp_audit": {
     "fixed_bishop": "All ten asset outputs regenerated after select/source-PTS fix; duplicate reuses same source pixels.",
-    "core_course_and_plug": "Retained older outputs were generated with fps output clock; timestamps may select source frames approximately half an interval later. Use native exact-frame extraction before exact numeric fixture promotion. Not regenerated in this pass."
+    "core_course_and_plug": "All18course+plug outputs now regenerated with actualsourcePTS; seecourse_frame_manifest.json. Oldimagecitations refer tocommitdd91b14 unless explicitlycorrected."
   },
   "method": "Original release assets verified by byte size and SHA256; ffprobe source dimensions; existing extract_frames.py sheets with interval15,width1280,tile1280,2x2. No inference of native source detail from upscaling.",
   "unique_video_count": 9,

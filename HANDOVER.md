@@ -141,3 +141,35 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
   Working synthesis is not implementation approval. Corrected frame job was
   interrupted with prioragentturn; resumed in root session78088, adopting verified
   completed7/8priorityoutputs and skipping previouslycomplete sources.
+
+## Full sampled-source pass complete (2026-10-23)
+
+- All 28 unique canonical transcripts read end-to-end; all 874 sampled sheet
+  positions covered across documented old/corrected/mixed reader versions. All
+  60 PDF pages inspected individually at detail, all four images at native
+  size, all 13 supplementary notes read. This is not continuous native-video
+  viewing, independent double review or historical replay acceptance.
+- Completed and published corrected course/plug extraction: 19 verified source
+  assets, 2,481 frames / 630 sheets. Together with Bishop: 3,445 unique frames /
+  874 sheets. Source and output hashes retained in course_frame_manifest.json;
+  old course images remain in Git at dd91b14. No active extraction job remains.
+- Dense native cursor evidence plus alternate English ASR resolves v7's key
+  old/new-high referent issue: old protected high holds after wick-only weak-low
+  take; new lower candidate remains liquidity until the body-break contrast.
+  Retained all 21 reviewed native frames and alternate small/medium ASR outputs
+  with model revisions/hashes. Network-broken v8 question and plug sponsorship
+  negation remain low-confidence; no rule or exception is invented.
+- Expanded source specification v0.2, synthesis, chronological example catalogues
+  (61 session pair/story segments, not fills), independent verification and
+  IMPLEMENTATION_HANDOFF.md. Historical clock/feed/candle-pair gaps remain
+  later example-reconstruction work. Teacher expectations were not changed.
+- No engine, fixture or test changes in this source-study milestone. Next is
+  explicit causal event/numerical contracts, then complete source-route build,
+  independent code review and teacher-example replay in the owner's order.
+  Existing engine remains partial; no live alerts or broker activation.
+
+- Final independent source-consistency verdict is saved in
+  `full_study_verification.md` section8: declared coverage and handoff accepted,
+  with old/corrected sample limits, residual speech/p8 uncertainties and numerical
+  choices explicit. Ready for contract definition before code; existing engine
+  and all40historical observations are not certified by this source review.

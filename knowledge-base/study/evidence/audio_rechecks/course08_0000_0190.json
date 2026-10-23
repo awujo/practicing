@@ -1,0 +1,415 @@
+{
+  "input": "course08_0000_0190.wav",
+  "input_sha256": "215a76dcf5e277e158c33244487d730227a71e2efc37b669aa642506c09690fc",
+  "source_offset_seconds": 0,
+  "model": "small.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 1.84,
+      "end": 3.84,
+      "text": "Okay, that's a question.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 3.84,
+      "end": 5.84,
+      "text": "Yeah, I did my question.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 5.84,
+      "end": 7.84,
+      "text": "For that weak blue,",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 7.84,
+      "end": 9.84,
+      "text": "when we want to sell,",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 9.84,
+      "end": 11.84,
+      "text": "the channel is coming down already.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 11.84,
+      "end": 13.84,
+      "text": "For that weak blue,",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 13.84,
+      "end": 14.84,
+      "text": "are you with me?",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 14.84,
+      "end": 16.84,
+      "text": "For that weak blue,",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 16.84,
+      "end": 18.84,
+      "text": "for us to have a big obstructive for that weak blue,",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 18.84,
+      "end": 23.84,
+      "text": "must you also take two structural points?",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 23.84,
+      "end": 24.84,
+      "text": "No.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 24.84,
+      "end": 26.84,
+      "text": "Like two structural inter-advocacy?",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 26.84,
+      "end": 28.84,
+      "text": "No, it doesn't have to.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 28.84,
+      "end": 29.84,
+      "text": "It doesn't have to, okay.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 29.84,
+      "end": 30.84,
+      "text": "One is enough.",
+      "avg_logprob": -0.3847221427291404,
+      "no_speech_prob": 0.08382580429315567
+    },
+    {
+      "start": 30.84,
+      "end": 40.2,
+      "text": "enough. One is enough. Oh, that's my first question. The question is this. In getting",
+      "avg_logprob": -0.5712838164147209,
+      "no_speech_prob": 0.5072940587997437
+    },
+    {
+      "start": 40.2,
+      "end": 47.24,
+      "text": "the the ring circle, which which timeframe do you think would be more possible? Because",
+      "avg_logprob": -0.5712838164147209,
+      "no_speech_prob": 0.5072940587997437
+    },
+    {
+      "start": 47.24,
+      "end": 53.88,
+      "text": "my challenge is this. Home, it turned on 30 minutes. It turned on 30 minutes. Oh, time",
+      "avg_logprob": -0.5712838164147209,
+      "no_speech_prob": 0.5072940587997437
+    },
+    {
+      "start": 53.88,
+      "end": 62.64,
+      "text": "time frame might not be changed on four hours. So me, that's what I used to have. So what",
+      "avg_logprob": -0.5704865325242281,
+      "no_speech_prob": 0.4358695447444916
+    },
+    {
+      "start": 62.64,
+      "end": 67.56,
+      "text": "time frame is best to look for that, for that's people of liquidity and because of the total.",
+      "avg_logprob": -0.5704865325242281,
+      "no_speech_prob": 0.4358695447444916
+    },
+    {
+      "start": 67.56,
+      "end": 72.28,
+      "text": "For you to know that, okay, the unit circle is about to start. So then all you'll be looking",
+      "avg_logprob": -0.5704865325242281,
+      "no_speech_prob": 0.4358695447444916
+    },
+    {
+      "start": 72.28,
+      "end": 79.08,
+      "text": "for is to know when you enter again for the main train to continue. So what time frame",
+      "avg_logprob": -0.5704865325242281,
+      "no_speech_prob": 0.4358695447444916
+    },
+    {
+      "start": 79.08,
+      "end": 83.96,
+      "text": "you really suggest for a person to look for the green circle,",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 83.96,
+      "end": 86.44,
+      "text": "like going on to look for the green circle, what I think",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 86.44,
+      "end": 89.56,
+      "text": "that's beautiful. Those are my two questions.",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 89.56,
+      "end": 92.84,
+      "text": "Okay, beautiful. So you can use when it comes to",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 92.84,
+      "end": 97.32,
+      "text": "like I always say, you can always use the weekly",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 97.32,
+      "end": 100.6,
+      "text": "to make it very easy. You can use the daily",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 100.6,
+      "end": 105.16,
+      "text": "and you can use the four hours. This four hours is an exception",
+      "avg_logprob": -0.3310633447766304,
+      "no_speech_prob": 0.07232550531625748
+    },
+    {
+      "start": 105.16,
+      "end": 108.36,
+      "text": "where you can use the daily, one weekly, and sometimes the four hours.",
+      "avg_logprob": -0.23372247138944993,
+      "no_speech_prob": 0.3144499659538269
+    },
+    {
+      "start": 109.32,
+      "end": 113.72,
+      "text": "Just say you can use the, let's use the weekly, let's say we are using weekly and the daily to",
+      "avg_logprob": -0.23372247138944993,
+      "no_speech_prob": 0.3144499659538269
+    },
+    {
+      "start": 114.84,
+      "end": 121.8,
+      "text": "build bias, but when it comes to be able, if you build your bias, your bias or what I choose to",
+      "avg_logprob": -0.23372247138944993,
+      "no_speech_prob": 0.3144499659538269
+    },
+    {
+      "start": 121.8,
+      "end": 128.52,
+      "text": "call a storyline, if you build it from the weekly to the daily, we can also go back to",
+      "avg_logprob": -0.23372247138944993,
+      "no_speech_prob": 0.3144499659538269
+    },
+    {
+      "start": 128.52,
+      "end": 134.04,
+      "text": "above four hours. You can see a range cycle of four hours, you can see it on one hour,",
+      "avg_logprob": -0.23372247138944993,
+      "no_speech_prob": 0.3144499659538269
+    },
+    {
+      "start": 134.04,
+      "end": 135.64,
+      "text": "You can see it on two hours.",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 135.64,
+      "end": 138.52,
+      "text": "You can also see it on 30 minutes, right?",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 138.52,
+      "end": 140.0,
+      "text": "You can even see it on 15 minutes.",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 140.0,
+      "end": 141.68,
+      "text": "It's just being able to be able to train your eyes",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 141.68,
+      "end": 143.04,
+      "text": "to be able to see it.",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 143.04,
+      "end": 144.8,
+      "text": "You will see it on circle of 15 minutes.",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 144.8,
+      "end": 146.88,
+      "text": "You see it on 30, you see it on 45,",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 146.88,
+      "end": 148.16,
+      "text": "you see it on one hour.",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 148.16,
+      "end": 150.12,
+      "text": "You will even see it on two hours, right?",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 150.12,
+      "end": 152.92,
+      "text": "There are times that you also see it on,",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 152.92,
+      "end": 155.68,
+      "text": "you also see it on the four hours as well, right?",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 155.68,
+      "end": 158.64,
+      "text": "So if you build a bias on the daily timeframe",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 158.64,
+      "end": 161.24,
+      "text": "and you believe that, let's say for example,",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 161.24,
+      "end": 163.08,
+      "text": "prices started reacting from a,",
+      "avg_logprob": -0.19183313204142863,
+      "no_speech_prob": 0.2338215410709381
+    },
+    {
+      "start": 163.08,
+      "end": 165.72,
+      "text": "that's the price that started reacting from a particular daily,",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 166.2,
+      "end": 170.04,
+      "text": "particular daily key level, right. And now that price has started",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 170.04,
+      "end": 173.6,
+      "text": "reacting from a particular daily key level. Okay, so okay, this",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 173.6,
+      "end": 178.2,
+      "text": "is the daily time. This is the daily time frame. We know",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 178.2,
+      "end": 180.92,
+      "text": "already that this is already a bearish market structure",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 180.92,
+      "end": 183.6,
+      "text": "already, right? Because you can see what price is actually doing",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 183.6,
+      "end": 186.0,
+      "text": "here. We swept liquidity here. And after the sweep of",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 186.0,
+      "end": 187.96,
+      "text": "liquidity, you can see how we broke this particular",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    },
+    {
+      "start": 187.96,
+      "end": 190.0,
+      "text": "structure, right. So after breaking the path,",
+      "avg_logprob": -0.23705240356640553,
+      "no_speech_prob": 0.023258144035935402
+    }
+  ]
+}

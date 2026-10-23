@@ -55,3 +55,27 @@ of all28lessons. Dedicated readers hold the wider source ledgers.
    entry readers independently reached the same qualification.
 
 No engine behaviour, expected fixture or tolerance was modified by this study.
+
+## Additional source detail — 2026-10-23
+
+Opened corrected course2 finalsheet029 individually:1680s ending portrait/logo
+tile, not a new chart example. This covers the extra final sheet absent from
+the28-sheet old course2 pass. Course and plug timestamp correction is complete;
+old image citations above refer to Gitcommitdd91b14. No claim of re-reading
+every corrected frame follows from publishing the new extraction.
+
+## Dense reference and alternate-ASR followup
+
+Independently opened native requested1758s and1761s course7frames. The former
+anchors a ray to the OLD higher peak; the latter points at the NEW lower peak.
+Together with the verifier's21-frame review and both transcript versions, this
+substantially explains valid-old versus low-probability/invalid-new references.
+Do not migrate the protected high merely because the weak low was wick-swept;
+body-close-below is the source's explicit contrasting migration case.
+
+Read all alternate small.en segments for course8 opening0–190s, its1170–1260s
+network fragment, course7 1640–1860s and plug2000–2080s. Outputs and parameters
+are preserved under `evidence/audio_rechecks/`, explicitly NOT human-verified.
+Course8 opening becomes coherent and corroborates one-point break sufficiency
+and nested ranges. Network fragment and plug negation remain unclear; no rule
+is invented from them. An additional medium.en check is tracked separately.

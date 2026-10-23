@@ -1,6 +1,6 @@
 # Full bias and storyline source study — working ledger
 
-Study date: 2026-10-20. Scope: canonical course videos 9–13 and 16–18.
+Study dates: 2026-10-20 through 2026-10-23. Scope: canonical course videos 9–13 and 16–18.
 No engine code or teacher expectations are changed by this study. This is a
 source ledger, not teacher replay acceptance or a claim to have studied all
 other sources. All eight assigned descriptive-slug transcripts were read
@@ -19,17 +19,17 @@ Readable chart dates are context, not automatically the teacher's entry time.
 
 | Video | Canonical transcript | SHA256 | Transcript coverage | Visual coverage |
 |---|---|---|---|---|
-| 9 | `video-9-bias-storyline/transcript.txt` | `c0f8546790ea0bd58c5dd0fa0a0bc9f41f4b15bd89e8e03dcd057ea74ec1dea6` | all 395 lines, [0.0-8.0] through [1808.2-1812.2] | pending systematic sheet inspection |
-| 10 | `video-10-part-2-bias/transcript.txt` | `6cb355abc9746af7212656d0bea45950723632d46ba93231fde987a7f1e6315f` | all 766 lines, [2.3-13.4] through [1985.4-1987.6] | pending systematic sheet inspection |
-| 11 | `video-11-key-levels-1/transcript.txt` | `60475325974644e4d80e36fc862a83a326b0bf048779519d7327337f12092c0f` | all 1189 lines, [4.1-9.6] through [2270.2-2270.4] | pending systematic sheet inspection |
-| 12 | `video-12-bias-continuation-part-1/transcript.txt` | `45f0ac3b6df8a83608871ce06812b743c97d0b569317a3e51e82aca0993ced66` | all 899 lines, [2.6-10.7] through [2024.1-2025.5] | pending systematic sheet inspection |
-| 13 | `video-13-bias-continuation-part-2/transcript.txt` | `a2bf10843554866e40a1792b1a539f70e59f8907d94488df9423ea2e4c753a34` | all 347 lines, [3.1-17.1] through [2169.3-2181.4] | pending systematic sheet inspection |
-| 16 | `video-16-storyline-1/transcript.txt` | `449600ff1c4134df88c75c8147e487bde1d5643bceced829ae42cf30afe435ad` | all 600 lines, [0.0-7.0] through [1743.4-1744.9] | old repo sheets 001–029, all four tiles inspected |
-| 17 | `video-17-storyline-2/transcript.txt` | `3d43e736800cc9a3c64c1270e1b92725ea708beed6f276c625aeffbd55459913` | all 741 lines, [4.4-11.8] through [2036.5-2041.5] | old repo sheets 001–034, all four tiles inspected |
-| 18 | `video-18-logic-x-gold-study/transcript.txt` | `f88d384d88f68ef7fcc3903b9a39511ac57d470b914ed0684fc4de50b01d271e` | all 725 lines, [0.0-3.9] through [1629.1-1630.0] | pending systematic sheet inspection |
+| 9 | `video-9-bias-storyline/transcript.txt` | `c0f8546790ea0bd58c5dd0fa0a0bc9f41f4b15bd89e8e03dcd057ea74ec1dea6` | all 395 lines, [0.0-8.0] through [1808.2-1812.2] | delegated to independent verifier; see its coverage ledger |
+| 10 | `video-10-part-2-bias/transcript.txt` | `6cb355abc9746af7212656d0bea45950723632d46ba93231fde987a7f1e6315f` | all 766 lines, [2.3-13.4] through [1985.4-1987.6] | corrected sourcePTS sheets001–034, all populated tiles inspected |
+| 11 | `video-11-key-levels-1/transcript.txt` | `60475325974644e4d80e36fc862a83a326b0bf048779519d7327337f12092c0f` | all 1189 lines, [4.1-9.6] through [2270.2-2270.4] | corrected sourcePTS sheets001–038, all populated tiles inspected |
+| 12 | `video-12-bias-continuation-part-1/transcript.txt` | `45f0ac3b6df8a83608871ce06812b743c97d0b569317a3e51e82aca0993ced66` | all 899 lines, [2.6-10.7] through [2024.1-2025.5] | corrected sourcePTS sheets001–034, all populated tiles inspected |
+| 13 | `video-13-bias-continuation-part-2/transcript.txt` | `a2bf10843554866e40a1792b1a539f70e59f8907d94488df9423ea2e4c753a34` | all 347 lines, [3.1-17.1] through [2169.3-2181.4] | corrected sourcePTS sheets001–037, all populated tiles inspected |
+| 16 | `video-16-storyline-1/transcript.txt` | `449600ff1c4134df88c75c8147e487bde1d5643bceced829ae42cf30afe435ad` | all 600 lines, [0.0-7.0] through [1743.4-1744.9] | old repo sheets 001–029, all populated tiles inspected; corrected001,014,024,029–030 also inspected |
+| 17 | `video-17-storyline-2/transcript.txt` | `3d43e736800cc9a3c64c1270e1b92725ea708beed6f276c625aeffbd55459913` | all 741 lines, [4.4-11.8] through [2036.5-2041.5] | old repo sheets 001–034, all populated tiles inspected; corrected003,007,021,029–030,034–035 also inspected |
+| 18 | `video-18-logic-x-gold-study/transcript.txt` | `f88d384d88f68ef7fcc3903b9a39511ac57d470b914ed0684fc4de50b01d271e` | all 725 lines, [0.0-3.9] through [1629.1-1630.0] | delegated to independent verifier; see its coverage ledger |
 
-Visual coverage currently in progress; do not interpret transcript completion as
-full visual completion. Numerical trade extraction and broker-feed alignment
+Combined sampled visual coverage is now complete through the main and
+course9/18 supplement ledgers; actual old/corrected versions remain explicit. Numerical trade extraction and broker-feed alignment
 are separate unfinished work. Source observations remain unresolved.
 
 ## Cross-source corrections already established
@@ -389,3 +389,28 @@ are separate unfinished work. Source observations remain unresolved.
   source set does not establish universal fixed stops or compulsorypartials.
 - Chart tools and narrated retrospective opportunities do not by themselves
   establish broker execution. Missing price/time/status stays missing.
+
+## Incremental visual coverage ledger (sourcePTS staging)
+
+All stated ranges mean every populated tile was actually displayed and inspected, at 15-second source sampling, not continuous video playback. Corrected sheets live under `/workspace/scratch/corrected_course_frames/<canonical-slug>/sheets/`; these supersede old sampler timings. Numeric fills remain unmeasured.
+
+- **v10 corrected sheets 001–034, all 133 frames:** 001–008 GBPUSD Weekly 2022–2023, line/body break and recurrent OC reactions; 009–013 bearish May/June 2022 weekly sequence; 014–021 GBPUSD Monthly 2019–June 2024, historical July/October 2023 versus prospective next-month zigzag; 022–025 Deriv synthetic V25/Volatility50(1s), not forex; 026 transition; 027–034 FOREXCOM XAUUSD H1 June19–20 2024 overnight OC/break/retest expansion. Late static Gold chart is not additional trades. Last sheet has one populated tile.
+- **v11 corrected sheets 001–038, all populated tiles:** 001–022 A/V/OC, role flip, engulfed OC versus extreme, nearby IRL and nested-TF schematics on empty EURUSD canvas; 023 brief NZDUSD loading then AUDUSD H2; 024–025 AUDUSD H2 June19–25 body junction/retests; 026–027 AUDUSD H4 May3–7 wick resolved on M30 into A/sweep/double highs; 028–029 AUDUSD Daily June19–25 sweep/IRL/close-below; 029–030 May8–14 engulfed OC versus V; 031 drawn daily/H4 probability schematic; 032–033 May/June daily old highs, nearest exit and current conditional plan; 034 Feb2–5 OC reaction then inducement/sweep; 035 Feb9–23 lows taken then bullish rise; 036 Feb–Apr sequence with V engulf/retest; 037 Apr5–23 broken V/body close, imbalance/prior daily high then fall; 038 Apr23–May3 reversal/overview. Chart is AUDUSD throughout the worked chart portion, despite generic inherited notes mentioning other assets.
+- **v12 corrected sheets 001–034, all 136 frames, source 0–2025s:** 001–011 schematic ABC higher-TF rejection/closed candle, lower-TF positive break and nearer KL/imbalance; 012–016 FOREXCOM EURUSD H4 June/July2024, local high swept/short illustration within larger context; drawn short position box is an illustrative chart tool, not independent fill proof. 017–019 same sequence drills H1 current continuation long: old high/body junction around June27, July1 pullback and local engulf/OC; body line chart is explicitly displayed at1080s. The long case shows target above and invalidation below in chart context, so transcript's buy-stop word “above” remains a spoken/transcription ambiguity, not a rule to place buy invalidation above entry. 020–025 blank canvas bearish higher-TF return, H1/M30 confirmation and OC-engulf schematics; 026–029 bullish origin/IRL→break→retest with optional local engulf and tighter protection; 030–034 deeper HTF return after origin liquidity swept, lower engulf/retest drawn without requiring fresh local IRL. Last tile2025s is participant screen, not a new chart example.
+
+Previously inspected **old repository v16 sheets001–029 and v17 sheets001–034** in full. Their narrative geometry is reliable at this scale; labels can differ by about7.5 seconds from sourcePTS. v16: initial actual SAXO XAUUSD H1 illustrative short tool, then all storyline cascade/exit/flip drawings; v17: schematic lifecycle/countertrend versus full flip through sheet029, then actual SAXO XAUUSD H1/M30 Aug2–5 2024 broken tested V/QM versus deeper A extreme, sheet030–034. Static chart during pauses is not new trade evidence. Corrected versions have not yet been claimed fully reread.
+
+- **v13 corrected sheets001–037, all146 populated tiles, source0–2175s:** 001–006 bullish HTF-origin schematic with three alternatives: engulf+IRL, immediate retest, shallower broken OC retest rather than deepest V; 007–010 bearish mirrored scenario and nearby OC alternatives. 011–015 actual Deriv Volatility25 Daily→H4→M30/H2 June2024, prior daily high/liquidity and rejection; 016–019 H1/H2 July1 sequence, first shallow OC short, separate lower V long missed while waiting deeper, another current short conditional OC. 020–021 schematic on blank EURUSD canvas explains engulfed OC/new A versus broken OC and continuation; 021–022 return to same V25 H2 current plan. 023–028 actual GBPUSD Daily May–July2024: June11 OC, June13 body break and next retest/sells, later June19/25 nearer continuation levels; multiple horizontal levels are conditional routes within one evolving example, not separate executed trades. 029–030 drills GBPUSD H4 June18 retest and drop; 030–033 switches to actual EURUSD H1 June27–July1, long tool and structural-stop comparison, then bearish geometry drawings over chart. The browser URL still says SAXO XAUUSD during this EURUSD display; asset label/price scale establish EURUSD, so URL alone cannot identify asset. 034–037 finally actual XAUUSD: FOREXCOM/SAXO feed comparison, H1 June28 minor first high versus stronger prior high, red hand marks show stop placement/failed minor level explanation. Final V25 screen revisit does not create a new trade. v13's narrated tiny V25 stop/BE and missed long remain teacher narration; no independent broker fills visible.
+- **Corrected v16 targeted reread:** sheets001,014,024,029,030, all populated tiles. Final030 only1740s continuation schematic already discussed, no new example. Corrected v17 targeted reread sheets003,007,021,029,030,034,035; final035 only2040s participant tile, no new chart. This supplements the complete old-repository passes; it is not a claim all intervening corrected sheets were reread. Positive opposite structural confirmation, countertrend engulf versus full flip, and broken internal QM/V geometry remain consistent between versions.
+
+### Attribution boundaries
+
+These are course lessons whose visible watermark/terminology includes Structure + Liquidity + Key Level and, in v17, Alchemy Trading SLK. They are not automatically Bishop-session statements. The course explicitly uses A/V/OC body junctions, engulf and broken-level retests; Bishop's separate stop/target management must retain its own evidence chain. The course v13 continuation 10–11-pip preference cannot silently become Bishop's universal structural stop. Source-alias duplicates and repeated views of one chart are not independent confirmations or additional teacher trades.
+
+## Cross-reader visual closure — 2026-10-23
+
+`full_course_09_18_visual_supplement.md` is now complete: course9old001–031
+and course18corrected001–028, all tiles. Combined with the precise main-reader
+ranges above and corrected final16/17sheets, every sampled position in these
+eight lessons has reader coverage. No claim of rereading all corrected16/17
+images or continuous native-video viewing follows.

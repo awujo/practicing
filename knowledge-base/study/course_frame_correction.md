@@ -26,3 +26,20 @@ A fifteen-second overview does not prove an intrabar fill or guarantee a brief
 annotation was captured. Such claims still need exact-time/native-frame checks.
 The nine unique Bishop-session videos were corrected separately and are not
 modified by this task.
+
+## Completion — 2026-10-23
+
+All19originalassets were hash-verified and all19corrected outputs are now
+published under `knowledge-base/frames/<slug>/`:2,481frames/630sheets.
+`course_frame_manifest.json` contains sourceURL/hash/nativeprobe/actualPTS
+counts and SHA256 for every output. A fresh verification checked originals,
+monotonic distinct15-second buckets, counts and every published output hash.
+
+Together with the earlier nineunique Bishop sessions this is3,445unique
+sampledframes/874sheets across28uniquevideos. The Part3duplicate adds116frames
+and29sheets as an alias; do not count it as additional teaching. Old course
+images remain available in Git at `dd91b14`, and a local backup under
+`/workspace/scratch/pre_source_pts_course_frames/`. Readerreports distinguish
+old/mixed/correctedversion coverage; replacingimages does not retroactively
+mean they reviewed every new picture. Exact intrabar/source-state claims still
+require dedicated native-time review rather than15-second overview inference.

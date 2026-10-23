@@ -161,3 +161,4 @@ sheet_001 covers frames 1-4, and so on.
 | 2235 | 37:15 | I mean, that's one of the most valuable assets that you cannot, the moment it is lost, you cannot get it anymore, right? So if you're a Christian, you know what Paul says about time? He says redeeming the time, |
 | 2250 | 37:30 | Because one of the ways you can redeem time, that means buy extra time, is that when you have enough money, people can do the many jobs that you should do. For example, imagine you have money as a trader. |
 | 2265 | 37:45 | You won't be washing your car. You won't be doing your cook. You have people that are assigned to do all of those things. It will even make you extra and super productive. This is why we have billionaires |
+| 2280 | 38:00 | It makes them super, super productive, right? So that is all I just wanted to say to you, right? All the recording will be shared. Have a wonderful evening. |

@@ -1,6 +1,6 @@
 # Entry course and plug-and-play source study
 
-Study date: 2026-10-20. This is source study, not an engine acceptance result.
+Study dates: 2026-10-20 and 2026-10-23. This is source study, not an engine acceptance result.
 No engine edits made. Complete long-slug transcripts read for course14 (319
 segments, 0.2–1385.9s), course15 (769, 0–2146.6s), plug (1282, 2.4–3120.7s).
 The short `video-14`/`video-15` paths contain earlier notes rather than additional
@@ -14,17 +14,19 @@ Old contact sheets actually inspected in this pass:
 - `frames/video-14-entry-models-1/sheets/sheet_001.jpg` through `sheet_023.jpg`: all23.
 - `frames/video-15-entry-models-2/sheets/`: sheets001,008,013,018,022,025,029,032 (8/36).
 - `frames/bishop-this-plug-and-play-forex-system-changed-how-i-trade-result-focused/sheets/`:
-  014,017,020,025,028,032,034,040,044,050 (10/52).
+  001–052: all52 (completed before corrected pass).
 
 Course/plug OLD sheets use midpoint ffmpeg sampling: actual pictures may be
 approximately7.5 seconds later than burned labels. They support visual geometry,
 not exact speech-to-picture times. Corrected course14/15 sheets became available
 under `/workspace/scratch/corrected_course_frames/` during this study. All24
 corrected14 sheets and all36 corrected15 sheets have now been inspected,
-including terminal paddedsheet14/024. Corrected PTS timestamps support the
-visual observations below. **Plug visual study is not complete.** Viewing23 old14 sheets is coverage
-of retained15-second samples, not continuous-video coverage or exact trade fill
-reconstruction. Numbers below cite transcript seconds; sheet ranges are locators,
+including terminal paddedsheet14/024. On October23 all53 corrected plug sheets
+001–053 were inspected, sourcePTS0–3120s, with the final sheet having one
+actual tile and black padding. Corrected PTS timestamps support the visual
+observations below. All retained15-second samples for the three assigned
+lectures have been reviewed; this is not continuous-video coverage or exact
+trade fill reconstruction. Numbers below cite transcript seconds; sheet ranges are locators,
 not certified PTS matches. No numeric trade prices promoted from these previews.
 
 ## Course14: full chronological rules
@@ -224,7 +226,7 @@ in EURJPY portion must be checked visually rather than corrected by guess.
 |P-G1|1831.9–2025.9|Gold Dailybias→H3BOS/containedcandles/OC limit; missed entry/move; cannot count as filled limit|
 |P-G2|2025.9–2065.7|Gold M30 replacement after miss, A sponsoredsales qualification disputedASR, marketexecution explicitly stated; numericpriceclockopen|
 |P-G3|2081.3–2197.9|Gold Friday H4 previouslow sweep/highstanding, following containedIRL sweep toKL; historical opportunity, fill not independently established|
-|P-EJ1|2213.6–2499.8|EURJPY weekly→Daily→H4alignment then H3/H1sameKL; teacher describes shared/taken trade but exactside ASRambiguous|
+|P-EJ1|2213.6–2499.8|EURJPY weekly→Daily→H4alignment then H3/H1sameKL; teacher describes shared/taken trade; corrected visuals show bearish roleflip/short context, though ASR high/low naming remains ambiguous|
 |P-UC1|2522.1–2729.2|USDCHF M30 sponsoredA roleflip+imbalance+IRL plus OC price; explicitly untaken|
 |P-G4|2738.3–2886.1|Goldbuy today, exitedearly reasons unstated; don't assign full chartmove realizedprofit|
 |P-EJ2|2890.2–3049.2|EURJPY M30/H3 alternative V accepted; likely samechart/storyEJ1, deduplicationopen|
@@ -243,9 +245,9 @@ algorithm. Crosscheck supplementary/session sources separately.
 
 ## Open decisions before implementation
 
-1. Finish corrected plug visual pass (52old sheets; corrected count may differ),
-   reconcile low-confidence audio/ASR. Alternate plug transcript fully read;
-   native audio needed for disputed negation2049–2053.
+1. Corrected visual pass complete for all assigned lectures (14:24 sheets;
+   15:36; plug:53). Reconcile low-confidence audio/ASR; alternate plug
+   transcript fully read. Native audio still needed for disputed negation2049–2053.
 2. Body-vs-wick geometry for engulf, exactOC/A/Vprice when feed has gaps, exact
    impulse/IRLproximity definitions. These lectures point/draw; they don't supply
    arbitrary epsilon, Nbarlookbacks or thresholds.
@@ -253,7 +255,9 @@ algorithm. Crosscheck supplementary/session sources separately.
    whileHTFforming. Separate finalbiasstate from provisionalentrypermission;
    don't make a false universal closure rule.
 4. Stopstructure: localhigh/low examples, continuation10–11/8pips illustrations,
-   and sourcePDFimbalancezonestops cannot be merged into one default geometry.
+   and documentedPDFstops/possiblezoneprotection cannot be merged into one
+   default geometry. Position-tool boxes alone do not establish independent
+   imbalance boundaries.
 5. Exit hierarchy: ERL, opposingKL, fixed1:3/1:4 illustrations, discretionary
    earlyexit and breakeven outcomes all occur. Need explicit source-specific
    mode and preserve actualresult vs chartMFE.
@@ -319,3 +323,30 @@ improvements/disagreements:
  previousH4 to previousDailyhigh. Need visualsequence, not guessed labels.
 -Both transcripts omit exact quantitativedefinitions for impulse/proximity;
  neither provides a separately namedfourthman algorithm.
+
+
+### Corrected plug visual evidence (October23)
+
+All53 sheets at `/workspace/scratch/corrected_course_frames/bishop-this-plug-and-play-forex-system-changed-how-i-trade-result-focused/sheets/` inspected individually in order,001–018,019–036,037–053. Each full sheet contains four15-second samples; source duration ends just after3120s. The following ledger records the material sequence, including non-chart sections and repeated examples:
+
+|Corrected sheets|Actual source seconds|Inspected content and interpretation|
+|---|---|---|
+|001–002|0–105|Black first tile then static Gold H4 chart; introductory discussion, no demonstrated entry fill.|
+|003–006|120–345|ChatGPT definition of plug-and-play displayed; explanatory source content, not trading evidence.|
+|007–008|360–465|Gold chart then X community/profile/media posts; EURJPY opened at450–465. Shared chart short-position drawing visible at465. The account UI includes THE 4TH / @The_4thMan: positive attribution evidence, not an algorithm definition.|
+|009–013|480–765|EURJPY weekly zoom, then red weekly/Daily rejection and infinity sweep/break sketches. These are schematic rules drawn beside actual chart, not extra filled trades.|
+|014–018|780–1065|Green A/V roleflip schematics, grey imbalance/KL region, prior sponsored sell reactions circled; upward breakout candle and following contained/IRL candle drawn separately.|
+|019–022|1080–1305|Breakout high swept, reverse candle/new IRL low, return to grey KL region, new external objective; W/D labels added. This is the second liquidity formation schematic, not a separate fourth-man route.|
+|023–024|1320–1425|Same schematic retained with candle and sweep annotations; consistency/journal discussion, no new historical trade.|
+|025–028|1440–1665|Twice Daily rejection at weekly KL fallback drawn, H4 confirmation sketch; Gold briefly at1650, NAS100 chart at1665.|
+|029–031|1680–1845|NAS100 multi-roleflip chart, several historical returns/breaks at same line; Gold replaces NAS by1815, Daily candles and line chart at1830–1845.|
+|032–034|1860–2025|Gold Daily A level, previous low sweep, H4 context then H3 chart at1935; minor structure highs and contained candles; OC chosen at2010; lower timeframe switch by2025. H3 missed limit and M30 replacement belong to one trade story.|
+|035|2040–2085|Gold M30 line/candle views and selected junction, then broader context. Candle geometry supports the illustrated replacement but cannot establish whether the spoken sponsorship clause contains a negation.|
+|036–037|2100–2205|Gold H4 Friday low sweep and high standing; A/OC level above the low, contained pullback/IRL and return; no independent broker fill shown.|
+|038–040|2220–2385|EURJPY weekly→Daily and grey band around repeated body junction; lower-timeframe move below that band. Visual sequence supports bearish bias/short context despite transcript naming confusion about previous highs. Settings dialog at2385.|
+|041–042|2400–2505|EURJPY H4/H3/H1-style refinement: broken level retested from below, nearby liquidity low marked, subsequent downward expansion. This is the earlier shared EURJPY story revisited, not automatically another unique trade.|
+|043–046|2520–2745|USDCHF selected2535; M30 bullish roleflip, contained pullback/IRL, higher A level and lower OC junction drawn separately. Both candidate entry prices are discussed. Teacher says untaken; later chart rally is not his realized result. At2745 briefly EURJPY before switch.|
+|047–049|2760–2925|Gold bullish roleflip, local low/high levels and subsequent rally; teacher says early exit, reasons unspecified. ChatGPT page2910 then EURJPY2925.|
+|050–053|2940–3120|EURJPY alternative V/OC junctions on lower timeframe; two levels remain, internal low and later downward expansion. Ending repeats chart; last sheet black padding is not missing content. Alternative participant level accepted; this does not prove unique mandatory KL selection.|
+
+The EURJPY introduction465s, full2213–2499 explanation, and2890–3049 alternative-level discussion must remain cross-references to one story until dates/order evidence proves distinct executions. Corrected visuals resolve the broad bearish context but do not alone settle the precise previous-candle label or exact causal decision clock. No numeric price/fill was inferred from these contact-sheet previews. The course14 two buys remain actual breakeven exits; the plug Gold H3 miss, M30 replacement, untaken USDCHF and early-exited Gold retain separate statuses.

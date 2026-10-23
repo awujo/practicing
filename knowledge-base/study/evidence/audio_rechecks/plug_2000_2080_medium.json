@@ -1,0 +1,101 @@
+{
+  "input": "plug_2000_2080.wav",
+  "input_sha256": "910b814e171521613b506b5b8fde9e88a6b965635fa6950ddaa556c112200ac1",
+  "source_offset_seconds": 2000,
+  "model": "medium.en",
+  "engine": "faster-whisper",
+  "version": "1.2.1",
+  "compute_type": "int8",
+  "cpu_threads": 2,
+  "language": "en",
+  "vad_filter": true,
+  "condition_on_previous_text": false,
+  "beam_size": 5,
+  "status": "alternate_ASR_not_human_verified",
+  "segments": [
+    {
+      "start": 2000.0,
+      "end": 2006.0,
+      "text": "liquidity. We are inside this particular country. So for me, it was a very easy one to know. I just",
+      "avg_logprob": -0.3076675683259964,
+      "no_speech_prob": 0.6666803359985352
+    },
+    {
+      "start": 2006.0,
+      "end": 2010.72,
+      "text": "placed my limit here. I placed my limit at this point, which you can close, then internal range",
+      "avg_logprob": -0.3076675683259964,
+      "no_speech_prob": 0.6666803359985352
+    },
+    {
+      "start": 2010.72,
+      "end": 2016.32,
+      "text": "liquidity is resting here. That is going to serve as my internal range liquidity.",
+      "avg_logprob": -0.3076675683259964,
+      "no_speech_prob": 0.6666803359985352
+    },
+    {
+      "start": 2018.64,
+      "end": 2022.56,
+      "text": "So I came up, checked it in the morning. I saw that price had moved.",
+      "avg_logprob": -0.3076675683259964,
+      "no_speech_prob": 0.6666803359985352
+    },
+    {
+      "start": 2023.36,
+      "end": 2027.68,
+      "text": "Okay, price has even started moving. It was a missed entry. It was simple. I just came",
+      "avg_logprob": -0.3076675683259964,
+      "no_speech_prob": 0.6666803359985352
+    },
+    {
+      "start": 2027.68,
+      "end": 2031.52,
+      "text": "straight to the 30 minutes. So okay let's pay attention to the 30 minutes we will find",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2031.52,
+      "end": 2036.16,
+      "text": "anything. So this is where I go to on my own entry. So on the 30 minutes time frame you'll",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2036.16,
+      "end": 2040.32,
+      "text": "find out that we have an A shape key level that got disrespected to the upside.",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2044.8,
+      "end": 2048.64,
+      "text": "A shape key level that got disrespected to the upside closed above it as a body.",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2048.64,
+      "end": 2053.44,
+      "text": "This is this one does this level now because also in the cell prices disrespected and the",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2053.44,
+      "end": 2058.48,
+      "text": "woman price came to that level. I had to use market execution exactly the same way",
+      "avg_logprob": -0.301632752568703,
+      "no_speech_prob": 0.5629263520240784
+    },
+    {
+      "start": 2058.48,
+      "end": 2074.24,
+      "text": "I'm taking us back to something, right, back to the daily on board.",
+      "avg_logprob": -0.7203310996294021,
+      "no_speech_prob": 0.4959820508956909
+    }
+  ]
+}

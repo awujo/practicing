@@ -217,3 +217,4 @@ sheet_001 covers frames 1-4, and so on.
 | 3075 | 51:15 | The momentum, it uses to call... call brokenness, previous momentum, moment, movement around. |
 | 3090 | 51:30 | Go on, beauty bias yourself. For a nice... MJ. Yes, you've answered the question. I've answered your question. Yes. |
 | 3105 | 51:45 | All right, so, right? So, go back and see. |
+| 3120 | 52:00 | Let me just round it up for a minute so I'm stuck recording. So, I don't like to be just too loud so that people can't listen to me. |
