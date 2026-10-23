@@ -138,3 +138,42 @@ def test_gap_across_final_and_current_month_rejected_and_retried(tmp_path):
     assert '2026-09' not in p.done_m
     repaired=store.update('DV1HZ100V',pd.Timestamp('2026-10-22T10:03Z'),days=45,root=str(tmp_path),feed=FakeFeed())
     assert (repaired.df.index.to_series().diff().dropna()==3600).all()
+
+
+def test_rate_limit_retries_without_replaying_permanent_errors(monkeypatch):
+    sleeps=[]
+    monkeypatch.setattr(deriv.time,'sleep',sleeps.append)
+    class Socket:
+        def __init__(self,errors):self.errors=list(errors);self.sent=[]
+        def send(self,text):self.sent.append(json.loads(text))
+        def recv(self):
+            code=self.errors.pop(0)
+            return json.dumps({'req_id':self.sent[-1]['req_id'],**({'error':{'code':code}} if code else {'ok':1})})
+    feed=deriv.Feed();feed.ws=Socket(['RateLimit','RateLimit',None])
+    assert feed.request({'active_symbols':'brief'})['ok']==1
+    assert len(feed.ws.sent)==3 and sleeps[-2:]==[10,20]
+    feed.ws=Socket(['InvalidSymbol'])
+    with pytest.raises(RuntimeError,match='InvalidSymbol'):feed.request({'ticks_history':'bad'})
+    assert len(feed.ws.sent)==1
+    feed.ws=Socket(['RateLimit']*4)
+    with pytest.raises(RuntimeError,match='RateLimit'):feed.request({'active_symbols':'brief'})
+    assert len(feed.ws.sent)==4
+
+
+@pytest.mark.parametrize("empty_frame",[False,True])
+def test_closed_connection_reopens_and_retries_same_history_request(monkeypatch,empty_frame):
+    monkeypatch.setattr(deriv.time,'sleep',lambda _:None)
+    sent=[]
+    class Broken:
+        def send(self,text):
+            if not empty_frame:raise ConnectionError('closed')
+        def recv(self):return ''
+        def close(self):pass
+    class Reopened:
+        def send(self,text):sent.append(json.loads(text))
+        def recv(self):return json.dumps({'req_id':sent[-1]['req_id'],'candles':[]})
+        def close(self):pass
+    f=deriv.Feed(socket_factory=lambda *a,**kw:Reopened());f.ws=Broken()
+    payload={'ticks_history':'R_75','start':100,'end':'200','count':1}
+    assert f.request(payload)=={'req_id':2,'candles':[]}
+    assert {k:v for k,v in sent[0].items() if k!='req_id'}==payload

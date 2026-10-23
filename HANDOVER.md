@@ -31,7 +31,8 @@ Candles close 17:00 New York. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN` (cha
 Claude cannot read Actions logs (redirect blocked) → workflows write errors as `::error` annotations or into
 `reports/run.log`, which Claude reads via the GitHub API.
 
-## Status (2026-10-22)
+## Status (2026-10-23)
+- [x] Investigated Deriv selection error: run39767418604 loaded DVR25 but DVR75 failed with public API RateLimit. Feed now spaces requests3.1s and retries explicit throttles at10/20/40s within300s budget. Settings instrument selector groups brokers and markets into searchable collapsible sections; chosen markets retain selection and counts update. IC categories inferred from symbols; Deriv market categories use API metadata.
 - [x] Deriv real-feed and MySQL isolation Actions passed; production live run39757696620 succeeded. News fallback deployment schema now matches canonical schema; legacy regression fixtures updated for multiuser discovery/auth and weekend no-work behavior.
 - [x] User explicitly requested public calendar integration: News tab + personal currency/impact filters, daily local-hour summary and ~60min reminders, configurable shared FF weekly JSON cache. Independent5min news.yml and secret-protected /cron/news endpoint; same-secret external1–5min timer recommended because GH schedules are best-effort. Atomic per-user delivery claims, stale/week-coverage safeguards,80s fair batch budget,30day receipt retention, preview-only manual runs. Owner defaults enabled; new users opt in. No AI calls or live strategy rule changes.
 - [x] Deriv public feed integrated into selected-only hourly bias+entry pipeline:89 human-labelled choices, DV keys/files and source/pip metadata, UTC closed candles + seven-day week, continuous synthetic/crypto weekend scanning, no cross-provider fallback or broker order approval. Bounded366day warmup uses actual history. Read DERIV.md.
@@ -457,3 +458,11 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - Preserved manual workflow scans during FX weekends; only scheduled runs filter closed markets from the shared watchlist union.
 
 - Final local regression suite:432 passed,3 skipped (77.62s). Dedicated Actions public-feed and real MySQL checks passed before final schema/manual-weekend cleanup.
+
+- 2026-10-23: User reported Deriv failures and requested grouped pair selector. Confirmed live run39767418604 DVR75 RateLimit, DVR25 successful; added bounded throttling recovery and conservative pacing. Added broker/category schema metadata and collapsible searchable selector, live selection counts and cache version bump. Targeted regression48 tests passed; cold two-market public validation runs bias+entry without DB or Telegram.
+
+- Public cold probe reproduced throttling with1.1s pacing; preserved5285H1 DVR75 history and retry completed8759bars. Increased to3.1s/request and10/20/40s throttle cooldown. Independent reviewer48passed and found unmapped-group fallback; fixed consistent Other markets filtering and dynamic selection counts.
+
+- Validation: full suite434passed3skipped before connection recovery addition; final focused49passed with reconnect test. Chromium phone viewport390x844 verified16groups, search, checkbox toggle, retained selections. Real cold probe also exposed remote WebSocket closure during warmup; added bounded reconnect for connection/timeout errors preserving requested historical range, permanent API errors still fail closed.
+
+- Final public validation after pacing/reconnect: DVR25 and DVR75 each8759closedH1; D/W/M bias+entry pipelines succeeded (33/29stories), no DB or Telegram. Independent reconnect reviewer caught empty close-frame case; fixed/tested alongside exception-based disconnect. Final focused50tests passed.

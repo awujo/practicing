@@ -74,3 +74,7 @@ fieldset legend { font-weight: 700; padding: 0; margin-bottom: 4px; float: left;
 
 .bias-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--line, rgba(127,127,127,.2)); }
 .bias-row .muted { grid-column: 1 / -1; font-size: 12px; }
+.market-group { border: 1px solid var(--line, #333); border-radius: 10px; margin: 8px 0; padding: 12px; }
+.market-group summary { cursor: pointer; font-weight: 600; }
+.market-group .chips { margin-top: 12px; }
+[hidden] { display: none !important; }

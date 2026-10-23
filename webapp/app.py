@@ -361,9 +361,11 @@ def runs(limit: int = 30, user=Depends(require_user)):
 @app.get("/api/settings/schema")
 def settings_schema(user=Depends(require_user)):
     schema = S.schema_json()
+    groups = {}
     catalogue = Path(__file__).resolve().parents[1] / "data" / "broker_symbols.json"
     if catalogue.exists():
         data = json.loads(catalogue.read_text())
+        groups = {r["key"]: "IC Markets · " + instruments.market_category(r["name"]) for r in data["symbols"]}
         choices = sorted({r["key"] for r in data["symbols"] if 3 <= len(r["key"]) <= 12})
         for field in schema["settings"]:
             if field["name"] == "pairs":
@@ -375,6 +377,7 @@ def settings_schema(user=Depends(require_user)):
     for field in schema["settings"]:
         if field["name"]=="pairs":
             field["choices"]=sorted(set(field["choices"])|{r["key"] for r in deriv})
+            field["groups"]={**groups, **{r["key"]:"Deriv · "+instruments.market_category(r["symbol"],r.get("market")) for r in deriv}}
             field["labels"]={r["key"]:"Deriv · "+r["name"]+" ("+r["key"]+")" for r in deriv}
             field["help"]+=" Deriv labels use its public API and UTC candles; broker order execution is unavailable for these markets."
     if "broker_catalogue" in schema:

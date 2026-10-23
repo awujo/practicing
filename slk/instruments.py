@@ -116,3 +116,22 @@ def label(pair):
 def deriv_continuous(pair):
     return any(r["key"]==norm(pair) and r.get("market") in ("synthetic_index","cryptocurrency")
                for r in deriv_symbols())
+
+
+def market_category(symbol, market=None):
+    """UI classification; provider market wins where supplied by Deriv."""
+    markets={'synthetic_index':'Synthetic indices','cryptocurrency':'Cryptocurrencies',
+             'indices':'Indices','commodities':'Commodities'}
+    if market in markets:return markets[market]
+    pair=re.sub('^FRX','',symbol.upper())
+    major={'EURUSD','GBPUSD','USDJPY','USDCHF','USDCAD','AUDUSD','NZDUSD'}
+    currencies={'USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD','SGD','HKD','CNH','CZK','DKK','HUF','MXN','NOK','PLN','SEK','THB','TRY','ZAR'}
+    if pair in major:return 'Forex · majors'
+    if len(pair)==6 and pair[:3] in currencies and pair[3:] in currencies:
+        return 'Forex · minors' if {pair[:3],pair[3:]} <= {'USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD'} else 'Forex · exotics'
+    if pair.startswith(('XAU','XAG','XPT','XPD')):return 'Metals'
+    if pair in {'XBRUSD','XTIUSD','XNGUSD'}:return 'Energy'
+    if re.fullmatch(r'GC[A-Z]\d{2}',pair):return 'Futures'
+    if pair in {'AUS200','CA60','CHINA50','CHINAH','DE30','DE40','ES35','F40','HK50','IT40','JP225','MIDDE50','MIDDE60','NETH25','NOR25','SA40','SE30','STOXX50','SWI20','TECDE30','UK100','US2000','US30','US500','USTEC'}:return 'Indices'
+    if pair.endswith('USD'):return 'Cryptocurrencies'
+    return 'Other markets'

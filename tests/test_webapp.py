@@ -376,3 +376,16 @@ def test_deriv_catalogue_labels_and_orders_are_signals_only(client,monkeypatch):
     monkeypatch.setattr(webapp.db,'query',lambda *a:[{'pair':'DV1HZ100V'}])
     r=client.post('/api/entries/5/approve',headers=hdr(make_init_data()))
     assert r.status_code==409 and 'signals only' in r.json()['detail']
+
+
+def test_instrument_groups_keep_brokers_and_markets_distinct(client):
+    response=client.get('/api/settings/schema',headers=hdr(make_init_data()))
+    field=next(f for f in response.json()['settings'] if f['name']=='pairs')
+    groups=field['groups']
+    assert groups['EURUSD']=='IC Markets · Forex · majors'
+    assert groups['EURGBP']=='IC Markets · Forex · minors'
+    assert groups['XAUUSD']=='IC Markets · Metals'
+    assert groups['USTEC']=='IC Markets · Indices'
+    assert groups['BTCUSD']=='IC Markets · Cryptocurrencies'
+    assert groups['DV1HZ100V']=='Deriv · Synthetic indices'
+    assert set(field['choices'])==set(groups)

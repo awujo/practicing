@@ -68,18 +68,44 @@ class Feed:
         return self
     def __exit__(self,*a):
         if self.ws:self.ws.close()
-    def request(self,payload):
-        if time.monotonic()>=self.deadline:raise TimeoutError('Deriv data budget elapsed')
-        gap=.3-(time.monotonic()-self.last)
-        if gap>0:time.sleep(gap)
+    def _reply(self,payload):
         self.request_id+=1;rid=self.request_id
         self.ws.send(json.dumps({**payload,'req_id':rid}));self.last=time.monotonic()
         for _ in range(10):
-            reply=json.loads(self.ws.recv())
-            if reply.get('req_id')!=rid:continue
-            if reply.get('error'):raise RuntimeError('Deriv '+str(reply['error'].get('code','request failed')))
-            return reply
+            raw=self.ws.recv()
+            if raw in ('',b''):raise ConnectionError('Deriv socket closed')
+            reply=json.loads(raw)
+            if reply.get('req_id')==rid:return reply
         raise RuntimeError('Deriv response mismatch')
+    def request(self,payload):
+        # Cold watchlists need many pages. Bound both throttle and connection recovery.
+        for attempt in range(4):
+            delay=max(0,3.1-(time.monotonic()-self.last))
+            if attempt:delay=max(delay,10*2**(attempt-1))
+            if time.monotonic()+delay>=self.deadline:
+                raise TimeoutError('Deriv data budget elapsed')
+            if delay:time.sleep(delay)
+            try:
+                if self.ws is None:self.ws=self.factory(URL,timeout=20)
+                reply=self._reply(payload)
+            except Exception as exc:
+                transient=isinstance(exc,(OSError,ConnectionError,TimeoutError))
+                try:
+                    from websocket import WebSocketConnectionClosedException,WebSocketTimeoutException
+                    transient=transient or isinstance(exc,(WebSocketConnectionClosedException,WebSocketTimeoutException))
+                except ImportError:pass
+                if not transient or attempt==3:raise
+                try:self.ws.close()
+                except Exception:pass
+                self.ws=None
+                continue
+            error=reply.get('error')
+            if error:
+                code=str(error.get('code','request failed'))
+                if code=='RateLimit' and attempt<3:continue
+                raise RuntimeError('Deriv '+code)
+            return reply
+        raise RuntimeError('Deriv retry budget elapsed')
     def prefetch(self,pairs=None):
         rows=catalogue(self.request({'active_symbols':'brief'})['active_symbols'])
         self.symbols={r['key']:r for r in rows}
