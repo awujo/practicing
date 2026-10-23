@@ -173,3 +173,34 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
   with old/corrected sample limits, residual speech/p8 uncertainties and numerical
   choices explicit. Ready for contract definition before code; existing engine
   and all40historical observations are not certified by this source review.
+
+## Offline v2 implementation checkpoint (2026-10-23)
+
+- Added `bishop/v2/` separately from the legacy engine after completing source
+  study. Shared immutable causal records, tick prices, explicit policies;
+  calendar feed/aggregation, scoped structure and liquidity, stories,
+  entry/risk families, strict execution and local CLI are connected end-to-end.
+- Declared session liquidity and optional body/prior-ATR impulse assessments
+  preserve missing-data/availability/DST limits. No universal numerical impulse
+  or session hours are inferred. New paper stores default to the owner
+  aggressive/fixed11 preset. Source protection and FVG zone-edge experiment
+  remain selectable, with unresolved risk when required geometry is absent.
+- Added isolated SQLite/explicit MySQL paper schema, authenticated Mini App,
+  settings, atomic snapshots/events/disabled outbox, causal replay export and
+  manually invoked local job worker. Stale snapshots cannot replace newer
+  projections. Full deterministic recomputation is implemented; resumable
+  incremental detection and ongoing broker reconciliation are not certified.
+- Independent agents reviewed actual code while it was built. Fixed destination
+  lifecycle, counterweekly guard, source-reference lineage, delayed evidence,
+  missing bins, boundary cancellation and invalid management input defects.
+  Full suite:228passed in5.13s. Nonempty full-pipeline causal-prefix checks pass.
+- Optimized role histories with per-run indexes: focused unchanged-output entry
+  benchmark6.55x faster; full180H1 synthetic run2.027s versus earlier>60s probe.
+  Actual CLI also completed on existing frozen EURGBP BID H1 data; feed differs
+  from source FOREXCOM and no historical match/profitability claim follows.
+- See `bishop/v2/README.md`, `knowledge-base/study/BUILD_VERIFICATION.md` and
+  `build_*_contract.md` for commands, source mappings and explicit limitations.
+  Legacy source fixture remains unchanged; all40historical observations still
+  require case-level source verification/replay. No PR, deployment, acquisition,
+  real messaging or broker activation occurred. Next is source-case chronology,
+  feed and geometry verification, then strict mismatch-driven replay.
