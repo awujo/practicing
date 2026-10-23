@@ -110,3 +110,21 @@ def get_settings():
 
 def set_setting(k, v):
     execute("INSERT INTO settings (k, v) VALUES (%s, %s) ON DUPLICATE KEY UPDATE v = VALUES(v)", (k, v))
+
+
+def set_settings(changes):
+    """Persist one validated form atomically using one connection, including tenant scope."""
+    if not changes:
+        return
+    sql = tenancy.scoped_sql("INSERT INTO settings (k, v) VALUES (%s, %s) ON DUPLICATE KEY UPDATE v = VALUES(v)")
+    conn = connect()
+    try:
+        conn.begin()
+        with conn.cursor() as cur:
+            cur.executemany(sql, list(changes.items()))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

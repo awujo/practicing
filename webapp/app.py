@@ -414,8 +414,7 @@ def post_settings(body: dict = Body(...), user=Depends(require_user)):
         # Empty = no surprise expansion to the legacy owner's 28-market watchlist.
         if "pairs" in changes and not changes["pairs"]:
             changes["pairs"] = tenancy.STARTER["pairs"]
-    for k, v in changes.items():
-        _db(db.set_setting, k, v)
+    _db(db.set_settings, changes)
     return get_settings(user)
 
 

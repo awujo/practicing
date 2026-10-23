@@ -53,6 +53,7 @@ def client(monkeypatch):
     monkeypatch.setattr(webapp.db, "execute", fake_execute)
     monkeypatch.setattr(webapp.db, "get_settings", lambda: dict(store))
     monkeypatch.setattr(webapp.db, "set_setting", lambda k, v: store.__setitem__(k, v))
+    monkeypatch.setattr(webapp.db, "set_settings", lambda changes: store.update(changes))
     with TestClient(webapp.app) as c:
         c.calls, c.store = calls, store
         yield c
@@ -389,3 +390,39 @@ def test_instrument_groups_keep_brokers_and_markets_distinct(client):
     assert groups['BTCUSD']=='IC Markets · Cryptocurrencies'
     assert groups['DV1HZ100V']=='Deriv · Synthetic indices'
     assert set(field['choices'])==set(groups)
+
+
+def test_full_settings_form_saves_and_reloads_deriv_watchlist(client):
+    headers=hdr(make_init_data())
+    body=client.get('/api/settings',headers=headers).json()
+    body['pairs']='EURUSD,DVR25,DVR75,DV1HZ100V'
+    saved=client.post('/api/settings',headers=headers,json=body)
+    assert saved.status_code==200,saved.text
+    assert saved.json()['pairs']==body['pairs']
+    assert client.get('/api/settings',headers=headers).json()==saved.json()
+
+
+@pytest.mark.parametrize('fail',[False,True])
+def test_settings_batch_one_connection_atomic_and_scoped(monkeypatch,fail):
+    from slk import tenancy
+    events=[]
+    class Connection:
+        def begin(self):events.append('begin')
+        def cursor(self):return self
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def executemany(self,sql,args):
+            assert 'tenant_settings' in sql and '42' in sql
+            assert args==[('pairs','DVR75'),('alert_tapped','off')]
+            events.append('write')
+            if fail:raise RuntimeError('database failed')
+        def commit(self):events.append('commit')
+        def rollback(self):events.append('rollback')
+        def close(self):events.append('close')
+    def connect():events.append('connect');return Connection()
+    monkeypatch.setattr(webapp.db,'connect',connect)
+    with tenancy.scope(42):
+        if fail:
+            with pytest.raises(RuntimeError):webapp.db.set_settings({'pairs':'DVR75','alert_tapped':'off'})
+        else:webapp.db.set_settings({'pairs':'DVR75','alert_tapped':'off'})
+    assert events==['connect','begin','write','rollback' if fail else 'commit','close']

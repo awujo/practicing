@@ -68,6 +68,15 @@ def test_real_multiuser_isolation(monkeypatch):
         assert sent[0][0]==users[0] and "EURJPY" in sent[0][1] and "GBPCHF" not in sent[0][1]
         assert client.post("/api/bias/send-eligible",headers=headers(users[0])).status_code==429
         assert sent[1][0]==users[1] and "GBPCHF" in sent[1][1] and "EURJPY" not in sent[1][1]
+        # Whole-form saves used by the Mini App, including Deriv, persist for
+        # both legacy owner tables and isolated tenant tables.
+        for uid in (777000111,*users):
+            body=client.get('/api/settings',headers=headers(uid)).json()
+            body['pairs']='EURUSD,DVR25,DVR75,DV1HZ100V'
+            saved=client.post('/api/settings',headers=headers(uid),json=body)
+            assert saved.status_code==200,saved.text
+            assert saved.json()['pairs']==body['pairs']
+            assert client.get('/api/settings',headers=headers(uid)).json()==saved.json()
     assert T.USER.get() is None
 
 
