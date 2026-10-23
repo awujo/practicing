@@ -11,6 +11,10 @@ on:
         description: "Release tag holding the videos"
         required: true
         default: "kevin_King"
+      asset_name:
+        description: "Optional exact video filename; empty processes all MP4 assets"
+        required: false
+        default: ""
       model:
         description: "faster-whisper model (tiny/base/small/medium)"
         required: false
@@ -33,10 +37,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.release_tag }}
+          ASSET_NAME: ${{ inputs.asset_name }}
         run: |
           m=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '
             [.assets[] | select(.name|test("\\.mp4$"))
              | {id: .id, slug: ("kevin-" + (.name | ascii_downcase | sub("(\\.mp4)+$";"") | gsub("[^a-z0-9]+";"-") | sub("-+$";"")))}]')
+          if [ -n "$ASSET_NAME" ]; then
+            ids=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" | jq --arg name "$ASSET_NAME" '[.assets[] | select(.name == $name) | .id]')
+            m=$(jq --argjson ids "$ids" '[.[] | select(.id as $id | $ids | index($id))]' <<< "$m")
+          fi
+          [ "$(jq length <<< "$m")" -gt 0 ] || { echo "No matching video assets" >&2; exit 1; }
           echo "$m"
           echo "matrix={\"include\":$(echo "$m" | jq -c .)}" >> "$GITHUB_OUTPUT"
 
@@ -88,7 +98,7 @@ jobs:
 
   commit:
     needs: process
-    if: always() && needs.process.result != 'skipped'
+    if: needs.process.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,10 +107,20 @@ jobs:
           path: knowledge-base
           merge-multiple: true
       - name: Commit
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add knowledge-base
+          python - <<'PYDOC'
+          import os
+          from pathlib import Path
+          p=Path('HANDOVER.md')
+          text=p.read_text()
+          text += "\n- Video extraction completed for release " + os.environ['RELEASE_TAG'] + ": timestamped transcripts and contact sheets published by transcribe.yml.\n"
+          p.write_text(text)
+          PYDOC
+          git add knowledge-base HANDOVER.md
           git diff --cached --quiet && { echo "nothing new"; exit 0; }
-          git commit -m "Kevin King transcripts + contact sheets (${{ inputs.release_tag }})"
+          git commit -m "Video transcripts + contact sheets ($RELEASE_TAG)"
           git pull --rebase && git push

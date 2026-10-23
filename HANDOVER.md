@@ -32,6 +32,7 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 `reports/run.log`, which Claude reads via the GitHub API.
 
 ## Status (2026-10-23)
+- [ ] New SLK Radar release video670611585: extract transcript/frames with existing GitHub workflow, compare confirmation features against claude-bishop-aggressive evidence before implementation. Added exact-asset filter to avoid reprocessing old video. Settings save fixdb37169 deployed and real MySQL CI40012133286passed.
 - [x] Settings full-form save now uses one database connection and one transaction rather than reconnecting/committing for every field. Failed writes roll back the entire form; owner/tenant scopes preserved. Added Deriv full-form save/reload and atomic failure regressions, plus real MySQL owner/tenant coverage. Exact earlier user save error is unconfirmed.
 - [x] Investigated Deriv selection error: run39767418604 loaded DVR25 but DVR75 failed with public API RateLimit. Feed now spaces requests3.1s and retries explicit throttles at10/20/40s within300s budget. Settings instrument selector groups brokers and markets into searchable collapsible sections; chosen markets retain selection and counts update. IC categories inferred from symbols; Deriv market categories use API metadata.
 - [x] Deriv real-feed and MySQL isolation Actions passed; production live run39757696620 succeeded. News fallback deployment schema now matches canonical schema; legacy regression fixtures updated for multiuser discovery/auth and weekend no-work behavior.
@@ -469,3 +470,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - Final public validation after pacing/reconnect: DVR25 and DVR75 each8759closedH1; D/W/M bias+entry pipelines succeeded (33/29stories), no DB or Telegram. Independent reconnect reviewer caught empty close-frame case; fixed/tested alongside exception-based disconnect. Final focused50tests passed.
 
 - 2026-10-23: User additionally reported failure while saving Deriv selections. Deriv keys pass validation and full-form save/reload regression; found per-field fresh MySQL connection/commit path causing many TLS round trips and partial persistence on failure. Batched validated settings in one scoped executemany transaction, rollback on error. No production preferences modified for testing. Focused46tests passed.
+
+- 2026-10-23: User requested processing second SLK Radar release video before design/implementation of confirmation alerts/Chrome extension. Located new67MBasset670611585 and Bishopconfirmation transcripts/frames on claude-bishop-aggressive. Updated transcribe workflow with optional exact-asset filter, fail on missing matches, only publish successful extraction and log generated evidence.
