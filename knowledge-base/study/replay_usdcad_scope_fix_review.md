@@ -104,3 +104,9 @@ prove this one predicate alone explains every missing USDCAD candidate or that
 relaxing it would produce a complete source match. Preserve both frozen runs
 and re-evaluate under a new implementation fingerprint only after the causal
 rule and independent regressions are agreed.
+
+## Correction implemented (policy3)
+
+`_first_take_for_reaction` now retains the original take, allows a later related KL rejection, and rejects cross-episode reuse. No timeout or price threshold was added. Normal and nested routes use the same link rule. Eager `LIQUIDITY_FIRST_TAKEN` events preserve original observation clocks even before a later rejection exists; setup evidence includes those IDs, and standard engine output exposes `liquidity_take_events`.
+
+The first corrected replay restores the named H1 BO candidate at07:00UTC:1.40425/1.40521/1.40249, with original04–05reaction and01–02take IDs linked. The stop now uses the separately corrected current protection scope, rather than the baseline1.41561 remote stop. This still differs from source1.40471/1.40539/1.40129. Restoring a causally supported candidate fixes the suppression regression; it does not establish that candidate as the teacher's trade. Final replay hashes and counts are recorded in `reports/teacher_replay_v2_first_take_fix/`.

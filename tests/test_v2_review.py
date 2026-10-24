@@ -151,7 +151,7 @@ def test_engine_confirmed_flip_cancels_existing_pending_order(monkeypatch):
     setup=Setup(id='s',instrument='X',tf='M1',model='test',side='BUY',story_id='story',
                 clock=Clock(T,T,T),entry_ticks=8,stop_ticks=5,target_ticks=12,risk_profile='fixed11')
     monkeypatch.setattr(engine,'find_stories',lambda *a:SimpleNamespace(stories=(story,),events=(flip,),support=()))
-    monkeypatch.setattr(engine,'detect_setups',lambda *a,**k:SimpleNamespace(setups=(setup,),support=()))
+    monkeypatch.setattr(engine,'detect_setups',lambda *a,**k:SimpleNamespace(setups=(setup,),events=(),support=()))
     monkeypatch.setattr(engine,'jsonable',lambda x:x)
     result=engine.run({'instrument':inst,'bars':bars},as_of=bars[-1].end,costs=Costs(),
                       policy=StrategyPolicy(entry_tfs=('M1',),origin_tfs=('D',)))
@@ -287,7 +287,7 @@ def test_eligibility_start_equals_filtering_full_nonempty_entry_history():
     expected=tuple(s for s in full.setups if s.available_at>=cutoff)
     assert expected and len(expected)<len(full.setups)
     assert tail.setups==expected
-    assert tail.events==tuple(e for e in full.events if e.available_at>=cutoff)
+    assert tail.events==tuple(e for e in full.events if e.kind=='LIQUIDITY_FIRST_TAKEN' or e.available_at>=cutoff)
     assert tail.support==full.support and tail.imbalances==full.imbalances
 
 
@@ -309,7 +309,7 @@ def test_economic_aliases_do_not_consume_slots_and_later_confirmation_is_distinc
                     clock=Clock(T+timedelta(minutes=1),T+timedelta(minutes=1),T+timedelta(minutes=1)),
                     reference_id='story_b')
     monkeypatch.setattr(engine,'find_stories',lambda *a:SimpleNamespace(stories=stories,events=(alias_end,),support=()))
-    monkeypatch.setattr(engine,'detect_setups',lambda *a,**k:SimpleNamespace(setups=setups,support=()))
+    monkeypatch.setattr(engine,'detect_setups',lambda *a,**k:SimpleNamespace(setups=setups,events=(),support=()))
     monkeypatch.setattr(engine,'jsonable',lambda x:x)
     result=engine.run({'instrument':instrument,'bars':bars},as_of=bars[-1].end,costs=Costs(),
                       policy=StrategyPolicy(source_profile=profile,entry_tfs=('M1',),origin_tfs=('D',)),

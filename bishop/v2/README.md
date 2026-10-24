@@ -122,3 +122,5 @@ The canonical first context governs cancellation. This fixes exposure crowding,
 not the outstanding source stop/target/reference discrepancies.
 
 Publication-order limitation: base candles must have nondecreasing `available_at` in occurrence order. Late internal candles are explicitly rejected because snapshot rebuilding cannot preserve earlier gap and structure decisions. Supporting them requires receipt-order replay; this engine does not implement it.
+
+First-take linkage (policy3): confirmation and nested routes may link a later KL rejection to the original observable H4 liquidity take in the same valid parent episode. They do not require a repeated sweep on the rejection candle. A first take from before the parent/level was available, a segment change, level-role loss/unavailability, scope break or replacement episode prevents reuse. `liquidity_take_events` carries the original pool/bar/receipt provenance independently of later reactions; setup evidence includes the linked event IDs. This does not certify teacher-example associations.

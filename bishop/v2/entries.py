@@ -136,6 +136,35 @@ def _reaction_episode_reason(reaction, candidate_bar, h4_events):
     return None
 
 
+def _first_take_for_reaction(pool, reaction_bar, bars, level, parent_break, h4_events):
+    """Carry the first take forward within its original, still-valid episode.
+
+    A later KL rejection need not repeat the sweep. Conversely, a subsequent
+    take cannot replace a first take belonging to an older or broken episode.
+    Only closed observations known by the reaction are considered.
+    """
+    first = next((b for b in bars
+        if b.start >= pool.available_at and b.end <= reaction_bar.end
+        and b.available_at <= reaction_bar.available_at
+        and (b.high_ticks > pool.price_ticks if pool.kind == 'HIGH'
+             else b.low_ticks < pool.price_ticks)), None)
+    if first is None or first.start < max(parent_break.available_at, level.available_at):
+        return None
+    opposite='SELL' if parent_break.side=='BUY' else 'BUY'
+    for event in h4_events:
+        if not parent_break.available_at < event.available_at <= reaction_bar.available_at:
+            continue
+        if event.reference_id==level.id and (event.kind=='LEVEL_UNAVAILABLE' or
+                (event.kind=='LEVEL_ROLE_CHANGE' and event.side==opposite)):
+            return None
+        if (parent_break.scope_id is not None and event.scope_id==parent_break.scope_id
+                and event.kind=='RANGE_BROKEN'):
+            return None
+    if _reaction_episode_reason((first, level, parent_break, (pool,)), reaction_bar, h4_events):
+        return None
+    return first
+
+
 def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_events=(), eligibility_start=None):
     if eligibility_start is not None:
         eligibility_start=utc(eligibility_start)
@@ -159,14 +188,23 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
         segment_starts[tf]={}
         for bar in bars:
             segment_starts[tf].setdefault(bar.segment_id,bar.start)
-    pool_take_cache={}
-    def pool_taken_before(pool, bar, bars):
-        key=(pool.id,bar.id)
-        if key not in pool_take_cache:
-            pool_take_cache[key]=_pool_taken_before(pool,bar,bars)
-        return pool_take_cache[key]
     imbalances=tuple(g for tf in policy.entry_tfs for g in _imbalance(bars_by_tf.get(tf,()),policy))
     setups={}; events={}; support=[]
+    reaction_takes={}
+    take_link_cache={}
+    take_events={}
+    def linked_takes(hp, rb, bs, level, parent, h4):
+        linked=[]
+        for pool in hp:
+            key=(pool.id,rb.id,level.id,parent.id)
+            if key not in take_link_cache:
+                take_link_cache[key]=_first_take_for_reaction(pool,rb,bs,level,parent,h4.events)
+            first=take_link_cache[key]
+            if first is None: continue
+            take=take_events[(pool.id,first.tf)]
+            linked.append((pool,take))
+        reaction_takes[(rb.id,level.id,parent.id)]=tuple(t.id for _,t in linked)
+        return tuple(p for p,_ in linked)
     profile=policy.source_profile
     # Profiles select procedures before outcomes. source_all is the audit view.
     if profile in ('source_all','all_routes'):
@@ -203,6 +241,24 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                 if external_sweep: break
     all_liq=tuple(l for r in structures.values() for l in r.liquidity)+tuple(formed_pools)
     all_levels=tuple(l for r in structures.values() for l in r.levels)
+    # Publish observed takes independently of whether a later reaction exists.
+    # Otherwise adding that later reaction would backdate a new event into an
+    # earlier report. One immutable event is shared by related reactions.
+    for tf in dict.fromkeys((*policy.entry_tfs,'H1') if 'nested_confirmation' in enabled else policy.entry_tfs):
+        for pool in all_liq:
+            if pool.tf!='H4': continue
+            first=next((b for b in bars_by_tf.get(tf,()) if b.start>=pool.available_at
+                and (b.high_ticks>pool.price_ticks if pool.kind=='HIGH' else b.low_ticks<pool.price_ticks)),None)
+            if first is None: continue
+            take=Event(id=stable_id('entry_first_take',pool.id,first.id,policy.id),
+                kind='LIQUIDITY_FIRST_TAKEN',instrument=first.instrument,tf=first.tf,
+                clock=Clock(first.start,first.end,max(pool.available_at,first.available_at)),
+                side='SELL' if pool.kind=='HIGH' else 'BUY',
+                reference_id=pool.id,price_ticks=pool.price_ticks,bar_ids=(first.id,),
+                evidence_ids=(pool.id,),policy_id=policy.id,
+                details={'link_policy':'first_take_then_same_episode_reaction_v1'})
+            events[take.id]=take
+            take_events[(pool.id,tf)]=take
     for tf in policy.entry_tfs:
         support.append(dict(tf=tf,route='entries',status='SUPPORTED' if tf in structures and tf in bars_by_tf else 'UNSUPPORTED',
                             families=FAMILIES, enabled_families=tuple(f for f in FAMILIES if f in enabled),
@@ -328,7 +384,7 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                         hp=pools('H4',story.side,b.start,br.clock.occurred_from)
                         if not hp and profile not in ('source_all','all_routes','core_course'): continue
                         # Bishop confirmation waits for known H4 liquidity taken.
-                        swept=[p for p in hp if not pool_taken_before(p,b,bs) and (b.low_ticks<p.price_ticks if story.side=='BUY' else b.high_ticks>p.price_ticks)]
+                        swept=linked_takes(hp,b,bs,lv4,br,h4)
                         if not swept and profile not in ('source_all','all_routes','core_course'): continue
                         reactions.append((b,lv4,br,tuple(swept)))
             retired_reactions=set()
@@ -354,7 +410,8 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                 reaction=reaction_for(b)
                 if reaction:
                     rb,lv4,hbr,hp=reaction
-                    causes=(rb.id,lv4.id,hbr.id,*[p.id for p in hp])
+                    causes=(rb.id,lv4.id,hbr.id,*[p.id for p in hp],
+                            *reaction_takes.get((rb.id,lv4.id,hbr.id),()))
                     at=max(story.available_at,b.available_at,rb.available_at,bs[i-1].available_at if i else b.available_at,lv4.available_at,hbr.available_at,*[p.available_at for p in hp])
                     for br in result.events:
                         if not hp: continue
@@ -433,11 +490,11 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                         if not prior: continue
                         hb=max(prior,key=lambda x:x.available_at)
                         hp=pools('H4',story.side,rb.start,hb.clock.occurred_from)
-                        swept=tuple(p for p in hp if not pool_taken_before(p,rb,h1bars) and (rb.low_ticks<p.price_ticks if story.side=='BUY' else rb.high_ticks>p.price_ticks))
-                        if not swept: continue
                         for level in h4.levels:
                             if level.available_at>rb.start or cached_role(level,h4,rb.start)!=story.side: continue
                             if rb.low_ticks<=level.price_ticks<=rb.high_ticks and (rb.close_ticks>level.price_ticks if story.side=='BUY' else rb.close_ticks<level.price_ticks):
+                                swept=linked_takes(hp,rb,h1bars,level,hb,h4)
+                                if not swept: continue
                                 witnessed.append((rb,level,hb,swept))
                     if not witnessed: continue
                     rb,htflevel,hb,hp=max(witnessed,key=lambda x:x[0].available_at)
@@ -467,7 +524,8 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                                 if child is None:
                                     support.append(dict(route='nested_confirmation',story_id=story.id,tf=tf,status='UNRESOLVED',reason='lower_AV_not_yet_available',evidence_ids=(br.id,a.id,b.id,x.id,y.id)))
                                     continue
-                                chain=(hb.id,rb.id,htflevel.id,br.id,lv.id,a.id,b.id,x.id,y.id)
+                                chain=(hb.id,rb.id,htflevel.id,br.id,lv.id,a.id,b.id,x.id,y.id,
+                                       *reaction_takes.get((rb.id,htflevel.id,hb.id),()))
                                 emit('nested_confirmation',story,tf,child,at,chain,(rb,a,b,x,y),hp,
                                      extra={'nesting_chain_ids':chain,'parent_entry_tf':'H1',
                                             'standing_reference_bar_id':a.id,'standing_confirmation_bar_id':b.id,

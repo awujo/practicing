@@ -247,3 +247,13 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 - Next: complete USDCAD episode rejection audit, then identify source-clock/reference differences in remaining candidate plans. No broker activation, deployment, messages, or source-price fitting.
 
 - Follow-up USDCAD trace: likely regression in `_pool_taken_before`, not data-gap/role retirement. H1 first sweep01–02UTC precedes later sell-KL rejection; requiring a fresh pool at the reaction bar suppresses a potentially valid multi-candle episode. Reviewer preparing source-linked rule boundaries. Do not ship this as teacher-accepted or treat zero setups as correct.
+
+## First-take correction (2026-10-24)
+
+- User requested correction of the USDCAD suppression regression. Policy3 now links an earlier first observable H4 liquidity take to a later same-episode KL rejection in both normal and nested confirmation. No repeat sweep or arbitrary timeout is required. Earlier-episode takes, role loss/unavailability, scope breaks, replacement episodes and segment changes cannot sponsor reuse.
+- First-take events are emitted independently of future rejections; standard output `liquidity_take_events` and setup evidence IDs retain pool/bar/receipt provenance. Independent13case review covers event prefixes and normal BO integration, buy/sell mirrors, strict crossing, retirement, no future evidence and no borrowing a later sweep.
+- Full suite265passed6.05s. Tests updated their EntryResult mocks for the output contract, and eligibility filtering keeps observation history while filtering entry eligibility. Source fixtures/prices/tolerances unchanged.
+- USDCAD first corrected replay restored312setups/7orders and original07UTC BO1.40425/1.40521/1.40249 (24story aliases); source printed1.40471/1.40539/1.40129 still differs. Restored eligibility is a regression correction, not teacher acceptance. Full final implementation reruns saved under `reports/teacher_replay_v2_first_take_fix/`; inspect final index for scope/count/hash status.
+- Next source-fidelity questions include actual source candle/level identity and the protective origin across the multi-candle reaction excursion. Do not assume current reaction-bar protection automatically covers every earlier excursion or adjust a buffer to the printed stop. No live activation/deployment/messages.
+
+- Final policy3 all10source reruns completed, same implementation fingerprint, allstrictUNRESOLVED. All ten report byte hashes and unchanged source fixture hash verified; final README includes before/after counts. No active replay remains.
