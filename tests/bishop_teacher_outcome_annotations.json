@@ -1,0 +1,1500 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-24",
+  "fixture_inventory_sha256": "0f2bae1c49705431f0d3b6e926ec5d9dda80ccadabb2ee9dfa475542de75b8a4",
+  "scope": "All40 existing fixture observations annotated independently; additional narrated outcome reviews are separate, not new historical acceptance fixtures.",
+  "standards": {
+    "realized_vs_excursion": "Chart touches and MFE do not prove actual TP; paired broker observations remain separate until mapped.",
+    "loss_taxonomy": "No diagnosed deviation is not proof of full compliance or unavoidability. Case critique does not establish a universal hindsight filter.",
+    "acceptance": "No original fixture edited; no acceptance promotion; no outcome-based threshold fitting."
+  },
+  "fixture_annotations": [
+    {
+      "example_id": "pdf-p02-eurcad-buy-1",
+      "instrument": "EURCAD",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 2,
+          "note": "Chart labels; broker arrow near 1.61274 is a different execution observation."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Broker linked exit below chart target; exact plan execution unmapped.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p03-eurjpy-buy-1",
+      "instrument": "EURJPY",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 3,
+          "note": "Exact axis labels are visible; old notes only approximated this plan."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart extended beyond target."
+    },
+    {
+      "example_id": "pdf-p05-eurchf-buy-1",
+      "instrument": "EURCHF",
+      "side": "BUY",
+      "timeframe": "M30",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 5,
+          "note": "Chart plan TP is .93498; broker pending-order TP differs on page 6."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart plan; broker pending target differs."
+    },
+    {
+      "example_id": "pdf-p06-eurchf-buy-1",
+      "instrument": "EURCHF",
+      "side": "BUY",
+      "timeframe": "M30",
+      "source_observation_state": "PENDING",
+      "actual_outcome": "PENDING_AT_SNAPSHOT",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 6,
+          "note": "BUY LIMIT 0.91, entry .93193, SL .93147, TP .93704; screenshot x-axis includes July 28-29, year inferred only from adjacent chart."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "BUY LIMIT remains pending at snapshot."
+    },
+    {
+      "example_id": "pdf-p08-eurgbp-buy-1",
+      "instrument": "EURGBP",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 8,
+          "note": "H2 High swept, Low standing V-shaped kl 4thman's CE. Grey label reads .85315, not old-note .85319."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Later upper wick beyond target; fill unknown."
+    },
+    {
+      "example_id": "pdf-p10-usoil-buy-1",
+      "instrument": "USOIL",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 10,
+          "note": "First of two entries. Raw chart units preserved; broker chart alongside quotes ~81-85, not 8100-8500."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Multiple broker legs precede final rise; two chart plans not one-to-one mapped.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING",
+      "correlation_group": "pdf-p10-oil-two-chart-plans-broker-mapping-unresolved"
+    },
+    {
+      "example_id": "pdf-p10-usoil-buy-2",
+      "instrument": "USOIL",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 10,
+          "note": "Second entry. Two teal labels 8462.1/8459.8; box-to-label target association needs independent verification."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Multiple broker legs precede final rise; two chart plans not one-to-one mapped.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING",
+      "correlation_group": "pdf-p10-oil-two-chart-plans-broker-mapping-unresolved"
+    },
+    {
+      "example_id": "pdf-p11-xauusd-sell-1",
+      "instrument": "XAUUSD",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 11,
+          "note": "mindguy0x community example in Bishop compilation; grey rather than pink risk box. Not a uniquely Bishop entry."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Later same-thesis chart extends below target."
+    },
+    {
+      "example_id": "pdf-p13-eurnzd-sell-1",
+      "instrument": "EURNZD",
+      "side": "SELL",
+      "timeframe": "H3",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 13,
+          "note": "Daily bearish breakout / H4 breakout with idm / H3 Engulfing Confirmation Entry."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Latest market remains above short target; eventual TP unproved."
+    },
+    {
+      "example_id": "pdf-p15-usdcad-sell-1",
+      "instrument": "USDCAD",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 15,
+          "note": "H1 Breakout Confirmation Entry."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart wick beyond TP; broker linked exit earlier than chart TP.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p17-audusd-buy-1",
+      "instrument": "AUDUSD",
+      "side": "BUY",
+      "timeframe": "M30",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 17,
+          "note": "M30 Engulfing Confirmation Entry; initial entry appears on July 15, snapshot July 16."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart above TP then reverses; broker linked exit near but not proved equal TP.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p19-gbpjpy-buy-1",
+      "instrument": "GBPJPY",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 19,
+          "note": "First of two stacked plans. Two teal labels 218.014/218.007; association needs independent verification."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Two chart plans versus three broker entry arrows; exits near217.8.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING",
+      "correlation_group": "pdf-p19-two-chart-plans-three-broker-entry-arrows"
+    },
+    {
+      "example_id": "pdf-p19-gbpjpy-buy-2",
+      "instrument": "GBPJPY",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 19,
+          "note": "Second of two stacked plans; do not merge stops/targets."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "Stacked-box target-to-entry association requires a second visual review.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Two chart plans versus three broker entry arrows; exits near217.8.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING",
+      "correlation_group": "pdf-p19-two-chart-plans-three-broker-entry-arrows"
+    },
+    {
+      "example_id": "pdf-p20-xagusd-sell-1",
+      "instrument": "XAGUSD",
+      "side": "SELL",
+      "timeframe": "H4",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 20,
+          "note": "Left chart, no named CE trigger."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart directional travel only; no broker execution proof."
+    },
+    {
+      "example_id": "pdf-p20-usoil-buy-2",
+      "instrument": "USOIL",
+      "side": "BUY",
+      "timeframe": "H4",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 20,
+          "note": "Right chart; raw source price units preserved."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart directional travel only; no broker execution proof."
+    },
+    {
+      "example_id": "pdf-p22-xagusd-sell-1",
+      "instrument": "XAGUSD",
+      "side": "SELL",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 22,
+          "note": "Chart plan differs from the broker execution and TP on the right."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart below target; broker active short still above broker TP."
+    },
+    {
+      "example_id": "pdf-p22-xagusd-sell-2",
+      "instrument": "XAGUSD",
+      "side": "SELL",
+      "timeframe": "H2",
+      "source_observation_state": "OPEN_POSITION",
+      "actual_outcome": "OPEN_AT_SNAPSHOT",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 22,
+          "note": "SELL 0.06 line at 59.655; broker TP58.534; a numeric broker SL is not readable. Do not borrow chart SL."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart below target; broker active short still above broker TP."
+    },
+    {
+      "example_id": "pdf-p23-usdchf-sell-1",
+      "instrument": "USDCHF",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 23,
+          "note": "Left snapshot. Target axis label reads .80535, not old-note .80525."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Later left chart below target; earlier right still developing.",
+      "correlation_group": "pdf-p23-usdchf-one-region-two-snapshots"
+    },
+    {
+      "example_id": "pdf-p23-usdchf-sell-2",
+      "instrument": "USDCHF",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 23,
+          "note": "Right snapshot of same setup with different stop/target; a separate source-demonstrated variant, not an extra independent trade."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Later left chart below target; earlier right still developing.",
+      "correlation_group": "pdf-p23-usdchf-one-region-two-snapshots"
+    },
+    {
+      "example_id": "pdf-p25-audusd-sell-1",
+      "instrument": "AUDUSD",
+      "side": "SELL",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 25,
+          "note": "Explicit note: Daily recent breakout bullish, looking for shorts to liquidity, more confidence since weekly bearish."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart reaches short target region."
+    },
+    {
+      "example_id": "pdf-p27-gbpusd-sell-1",
+      "instrument": "GBPUSD",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 27,
+          "note": "Grey entry axis label reads1.31932, not old-note1.31923."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart strong decline; broker linked short/exit differs in feed/time.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p29-chfjpy-sell-1",
+      "instrument": "CHFJPY",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 29,
+          "note": "Chart plan shown on right; broker fills are a separate observation."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Broker linked favorable short leg; exact planned TP mapping unknown.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p31-gbpnzd-buy-1",
+      "instrument": "GBPNZD",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN_FOR_CHART_PLAN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 31,
+          "note": "Chart plan. Broker order below opens2.30008, closes2.30172; shown SL2.30017 is above original buy fill and is a managed SL, not this initial stop."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Broker history confirms closed profitable buy; chart TP differs.",
+      "paired_execution_evidence": "CLOSED_BUY_HISTORY_PROFIT_31_52_COMMISSION_MINUS_2_31",
+      "paired_outcome": "PROFITABLE_CLOSE_REASON_UNKNOWN",
+      "paired_original_risk": "UNKNOWN_MANAGED_SL_ABOVE_ORIGINAL_FILL"
+    },
+    {
+      "example_id": "pdf-p33-gbpcad-buy-1",
+      "instrument": "GBPCAD",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 33,
+          "note": "H2 Breakout Confirmation Entry; daily PDL swept/reject daily context on right."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart target tagged by wick; paired broker favorable leg separate.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p35-gbpjpy-buy-1",
+      "instrument": "GBPJPY",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 35,
+          "note": "Confirmation entry label but no numeric position box labels; do not infer exact entry/stop/TP from axis proximity."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Advance shown; no numeric risk/target or broker."
+    },
+    {
+      "example_id": "pdf-p37-eurgbp-sell-1",
+      "instrument": "EURGBP",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 37,
+          "note": "Daily recent breakout bearish, PDH swept, Daily reject Daily."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart below TP; broker favorable linked short leg.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p38-us30-buy-1",
+      "instrument": "US30",
+      "side": "BUY",
+      "timeframe": "M30",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 38,
+          "note": "Grey entry label50816.7, not old-note50818.7."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Wick reaches top target region; no broker closure."
+    },
+    {
+      "example_id": "pdf-p40-audcad-buy-1",
+      "instrument": "AUDCAD",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 40,
+          "note": "H2 Breakout CE; daily bullish breakout/PDL swept/reject daily."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart reaches target; broker has two entries versus one drawing.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p42-usoil-sell-1",
+      "instrument": "USOIL",
+      "side": "SELL",
+      "timeframe": "H3",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 42,
+          "note": "H4 rejects H4 at extreme; raw source units preserved."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "FOREXCOM oil chart price scale differs from broker quote scale; symbol/scale mapping must be validated.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Wick through target then rebounds; no exact broker closure proof."
+    },
+    {
+      "example_id": "pdf-p44-ethusdt-sell-1",
+      "instrument": "ETHUSDT",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 44,
+          "note": "Source ticker ETHUSDT.P perpetual. Broker screen alongside is not necessarily same contract/feed."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Broker adverse first short leg then favorable subsequent legs; main chart distinct.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING",
+      "paired_attempt_outcomes": [
+        "ADVERSE_LINKED_SHORT_LEG_CAUSE_UNKNOWN",
+        "FAVORABLE_LATER_SHORT_LEGS_CAUSE_UNKNOWN"
+      ]
+    },
+    {
+      "example_id": "pdf-p46-eurjpy-buy-1",
+      "instrument": "EURJPY",
+      "side": "BUY",
+      "timeframe": "M45",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 46,
+          "note": "M45 chart trigger; broker chart alongside is M30 and entry appears on May26."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart wick reaches target; broker M30 differs from M45 chart.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p47-gbpcad-buy-1",
+      "instrument": "GBPCAD",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 47,
+          "note": "Grey entry label1.84768, not old-note1.84766."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Latest market below target though earlier wick near top; no broker history."
+    },
+    {
+      "example_id": "pdf-p50-nas100-buy-1",
+      "instrument": "NAS100",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 50,
+          "note": "Position box without named CE label; origin of plan appears May20."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Long drawing; no broker execution record."
+    },
+    {
+      "example_id": "pdf-p52-nas100-sell-1",
+      "instrument": "NAS100",
+      "side": "SELL",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 52,
+          "note": "Red stop label29060.5, not old-note29068.5."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart selling to target zone then rebound; no broker record."
+    },
+    {
+      "example_id": "pdf-p54-eurgbp-buy-1",
+      "instrument": "EURGBP",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 54,
+          "note": "Grey entry label.86609, not old-note.86606."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart beyond target; no broker evidence."
+    },
+    {
+      "example_id": "pdf-p55-us30-buy-1",
+      "instrument": "US30",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 55,
+          "note": "H1 breakout CE in right chart; page56 supplies H4 context."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart wick above target; no broker history."
+    },
+    {
+      "example_id": "pdf-p58-jp225-buy-1",
+      "instrument": "JP225",
+      "side": "BUY",
+      "timeframe": "H1",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 58,
+          "note": "Red stop label62813, not old-note62613. Entry appears May13; exact UTC must be aligned."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart target region then retracement; linked broker exit approximate.",
+      "paired_execution_evidence": "SEPARATE_BROKER_OBSERVATION_NOT_CERTIFIED_ONE_TO_ONE_PLAN_MAPPING"
+    },
+    {
+      "example_id": "pdf-p60-gbpaud-sell-1",
+      "instrument": "GBPAUD",
+      "side": "SELL",
+      "timeframe": "M45",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 60,
+          "note": "Second Entry H4 breakout with idm H4rH4 / M45 break with idm. Teal label1.87390, not old-note1.87393."
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_supplement_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+        "Source-feed candle alignment and matching tolerances are not yet established.",
+        "Independent second source reviewer has not yet signed off this extraction.",
+        "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+        "Bias timeframe and setup-availability UTC window have not been independently established."
+      ],
+      "chart_or_paired_observation": "Chart beyond target; no broker order record."
+    },
+    {
+      "example_id": "video-entries5-native-t1065-xauusd",
+      "instrument": "XAUUSD",
+      "side": "BUY",
+      "timeframe": "H3",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "TEACHER_MISSED_OPPORTUNITY",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/study/examples/entries5-native-t1065.png",
+          "source_video_slug": "bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case",
+          "source_pts_seconds": 1065,
+          "source_video_sha256": "85012b57574f2f7d42f5256a36e48bec2efaa6fec89ad1899f8fc1a38097597a",
+          "note": "Actual native PTS1065: selected3h; tool RR5.66 and stop15.25. Drawing anchor Wed05Aug26 02:00 UTC+1 is not proof of fill. Teacher subsequently changes target/stop while demonstrating."
+        },
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+          "start_seconds": 1057.8,
+          "end_seconds": 1085.0
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_session_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Illustrative position-tool plan, not independently established filled order.",
+        "Exact bias, setup-availability and fill UTC windows are not established.",
+        "Drawing anchor time must not be substituted for actual trigger or fill time.",
+        "Source-feed candles and justified numerical tolerances are not established.",
+        "Independent numeric second review remains pending."
+      ],
+      "chart_or_paired_observation": "Teacher absent for2am H3 engulf; later5R/8R/19R tool adjustments are hypothetical."
+    },
+    {
+      "example_id": "video-entries5-native-t1410-eurusd",
+      "instrument": "EURUSD",
+      "side": "BUY",
+      "timeframe": "H2",
+      "source_observation_state": "ILLUSTRATIVE_PLAN",
+      "actual_outcome": "UNKNOWN",
+      "tp_sl_cause": "UNRESOLVED",
+      "source_model_compliance": "NOT_ESTABLISHED",
+      "mentor_posttrade_review": "NO_CASE_SPECIFIC_REVIEW_IDENTIFIED",
+      "rule_deviation": "UNRESOLVED",
+      "for_replay_acceptance": false,
+      "source_refs": [
+        {
+          "path": "knowledge-base/study/examples/entries5-native-t1410.png",
+          "source_video_slug": "bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case",
+          "source_pts_seconds": 1410,
+          "source_video_sha256": "85012b57574f2f7d42f5256a36e48bec2efaa6fec89ad1899f8fc1a38097597a",
+          "note": "Actual native PTS1410: selected2h; final visible example after transient stop-dragging at1395. Transcript1403-1418: personally I would have done something like this, aim for about5R. Illustrative, not actual historical fill proof."
+        },
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+          "start_seconds": 1403.0,
+          "end_seconds": 1418.2
+        }
+      ],
+      "study_refs": [
+        "knowledge-base/study/full_session_study.md"
+      ],
+      "clock_status": "SETUP_FILL_AND_EXIT_UTC_UNRESOLVED",
+      "coverage_limits": [
+        "Illustrative position-tool plan, not independently established filled order.",
+        "Exact bias, setup-availability and fill UTC windows are not established.",
+        "Drawing anchor time must not be substituted for actual trigger or fill time.",
+        "Source-feed candles and justified numerical tolerances are not established.",
+        "Independent numeric second review remains pending."
+      ],
+      "chart_or_paired_observation": "Personally I would have plan; exact remembered earlier personal model uncertain; not a proven5R realization."
+    }
+  ],
+  "narrated_outcome_reviews": [
+    {
+      "id": "session-be-us30-first-entry",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_LOSS",
+      "review_classification": "LOSS_WITHOUT_IDENTIFIED_RULE_DEVIATION",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-10-minute-series-part-1-bias-entries-amp-confirmation-entries-combined/transcript.txt",
+          "start_seconds": 398.4,
+          "end_seconds": 428.6,
+          "quote": "I got stopped out ... but that did not mean my bias was wrong"
+        }
+      ],
+      "preentry_or_management_lesson": "Keep the loss and require a fresh breakout/liquidity/confirmation for later opportunity.",
+      "causal_limit": "Not proof of mathematical unavoidability or independently verified full compliance; no stop/fill UTC.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "session-t3-audchf",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_LOSS",
+      "review_classification": "ACCEPTED_SELECTED_SYSTEM_LOSS",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb/transcript.txt",
+          "start_seconds": 577.9,
+          "end_seconds": 677.3,
+          "quote": "I don't actually use that ... if that was the reason why I took a loss, then that's fine by me ... I took the loss and moved on"
+        }
+      ],
+      "preentry_or_management_lesson": "Do not add a new external-breakout veto after observing this loss.",
+      "causal_limit": "Teacher describes W/D/H4/H1 chosen model; exact historical compliance requires candles, clocks and stop evidence.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "session-t3-nzdchf",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_IMMEDIATE_LOSS",
+      "review_classification": "TEACHER_IDENTIFIED_CONTEXT_TIMING_DEVIATION",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb/transcript.txt",
+          "start_seconds": 719.3,
+          "end_seconds": 728.8,
+          "quote": "I should have waited for a new breakout ... But I now daily reject daily instead"
+        }
+      ],
+      "preentry_or_management_lesson": "Fresh Daily breakout is identified by teacher as missing for this case; preserve as case-specific critique.",
+      "causal_limit": "No universal fresh-Daily-break gate inferred; unclear ASR around708\u2013719 closure; source alignment needed to prove missing fact at placement.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "session-t3-gbpusd-tight-accounts",
+      "fixture_ids": [],
+      "actual_outcome": "MIXED_ACCOUNT_OUTCOMES",
+      "review_classification": "TEACHER_IDENTIFIED_PROTECTION_DEVIATION",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb/transcript.txt",
+          "start_seconds": 1287.7,
+          "end_seconds": 1348.1,
+          "quote": "price has every right to come to this liquidity ... Stopped me out on one or two of my accounts ... one peep, one or two peeps"
+        }
+      ],
+      "preentry_or_management_lesson": "Nearby known H4 liquidity/KL can need protection beyond engulf high; timestamp the selected stop before entry.",
+      "causal_limit": "Narrow losing and wider surviving account must both remain; wider counterfactual must not rewrite original losses or fit future excursion.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "session-t3-usdjpy",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_MANUAL_PROFIT_AROUND_2R",
+      "review_classification": "DISCRETIONARY_MANAGEMENT_NOT_AUTOMATIC_TP",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb/transcript.txt",
+          "start_seconds": 1089.1,
+          "end_seconds": 1105.7,
+          "quote": "If you just trade3R, it gave it3R. But I closed around2R ... did not trust ... consolidations"
+        }
+      ],
+      "preentry_or_management_lesson": "Preserve manual exit separately from planned TP and favorable excursion.",
+      "causal_limit": "No numerical stalling rule or universal early-exit filter supplied.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "core14-gold-two-entries",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_TWO_BREAK_EVEN_EXITS",
+      "review_classification": "MANAGEMENT_OUTCOME_AFTER_FAVORABLE_EXCURSION",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/video-14-entry-models-1/transcript.txt",
+          "start_seconds": 1236.3,
+          "end_seconds": 1259.3,
+          "quote": "both did a one to three ... I just went break even on the two ... didn't even take partials ... trade took me out ... break even"
+        }
+      ],
+      "preentry_or_management_lesson": "Both exits stay BE, not3R/4R wins; record no partials and BE amendments.",
+      "causal_limit": "Exact amendment/fill times, costs and initial stops remain unknown; narrator8R overall is excursion arithmetic, not realized P&L.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "core13-gold-student-stop",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_STOP_LOSS",
+      "review_classification": "TEACHER_IDENTIFIED_PROTECTION_REFINEMENT",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/video-13-bias-continuation-part-2/transcript.txt",
+          "start_seconds": 1955.3,
+          "end_seconds": 2156.8,
+          "quote": "entered on the first key level with the stop above the second ... there was still another high ... put your stop loss above the high add one more peeps ... or0.5"
+        }
+      ],
+      "preentry_or_management_lesson": "Distinguish selected entry KL from relevant stronger protective high known before entry.",
+      "causal_limit": "Exact reference/padding choice remains source-specific; do not turn every later high into preentry knowledge.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "session-t3-usdchf",
+      "fixture_ids": [],
+      "actual_outcome": "NARRATED_TAKEN_ENTRY_TARGET_REACHED",
+      "review_classification": "FAVORABLE_SOURCE_CASE_WITHOUT_BROKER_ACCOUNTING",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-3-trades-breakdown-bias-to-entry-case-study-gb/transcript.txt",
+          "start_seconds": 1455.0,
+          "end_seconds": 1508.5,
+          "quote": "this was my entry ... immediately price reached that target ... reversal"
+        }
+      ],
+      "preentry_or_management_lesson": "Selected H2 engulf after fresh H4 breakout/liquidity/reaction; nearby target can be reached before immediate reversal.",
+      "causal_limit": "Approximate3.5\u20134R narration is not exact broker-realized accounting; no universal Thursday entry rule.",
+      "for_replay_acceptance": false
+    },
+    {
+      "id": "routine-usdcad-clean-h2-passed",
+      "fixture_ids": [],
+      "actual_outcome": "PASSED_OPPORTUNITY_LATER_WORKED",
+      "review_classification": "COMPLIANT_NO_ENTRY_DESPITE_FAVORABLE_FUTURE",
+      "source_refs": [
+        {
+          "path": "knowledge-base/videos/bishop-defi-bishop-study-daily-routine-x-trade-breakdown-how-do-i-manage-trading-multiple-pairs-wha/transcript.txt",
+          "start_seconds": 1812.7,
+          "end_seconds": 1828.5,
+          "quote": "very clean breakout ... no h4 reject h4 ... I let this guy slide ... played out quite well"
+        }
+      ],
+      "preentry_or_management_lesson": "Maintain selected H4-reaction requirement even when clean H2 alternative later wins.",
+      "causal_limit": "No reason to relax source checklist retroactively; alternative profiles remain distinct.",
+      "for_replay_acceptance": false
+    }
+  ]
+}

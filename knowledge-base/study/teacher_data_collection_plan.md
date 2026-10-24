@@ -1,0 +1,63 @@
+# IC Markets collection plan
+
+2026-10-24. Authorized historical collection preparation; this planning pass made
+no network, database, broker or remote calls. `reports/teacher_collection_plan.json`
+is generated from the unchanged 40 fixtures and hashes their file. It inventories
+23 pairs and all entry TFs (M30/M45/H1/H2/H3/H4). There are 46 grouped jobs across
+M5 and H1, covering 36 dated fixtures. Four dates remain unresolved: PDFp06 EURCHF,
+PDFp22 XAGUSD second plan and both native-video fixtures (XAUUSD/EURUSD). These
+remain in inventory but have no guessed collection dates. Every fixture lacks
+independently established setup/fill clocks. Snapshot dates select diagnostic
+windows only, never an entry clock or acceptance pass.
+
+M5 windows begin 35 calendar days before each snapshot date and finish at the
+following UTC midnight plus14 days of outcome coverage (`--forward-days 14`).
+Future outcome data must remain excluded from earlier replay eligibility. Overlapping windows for one pair are merged. M5 supports
+M45/M30/M15/M5 and H3, but not finer M1 examples or exact intrabar sequencing.
+H1 context uses 400 calendar days to provide longer D/W/monthly history without
+replicating 400 days of M5. M5/H1 candle equivalence must be checked on overlap;
+these are independent provider bars. 35 days is an engineering starting window,
+not proof of sufficient structural initialization. 400 days yields approximately
+13 monthly bars and cannot establish arbitrary long monthly structures or a
+20-month ATR; those contexts remain unresolved unless history is extended.
+
+Run `python -m bishop.collect_teacher_data --plan-only` to reproduce the plan.
+Explicit acquisition: `python -m bishop.collect_teacher_data --collect --metadata
+PAIR_METADATA.json --out data/teacher_icmarkets`. Optional `--pairs EURGBP GBPJPY`
+or repeated `--job-id` limits the selected planned jobs. `--warmup-days` must be
+at least35; `--context-days` must be at least the base warmup. Root owns remote
+execution/workflows. Pair metadata must declare exact `broker_symbol`,
+`calendar_id`, `anchor_id`, `calendar_version` and `asset_class`. Explicit interval
+calendars also require their full `calendar` intervals. FX NY17 conventions are
+an engineering hypothesis; metals/oil/indices have maintenance/holiday schedules
+and broker-specific instruments. NAS100,US30,JP225,USOIL and ETHUSDT cannot be
+silently substituted with differently named cash/futures/crypto CFDs. Symbol
+details provide display precision/pip units but the existing client does not
+export a full historical holiday/session calendar. Missing schedules prevent
+complete replay coverage certification; collect raw bars without inventing them.
+
+`HistoricalClient` restricts requests to app/account authentication, symbol
+metadata and historical trendbars. It wraps shared Kevin settings read-only,
+SELECTs `settings` directly without probing Bishop settings, and bypasses all
+refresh/retry-with-refresh paths. Invalid access tokens fail; Kevin owns rotation.
+There are no trade/account-position requests or fallback provider. Each H1 request covers seven days; each M5 request covers one day and uses the client's existing historical rate limiter. Missing
+bars remain missing. The trendbar response has no pagination/completeness flag;
+small request bounds reduce truncation risk but cannot prove completeness. Every
+chunk records requested bounds, returned/retained row counts, first/last bar and
+empty status. Job success means `RAW_COLLECTED_UNVALIDATED`, never data complete.
+Volume is preserved, zero-volume rows counted, and observed FX-weekend candles
+are retained and counted as diagnostics rather than discarded. `acquisition_status.json` records
+per-job partial progress; failures persist exception type only. Authentication is
+attempted once and fails closed with a redacted status artifact. Failed jobs do
+not block independent jobs. Raw capture may declare unresolved broker schedules
+and anchor; such manifests cannot supply completed replay coverage until reviewed.
+
+Prices are decoded from protobuf integer1e-5 units through Decimal; no floating
+point or six-significant-digit formatting. Validate geometry, interval alignment
+and display tick grid. Gzip artifacts are deterministic and immutable; a sidecar
+records compressed SHA256, stable provider/symbol/source identity, symbol details,
+requested/observed bounds, case IDs and retrieval clock. Availability at historical
+bar close is an explicit assumption; retrieval time is distinct. BID IC Markets
+is alternate-feed diagnostic evidence for charts carrying FOREXCOM/OANDA/etc.;
+calendar/anchor/feed equivalence and actual fill/status remain separate questions.
+Calendar completeness is deliberately `NOT_CALENDAR_VALIDATED` at collection.
