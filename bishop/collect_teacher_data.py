@@ -80,7 +80,7 @@ def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, cloc
             if not collect_start<=search_start<search_end<=collect_end:raise ValueError('invalid exploratory annotation bounds')
             item.update(status='EXPLORATORY_ANNOTATED_WINDOW',clock_annotation=annotation)
             for tf,days in [('M5',warmup_days),('H1',context_days)]:
-                pending.setdefault((case['pair'],tf),[]).append((min(collect_start,search_start-timedelta(days=days)),collect_end,case['id']))
+                pending.setdefault((case['pair'],tf),[]).append((min(collect_start,search_start-timedelta(days=days)),max(collect_end,search_end+timedelta(days=forward_days)),case['id']))
         inventory.append(item)
         if not stamp or annotations_only: continue
         day=utc(stamp+'T00:00:00Z')

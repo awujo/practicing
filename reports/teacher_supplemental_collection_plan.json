@@ -638,11 +638,11 @@
   ],
   "jobs": [
     {
-      "id": "collect_389347c3e8f10563747c6ecd",
+      "id": "collect_006e2a508f0183f2b03ca473",
       "pair": "EURCHF",
       "base_tf": "H1",
       "start": "2025-06-22T00:00:00+00:00",
-      "end": "2026-08-01T00:00:00+00:00",
+      "end": "2026-08-14T00:00:00+00:00",
       "case_ids": [
         "pdf-p06-eurchf-buy-1"
       ],
@@ -702,11 +702,11 @@
       }
     },
     {
-      "id": "collect_8753c95e18a05f96973cb907",
+      "id": "collect_306e6b0b008cb8ffaa366175",
       "pair": "EURCHF",
       "base_tf": "M5",
       "start": "2026-06-01T00:00:00+00:00",
-      "end": "2026-08-01T00:00:00+00:00",
+      "end": "2026-08-14T00:00:00+00:00",
       "case_ids": [
         "pdf-p06-eurchf-buy-1"
       ],
@@ -766,11 +766,11 @@
       }
     },
     {
-      "id": "collect_3834a7bd48de67bb24adb107",
+      "id": "collect_9d564f607c262fff0a3e20b2",
       "pair": "EURUSD",
       "base_tf": "H1",
       "start": "2025-06-29T00:00:00+00:00",
-      "end": "2026-08-11T00:00:00+00:00",
+      "end": "2026-08-22T00:00:00+00:00",
       "case_ids": [
         "video-entries5-native-t1410-eurusd"
       ],
@@ -825,11 +825,11 @@
       }
     },
     {
-      "id": "collect_00de773d9724aed466dd63eb",
+      "id": "collect_29a67de327bf0a65b10a1e24",
       "pair": "EURUSD",
       "base_tf": "M5",
       "start": "2026-06-01T00:00:00+00:00",
-      "end": "2026-08-11T00:00:00+00:00",
+      "end": "2026-08-22T00:00:00+00:00",
       "case_ids": [
         "video-entries5-native-t1410-eurusd"
       ],
@@ -884,11 +884,11 @@
       }
     },
     {
-      "id": "collect_3b7f3df0b9b3c140ddc61728",
+      "id": "collect_4c8faea748e531e3871d5955",
       "pair": "XAGUSD",
       "base_tf": "H1",
       "start": "2025-06-03T00:00:00+00:00",
-      "end": "2026-07-15T00:00:00+00:00",
+      "end": "2026-07-26T00:00:00+00:00",
       "case_ids": [
         "pdf-p22-xagusd-sell-2"
       ],
@@ -948,11 +948,11 @@
       }
     },
     {
-      "id": "collect_e0a90407921517b1ab18c21b",
+      "id": "collect_a26d9d3b077e42e6d2d69954",
       "pair": "XAGUSD",
       "base_tf": "M5",
       "start": "2026-06-01T00:00:00+00:00",
-      "end": "2026-07-15T00:00:00+00:00",
+      "end": "2026-07-26T00:00:00+00:00",
       "case_ids": [
         "pdf-p22-xagusd-sell-2"
       ],
@@ -1012,11 +1012,11 @@
       }
     },
     {
-      "id": "collect_87120071d0b4cd5700599909",
+      "id": "collect_48e4c6ec69834554621d98e3",
       "pair": "XAUUSD",
       "base_tf": "H1",
       "start": "2025-06-30T00:00:00+00:00",
-      "end": "2026-08-11T00:00:00+00:00",
+      "end": "2026-08-22T00:00:00+00:00",
       "case_ids": [
         "video-entries5-native-t1065-xauusd"
       ],
@@ -1073,11 +1073,11 @@
       }
     },
     {
-      "id": "collect_188a2e3e07dd2d1a56618cbb",
+      "id": "collect_ce795438d5eecc3590c1491b",
       "pair": "XAUUSD",
       "base_tf": "M5",
       "start": "2026-06-01T00:00:00+00:00",
-      "end": "2026-08-11T00:00:00+00:00",
+      "end": "2026-08-22T00:00:00+00:00",
       "case_ids": [
         "video-entries5-native-t1065-xauusd"
       ],

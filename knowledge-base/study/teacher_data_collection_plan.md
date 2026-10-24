@@ -69,15 +69,14 @@ creates an explicitly exploratory supplementary plan without changing the fixtur
 snapshot dates, setup/fill clocks or acceptance states. Annotation event-search
 bounds and attribution remain embedded in each job; collection uses the declared
 candidate collection bounds, extending only their start as needed to provide
-35-day M5/400-day H1 warmup before the event-search start. The annotation's explicit
-end controls this supplementary collection; default forward14 does not override
-it. The saved supplemental plan has eight jobs across EURCHF/XAGUSD/XAUUSD/EURUSD.
-After validating initial artifacts, the useful new-date wave is EURUSD+XAUUSD:
-initial EURUSD has no job, and initial XAUUSD ends July23 before August4–8. The
-initial EURCHF/XAG windows cover proposed event searches and required warmup,
-although not every earlier day of the annotations' broader June1 collection
-suggestions. Any additional early history should be justified by unresolved
-initialization rather than duplicate acquisition by default.
+35-day M5/400-day H1 warmup before the event-search start. The supplementary end is the later of the
+annotation's collection end and event-search end plus the declared forward14 days.
+Outcome data remains excluded from earlier entry eligibility. The saved supplemental plan has eight jobs across EURCHF/XAGUSD/XAUUSD/EURUSD.
+The second wave includes all four pairs EURUSD/XAUUSD/EURCHF/XAGUSD. Initial
+EURUSD has no job and initial XAUUSD ends July23 before August4–8; the initial
+EURCHF/XAG windows do not cover the full warmup measured from the earlier
+exploratory search starts and do not carry these new annotated case IDs. The
+second wave preserves their complete declared bounds and attribution.
 
 `python -m bishop.collect_teacher_schedules --metadata FILE --out DIR --pairs ALL`
 collects current symbol schedule fields through the same read-only authentication

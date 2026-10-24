@@ -123,6 +123,10 @@ def test_exploratory_annotations_preserve_fixture_clocks_and_bounded_jobs():
     for job in result['jobs']:
         assert job['exploratory_case_ids']==job['case_ids']
         assert job['clock_annotations']
+        from datetime import timedelta
+        from bishop.v2.types import utc
+        for annotation in job['clock_annotations'].values():
+            assert utc(job['end'])>=utc(annotation['candidate_event_search'][1])+timedelta(days=14)
     native=next(i for i in result['inventory'] if i['id']=='video-entries5-native-t1410-eurusd')
     assert native['chart_snapshot_date'] is None and native['setup_time'] is None and native['fill_time'] is None
     assert native['clock_readiness']=='UNRESOLVED_SETUP_FILL_CLOCKS'

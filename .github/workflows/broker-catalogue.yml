@@ -32,11 +32,11 @@ jobs:
           python -m bishop.collect_teacher_schedules \
             --metadata reports/teacher_icmarkets_metadata.json \
             --out data/teacher_icmarkets_supplement/schedules
-      - name: Collect bounded native-video example windows
+      - name: Collect all four bounded supplemental example windows
         if: success() || failure()
         run: |
           python -m bishop.collect_teacher_data --collect \
-            --pairs EURUSD XAUUSD --annotations-only \
+            --pairs EURUSD XAUUSD EURCHF XAGUSD --annotations-only \
             --clock-annotations reports/teacher_clock_annotations.json \
             --metadata reports/teacher_icmarkets_metadata.json \
             --plan-out reports/teacher_supplemental_collection_plan.json \
