@@ -13,10 +13,11 @@ import io
 import json
 from pathlib import Path
 import os
+import re
 
 from bishop.v2.types import utc, stable_id
 from bishop.v2.aggregation import is_open
-from ctrader.client import CTraderClient
+from ctrader.client import CTraderClient, CTraderError
 from ctrader import tokens
 from ctrader.framing import oa, model
 
@@ -26,6 +27,15 @@ class ReadOnlySettings:
     def __init__(self, settings): self.settings=settings
     def get(self, key, default=None): return self.settings.get(key,default)
     def set(self, *args, **kwargs): raise RuntimeError('borrowed settings are read-only')
+
+
+def safe_failure(exc):
+    """Persist diagnostic codes, never remote descriptions or account values."""
+    result={'error_type':type(exc).__name__}
+    code=getattr(exc,'code',None)
+    if isinstance(code,str) and re.fullmatch(r'[A-Z][A-Z_]{1,79}',code):
+        result['error_code']=code
+    return result
 
 
 def borrowed_settings():
@@ -178,18 +188,29 @@ def main(argv=None):
     try:
         client=HistoricalClient();client.connect();client.app_auth();client.account_auth()
     except Exception as exc:
-        status.update(status='AUTH_OR_CONNECTION_FAILED',error_type=type(exc).__name__)
+        status.update(status='AUTH_OR_CONNECTION_FAILED',**safe_failure(exc))
         save_status()
         if client is not None: client.close()
         return 1
     try:
         for job in jobs:
+            failures=[]
             try:
-                result=collect_job(client,job,metadata[job['pair']],a.out_dir)
-                status['jobs'].append({'id':job['id'],'pair':job['pair'],'base_tf':job['base_tf'],'status':'RAW_COLLECTED_UNVALIDATED',**result})
+                for attempt in range(2):
+                    try:
+                        result=collect_job(client,job,metadata[job['pair']],a.out_dir)
+                        break
+                    except (CTraderError,ConnectionError,TimeoutError,OSError) as exc:
+                        failures.append(safe_failure(exc))
+                        if attempt: raise
+                        # Re-read Kevin's current access token on a fresh socket.
+                        # Neither this path nor HistoricalClient can rotate it.
+                        client.close()
+                        client=HistoricalClient();client.connect();client.app_auth();client.account_auth()
+                status['jobs'].append({'id':job['id'],'pair':job['pair'],'base_tf':job['base_tf'],'status':'RAW_COLLECTED_UNVALIDATED','reconnect_failures':failures,**result})
             except Exception as exc:
                 # Never persist exception text: remote diagnostics may contain IDs.
-                status['jobs'].append({'id':job['id'],'pair':job['pair'],'base_tf':job['base_tf'],'status':'FAILED','error_type':type(exc).__name__})
+                status['jobs'].append({'id':job['id'],'pair':job['pair'],'base_tf':job['base_tf'],'status':'FAILED','reconnect_failures':failures,**safe_failure(exc)})
             status['status']='COLLECTING';save_status()
     finally:
         client.close()

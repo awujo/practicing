@@ -26,6 +26,23 @@ def test_borrowed_client_refuses_rotation_and_nonhistorical_requests(monkeypatch
     assert backing.get('ctrader_access_token')=='fake_access'
 
 
+def test_dead_connection_reopens_once_without_rotating_or_leaking_descriptions(tmp_path,monkeypatch):
+    from ctrader.client import CTraderError
+    args,calls=setup_cli(tmp_path,monkeypatch)
+    monkeypatch.setattr(tokens,'refresh_tokens',lambda *a,**k:pytest.fail('refresh called'))
+    attempts=[]
+    def collect(client,job,*a,**k):
+        attempts.append(job['id'])
+        if len(attempts)==1:raise CTraderError('ACCOUNT_DISCONNECTED','SECRET_ACCOUNT_123456')
+        return dict(path='fake',manifest='fake',sha256='fake',rows=1)
+    monkeypatch.setattr(collector,'collect_job',collect)
+    assert collector.main(args+['--pairs','EURGBP'])==0
+    assert calls.count('AUTH_CONNECT')==2
+    status=json.loads((tmp_path/'out'/'acquisition_status.json').read_text())
+    assert status['jobs'][0]['reconnect_failures']==[{'error_type':'CTraderError','error_code':'ACCOUNT_DISCONNECTED'}]
+    assert 'SECRET_ACCOUNT' not in json.dumps(status)
+
+
 def setup_cli(tmp_path,monkeypatch):
     fixtures=tmp_path/'cases.json'
     fixtures.write_text(json.dumps({'examples':[dict(id=p,pair=p,tf='H1',chart_snapshot_date='2026-01-05')
