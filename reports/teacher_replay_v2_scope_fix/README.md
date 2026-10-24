@@ -20,3 +20,5 @@ Changes restrict protection to causal entry-episode evidence, retire consumed po
 Reports retain their original implementation fingerprint `c5adadf2120cc10b84ab0f68c8ef72c7e7dd3fd30b7f5de3c7237073d4a19613`. A subsequent engine guard rejects nonmonotone candle publication; these synchronous frozen feeds are unaffected. Full receipt-order replay is not implemented. Do not describe this guard as support for late-arriving internal candles.
 
 Validation: 252 tests passed. Report hashes and the original source fixture hash are checked separately below.
+
+Independent USDCAD trace review found a likely regression rather than a demonstrated valid rejection: the H1 01–02UTC candle already sweeps H4 IRL1.40441 while closing above sell KL1.40472; a later candle rejects that KL. `_pool_taken_before` then rejects the later reaction because the pool was taken earlier. The old BO1.40425 candidate used the subsequent04–05UTC reaction. Source-supported sweep-then-reaction episode handling needs review before this suppression can be accepted. No numeric-price fitting or blanket consumption-filter relaxation was applied.

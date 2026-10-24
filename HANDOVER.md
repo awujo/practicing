@@ -245,3 +245,5 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
 - USDCAD now has zero setups; independent first-blocking-rule/source review requested. Do not treat suppression as success. GBPJPY setup counts increased while order counts fell, so overall candidate reduction is not universal.
 - Full suite252passed7.38s. Independent full-engine test exposed late internal publication erasing earlier gap history. Engine now explicitly rejects nonmonotone publication; receipt-order replay remains unsupported. Frozen synchronous replay inputs are unaffected by this subsequent guard.
 - Next: complete USDCAD episode rejection audit, then identify source-clock/reference differences in remaining candidate plans. No broker activation, deployment, messages, or source-price fitting.
+
+- Follow-up USDCAD trace: likely regression in `_pool_taken_before`, not data-gap/role retirement. H1 first sweep01–02UTC precedes later sell-KL rejection; requiring a fresh pool at the reaction bar suppresses a potentially valid multi-candle episode. Reviewer preparing source-linked rule boundaries. Do not ship this as teacher-accepted or treat zero setups as correct.
