@@ -53,10 +53,17 @@ class HistoricalClient(CTraderClient):
         return super().request(msg,*args,**kwargs)
 
 
-def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14):
+def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, clock_annotations=None, annotations_only=False):
     if type(warmup_days) is not int or warmup_days<35 or type(context_days) is not int or context_days<warmup_days:
         raise ValueError('require >=35 base warmup days and context >= base warmup')
     if type(forward_days) is not int or forward_days<0: raise ValueError('nonnegative forward_days required')
+    annotations={a['example_id']:a for a in (clock_annotations or {}).get('annotations',[])}
+    if len(annotations)!=len((clock_annotations or {}).get('annotations',[])):raise ValueError('duplicate clock annotations')
+    known={c['id']:c for c in fixtures['examples']}
+    if set(annotations)-set(known):raise ValueError('unknown annotated example')
+    for cid,a in annotations.items():
+        if a['pair']!=known[cid]['pair']:raise ValueError('annotation pair mismatch')
+    if annotations_only and not annotations:raise ValueError('annotations_only requires clock annotations')
     inventory=[]; pending={}
     for case in fixtures['examples']:
         stamp=case.get('chart_snapshot_date')
@@ -65,8 +72,17 @@ def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14):
               'setup_time':case.get('setup_time'),'fill_time':case.get('time'),
               'clock_readiness':'UNRESOLVED_SETUP_FILL_CLOCKS' if not case.get('setup_time') or not case.get('time') else 'DECLARED_CLOCKS',
               'status':'PLANNED_SNAPSHOT_WINDOW' if stamp else 'UNRESOLVED_DATE'}
+        annotation=annotations.get(case['id'])
+        if annotation:
+            if stamp:raise ValueError('annotations must not replace fixture snapshot dates')
+            search_start,search_end=map(utc,annotation['candidate_event_search'])
+            collect_start,collect_end=map(utc,annotation['candidate_collection'])
+            if not collect_start<=search_start<search_end<=collect_end:raise ValueError('invalid exploratory annotation bounds')
+            item.update(status='EXPLORATORY_ANNOTATED_WINDOW',clock_annotation=annotation)
+            for tf,days in [('M5',warmup_days),('H1',context_days)]:
+                pending.setdefault((case['pair'],tf),[]).append((min(collect_start,search_start-timedelta(days=days)),collect_end,case['id']))
         inventory.append(item)
-        if not stamp: continue
+        if not stamp or annotations_only: continue
         day=utc(stamp+'T00:00:00Z')
         for tf,days in [('M5',warmup_days),('H1',context_days)]:
             pending.setdefault((case['pair'],tf),[]).append((day-timedelta(days=days),day+timedelta(days=1+forward_days),case['id']))
@@ -78,8 +94,8 @@ def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14):
                 merged[-1][1]=max(b,merged[-1][1]);merged[-1][2].append(cid)
             else: merged.append([a,b,[cid]])
         for a,b,ids in merged:
-            jobs.append({'id':stable_id('collect',pair,tf,a,b),'pair':pair,'base_tf':tf,'start':a.isoformat(),'end':b.isoformat(),'case_ids':sorted(ids)})
-    return {'schema_version':'teacher_collection_v1','provider':'IC Markets cTrader Open API','purpose':'alternate-feed diagnostic, not source-feed equivalence','base_warmup_days':warmup_days,'context_warmup_days':context_days,'forward_days':forward_days,'inventory':inventory,'jobs':jobs}
+            jobs.append({'id':stable_id('collect',pair,tf,a,b),'pair':pair,'base_tf':tf,'start':a.isoformat(),'end':b.isoformat(),'case_ids':sorted(ids),'exploratory_case_ids':sorted(cid for cid in ids if cid in annotations),'clock_annotations':{cid:annotations[cid] for cid in ids if cid in annotations}})
+    return {'schema_version':'teacher_collection_v1','plan_scope':'ANNOTATED_EXPLORATORY_ONLY' if annotations_only else 'FIXTURES_PLUS_ANNOTATIONS' if annotations else 'FIXTURE_SNAPSHOT_WINDOWS','provider':'IC Markets cTrader Open API','purpose':'alternate-feed diagnostic, not source-feed equivalence','base_warmup_days':warmup_days,'context_warmup_days':context_days,'forward_days':forward_days,'inventory':inventory,'jobs':jobs}
 
 
 def exact_prices(tb):
@@ -133,8 +149,9 @@ def collect_job(client, job, metadata, out_dir, retrieved_at=None):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fixtures',default='tests/bishop_examples.json');p.add_argument('--plan-out',default='reports/teacher_collection_plan.json');p.add_argument('--warmup-days',type=int,default=35);p.add_argument('--context-days',type=int,default=400);p.add_argument('--forward-days',type=int,default=14)
-    p.add_argument('--plan-only',action='store_true');p.add_argument('--pairs',nargs='+');p.add_argument('--collect',action='store_true');p.add_argument('--metadata',help='explicit pair -> broker symbol/calendar metadata JSON');p.add_argument('--out-dir','--out',dest='out_dir',default='data/teacher_icmarkets');p.add_argument('--job-id',action='append')
-    a=p.parse_args(argv);fixture_path=Path(a.fixtures);plan=build_plan(json.loads(fixture_path.read_text()),a.warmup_days,a.context_days,a.forward_days);plan['fixtures_sha256']=sha256(fixture_path.read_bytes()).hexdigest()
+    p.add_argument('--clock-annotations');p.add_argument('--annotations-only',action='store_true');p.add_argument('--plan-only',action='store_true');p.add_argument('--pairs',nargs='+');p.add_argument('--collect',action='store_true');p.add_argument('--metadata',help='explicit pair -> broker symbol/calendar metadata JSON');p.add_argument('--out-dir','--out',dest='out_dir',default='data/teacher_icmarkets');p.add_argument('--job-id',action='append')
+    a=p.parse_args(argv);fixture_path=Path(a.fixtures);plan=build_plan(json.loads(fixture_path.read_text()),a.warmup_days,a.context_days,a.forward_days,json.loads(Path(a.clock_annotations).read_text()) if a.clock_annotations else None,a.annotations_only);plan['fixtures_sha256']=sha256(fixture_path.read_bytes()).hexdigest()
+    if a.clock_annotations:plan['clock_annotations_sha256']=sha256(Path(a.clock_annotations).read_bytes()).hexdigest()
     plan_path=Path(a.plan_out);plan_path.parent.mkdir(parents=True,exist_ok=True);plan_path.write_text(json.dumps(plan,indent=2)+'\n')
     if not a.collect or a.plan_only: return 0
     if not a.metadata: p.error('--collect requires explicit --metadata')

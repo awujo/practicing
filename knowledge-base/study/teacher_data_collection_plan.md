@@ -61,3 +61,32 @@ bar close is an explicit assumption; retrieval time is distinct. BID IC Markets
 is alternate-feed diagnostic evidence for charts carrying FOREXCOM/OANDA/etc.;
 calendar/anchor/feed equivalence and actual fill/status remain separate questions.
 Calendar completeness is deliberately `NOT_CALENDAR_VALIDATED` at collection.
+
+## Supplemental annotations and current schedule evidence
+
+`--clock-annotations reports/teacher_clock_annotations.json --annotations-only`
+creates an explicitly exploratory supplementary plan without changing the fixture
+snapshot dates, setup/fill clocks or acceptance states. Annotation event-search
+bounds and attribution remain embedded in each job; collection uses the declared
+candidate collection bounds, extending only their start as needed to provide
+35-day M5/400-day H1 warmup before the event-search start. The annotation's explicit
+end controls this supplementary collection; default forward14 does not override
+it. The saved supplemental plan has eight jobs across EURCHF/XAGUSD/XAUUSD/EURUSD.
+After validating initial artifacts, the useful new-date wave is EURUSD+XAUUSD:
+initial EURUSD has no job, and initial XAUUSD ends July23 before August4–8. The
+initial EURCHF/XAG windows cover proposed event searches and required warmup,
+although not every earlier day of the annotations' broader June1 collection
+suggestions. Any additional early history should be justified by unresolved
+initialization rather than duplicate acquisition by default.
+
+`python -m bishop.collect_teacher_schedules --metadata FILE --out DIR --pairs ALL`
+collects current symbol schedule fields through the same read-only authentication
+wrapper. `symbol_schedules.json` and its hash contain only symbol ID/name, digits,
+pip position, schedule timezone/intervals and holiday fields. Account IDs and
+unrelated symbol trading/account fields are excluded. Retrieval time and the
+`NOT_HISTORICAL_CALENDAR_CERTIFICATION` label remain explicit. Raw weekly offsets,
+end inclusion, timezone history, historical applicability and holidays are not yet
+converted to a replay calendar. The separate status file redacts auth/per-symbol
+failures to their exception types. This source discovery supersedes the earlier
+limitation that the existing convenience client discarded these fields; a
+historical calendar still needs independent interpretation and validation.

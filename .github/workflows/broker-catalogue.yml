@@ -1,0 +1,53 @@
+name: Bishop IC Markets supplemental data
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+# Share the data-collection lock to avoid opening competing broker connections.
+concurrency:
+  group: bishop-teacher-data
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      CTRADER_TOKEN_TABLE: settings
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'protobuf>=3.20' pandas requests pymysql
+      - name: Capture current symbol schedules and holidays
+        run: |
+          python -m bishop.collect_teacher_schedules \
+            --metadata reports/teacher_icmarkets_metadata.json \
+            --out data/teacher_icmarkets_supplement/schedules
+      - name: Collect bounded native-video example windows
+        if: success() || failure()
+        run: |
+          python -m bishop.collect_teacher_data --collect \
+            --pairs EURUSD XAUUSD --annotations-only \
+            --clock-annotations reports/teacher_clock_annotations.json \
+            --metadata reports/teacher_icmarkets_metadata.json \
+            --plan-out reports/teacher_supplemental_collection_plan.json \
+            --out-dir data/teacher_icmarkets_supplement/candles
+      - name: Preserve supplemental data and raw schedule evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bishop-teacher-icmarkets-supplement-${{ github.run_id }}
+          path: |
+            data/teacher_icmarkets_supplement/
+            reports/teacher_supplemental_collection_plan.json
+          if-no-files-found: error
+          retention-days: 30

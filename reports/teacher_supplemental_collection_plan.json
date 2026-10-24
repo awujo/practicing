@@ -1,0 +1,1139 @@
+{
+  "schema_version": "teacher_collection_v1",
+  "plan_scope": "ANNOTATED_EXPLORATORY_ONLY",
+  "provider": "IC Markets cTrader Open API",
+  "purpose": "alternate-feed diagnostic, not source-feed equivalence",
+  "base_warmup_days": 35,
+  "context_warmup_days": 400,
+  "forward_days": 14,
+  "inventory": [
+    {
+      "id": "pdf-p02-eurcad-buy-1",
+      "pair": "EURCAD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-31",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p03-eurjpy-buy-1",
+      "pair": "EURJPY",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-29",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p05-eurchf-buy-1",
+      "pair": "EURCHF",
+      "tf": "M30",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-29",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p06-eurchf-buy-1",
+      "pair": "EURCHF",
+      "tf": "M30",
+      "source_feed": "broker",
+      "chart_snapshot_date": null,
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "EXPLORATORY_ANNOTATED_WINDOW",
+      "clock_annotation": {
+        "example_id": "pdf-p06-eurchf-buy-1",
+        "pair": "EURCHF",
+        "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+        "direct_calendar_evidence": {
+          "month": 7,
+          "days": [
+            28,
+            29
+          ],
+          "year": null,
+          "timezone": null,
+          "phone_time": "08:58"
+        },
+        "paired_context": {
+          "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 5,
+          "chart_header_local": "2026-07-29T08:59:00+01:00",
+          "chart_header_utc": "2026-07-29T07:59:00Z",
+          "relationship": "Adjacent EURCHF M30 chart shares .93193 entry/.93147 stop and nearby candle geometry; target differs; simultaneity not proven."
+        },
+        "evidence": [
+          {
+            "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 6,
+            "type": "BROKER_AXIS_MONTH_DAY"
+          },
+          {
+            "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 5,
+            "type": "PAIRED_CHART_HEADER"
+          }
+        ],
+        "candidate_event_search": [
+          "2026-07-27T00:00:00Z",
+          "2026-07-31T00:00:00Z"
+        ],
+        "candidate_collection": [
+          "2026-06-01T00:00:00Z",
+          "2026-08-01T00:00:00Z"
+        ],
+        "candidate_basis": "Exploratory only; assumes paired2026 year and pads unknown broker timezone.",
+        "verified_setup_time": null,
+        "verified_fill_time": null,
+        "verified_fill_window": null,
+        "chart_snapshot_date": null,
+        "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+        "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+      }
+    },
+    {
+      "id": "pdf-p08-eurgbp-buy-1",
+      "pair": "EURGBP",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-23",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p10-usoil-buy-1",
+      "pair": "USOIL",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-21",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p10-usoil-buy-2",
+      "pair": "USOIL",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-21",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p11-xauusd-sell-1",
+      "pair": "XAUUSD",
+      "tf": "H1",
+      "source_feed": null,
+      "chart_snapshot_date": "2026-07-08",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p13-eurnzd-sell-1",
+      "pair": "EURNZD",
+      "tf": "H3",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-17",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p15-usdcad-sell-1",
+      "pair": "USDCAD",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-16",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p17-audusd-buy-1",
+      "pair": "AUDUSD",
+      "tf": "M30",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-16",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p19-gbpjpy-buy-1",
+      "pair": "GBPJPY",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-15",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p19-gbpjpy-buy-2",
+      "pair": "GBPJPY",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-15",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p20-xagusd-sell-1",
+      "pair": "XAGUSD",
+      "tf": "H4",
+      "source_feed": "Saxo",
+      "chart_snapshot_date": "2026-07-14",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p20-usoil-buy-2",
+      "pair": "USOIL",
+      "tf": "H4",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-14",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p22-xagusd-sell-1",
+      "pair": "XAGUSD",
+      "tf": "H2",
+      "source_feed": "Saxo",
+      "chart_snapshot_date": "2026-07-13",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p22-xagusd-sell-2",
+      "pair": "XAGUSD",
+      "tf": "H2",
+      "source_feed": "broker",
+      "chart_snapshot_date": null,
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "EXPLORATORY_ANNOTATED_WINDOW",
+      "clock_annotation": {
+        "example_id": "pdf-p22-xagusd-sell-2",
+        "pair": "XAGUSD",
+        "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+        "direct_calendar_evidence": {
+          "month": 7,
+          "days": [
+            9,
+            10
+          ],
+          "year": null,
+          "timezone": null,
+          "phone_time": "23:27"
+        },
+        "paired_context": {
+          "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+          "page": 22,
+          "chart_header_local": "2026-07-13T06:24:00+01:00",
+          "chart_header_utc": "2026-07-13T05:24:00Z",
+          "relationship": "Same-page Saxo H2 chart; p21 D/H4 companion charts stamped2026-07-13 06:23 UTC+1. Broker screenshot has earlier Jul9\u201310 axis; same date/time not established."
+        },
+        "evidence": [
+          {
+            "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 22,
+            "type": "BROKER_AXIS_AND_PAIRED_CHART_HEADER"
+          },
+          {
+            "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 21,
+            "type": "COMPANION_CHART_HEADERS"
+          }
+        ],
+        "candidate_event_search": [
+          "2026-07-08T00:00:00Z",
+          "2026-07-12T00:00:00Z"
+        ],
+        "candidate_collection": [
+          "2026-06-01T00:00:00Z",
+          "2026-07-15T00:00:00Z"
+        ],
+        "candidate_basis": "Exploratory only; paired2026 year assumption, broker timezone unknown; no inference that Jul13 chart time is broker fill.",
+        "verified_setup_time": null,
+        "verified_fill_time": null,
+        "verified_fill_window": null,
+        "chart_snapshot_date": null,
+        "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+        "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+      }
+    },
+    {
+      "id": "pdf-p23-usdchf-sell-1",
+      "pair": "USDCHF",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-10",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p23-usdchf-sell-2",
+      "pair": "USDCHF",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-09",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p25-audusd-sell-1",
+      "pair": "AUDUSD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-07-08",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p27-gbpusd-sell-1",
+      "pair": "GBPUSD",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-24",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p29-chfjpy-sell-1",
+      "pair": "CHFJPY",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-24",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p31-gbpnzd-buy-1",
+      "pair": "GBPNZD",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-10",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p33-gbpcad-buy-1",
+      "pair": "GBPCAD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-09",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p35-gbpjpy-buy-1",
+      "pair": "GBPJPY",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-05",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p37-eurgbp-sell-1",
+      "pair": "EURGBP",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-06-01",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p38-us30-buy-1",
+      "pair": "US30",
+      "tf": "M30",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-29",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p40-audcad-buy-1",
+      "pair": "AUDCAD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-29",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p42-usoil-sell-1",
+      "pair": "USOIL",
+      "tf": "H3",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-28",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p44-ethusdt-sell-1",
+      "pair": "ETHUSDT",
+      "tf": "H1",
+      "source_feed": "Bybit",
+      "chart_snapshot_date": "2026-05-27",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p46-eurjpy-buy-1",
+      "pair": "EURJPY",
+      "tf": "M45",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-27",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p47-gbpcad-buy-1",
+      "pair": "GBPCAD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-21",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p50-nas100-buy-1",
+      "pair": "NAS100",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-21",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p52-nas100-sell-1",
+      "pair": "NAS100",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-19",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p54-eurgbp-buy-1",
+      "pair": "EURGBP",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p55-us30-buy-1",
+      "pair": "US30",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p58-jp225-buy-1",
+      "pair": "JP225",
+      "tf": "H1",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-14",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "pdf-p60-gbpaud-sell-1",
+      "pair": "GBPAUD",
+      "tf": "M45",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": "2026-05-12",
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "PLANNED_SNAPSHOT_WINDOW"
+    },
+    {
+      "id": "video-entries5-native-t1065-xauusd",
+      "pair": "XAUUSD",
+      "tf": "H3",
+      "source_feed": "Saxo",
+      "chart_snapshot_date": null,
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "EXPLORATORY_ANNOTATED_WINDOW",
+      "clock_annotation": {
+        "example_id": "video-entries5-native-t1065-xauusd",
+        "pair": "XAUUSD",
+        "clock_status": "CHART_CALENDAR_AND_DRAWING_ANCHOR_DIRECT",
+        "direct_calendar_evidence": {
+          "year": 2026,
+          "month": 8,
+          "days": [
+            5,
+            7
+          ],
+          "chart_utc_offset": "+01:00",
+          "left_drawing_anchor_local": "2026-08-05T02:00:00+01:00",
+          "left_drawing_anchor_utc": "2026-08-05T01:00:00Z",
+          "right_drawing_anchor_local": "2026-08-07T11:00:00+01:00",
+          "right_drawing_anchor_utc": "2026-08-07T10:00:00Z",
+          "coordinate_type": "ILLUSTRATIVE_DRAWING_NOT_FILL"
+        },
+        "evidence": [
+          {
+            "path": "knowledge-base/study/examples/entries5-native-t1065.png",
+            "source_pts_seconds": 1065,
+            "sha256": "007dc6ed1607c618807e0a2cc11ae7c4b11cdb50d06570be6f0ccce50daab220"
+          },
+          {
+            "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+            "start_seconds": 1054.3,
+            "end_seconds": 1085.8
+          }
+        ],
+        "candidate_event_search": [
+          "2026-08-04T00:00:00Z",
+          "2026-08-08T00:00:00Z"
+        ],
+        "candidate_collection": [
+          "2026-06-01T00:00:00Z",
+          "2026-08-11T00:00:00Z"
+        ],
+        "candidate_basis": "Exploratory event search around a directly dated hypothetical drawing; collection warmup is engineering choice.",
+        "verified_setup_time": null,
+        "verified_fill_time": null,
+        "verified_fill_window": null,
+        "chart_snapshot_date": null,
+        "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+        "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+      }
+    },
+    {
+      "id": "video-entries5-native-t1410-eurusd",
+      "pair": "EURUSD",
+      "tf": "H2",
+      "source_feed": "FOREXCOM",
+      "chart_snapshot_date": null,
+      "setup_time": null,
+      "fill_time": null,
+      "clock_readiness": "UNRESOLVED_SETUP_FILL_CLOCKS",
+      "status": "EXPLORATORY_ANNOTATED_WINDOW",
+      "clock_annotation": {
+        "example_id": "video-entries5-native-t1410-eurusd",
+        "pair": "EURUSD",
+        "clock_status": "CHART_CALENDAR_AND_CROSSHAIR_DIRECT",
+        "direct_calendar_evidence": {
+          "year": 2026,
+          "month": 8,
+          "days": [
+            4
+          ],
+          "chart_utc_offset": "+01:00",
+          "crosshair_local": "2026-08-04T12:00:00+01:00",
+          "crosshair_utc": "2026-08-04T11:00:00Z",
+          "coordinate_type": "CROSSHAIR_NOT_ENTRY_ANCHOR",
+          "drawing_region_description": "Box spans around Aug5\u20136 axis; no exact selected box-left clock."
+        },
+        "evidence": [
+          {
+            "path": "knowledge-base/study/examples/entries5-native-t1410.png",
+            "source_pts_seconds": 1410,
+            "sha256": "d70022d953705898eafc6a9291ea868f3593ffae18f94dd98cb1a23cc3a5270d"
+          },
+          {
+            "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+            "start_seconds": 1403,
+            "end_seconds": 1418.2
+          }
+        ],
+        "candidate_event_search": [
+          "2026-08-03T00:00:00Z",
+          "2026-08-08T00:00:00Z"
+        ],
+        "candidate_collection": [
+          "2026-06-01T00:00:00Z",
+          "2026-08-11T00:00:00Z"
+        ],
+        "candidate_basis": "Explicit native chart August2026 calendar; broad exploratory event window, not verified setup/fill; HTF warmup is engineering choice.",
+        "verified_setup_time": null,
+        "verified_fill_time": null,
+        "verified_fill_window": null,
+        "chart_snapshot_date": null,
+        "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+        "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+      }
+    }
+  ],
+  "jobs": [
+    {
+      "id": "collect_389347c3e8f10563747c6ecd",
+      "pair": "EURCHF",
+      "base_tf": "H1",
+      "start": "2025-06-22T00:00:00+00:00",
+      "end": "2026-08-01T00:00:00+00:00",
+      "case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ],
+      "exploratory_case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ],
+      "clock_annotations": {
+        "pdf-p06-eurchf-buy-1": {
+          "example_id": "pdf-p06-eurchf-buy-1",
+          "pair": "EURCHF",
+          "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+          "direct_calendar_evidence": {
+            "month": 7,
+            "days": [
+              28,
+              29
+            ],
+            "year": null,
+            "timezone": null,
+            "phone_time": "08:58"
+          },
+          "paired_context": {
+            "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 5,
+            "chart_header_local": "2026-07-29T08:59:00+01:00",
+            "chart_header_utc": "2026-07-29T07:59:00Z",
+            "relationship": "Adjacent EURCHF M30 chart shares .93193 entry/.93147 stop and nearby candle geometry; target differs; simultaneity not proven."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 6,
+              "type": "BROKER_AXIS_MONTH_DAY"
+            },
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 5,
+              "type": "PAIRED_CHART_HEADER"
+            }
+          ],
+          "candidate_event_search": [
+            "2026-07-27T00:00:00Z",
+            "2026-07-31T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-01T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory only; assumes paired2026 year and pads unknown broker timezone.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_8753c95e18a05f96973cb907",
+      "pair": "EURCHF",
+      "base_tf": "M5",
+      "start": "2026-06-01T00:00:00+00:00",
+      "end": "2026-08-01T00:00:00+00:00",
+      "case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ],
+      "exploratory_case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ],
+      "clock_annotations": {
+        "pdf-p06-eurchf-buy-1": {
+          "example_id": "pdf-p06-eurchf-buy-1",
+          "pair": "EURCHF",
+          "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+          "direct_calendar_evidence": {
+            "month": 7,
+            "days": [
+              28,
+              29
+            ],
+            "year": null,
+            "timezone": null,
+            "phone_time": "08:58"
+          },
+          "paired_context": {
+            "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 5,
+            "chart_header_local": "2026-07-29T08:59:00+01:00",
+            "chart_header_utc": "2026-07-29T07:59:00Z",
+            "relationship": "Adjacent EURCHF M30 chart shares .93193 entry/.93147 stop and nearby candle geometry; target differs; simultaneity not proven."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 6,
+              "type": "BROKER_AXIS_MONTH_DAY"
+            },
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 5,
+              "type": "PAIRED_CHART_HEADER"
+            }
+          ],
+          "candidate_event_search": [
+            "2026-07-27T00:00:00Z",
+            "2026-07-31T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-01T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory only; assumes paired2026 year and pads unknown broker timezone.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_3834a7bd48de67bb24adb107",
+      "pair": "EURUSD",
+      "base_tf": "H1",
+      "start": "2025-06-29T00:00:00+00:00",
+      "end": "2026-08-11T00:00:00+00:00",
+      "case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ],
+      "exploratory_case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ],
+      "clock_annotations": {
+        "video-entries5-native-t1410-eurusd": {
+          "example_id": "video-entries5-native-t1410-eurusd",
+          "pair": "EURUSD",
+          "clock_status": "CHART_CALENDAR_AND_CROSSHAIR_DIRECT",
+          "direct_calendar_evidence": {
+            "year": 2026,
+            "month": 8,
+            "days": [
+              4
+            ],
+            "chart_utc_offset": "+01:00",
+            "crosshair_local": "2026-08-04T12:00:00+01:00",
+            "crosshair_utc": "2026-08-04T11:00:00Z",
+            "coordinate_type": "CROSSHAIR_NOT_ENTRY_ANCHOR",
+            "drawing_region_description": "Box spans around Aug5\u20136 axis; no exact selected box-left clock."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/study/examples/entries5-native-t1410.png",
+              "source_pts_seconds": 1410,
+              "sha256": "d70022d953705898eafc6a9291ea868f3593ffae18f94dd98cb1a23cc3a5270d"
+            },
+            {
+              "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+              "start_seconds": 1403,
+              "end_seconds": 1418.2
+            }
+          ],
+          "candidate_event_search": [
+            "2026-08-03T00:00:00Z",
+            "2026-08-08T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-11T00:00:00Z"
+          ],
+          "candidate_basis": "Explicit native chart August2026 calendar; broad exploratory event window, not verified setup/fill; HTF warmup is engineering choice.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_00de773d9724aed466dd63eb",
+      "pair": "EURUSD",
+      "base_tf": "M5",
+      "start": "2026-06-01T00:00:00+00:00",
+      "end": "2026-08-11T00:00:00+00:00",
+      "case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ],
+      "exploratory_case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ],
+      "clock_annotations": {
+        "video-entries5-native-t1410-eurusd": {
+          "example_id": "video-entries5-native-t1410-eurusd",
+          "pair": "EURUSD",
+          "clock_status": "CHART_CALENDAR_AND_CROSSHAIR_DIRECT",
+          "direct_calendar_evidence": {
+            "year": 2026,
+            "month": 8,
+            "days": [
+              4
+            ],
+            "chart_utc_offset": "+01:00",
+            "crosshair_local": "2026-08-04T12:00:00+01:00",
+            "crosshair_utc": "2026-08-04T11:00:00Z",
+            "coordinate_type": "CROSSHAIR_NOT_ENTRY_ANCHOR",
+            "drawing_region_description": "Box spans around Aug5\u20136 axis; no exact selected box-left clock."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/study/examples/entries5-native-t1410.png",
+              "source_pts_seconds": 1410,
+              "sha256": "d70022d953705898eafc6a9291ea868f3593ffae18f94dd98cb1a23cc3a5270d"
+            },
+            {
+              "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+              "start_seconds": 1403,
+              "end_seconds": 1418.2
+            }
+          ],
+          "candidate_event_search": [
+            "2026-08-03T00:00:00Z",
+            "2026-08-08T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-11T00:00:00Z"
+          ],
+          "candidate_basis": "Explicit native chart August2026 calendar; broad exploratory event window, not verified setup/fill; HTF warmup is engineering choice.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_3b7f3df0b9b3c140ddc61728",
+      "pair": "XAGUSD",
+      "base_tf": "H1",
+      "start": "2025-06-03T00:00:00+00:00",
+      "end": "2026-07-15T00:00:00+00:00",
+      "case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ],
+      "exploratory_case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ],
+      "clock_annotations": {
+        "pdf-p22-xagusd-sell-2": {
+          "example_id": "pdf-p22-xagusd-sell-2",
+          "pair": "XAGUSD",
+          "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+          "direct_calendar_evidence": {
+            "month": 7,
+            "days": [
+              9,
+              10
+            ],
+            "year": null,
+            "timezone": null,
+            "phone_time": "23:27"
+          },
+          "paired_context": {
+            "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 22,
+            "chart_header_local": "2026-07-13T06:24:00+01:00",
+            "chart_header_utc": "2026-07-13T05:24:00Z",
+            "relationship": "Same-page Saxo H2 chart; p21 D/H4 companion charts stamped2026-07-13 06:23 UTC+1. Broker screenshot has earlier Jul9\u201310 axis; same date/time not established."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 22,
+              "type": "BROKER_AXIS_AND_PAIRED_CHART_HEADER"
+            },
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 21,
+              "type": "COMPANION_CHART_HEADERS"
+            }
+          ],
+          "candidate_event_search": [
+            "2026-07-08T00:00:00Z",
+            "2026-07-12T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-07-15T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory only; paired2026 year assumption, broker timezone unknown; no inference that Jul13 chart time is broker fill.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_e0a90407921517b1ab18c21b",
+      "pair": "XAGUSD",
+      "base_tf": "M5",
+      "start": "2026-06-01T00:00:00+00:00",
+      "end": "2026-07-15T00:00:00+00:00",
+      "case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ],
+      "exploratory_case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ],
+      "clock_annotations": {
+        "pdf-p22-xagusd-sell-2": {
+          "example_id": "pdf-p22-xagusd-sell-2",
+          "pair": "XAGUSD",
+          "clock_status": "MONTH_DAY_DIRECT_YEAR_PAIRED_INFERENCE",
+          "direct_calendar_evidence": {
+            "month": 7,
+            "days": [
+              9,
+              10
+            ],
+            "year": null,
+            "timezone": null,
+            "phone_time": "23:27"
+          },
+          "paired_context": {
+            "source": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+            "page": 22,
+            "chart_header_local": "2026-07-13T06:24:00+01:00",
+            "chart_header_utc": "2026-07-13T05:24:00Z",
+            "relationship": "Same-page Saxo H2 chart; p21 D/H4 companion charts stamped2026-07-13 06:23 UTC+1. Broker screenshot has earlier Jul9\u201310 axis; same date/time not established."
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 22,
+              "type": "BROKER_AXIS_AND_PAIRED_CHART_HEADER"
+            },
+            {
+              "path": "knowledge-base/supplementary/source/bishops_trade_chart_examples.pdf",
+              "page": 21,
+              "type": "COMPANION_CHART_HEADERS"
+            }
+          ],
+          "candidate_event_search": [
+            "2026-07-08T00:00:00Z",
+            "2026-07-12T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-07-15T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory only; paired2026 year assumption, broker timezone unknown; no inference that Jul13 chart time is broker fill.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_87120071d0b4cd5700599909",
+      "pair": "XAUUSD",
+      "base_tf": "H1",
+      "start": "2025-06-30T00:00:00+00:00",
+      "end": "2026-08-11T00:00:00+00:00",
+      "case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ],
+      "exploratory_case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ],
+      "clock_annotations": {
+        "video-entries5-native-t1065-xauusd": {
+          "example_id": "video-entries5-native-t1065-xauusd",
+          "pair": "XAUUSD",
+          "clock_status": "CHART_CALENDAR_AND_DRAWING_ANCHOR_DIRECT",
+          "direct_calendar_evidence": {
+            "year": 2026,
+            "month": 8,
+            "days": [
+              5,
+              7
+            ],
+            "chart_utc_offset": "+01:00",
+            "left_drawing_anchor_local": "2026-08-05T02:00:00+01:00",
+            "left_drawing_anchor_utc": "2026-08-05T01:00:00Z",
+            "right_drawing_anchor_local": "2026-08-07T11:00:00+01:00",
+            "right_drawing_anchor_utc": "2026-08-07T10:00:00Z",
+            "coordinate_type": "ILLUSTRATIVE_DRAWING_NOT_FILL"
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/study/examples/entries5-native-t1065.png",
+              "source_pts_seconds": 1065,
+              "sha256": "007dc6ed1607c618807e0a2cc11ae7c4b11cdb50d06570be6f0ccce50daab220"
+            },
+            {
+              "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+              "start_seconds": 1054.3,
+              "end_seconds": 1085.8
+            }
+          ],
+          "candidate_event_search": [
+            "2026-08-04T00:00:00Z",
+            "2026-08-08T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-11T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory event search around a directly dated hypothetical drawing; collection warmup is engineering choice.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    },
+    {
+      "id": "collect_188a2e3e07dd2d1a56618cbb",
+      "pair": "XAUUSD",
+      "base_tf": "M5",
+      "start": "2026-06-01T00:00:00+00:00",
+      "end": "2026-08-11T00:00:00+00:00",
+      "case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ],
+      "exploratory_case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ],
+      "clock_annotations": {
+        "video-entries5-native-t1065-xauusd": {
+          "example_id": "video-entries5-native-t1065-xauusd",
+          "pair": "XAUUSD",
+          "clock_status": "CHART_CALENDAR_AND_DRAWING_ANCHOR_DIRECT",
+          "direct_calendar_evidence": {
+            "year": 2026,
+            "month": 8,
+            "days": [
+              5,
+              7
+            ],
+            "chart_utc_offset": "+01:00",
+            "left_drawing_anchor_local": "2026-08-05T02:00:00+01:00",
+            "left_drawing_anchor_utc": "2026-08-05T01:00:00Z",
+            "right_drawing_anchor_local": "2026-08-07T11:00:00+01:00",
+            "right_drawing_anchor_utc": "2026-08-07T10:00:00Z",
+            "coordinate_type": "ILLUSTRATIVE_DRAWING_NOT_FILL"
+          },
+          "evidence": [
+            {
+              "path": "knowledge-base/study/examples/entries5-native-t1065.png",
+              "source_pts_seconds": 1065,
+              "sha256": "007dc6ed1607c618807e0a2cc11ae7c4b11cdb50d06570be6f0ccce50daab220"
+            },
+            {
+              "path": "knowledge-base/videos/bishop-defi-bishop-study-20-minute-series-part-5-approach-to-direct-and-confirmation-entries-case/transcript.txt",
+              "start_seconds": 1054.3,
+              "end_seconds": 1085.8
+            }
+          ],
+          "candidate_event_search": [
+            "2026-08-04T00:00:00Z",
+            "2026-08-08T00:00:00Z"
+          ],
+          "candidate_collection": [
+            "2026-06-01T00:00:00Z",
+            "2026-08-11T00:00:00Z"
+          ],
+          "candidate_basis": "Exploratory event search around a directly dated hypothetical drawing; collection warmup is engineering choice.",
+          "verified_setup_time": null,
+          "verified_fill_time": null,
+          "verified_fill_window": null,
+          "chart_snapshot_date": null,
+          "acceptance_status": "UNRESOLVED_SETUP_FILL_CLOCKS",
+          "collection_window_status": "EXPLORATORY_NOT_VERIFIED_FILL_INTERVAL"
+        }
+      }
+    }
+  ],
+  "fixtures_sha256": "0f2bae1c49705431f0d3b6e926ec5d9dda80ccadabb2ee9dfa475542de75b8a4",
+  "clock_annotations_sha256": "ebc7784b2ed26170b9e87693dc49b939405403527f29fda8edf3737fc69b14dc"
+}

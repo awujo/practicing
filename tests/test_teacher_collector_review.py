@@ -94,3 +94,48 @@ def test_failed_job_is_nonzero_partial_and_exception_text_redacted(tmp_path,monk
     text=(tmp_path/'out'/'acquisition_status.json').read_text();status=json.loads(text)
     assert status['status']=='PARTIAL' and status['failed_jobs']==2 and status['collected_jobs']==2
     assert 'SECRET_ACCOUNT_TOKEN' not in text
+
+
+def test_sparse_chunk_is_explicitly_unvalidated_not_complete(tmp_path):
+    info=dict(name='EURGBP',symbol_id=11,digits=5,pip_position=4)
+    tb=SimpleNamespace(low=100000,deltaOpen=0,deltaHigh=10,deltaClose=5,
+                       utcTimestampInMinutes=int(T.timestamp()/60),volume=1)
+    class Client:
+        account_id=12345
+        env='demo'
+        calls=0
+        def symbol(self,name):return info
+        def _hist_request(self,request):
+            self.calls+=1
+            return SimpleNamespace(trendbar=(tb,) if self.calls==1 else ())
+    client=Client()
+    job=dict(id='sparse',pair='EURGBP',base_tf='M5',start=T.isoformat(),
+             end=(T+timedelta(days=2)).isoformat(),case_ids=['plan'])
+    metadata=dict(broker_symbol='EURGBP',calendar_id='fx_ny_v1',anchor_id='ny17_wall_v2',
+                  calendar_version='declared',asset_class='FX')
+    output=collector.collect_job(client,job,metadata,tmp_path)
+    manifest=json.loads(open(output['manifest']).read())
+    assert client.calls==2 and manifest['rows']==1 and manifest['empty_chunks']==1
+    assert manifest['raw_collection_status']=='RAW_COLLECTED_UNVALIDATED'
+    assert manifest['coverage_status']=='NOT_CALENDAR_VALIDATED'
+    assert all(row['completeness']!='COMPLETE' for row in manifest['chunks'])
+
+
+def test_conflicting_same_timestamp_prices_refuse_frozen_output(tmp_path):
+    info=dict(name='EURGBP',symbol_id=11,digits=5,pip_position=4)
+    base=dict(low=100000,deltaOpen=0,deltaHigh=10,deltaClose=5,
+              utcTimestampInMinutes=int(T.timestamp()/60))
+    class Client:
+        account_id=12345
+        env='demo'
+        def symbol(self,name):return info
+        def _hist_request(self,request):
+            return SimpleNamespace(trendbar=(SimpleNamespace(**base),
+                       SimpleNamespace(**{**base,'deltaClose':6})))
+    job=dict(id='conflict',pair='EURGBP',base_tf='H1',start=T.isoformat(),
+             end=(T+timedelta(hours=1)).isoformat(),case_ids=['plan'])
+    metadata=dict(broker_symbol='EURGBP',calendar_id='fx_ny_v1',anchor_id='ny17_wall_v2',
+                  calendar_version='declared',asset_class='FX')
+    with pytest.raises(ValueError,match='conflicting'):
+        collector.collect_job(Client(),job,metadata,tmp_path)
+    assert not list(tmp_path.iterdir())

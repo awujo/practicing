@@ -111,3 +111,18 @@ def test_pair_selection_all_comma_and_invalid_before_auth(tmp_path,monkeypatch):
 def test_invalid_protocol_geometry_rejected():
     tb=SimpleNamespace(low=100,deltaOpen=20,deltaHigh=10,deltaClose=5)
     with pytest.raises(ValueError):exact_prices(tb)
+
+
+def test_exploratory_annotations_preserve_fixture_clocks_and_bounded_jobs():
+    fixture=json.load(open('tests/bishop_examples.json'));before=json.dumps(fixture,sort_keys=True)
+    annotations=json.load(open('reports/teacher_clock_annotations.json'))
+    result=build_plan(fixture,clock_annotations=annotations,annotations_only=True)
+    assert json.dumps(fixture,sort_keys=True)==before
+    assert result['plan_scope']=='ANNOTATED_EXPLORATORY_ONLY'
+    assert len(result['jobs'])==8
+    for job in result['jobs']:
+        assert job['exploratory_case_ids']==job['case_ids']
+        assert job['clock_annotations']
+    native=next(i for i in result['inventory'] if i['id']=='video-entries5-native-t1410-eurusd')
+    assert native['chart_snapshot_date'] is None and native['setup_time'] is None and native['fill_time'] is None
+    assert native['clock_readiness']=='UNRESOLVED_SETUP_FILL_CLOCKS'
