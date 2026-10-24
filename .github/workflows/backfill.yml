@@ -1,0 +1,51 @@
+name: Bishop IC Markets minute session data
+on:
+  workflow_dispatch:
+    inputs:
+      pairs:
+        description: Source symbols requiring minute-accurate session boundaries
+        default: US30,NAS100,JP225,USOIL,XAUUSD,XAGUSD
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: bishop-teacher-data
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      IN_PAIRS: ${{ inputs.pairs || 'US30,NAS100,JP225,USOIL,XAUUSD,XAGUSD' }}
+      CTRADER_CLIENT_ID: ${{ secrets.CTRADER_CLIENT_ID }}
+      CTRADER_CLIENT_SECRET: ${{ secrets.CTRADER_CLIENT_SECRET }}
+      CTRADER_ACCESS_TOKEN: ${{ secrets.CTRADER_ACCESS_TOKEN }}
+      CTRADER_ACCOUNT_ID: ${{ secrets.CTRADER_ACCOUNT_ID }}
+      CTRADER_ENV: demo
+      CTRADER_TOKEN_TABLE: settings
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      DATABASE_CA: ${{ secrets.DATABASE_CA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'protobuf>=3.20' pandas requests pymysql
+      - name: Collect exact minute buckets around broker sessions
+        run: |
+          python -m bishop.collect_teacher_data --collect --base-period M1 --base-only \
+            --pairs "$IN_PAIRS" --clock-annotations reports/teacher_clock_annotations.json \
+            --metadata reports/teacher_icmarkets_metadata.json \
+            --plan-out reports/teacher_minute_collection_plan.json \
+            --out-dir data/teacher_icmarkets_m1
+      - name: Preserve minute candles and acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bishop-teacher-icmarkets-m1-${{ github.run_id }}
+          path: |
+            data/teacher_icmarkets_m1/
+            reports/teacher_minute_collection_plan.json
+          if-no-files-found: error
+          retention-days: 30

@@ -130,3 +130,31 @@ def test_exploratory_annotations_preserve_fixture_clocks_and_bounded_jobs():
     native=next(i for i in result['inventory'] if i['id']=='video-entries5-native-t1410-eurusd')
     assert native['chart_snapshot_date'] is None and native['setup_time'] is None and native['fill_time'] is None
     assert native['clock_readiness']=='UNRESOLVED_SETUP_FILL_CLOCKS'
+
+
+def test_m1_base_only_plan_and_12hour_requests(tmp_path):
+    from bishop.v2.types import utc
+    from ctrader.framing import model
+    fixture={'examples':[{'id':'x','pair':'X','tf':'M45','chart_snapshot_date':'2026-01-01'}]}
+    default=build_plan(fixture)
+    assert {j['base_tf'] for j in default['jobs']}=={'M5','H1'}
+    assert 'base_period' not in default and 'base_only' not in default
+    minute=build_plan(fixture,base_period='M1',base_only=True)
+    assert len(minute['jobs'])==1 and minute['jobs'][0]['base_tf']=='M1'
+    requests=[]
+    class Fake:
+        account_id=7;env='demo'
+        def symbol(self,name):return {'name':name,'symbol_id':9,'digits':5,'pip_position':4}
+        def _hist_request(self,msg):
+            requests.append(msg)
+            return SimpleNamespace(trendbar=[SimpleNamespace(low=100000,deltaOpen=0,deltaHigh=1,deltaClose=0,volume=2,utcTimestampInMinutes=msg.fromTimestamp//60000)])
+    job={'id':'minute','pair':'X','base_tf':'M1','start':'2026-01-01T00:00:00Z','end':'2026-01-02T00:00:00Z','case_ids':['x']}
+    metadata=dict(broker_symbol='X',calendar_id='unresolved_broker_schedule',anchor_id='unresolved',calendar_version='unresolved',asset_class='metal')
+    result=collect_job(Fake(),job,metadata,tmp_path)
+    assert len(requests)==2
+    assert all(r.period==model.ProtoOATrendbarPeriod.Value('M1') and r.toTimestamp-r.fromTimestamp==12*3600*1000 for r in requests)
+    assert result['rows']==2
+    from pathlib import Path
+    manifest=json.loads(Path(result['manifest']).read_text())
+    assert manifest['base_tf']=='M1' and manifest['calendar_id']=='unresolved_broker_schedule'
+    with pytest.raises(ValueError):build_plan(fixture,base_period='M2')

@@ -63,7 +63,9 @@ class HistoricalClient(CTraderClient):
         return super().request(msg,*args,**kwargs)
 
 
-def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, clock_annotations=None, annotations_only=False):
+def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, clock_annotations=None, annotations_only=False, *, base_period="M5", base_only=False):
+    if base_period not in ('M1','M5') or type(base_only) is not bool:raise ValueError('base_period must be M1 or M5 and base_only boolean')
+    periods=[(base_period,warmup_days)]+([] if base_only else [('H1',context_days)])
     if type(warmup_days) is not int or warmup_days<35 or type(context_days) is not int or context_days<warmup_days:
         raise ValueError('require >=35 base warmup days and context >= base warmup')
     if type(forward_days) is not int or forward_days<0: raise ValueError('nonnegative forward_days required')
@@ -89,12 +91,12 @@ def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, cloc
             collect_start,collect_end=map(utc,annotation['candidate_collection'])
             if not collect_start<=search_start<search_end<=collect_end:raise ValueError('invalid exploratory annotation bounds')
             item.update(status='EXPLORATORY_ANNOTATED_WINDOW',clock_annotation=annotation)
-            for tf,days in [('M5',warmup_days),('H1',context_days)]:
+            for tf,days in periods:
                 pending.setdefault((case['pair'],tf),[]).append((min(collect_start,search_start-timedelta(days=days)),max(collect_end,search_end+timedelta(days=forward_days)),case['id']))
         inventory.append(item)
         if not stamp or annotations_only: continue
         day=utc(stamp+'T00:00:00Z')
-        for tf,days in [('M5',warmup_days),('H1',context_days)]:
+        for tf,days in periods:
             pending.setdefault((case['pair'],tf),[]).append((day-timedelta(days=days),day+timedelta(days=1+forward_days),case['id']))
     jobs=[]
     for (pair,tf),ranges in sorted(pending.items()):
@@ -105,7 +107,7 @@ def build_plan(fixtures, warmup_days=35, context_days=400, forward_days=14, cloc
             else: merged.append([a,b,[cid]])
         for a,b,ids in merged:
             jobs.append({'id':stable_id('collect',pair,tf,a,b),'pair':pair,'base_tf':tf,'start':a.isoformat(),'end':b.isoformat(),'case_ids':sorted(ids),'exploratory_case_ids':sorted(cid for cid in ids if cid in annotations),'clock_annotations':{cid:annotations[cid] for cid in ids if cid in annotations}})
-    return {'schema_version':'teacher_collection_v1','plan_scope':'ANNOTATED_EXPLORATORY_ONLY' if annotations_only else 'FIXTURES_PLUS_ANNOTATIONS' if annotations else 'FIXTURE_SNAPSHOT_WINDOWS','provider':'IC Markets cTrader Open API','purpose':'alternate-feed diagnostic, not source-feed equivalence','base_warmup_days':warmup_days,'context_warmup_days':context_days,'forward_days':forward_days,'inventory':inventory,'jobs':jobs}
+    return {'schema_version':'teacher_collection_v1','plan_scope':'ANNOTATED_EXPLORATORY_ONLY' if annotations_only else 'FIXTURES_PLUS_ANNOTATIONS' if annotations else 'FIXTURE_SNAPSHOT_WINDOWS','provider':'IC Markets cTrader Open API','purpose':'alternate-feed diagnostic, not source-feed equivalence','base_warmup_days':warmup_days,'context_warmup_days':context_days,'forward_days':forward_days,**({'base_period':base_period,'base_only':base_only} if base_period!='M5' or base_only else {}),'inventory':inventory,'jobs':jobs}
 
 
 def exact_prices(tb):
@@ -125,17 +127,17 @@ def collect_job(client, job, metadata, out_dir, retrieved_at=None):
     info=client.symbol(metadata['broker_symbol'])
     if info['name']!=metadata['broker_symbol']: raise ValueError('broker symbol resolved to a different name')
     start,end=utc(job['start']),utc(job['end']); period=job['base_tf']
-    if period not in ('M5','H1') or end<=start: raise ValueError('invalid planned duration/period')
+    if period not in ('M1','M5','H1') or end<=start: raise ValueError('invalid planned duration/period')
     got={}; volumes={}; cursor=start; request_count=0; chunks=[]
     while cursor<end:
-        stop=min(cursor+timedelta(days=7 if period=='H1' else 1),end)
+        stop=min(cursor+(timedelta(hours=12) if period=='M1' else timedelta(days=7 if period=='H1' else 1)),end)
         response=client._hist_request(oa.ProtoOAGetTrendbarsReq(ctidTraderAccountId=client.account_id,symbolId=info['symbol_id'],period=model.ProtoOATrendbarPeriod.Value(period),fromTimestamp=int(cursor.timestamp())*1000,toTimestamp=int(stop.timestamp())*1000))
         request_count+=1
         chunk_times=[]
         for tb in response.trendbar:
             at=datetime.fromtimestamp(int(tb.utcTimestampInMinutes)*60,timezone.utc)
             if not cursor<=at<stop: continue
-            if int(at.timestamp()) % (300 if period=='M5' else 3600): raise ValueError('unaligned historical candle')
+            if int(at.timestamp()) % {'M1':60,'M5':300,'H1':3600}[period]: raise ValueError('unaligned historical candle')
             prices=exact_prices(tb)
             # Display digit precision is not evidence for rounding raw protocol data.
             tick=Decimal(10)**-int(info['digits'])
@@ -159,8 +161,8 @@ def collect_job(client, job, metadata, out_dir, retrieved_at=None):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fixtures',default='tests/bishop_examples.json');p.add_argument('--plan-out',default='reports/teacher_collection_plan.json');p.add_argument('--warmup-days',type=int,default=35);p.add_argument('--context-days',type=int,default=400);p.add_argument('--forward-days',type=int,default=14)
-    p.add_argument('--clock-annotations');p.add_argument('--annotations-only',action='store_true');p.add_argument('--plan-only',action='store_true');p.add_argument('--pairs',nargs='+');p.add_argument('--collect',action='store_true');p.add_argument('--metadata',help='explicit pair -> broker symbol/calendar metadata JSON');p.add_argument('--out-dir','--out',dest='out_dir',default='data/teacher_icmarkets');p.add_argument('--job-id',action='append')
-    a=p.parse_args(argv);fixture_path=Path(a.fixtures);plan=build_plan(json.loads(fixture_path.read_text()),a.warmup_days,a.context_days,a.forward_days,json.loads(Path(a.clock_annotations).read_text()) if a.clock_annotations else None,a.annotations_only);plan['fixtures_sha256']=sha256(fixture_path.read_bytes()).hexdigest()
+    p.add_argument('--base-period',choices=('M1','M5'),default='M5');p.add_argument('--base-only',action='store_true');p.add_argument('--clock-annotations');p.add_argument('--annotations-only',action='store_true');p.add_argument('--plan-only',action='store_true');p.add_argument('--pairs',nargs='+');p.add_argument('--collect',action='store_true');p.add_argument('--metadata',help='explicit pair -> broker symbol/calendar metadata JSON');p.add_argument('--out-dir','--out',dest='out_dir',default='data/teacher_icmarkets');p.add_argument('--job-id',action='append')
+    a=p.parse_args(argv);fixture_path=Path(a.fixtures);plan=build_plan(json.loads(fixture_path.read_text()),a.warmup_days,a.context_days,a.forward_days,json.loads(Path(a.clock_annotations).read_text()) if a.clock_annotations else None,a.annotations_only,base_period=a.base_period,base_only=a.base_only);plan['fixtures_sha256']=sha256(fixture_path.read_bytes()).hexdigest()
     if a.clock_annotations:plan['clock_annotations_sha256']=sha256(Path(a.clock_annotations).read_bytes()).hexdigest()
     plan_path=Path(a.plan_out);plan_path.parent.mkdir(parents=True,exist_ok=True);plan_path.write_text(json.dumps(plan,indent=2)+'\n')
     if not a.collect or a.plan_only: return 0
