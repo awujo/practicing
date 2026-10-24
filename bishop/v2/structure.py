@@ -53,9 +53,14 @@ class RoleIndex:
 
     def __init__(self, events):
         grouped = {}
+        unavailable = {}
         for event in events:
+            if event.kind == "LEVEL_UNAVAILABLE" and event.reference_id is not None:
+                previous = unavailable.get(event.reference_id)
+                unavailable[event.reference_id] = min(previous, event.available_at) if previous else event.available_at
             if event.kind == "LEVEL_ROLE_CHANGE" and event.reference_id is not None:
                 grouped.setdefault(event.reference_id, []).append(event)
+        self._unavailable = MappingProxyType(unavailable)
         self._timeline = MappingProxyType({
             key: (tuple(e.available_at for e in ordered), tuple(e.side for e in ordered))
             for key, rows in grouped.items()
@@ -64,7 +69,8 @@ class RoleIndex:
 
     def role_at(self, level: Level, as_of):
         at = utc(as_of)
-        if level.available_at > at:
+        unavailable_at = self._unavailable.get(level.id)
+        if level.available_at > at or (unavailable_at is not None and unavailable_at <= at):
             return None
         times, sides = self._timeline.get(level.id, ((), ()))
         position = bisect_right(times, at)
@@ -72,7 +78,7 @@ class RoleIndex:
 
 
 def role_at(level: Level, events, as_of):
-    """Return BUY/support or SELL/resistance known at as_of; None if unborn.
+    """Return BUY/support or SELL/resistance; None if unborn or coverage lost.
 
     Raw body breaks change the potential retest role. Models requiring impulse
     must separately qualify it; a role is never a structural/story assertion.
@@ -84,8 +90,11 @@ def role_at(level: Level, events, as_of):
         return None
     side = level.side
     for event in sorted(events, key=lambda e: (e.available_at, e.id)):
-        if event.available_at <= at and event.reference_id == level.id and event.kind == "LEVEL_ROLE_CHANGE":
-            side = event.side
+        if event.available_at <= at and event.reference_id == level.id:
+            if event.kind == "LEVEL_UNAVAILABLE":
+                return None  # Terminal: later flips cannot restore lost coverage.
+            if event.kind == "LEVEL_ROLE_CHANGE":
+                side = event.side
     return side
 
 
@@ -203,6 +212,11 @@ def analyze(bars, policy=StrategyPolicy(), *, supplemental_liquidity=()) -> Stru
     for i, bar in enumerate(bars):
         discontinuity = prior is not None and (bar.segment_id != prior.segment_id)
         if discontinuity:
+            for level in known_levels:
+                emit("LEVEL_UNAVAILABLE", bar, ref=level,
+                     details={"reason": "DATA_GAP", "terminal": True,
+                              "previous_segment_id": prior.segment_id,
+                              "new_segment_id": bar.segment_id})
             for r in list(active.values()):
                 if r.status != "BROKEN":
                     snapshot(r, bar, status="BROKEN", details={**r.details, "reason": "DATA_GAP"})

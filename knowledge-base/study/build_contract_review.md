@@ -115,3 +115,34 @@ order references. Final complete repository suite: **228 passed** (including
 after RoleIndex integration; the earlier >60s finding is addressed for this
 measured case, without claiming historical-scale bounds. See
 `BUILD_VERIFICATION.md` for exact engineering scope and remaining acceptance.
+
+## Continued causal-risk audit — 2026-10-24
+
+New independent `tests/test_v2_risk_review.py` initially demonstrates six failures and one positive range-version check:
+
+- BUY entry100 with selected protected pool110 returns ELIGIBLE/stop109; SELL mirror returns stop91. Wrong-side pool must not become invalid directional geometry or crash Setup construction.
+- Proximity ATR includes pre-gap segment history instead of requiring current contiguous warmup.
+- A level explicitly formed in the old segment becomes current stop protection after a gap.
+- An already-consumed nearby liquidity pool remains labelled protection without fresh intact liquidity evidence.
+- A target touched in a completed bar overlapping delayed pool availability is treated as known intact because the implementation ignores bars whose start precedes availability. Unknown touch ordering must remain unresolved.
+- Positive check passes: latest known BROKEN range is not revived by a future version.
+
+Root owns risk fixes. These are independent causal/integrity defects, not teacher-price fitting, and no expected historical values changed.
+
+Entry/native-gap checks in `tests/test_v2_entry_episode_review.py` pass (four tests): role flip-back does not revive a retired reaction; segment change/new same-scope break retire pairing without global child/simultaneous veto; pool-taking is observed before reaction and does not consume future information; native LEVEL_UNAVAILABLE retirement preserves prefix history, waits for delayed observation, agrees with RoleIndex, and remains terminal after later role changes. This review does not certify cross-TF gap propagation or all historical examples.
+
+Risk fixes independently inspected after saving: wrong-side selected pools excluded, directional result geometry checked, segment-local ATR/protection used, consumed/overlapping pools excluded, and exclusions documented. All six original failure cases now pass. Native/entry suites also pass.
+
+One additional delayed-publication boundary remains demonstrated by `test_unpublished_internal_bar_cannot_be_skipped_to_complete_atr_warmup`: a bar unavailable at the historical decision clock is filtered out, allowing the available bars on either side to count as a complete ATR window. The original segment_id has not changed because the delayed row physically exists in the frozen feed. The risk warmup must stop across that unavailable observation rather than silently bridge it. This is not an ordinary calendar closure. Root notified; no production edit by reviewer.
+
+## Protection-link refinement review — 2026-10-24
+
+Independent risk/entryepisode suites now **14 passed**. The delayed internal-publication gap no longer supplies a false completed ATR warmup. Added explicit no-link versus linked protection checks: with entry100/local pattern low95 and an older containing range pool80, no causal link gives stop94; an explicit range-ID link permits stop79. This tests relevance evidence, not a teacher-specified universal stop distance. Wrong-side range-pool regressions now supply that explicit link, so geometry validation is still tested rather than bypassed by absent evidence. The overlap-target regression now requires target None specifically.
+
+Source and numerical fixture prices remain untouched; policy version distinguishes changed protection semantics. Cross-TF gap propagation remains outside this particular signoff.
+
+## Cross-TF gap propagation and late-publication review
+
+New `tests/test_v2_continuity_review.py` confirms that a base gap makes an old Weekly level unavailable before the next Weekly candle close, but only at the post-gap bar receipt clock; old story suspension is UNKNOWN, cancels dependent pending orders and leaves positions unchanged; a fresh later origin is not suspended. Gap event availability now includes both hashed source-bar dependency receipt times. These three checks pass.
+
+A fourth full-engine check confirms unresolved retrospective history loss when an internal bar first arrives after later bars: early available bars0–1 and2–3 create a gap known at3h, but adding the delayed1–2bar (first available5h) makes the final chronological batch erase that earlier gap. This is first publication, not a corrected price. An explicit correction/rebuild mode can have different semantics, but must not be represented as availability-causal event-prefix replay. Acceptable remedies are receipt-ordered knowledge/gap-resolution events or explicit rejection of unsupported nonmonotone publication; the regression allows fail-closed rejection. Root notified while frozen receipt=end feeds continue unchanged. No production or fixture changes by reviewer.

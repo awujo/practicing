@@ -88,9 +88,52 @@ def _is_active(story, at, story_events):
         if event.available_at>at:
             continue
         if (event.reference_id==story.id or event.details.get('story_id')==story.id):
-            if event.kind in ('STORY_RETIRED','STORY_INVALIDATED','STORY_FLIPPED','DESTINATION_REACHED','STORY_DESTINATION_REACHED'):
+            if event.kind in ('STORY_SUSPENDED','STORY_RETIRED','STORY_INVALIDATED','STORY_FLIPPED','DESTINATION_REACHED','STORY_DESTINATION_REACHED'):
                 return False
     return True
+
+
+def _pool_taken_before(pool, reaction_bar, bars):
+    """A previously witnessed take cannot manufacture another fresh reaction.
+
+    Check only observations available before this reaction starts. This does
+    not veto a live anticipatory order from a future sweep or touch.
+    """
+    return any(x.start >= pool.available_at and x.end <= reaction_bar.start
+               and x.available_at <= reaction_bar.start
+               and (x.high_ticks > pool.price_ticks if pool.kind == 'HIGH'
+                    else x.low_ticks < pool.price_ticks) for x in bars)
+
+
+def _reaction_episode_reason(reaction, candidate_bar, h4_events):
+    """Retire entry pairing, never the higher story or a previously placed order.
+
+    Scope/role loss and a fresh same-scope context break are causal boundaries;
+    elapsed bar counts and distance are deliberately absent.
+    """
+    rb, level, parent_break, _ = reaction
+    if rb.segment_id != candidate_bar.segment_id:
+        return 'reaction_data_segment_changed'
+    opposite = 'SELL' if parent_break.side == 'BUY' else 'BUY'
+    for event in h4_events:
+        if event.available_at <= rb.available_at:
+            continue
+        if (event.available_at <= candidate_bar.available_at
+                and event.kind == 'LEVEL_ROLE_CHANGE'
+                and event.reference_id == level.id and event.side == opposite):
+            return 'reaction_H4_level_role_lost'
+        same_scope = parent_break.scope_id is not None and event.scope_id == parent_break.scope_id
+        if not same_scope:
+            continue
+        if event.available_at <= candidate_bar.available_at and event.kind == 'RANGE_BROKEN':
+            return 'reaction_H4_scope_broken'
+        # Simultaneous parent/child confirmation is not a later episode.
+        # A new context already known before the child starts needs its own
+        # liquidity/reaction chain before it can sponsor another CE.
+        if (event.available_at <= candidate_bar.start and event.kind in BREAKS
+                and event.side == parent_break.side and event.evidence_status == 'KNOWN'):
+            return 'reaction_replaced_by_fresh_H4_break'
+    return None
 
 
 def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_events=(), eligibility_start=None):
@@ -98,6 +141,10 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
         eligibility_start=utc(eligibility_start)
     from .structure import RoleIndex
     role_indices={tf:RoleIndex(result.events) for tf,result in structures.items()}
+    # Only actual current-entry-TF event lineage can sponsor range protection.
+    # A containing price range or a higher-TF context event is not such a link.
+    event_scope_index={tf:{e.id:(e.scope_id,e.available_at) for e in result.events}
+                       for tf,result in structures.items()}
     role_cache={}
     def cached_role(level, result, at):
         key=(level.id,at)
@@ -107,6 +154,17 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
     stories=getattr(stories,'stories',stories)
     bars_by_tf={tf:tuple(sorted((b for b in bs if b.complete),key=lambda b:b.start))
                 for tf,bs in bars_by_tf.items()}
+    segment_starts={}
+    for tf, bars in bars_by_tf.items():
+        segment_starts[tf]={}
+        for bar in bars:
+            segment_starts[tf].setdefault(bar.segment_id,bar.start)
+    pool_take_cache={}
+    def pool_taken_before(pool, bar, bars):
+        key=(pool.id,bar.id)
+        if key not in pool_take_cache:
+            pool_take_cache[key]=_pool_taken_before(pool,bar,bars)
+        return pool_take_cache[key]
     imbalances=tuple(g for tf in policy.entry_tfs for g in _imbalance(bars_by_tf.get(tf,()),policy))
     setups={}; events={}; support=[]
     profile=policy.source_profile
@@ -163,9 +221,15 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
             return
         if story.details.get('owner_selection') == 'BLOCKED_COUNTERWEEKLY' or (not policy.allow_counterweekly and story.details.get('initial_weekly_relation') == 'COUNTER_WEEKLY'):
             return
+        protection_evidence=tuple(dict.fromkeys((*causes,level.id)))
+        scope_index=event_scope_index[tf]
+        protection_scopes=tuple(dict.fromkeys(scope_index[cause][0] for cause in causes
+            if cause in scope_index and scope_index[cause][0] is not None
+            and scope_index[cause][1]<=at))
         risk=plan(story.side,level.price_ticks,at,tf,bars_by_tf[tf],all_levels,all_liq,
                   story,instrument,policy,role_lookup=lambda l,t:cached_role(l,structures[l.tf],t),
-                  protection_bars=protection,ranges=result.ranges,zone_bounds=zone_bounds)
+                  protection_bars=protection,ranges=result.ranges,zone_bounds=zone_bounds,
+                  protection_evidence_ids=protection_evidence,protection_range_ids=protection_scopes)
         sid=stable_id('setup',story.id,tf,model,level.id,tuple(causes),policy.id)
         clock=Clock(at,at,at)
         details=dict(risk.details,phase=phase,source_profile=profile,model_enabled=True,
@@ -195,7 +259,9 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
         return min(levels,key=lambda l:(abs(reference-l.price_ticks),-l.available_at.timestamp(),l.id)) if levels else None
 
     def pools(tf,side,at,after):
-        return tuple(l for l in all_liq if l.tf==tf and (l.form not in ('BAR','PRIOR_PERIOD','SESSION') or l.details.get('role')=='IRL') and l.available_at<=at and l.formed_at>=after
+        known=[b for b in bars_by_tf[tf] if b.available_at<=at]
+        segment_start=segment_starts[tf][known[-1].segment_id] if known else at
+        return tuple(l for l in all_liq if l.tf==tf and l.formed_at>=segment_start and l.available_at>=segment_start and (l.form not in ('BAR','PRIOR_PERIOD','SESSION') or l.details.get('role')=='IRL') and l.available_at<=at and l.formed_at>=after
                      and l.kind==('LOW' if side=='BUY' else 'HIGH'))
 
     for story in stories:
@@ -232,6 +298,13 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                         at=max(story.available_at,parent.available_at,br.available_at,pool.available_at)
                         known=[b for b in bs if b.available_at<=at]
                         if not known: continue
+                        segment_start=segment_starts[tf][known[-1].segment_id]
+                        break_bars=[x for x in bs if x.id in br.bar_ids]
+                        if (br.clock.occurred_from<segment_start or pool.formed_at<segment_start
+                                or not break_bars or break_bars[-1].segment_id!=known[-1].segment_id): continue
+                        if tf=='H2':
+                            parent_bars=[x for x in bars_by_tf.get('H4',()) if x.id in parent.bar_ids]
+                            if not parent_bars or parent_bars[-1].end<=segment_start: continue
                         lv=select_level(tf,story.side,at,known[-1].close_ticks)
                         if lv:
                             pb=[b for b in known if b.id in pool.bar_ids or b.id in br.bar_ids]
@@ -248,19 +321,34 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                         if lv4.available_at>b.start or cached_role(lv4,h4,b.start) not in (_direction_role(story.side),story.side): continue
                         if not b.low_ticks<=lv4.price_ticks<=b.high_ticks: continue
                         if not (b.close_ticks>lv4.price_ticks if story.side=='BUY' else b.close_ticks<lv4.price_ticks): continue
-                        related=[e for e in h4breaks if e.available_at<=b.start]
+                        segment_start=segment_starts[tf][b.segment_id]
+                        related=[e for e in h4breaks if e.available_at<=b.start and e.clock.occurred_from>=segment_start]
                         if not related: continue
                         br=max(related,key=lambda e:e.available_at)
                         hp=pools('H4',story.side,b.start,br.clock.occurred_from)
                         if not hp and profile not in ('source_all','all_routes','core_course'): continue
                         # Bishop confirmation waits for known H4 liquidity taken.
-                        swept=[p for p in hp if (b.low_ticks<p.price_ticks if story.side=='BUY' else b.high_ticks>p.price_ticks)]
+                        swept=[p for p in hp if not pool_taken_before(p,b,bs) and (b.low_ticks<p.price_ticks if story.side=='BUY' else b.high_ticks>p.price_ticks)]
                         if not swept and profile not in ('source_all','all_routes','core_course'): continue
                         reactions.append((b,lv4,br,tuple(swept)))
+            retired_reactions=set()
             def reaction_for(b):
-                valid=[r for r in reactions if r[0].end<=b.start]
+                valid=[r for r in reactions if r[0].end<=b.start and r[0].available_at<=b.available_at]
                 if not valid: return None
-                return max(valid,key=lambda r:r[0].available_at)
+                # Do not fall back to an even older reaction after the current
+                # episode loses its support. A new witnessed reaction replaces it.
+                current=max(valid,key=lambda r:(r[0].end,r[0].available_at,r[1].id))
+                reason=_reaction_episode_reason(current,b,h4.events)
+                if reason:
+                    key=(current[0].id,current[1].id,reason)
+                    if key not in retired_reactions:
+                        support.append(dict(route='entry_reaction_episode',story_id=story.id,
+                            tf=tf,status='RETIRED',reason=reason,
+                            reaction_bar_id=current[0].id,level_id=current[1].id,
+                            parent_break_id=current[2].id,observed_at=b.available_at.isoformat()))
+                        retired_reactions.add(key)
+                    return None
+                return current
             for i,b in enumerate(bs):
                 if b.available_at<story.available_at: continue
                 reaction=reaction_for(b)
@@ -340,11 +428,12 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                     witnessed=[]
                     for rb in h1bars:
                         if rb.available_at>br.clock.occurred_from or rb.available_at<story.available_at: continue
-                        prior=[hb for hb in h4bos if hb.available_at<=rb.start]
+                        segment_start=segment_starts['H1'][rb.segment_id]
+                        prior=[hb for hb in h4bos if hb.available_at<=rb.start and hb.clock.occurred_from>=segment_start]
                         if not prior: continue
                         hb=max(prior,key=lambda x:x.available_at)
                         hp=pools('H4',story.side,rb.start,hb.clock.occurred_from)
-                        swept=tuple(p for p in hp if (rb.low_ticks<p.price_ticks if story.side=='BUY' else rb.high_ticks>p.price_ticks))
+                        swept=tuple(p for p in hp if not pool_taken_before(p,rb,h1bars) and (rb.low_ticks<p.price_ticks if story.side=='BUY' else rb.high_ticks>p.price_ticks))
                         if not swept: continue
                         for level in h4.levels:
                             if level.available_at>rb.start or cached_role(level,h4,rb.start)!=story.side: continue
@@ -355,6 +444,7 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                     for i in range(1,len(h1bars)):
                         a,b=h1bars[i-1:i+1]
                         if a.start<br.available_at or a.segment_id!=b.segment_id: continue
+                        if _reaction_episode_reason((rb,htflevel,hb,hp),b,h4.events): continue
                         standing=(b.low_ticks<a.low_ticks and b.high_ticks<a.high_ticks and b.close_ticks>a.low_ticks) if story.side=='BUY' else (b.high_ticks>a.high_ticks and b.low_ticks>a.low_ticks and b.close_ticks<a.high_ticks)
                         if not standing: continue
                         lv=select_level('H1',story.side,a.start,a.close_ticks)

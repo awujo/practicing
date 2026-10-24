@@ -237,3 +237,11 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
   prior suite). All12compressed report byte hashes and unchanged source fixture
   hash verified. Normal compressed-report CLI, index-only rebuild and explicit
   runtime-budget abort paths exercised. No active replay process left running.
+
+## Protection/continuity checkpoint (2026-10-24)
+
+- Source audit and independent tests restrict source protection to linked current entry evidence, retire consumed liquidity/obsolete reaction episodes, and propagate observation gaps across timeframe levels and dependent stories. Policy default version2 distinguishes changed semantics.
+- All ten source diagnostics rerun in `reports/teacher_replay_v2_scope_fix/`, with before/after counts and original implementation fingerprint. Report hashes and unchanged 40-record source fixture hash verified. No exact teacher acceptance established.
+- USDCAD now has zero setups; independent first-blocking-rule/source review requested. Do not treat suppression as success. GBPJPY setup counts increased while order counts fell, so overall candidate reduction is not universal.
+- Full suite252passed7.38s. Independent full-engine test exposed late internal publication erasing earlier gap history. Engine now explicitly rejects nonmonotone publication; receipt-order replay remains unsupported. Frozen synchronous replay inputs are unaffected by this subsequent guard.
+- Next: complete USDCAD episode rejection audit, then identify source-clock/reference differences in remaining candidate plans. No broker activation, deployment, messages, or source-price fitting.

@@ -83,9 +83,21 @@ def _reaction_candidates(bars_by_tf, structures, policy):
                     side = _role_side(_role(level, result, bar.start, policy.source_profile))
                     if side is None:
                         if bar.low_ticks <= level.price_ticks <= bar.high_ticks:
+                            unavailable = sorted((e for e in result.events if
+                                e.kind == "LEVEL_UNAVAILABLE" and e.reference_id == level.id and
+                                e.available_at <= bar.start), key=lambda e: (e.available_at, e.id))
+                            change, _, qualification = _role_qualification(level, result, bar.start)
+                            if unavailable:
+                                reason = ("level_unavailable_after_data_gap" if
+                                    "GAP" in str(unavailable[0].details.get("reason", "")).upper()
+                                    else "level_unavailable")
+                            elif change and qualification != "IMPULSE_CONFIRMED":
+                                reason = "selected source route requires impulse qualification; raw role change alone is insufficient"
+                            else:
+                                reason = "level_unavailable"
                             support.append({"route": "reused_level_origin", "level_id": level.id,
-                                "origin_bar_id": bar.id, "status": "UNKNOWN",
-                                "reason": "selected source route requires impulse qualification; raw role change alone is insufficient"})
+                                "origin_bar_id": bar.id, "status": "UNKNOWN", "reason": reason,
+                                "unavailability_event_id": unavailable[0].id if unavailable else None})
                         continue
                     rejected = bar.close_ticks > level.price_ticks if side == "BUY" else bar.close_ticks < level.price_ticks
                     if bar.low_ticks <= level.price_ticks <= bar.high_ticks and rejected:

@@ -384,7 +384,7 @@ class Order:
 
 @dataclass(frozen=True)
 class StrategyPolicy:
-    version: str = "bishop_v2_policy_1"
+    version: str = "bishop_v2_policy_2"
     source_profile: str = "bishop_confirmation"
     risk_profile: str = "context_liquidity"
     target_profile: str = "nearest_erl"

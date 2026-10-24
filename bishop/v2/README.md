@@ -120,3 +120,5 @@ same-model/level/clock/risk signals from multiple contexts and records their
 aliases. Later confirmations remain distinct; `source_all` keeps alternatives.
 The canonical first context governs cancellation. This fixes exposure crowding,
 not the outstanding source stop/target/reference discrepancies.
+
+Publication-order limitation: base candles must have nondecreasing `available_at` in occurrence order. Late internal candles are explicitly rejected because snapshot rebuilding cannot preserve earlier gap and structure decisions. Supporting them requires receipt-order replay; this engine does not implement it.

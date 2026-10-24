@@ -8,6 +8,7 @@ from .feed import load_feed
 from .aggregation import aggregate, minutes, expected_slots, is_open
 from .structure import analyze
 from .impulse import assess
+from .continuity import gaps_from_base, invalidate_levels, suspend_stories
 from .sessions import collect_sessions
 from .stories import find_stories
 from .entries import detect_setups
@@ -34,6 +35,11 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
     inst=feed['instrument']; base=tuple(feed['bars'])
     if any(b.available_at>clock for b in base): raise ValueError('feed contains future bars')
     if any(a.start>=b.start for a,b in zip(base,base[1:])): raise ValueError('feed must be ordered unique')
+    # Snapshot rebuilding cannot preserve earlier gap/structure decisions when
+    # an older candle first arrives after a newer one. Require receipt-order
+    # replay before supporting such feeds; never silently rewrite history.
+    if any(a.available_at>b.available_at for a,b in zip(base,base[1:])):
+        raise ValueError('nonmonotone bar publication requires receipt-order replay; late internal bars unsupported')
     if any(b.instrument!=inst.symbol for b in base): raise ValueError('feed instrument mismatch')
     lower=utc(scan_start) if scan_start else None
     if lower and lower>clock: raise ValueError('scan_start after as_of')
@@ -74,8 +80,9 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
             continue
         result=aggregate(base,tf,inst,clock,calendar=calendar)
         bars_by_tf[tf]=result['bars']; coverage[tf]=result['coverage']
-    structures={tf:assess(analyze(bs,policy,supplemental_liquidity=tuple(p for p in session_result.liquidity if p.tf==tf)),bs,policy) for tf,bs in bars_by_tf.items()}
-    story_result=find_stories(bars_by_tf,structures,policy)
+    gaps=gaps_from_base(base,policy)
+    structures={tf:invalidate_levels(assess(analyze(bs,policy,supplemental_liquidity=tuple(p for p in session_result.liquidity if p.tf==tf)),bs,policy),gaps,policy) for tf,bs in bars_by_tf.items()}
+    story_result=suspend_stories(find_stories(bars_by_tf,structures,policy),gaps,bars_by_tf,policy)
     entry_result=detect_setups(bars_by_tf,structures,story_result,inst,policy,story_events=story_result.events,eligibility_start=lower)
     candidates=sorted((s for s in entry_result.setups if (lower is None or s.available_at>=lower) and s.available_at<=clock),key=lambda s:(s.available_at,policy.entry_tfs.index(s.tf) if s.tf in policy.entry_tfs else len(policy.entry_tfs),s.id))
     stories={s.id:s for s in story_result.stories}
@@ -126,7 +133,7 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
             'status':'PARTIAL_UNVALIDATED' if degraded else 'COMPUTED_UNVALIDATED','as_of':clock,'scan_start':lower,'instrument':inst,'input':feed.get('hashes',{}),'policy':policy,'costs':costs,
             'selection':{'mode':'INDEPENDENT_ALTERNATIVES' if alternatives else 'PROSPECTIVE_CAPPED','max_open_orders':None if alternatives else max_open_orders,'rejected':rejected,'aliases':aliases,'dedup_policy':'same_model_level_clock_risk_v1_first_context'},
             'coverage':{'base':feed.get('coverage',{}),'timeframes':coverage},'support':support,
-            'stories':story_result.stories,'story_events':story_result.events,'setups':candidates,'orders':orders,'actions':actions,
+            'stories':story_result.stories,'story_events':story_result.events,'data_gap_events':gaps,'setups':candidates,'orders':orders,'actions':actions,
             'execution_events':execution['events'],'observations':execution['observations'],'positions':execution['positions'],
             'summary':{'stories':len(story_result.stories),'setups':len(candidates),'orders':len(orders),'outcomes':dict(Counter(o.get('outcome','UNKNOWN') for o in execution['observations']))},
             'teacher_acceptance':'NOT_REPLAYED','limitations':['OHLC execution censors ambiguous intrabar sequences.','Numerical policies are implementation choices; teacher replay acceptance is pending.']}
