@@ -472,3 +472,5 @@ Claude cannot read Actions logs (redirect blocked) → workflows write errors as
 - 2026-10-23: User additionally reported failure while saving Deriv selections. Deriv keys pass validation and full-form save/reload regression; found per-field fresh MySQL connection/commit path causing many TLS round trips and partial persistence on failure. Batched validated settings in one scoped executemany transaction, rollback on error. No production preferences modified for testing. Focused46tests passed.
 
 - 2026-10-23: User requested processing second SLK Radar release video before design/implementation of confirmation alerts/Chrome extension. Located new67MBasset670611585 and Bishopconfirmation transcripts/frames on claude-bishop-aggressive. Updated transcribe workflow with optional exact-asset filter, fail on missing matches, only publish successful extraction and log generated evidence.
+
+- Video extraction completed for release SLK-radar-video-and-other-bots-video: timestamped transcripts and contact sheets published by transcribe.yml.

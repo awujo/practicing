@@ -1,0 +1,164 @@
+[1.3-3.3] Hi there guys, this is Timothée
+[4.3-5.1] the
+[5.1-12.6] there behind SLK with the SLK bars, but and I'm going to try to make this video as short and sweet as possible
+[12.6-18.1] I basically want to demo some of the features that I've been working on for a while some of these features have been out
+[18.1-24.9] I just haven't been chance to make a video kind of like demoing them or showing them to
+[25.7-28.7] Everybody show that is what I'm going to get into now
+[29.5-32.5] Right up but I think one of the
+[33.9-40.0] Things I definitely I am happy about is the price a lot extension and
+[41.3-45.9] It's here. So you can get it from the Chrome Web Store. Sorry
+[45.9-49.7] I'm just search for SLK reader on the Chrome Web Store
+[51.6-56.7] Check it here, and then you see this so select SLK reader and
+[57.3-59.3] Then you can see add to Chrome
+[60.2-65.9] And add extension so this extension is going to help you so you can see that in pain
+[65.9-68.5] You can pin it yourself if it hasn't been pain
+[69.3-70.4] so
+[70.4-75.1] This extension is going to help you set price a lot easily is going to help you
+[75.8-80.6] Set confirmation a lot rejection a lot and so on and so forth easily
+[82.1-85.5] So let me go to trading view chat again
+[86.2-88.2] so you click on it and
+[89.4-91.4] You say signing
+[91.5-95.4] It's going to ask you for like your password and stuff
+[97.6-102.8] Then am I going to have to enter my password right now, okay
+[104.0-106.2] How to show it from scratch so that's why
+[107.5-109.5] But yeah, I guess I don't mind
+[110.2-129.1] Logging me in and yes, I am connected. Yes, I wanted I wanted this to be as clean clear as possible
+[130.7-138.5] Yeah, so you can below the extension you can see my email. It's connected and then you can show the doc on the chart
+[138.8-144.9] So one thing I definitely did was to make it show by default. So once you
+[146.4-148.4] Tell you to show the doc on the chart
+[149.4-151.4] So that in my account
+[152.2-154.4] It's going to display a small pill
+[160.9-162.9] Suppose they don't automatically
+[166.7-172.8] So, yes, you'll see it here right here automatically, okay, so if he doesn't show automatically and maybe
+[174.0-176.6] Trading view from charts. Yes
+[177.4-182.1] so one thing I made it do was on for people that use trading view on the web and
+[183.0-189.8] There even the web I made it show automatically when you go to this page. So if I go for example to
+[190.6-196.3] This page my SLQ reader login page. It won't show on there
+[196.3-202.0] But if I come here, it's going to show automatically and you can just click on it. You can shift it to one side
+[202.8-207.4] Another thing is it detects the pair that you are currently looking at. So if I
+[208.2-210.2] Decide to go to gbp card
+[210.7-218.6] You see it's changes to gbp card and so I have been
+[219.7-223.9] You know gets in questions on the confirmation entries and stuff
+[224.0-229.3] So this is more than just a normal price a lot in where you want to watch it
+[229.3-232.5] I would like maybe you want to make price gets here. So you say
+[233.9-237.3] 1.876 30 and then you put 1.876
+[237.8-243.8] There is your yeah, and then you maybe add a message or you can leave it as the
+[245.4-251.7] Default and then you say create an alert and so you see a lot created. There is also the option to
+[253.5-258.3] Give you a notification on can do close and it's a question will come in telegram by the way
+[258.7-265.0] So if price close above a setting price, maybe you want to get notified price is above this price
+[265.5-267.5] market is above this price or
+[269.7-274.5] The reverse scenario you want to get in a special price goes below here
+[274.7-277.2] You can choose close below
+[277.5-283.1] Then if you want to know if price rejects from this key level, you can also pick rejects
+[283.1-286.6] And then you can pick the specific time frame that you are looking at
+[287.3-289.3] from 5 15 30
+[289.6-297.6] One hour four hours one day and one week so I definitely will add for five minutes and we are also because I know those are like
+[298.7-303.2] Some also very important time frames. So yes, those will be added
+[304.3-311.0] So you've set the price that you're watching for sure. So another thing you can do is sets a lot for confirmation
+[311.5-314.1] so the two confirmations are currently supports
+[314.5-318.6] Majority are fourth man's paying back confirmation and the
+[319.9-321.9] CI is the confirmation
+[321.9-323.2] so
+[323.2-324.2] if
+[324.2-327.4] I'm going to attach like in the comment section of this video
+[327.4-331.0] I'm going to attach a video to fourth man's paying back confirmation
+[331.2-336.1] I'm also going to I saw something where take which book about the CI is the confirmation
+[336.1-341.7] I think I also find that exposed and put the link in the comment section of this video
+[341.8-347.0] So you can kind of know what a pinback confirmation is, but there's one that formed on
+[348.1-350.6] Yeah, you can pick out CD and
+[352.7-362.1] So basically price should decide close below and this low was still standing and this should have basically been
+[362.8-364.4] the trade
+[364.4-366.7] Did about six hours already?
+[367.6-371.8] Yes, so that is an example of a man's paying back confirmation. So
+[372.8-377.5] Lower time frame engulfing so you can make it required or not
+[377.7-383.7] So for example, it's usually more high probability if you have an engulfing on the lower time frame, for example here
+[384.3-387.1] There's the 15 minutes one time frame lower
+[387.7-389.7] And you can see this engulfing
+[390.2-394.0] So that's usually high probability when that forms on the lower time frame
+[394.0-396.7] So you can see it's one time frame lower 30 to 15
+[397.2-400.9] One out 32 hours one hour three hours one hour four hours two hours
+[400.9-405.4] I hope I honestly hope that is clear. If not, you can DM us on
+[406.3-412.2] Telegram SLK reader support and we will attend to your questions. So if I also go to the
+[413.3-420.2] You see that it is already on the dairy fair. I can do the same things. You can do the confirmations
+[421.2-428.1] CIS the you can think the time frame you want to watch it on so from five minutes four hours
+[428.5-436.2] For four months confirmation, we really came back on from we really will watch it from 30 minutes upward to 30 minutes like four hours
+[437.0-439.0] and yeah
+[439.3-443.9] So that is that about a lot. So another thing that I worked on
+[444.3-446.0] Let me also log in here
+[446.0-452.2] So I also let me just address this here. So this email sign in link is not the only option signing
+[452.4-456.4] But it's good when you are doing your first signing and you haven't set a password
+[456.4-460.7] So you put your email you get the link sign into your email and then
+[462.3-467.8] When you get into your account, you can set a password. So for example, I've already set mine and
+[468.6-470.6] just going to
+[470.9-475.8] Log in boy. Yeah, we are logged in
+[476.6-479.2] Sorry, my network is exactly very fast
+[479.8-482.8] but when you log in you can come to account and
+[483.5-485.5] You can actually set
+[485.6-488.9] Your password here
+[488.9-493.0] Empty and thank you. So you can set your password here
+[494.1-496.1] You can see
+[496.5-503.0] Connected browsers for the Chrome extension and so on and so forth. So the next thing I want to go to
+[503.9-505.9] Is the history
+[507.3-510.7] So we had something new come to history we had
+[512.2-517.1] Filters to the history. So for example me I get a lot of alerts because as dev
+[517.1-519.2] I want to see every single thing that comes and
+[520.1-524.4] But I personally only trade external breakouts. So if I just want external breakouts
+[524.5-530.5] It's a filter them out only show me external breakouts if I want regular pairs or
+[531.4-533.1] crypto or
+[533.1-536.0] Dairy pairs. It's also filter them out
+[538.1-540.4] If I want to buy or sell direction
+[541.8-545.1] The time frame chains weekly to daily daily to page four and
+[547.0-553.5] If I have journaled them, which is the next thing I'm going to so right now you can play back
+[555.9-557.9] You can play back your
+[558.1-560.1] Alts for example this
+[560.5-562.5] GDP card a lot
+[564.4-566.4] I got here
+[566.6-568.6] The update every
+[572.0-576.2] Sorry, the update every one hour by doing so
+[577.0-582.2] This is the alert. I need to press action. It's not very smooth because it's on then operate calm
+[582.4-584.9] but you can see where price rejected from and
+[586.0-592.8] You can go to the four hour and you can see the external breakouts. So these exactly how price leads at that time
+[592.8-598.3] And then what you can do is you can then back you can forward test from here or should I see back test
+[598.8-603.7] From here and just play back. So this feature is just to play back your alerts
+[603.7-608.3] What could I have done better? What key level the price react from what killer would?
+[608.9-613.4] Have been better for me to take an entry from so I can go to one. I'll see how things look
+[614.5-616.5] and
+[616.5-618.5] Then just play it forward
+[619.0-623.8] And see how the price reacts where could I have entered from and so on and so forth
+[624.6-631.4] See before to five minutes. So this was my initial entry this confirmation entry, which I will be adding very soon
+[631.4-633.4] I call it three kinds of confirmation
+[634.7-639.9] That was my first entry can see how price played out price eventually sold from there
+[641.0-644.5] Gave the confirmation again by different confirmation sold
+[645.1-647.5] So this is just a way of you generally
+[648.0-652.8] Studying your trades studying how markets played out at the end of the day
+[653.6-658.8] You can also put in stuff in your journal like the entry your SL
+[659.3-663.3] Take profit the error that you got your profit and loss and add notes
+[664.2-669.7] They'll also be support comments add images very soon. So these are the things you can do
+[669.7-671.7] I think the third thing
+[672.4-678.8] Cemention would be in telegram itself. You can now view charts. So
+[680.3-685.6] For example, I already clicked on this step index 200 I
+[686.4-691.9] Clicked on view chart already and it's brought and showed me the rejection
+[691.9-698.6] So there's rejection here. You can see where price is coming from now on the daily and then you can also see
+[699.2-701.2] the price action on the four R
+[702.0-703.5] Loading
+[703.5-706.3] Well, that's all convenient of me. Oh, yeah
+[707.5-713.3] You can now see the external breakout also how it's formed and yeah, so
+[714.1-715.8] That is
+[715.8-722.0] That's that one that so I hope these videos helped. We still have questions or
+[723.5-725.5] Things you need clarity on
+[725.8-728.3] Dems are always open
+[728.9-736.3] You can now also go to replay in Potter and it to take you over here to the particular alert and
+[736.6-740.5] Then you also be able to replay. So note that these
+[742.7-747.0] Replays or this yeah, this market replays
+[748.4-755.2] The updates every one are so for example the one for mass 100. Okay, it's already here
+[755.7-758.0] It's actually of the day by 6.5
+[758.5-759.8] So that's why it's here
+[759.8-765.0] But there are some times if the alert just came freshly and you come to this replay chart the candles
+[765.5-767.3] Won't be available yet
+[767.3-773.4] But in like the next hour the next force five minutes, you will see them and then you will to replay a lot
+[774.5-775.9] XTI
+[775.9-779.2] You can see the rejection
+[780.4-786.1] From this killer will probably and then you can see the breakout
+[786.8-790.7] on this killer
+[791.4-798.8] So I guess these were the rejection came from these the internal breakouts and yeah, so that's a lot to replay and
+[800.3-804.2] Those are all the features we have for now. Thanks you
