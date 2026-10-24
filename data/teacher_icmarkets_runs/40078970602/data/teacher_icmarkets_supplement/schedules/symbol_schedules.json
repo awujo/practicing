@@ -1,0 +1,1057 @@
+{
+  "schema_version": "teacher_symbol_schedules_v1",
+  "retrieved_at": "2026-10-24T08:41:36.137849+00:00",
+  "status": "CURRENT_SCHEDULE_EVIDENCE",
+  "certification": "NOT_HISTORICAL_CALENDAR_CERTIFICATION",
+  "semantics": "Raw provider fields only; weekday origin, inclusive endpoints, timezone history and historical applicability unresolved",
+  "symbols": [
+    {
+      "requested_pair": "AUDCAD",
+      "broker_symbol": "AUDCAD",
+      "record": {
+        "symbolId": 18,
+        "name": "AUDCAD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "AUDUSD",
+      "broker_symbol": "AUDUSD",
+      "record": {
+        "symbolId": 5,
+        "name": "AUDUSD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "CHFJPY",
+      "broker_symbol": "CHFJPY",
+      "record": {
+        "symbolId": 13,
+        "name": "CHFJPY",
+        "digits": 3,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "ETHUSDT",
+      "broker_symbol": "ETHUSD",
+      "record": {
+        "symbolId": 10029,
+        "name": "ETHUSD",
+        "digits": 2,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 0,
+            "endSecond": 61140
+          },
+          {
+            "startSecond": 61500,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147900,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234300,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320700,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 407100,
+            "endSecond": 492900
+          },
+          {
+            "startSecond": 495900,
+            "endSecond": 579540
+          },
+          {
+            "startSecond": 579900,
+            "endSecond": 604799
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1489,
+            "name": "06.08.2024 Ctrader Maintainence 09 - 18",
+            "description": "Ctrader Maintainence",
+            "scheduleTimeZone": "Europe/Moscow",
+            "holidayDate": 19882,
+            "isRecurring": false,
+            "startSecond": 32400,
+            "endSecond": 64800
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURCAD",
+      "broker_symbol": "EURCAD",
+      "record": {
+        "symbolId": 17,
+        "name": "EURCAD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURCHF",
+      "broker_symbol": "EURCHF",
+      "record": {
+        "symbolId": 10,
+        "name": "EURCHF",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURGBP",
+      "broker_symbol": "EURGBP",
+      "record": {
+        "symbolId": 9,
+        "name": "EURGBP",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURJPY",
+      "broker_symbol": "EURJPY",
+      "record": {
+        "symbolId": 3,
+        "name": "EURJPY",
+        "digits": 3,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURNZD",
+      "broker_symbol": "EURNZD",
+      "record": {
+        "symbolId": 26,
+        "name": "EURNZD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "EURUSD",
+      "broker_symbol": "EURUSD",
+      "record": {
+        "symbolId": 1,
+        "name": "EURUSD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "GBPAUD",
+      "broker_symbol": "GBPAUD",
+      "record": {
+        "symbolId": 16,
+        "name": "GBPAUD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "GBPCAD",
+      "broker_symbol": "GBPCAD",
+      "record": {
+        "symbolId": 19,
+        "name": "GBPCAD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "GBPJPY",
+      "broker_symbol": "GBPJPY",
+      "record": {
+        "symbolId": 7,
+        "name": "GBPJPY",
+        "digits": 3,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "GBPNZD",
+      "broker_symbol": "GBPNZD",
+      "record": {
+        "symbolId": 25,
+        "name": "GBPNZD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "GBPUSD",
+      "broker_symbol": "GBPUSD",
+      "record": {
+        "symbolId": 2,
+        "name": "GBPUSD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "JP225",
+      "broker_symbol": "JP225",
+      "record": {
+        "symbolId": 10006,
+        "name": "JP225",
+        "digits": 2,
+        "pipPosition": 1,
+        "scheduleTimeZone": "Asia/Tokyo",
+        "schedule": [
+          {
+            "startSecond": 111600,
+            "endSecond": 194340
+          },
+          {
+            "startSecond": 198000,
+            "endSecond": 280740
+          },
+          {
+            "startSecond": 284400,
+            "endSecond": 367140
+          },
+          {
+            "startSecond": 370800,
+            "endSecond": 453540
+          },
+          {
+            "startSecond": 457200,
+            "endSecond": 539940
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1791,
+            "name": "07.09.2026 - US Indices & JP225 - Early close @ 20:00",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 71940,
+            "endSecond": 86399
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "NAS100",
+      "broker_symbol": "USTEC",
+      "record": {
+        "symbolId": 10014,
+        "name": "USTEC",
+        "digits": 2,
+        "pipPosition": 1,
+        "scheduleTimeZone": "America/Chicago",
+        "schedule": [
+          {
+            "startSecond": 61200,
+            "endSecond": 143940
+          },
+          {
+            "startSecond": 147600,
+            "endSecond": 230340
+          },
+          {
+            "startSecond": 234000,
+            "endSecond": 316740
+          },
+          {
+            "startSecond": 320400,
+            "endSecond": 403140
+          },
+          {
+            "startSecond": 406800,
+            "endSecond": 489540
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1791,
+            "name": "07.09.2026 - US Indices & JP225 - Early close @ 20:00",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 71940,
+            "endSecond": 86399
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "US30",
+      "broker_symbol": "US30",
+      "record": {
+        "symbolId": 10015,
+        "name": "US30",
+        "digits": 2,
+        "pipPosition": 1,
+        "scheduleTimeZone": "America/Chicago",
+        "schedule": [
+          {
+            "startSecond": 61200,
+            "endSecond": 143940
+          },
+          {
+            "startSecond": 147600,
+            "endSecond": 230340
+          },
+          {
+            "startSecond": 234000,
+            "endSecond": 316740
+          },
+          {
+            "startSecond": 320400,
+            "endSecond": 403140
+          },
+          {
+            "startSecond": 406800,
+            "endSecond": 489540
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1791,
+            "name": "07.09.2026 - US Indices & JP225 - Early close @ 20:00",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 71940,
+            "endSecond": 86399
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "USDCAD",
+      "broker_symbol": "USDCAD",
+      "record": {
+        "symbolId": 8,
+        "name": "USDCAD",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "USDCHF",
+      "broker_symbol": "USDCHF",
+      "record": {
+        "symbolId": 6,
+        "name": "USDCHF",
+        "digits": 5,
+        "pipPosition": 4,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 61260,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 147660,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 234060,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 320460,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 406860,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1698,
+            "name": "01.01.2026 New Year's Day  ALL FX *",
+            "description": "01.01.2026 New Year's Day  ALL FX *",
+            "scheduleTimeZone": "Europe/Bucharest",
+            "holidayDate": 20454,
+            "isRecurring": false,
+            "startSecond": 0,
+            "endSecond": 0
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "USOIL",
+      "broker_symbol": "XTIUSD",
+      "record": {
+        "symbolId": 10019,
+        "name": "XTIUSD",
+        "digits": 3,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 64800,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 151200,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 237600,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 324000,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 410400,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1788,
+            "name": "07.09.2026 - Metals, Metals Futures, XNGUSD & XTIUSD - Early close @ 21:30",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 77340,
+            "endSecond": 86399
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "XAGUSD",
+      "broker_symbol": "XAGUSD",
+      "record": {
+        "symbolId": 42,
+        "name": "XAGUSD",
+        "digits": 3,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 64920,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 151320,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 237720,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 324120,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 410520,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1788,
+            "name": "07.09.2026 - Metals, Metals Futures, XNGUSD & XTIUSD - Early close @ 21:30",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 77340,
+            "endSecond": 86399
+          }
+        ]
+      }
+    },
+    {
+      "requested_pair": "XAUUSD",
+      "broker_symbol": "XAUUSD",
+      "record": {
+        "symbolId": 41,
+        "name": "XAUUSD",
+        "digits": 2,
+        "pipPosition": 2,
+        "scheduleTimeZone": "America/New_York",
+        "schedule": [
+          {
+            "startSecond": 64920,
+            "endSecond": 147540
+          },
+          {
+            "startSecond": 151320,
+            "endSecond": 233940
+          },
+          {
+            "startSecond": 237720,
+            "endSecond": 320340
+          },
+          {
+            "startSecond": 324120,
+            "endSecond": 406740
+          },
+          {
+            "startSecond": 410520,
+            "endSecond": 493020
+          }
+        ],
+        "holiday": [
+          {
+            "holidayId": 1788,
+            "name": "07.09.2026 - Metals, Metals Futures, XNGUSD & XTIUSD - Early close @ 21:30",
+            "description": "US Labor Day",
+            "scheduleTimeZone": "Europe/Minsk",
+            "holidayDate": 20703,
+            "isRecurring": false,
+            "startSecond": 77340,
+            "endSecond": 86399
+          }
+        ]
+      }
+    }
+  ],
+  "failures": []
+}

@@ -1,0 +1,708 @@
+{
+  "scope": "RAW_ICMARKETS_ACQUISITION_NOT_TEACHER_ACCEPTANCE",
+  "source_fixture_sha256": "0f2bae1c49705431f0d3b6e926ec5d9dda80ccadabb2ee9dfa475542de75b8a4",
+  "runs": [
+    {
+      "id": 40078316839,
+      "artifact_id": 12553924238,
+      "status": "PARTIAL",
+      "collected_jobs": 34,
+      "failed_jobs": 12
+    },
+    {
+      "id": 40078970602,
+      "artifact_id": 12554088661,
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "collected_jobs": 8,
+      "failed_jobs": 0,
+      "schedules": 23
+    },
+    {
+      "id": 40098655754,
+      "artifact_id": 12561479570,
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "collected_jobs": 8,
+      "failed_jobs": 0
+    }
+  ],
+  "total_raw_snapshots": 50,
+  "total_raw_rows_including_overlap": 496388,
+  "original_source_symbols": 23,
+  "market_equivalence_warning": "NAS100/USOIL aliases explicit; ETHUSDT uses separate ETHUSD surrogate and cannot establish source acceptance",
+  "inputs": [
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0401ebc6fede452bfc611a77.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0401ebc6fede452bfc611a77.csv.manifest.json",
+      "manifest_sha256": "c907726a6e03142d1fbe9252314c2c2c5057f58a465dc0472888e004eccccf38",
+      "data_sha256": "77be54ba59ee3819432a5d0af287da173baa2341503f51858f55901095a3d9b5",
+      "pair": "GBPUSD",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T08:38:07.053768+00:00",
+      "case_ids": [
+        "pdf-p27-gbpusd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0a3ff8aa72c9638bbd097615.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0a3ff8aa72c9638bbd097615.csv.manifest.json",
+      "manifest_sha256": "63d04e1b40385159fd232ddfc5004479498f4b3254b792ffffda94f937e5a920",
+      "data_sha256": "afe3642cb447c5a48587582859ad2b9f6cab1c1292a42b85021bdc14a34066b3",
+      "pair": "EURNZD",
+      "base_tf": "H1",
+      "rows": 7074,
+      "retrieved_at": "2026-10-24T08:35:30.207211+00:00",
+      "case_ids": [
+        "pdf-p13-eurnzd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0cc3f98fa55f9155e6bd3a76.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0cc3f98fa55f9155e6bd3a76.csv.manifest.json",
+      "manifest_sha256": "6dba668ac3ec28cebc5fe3b5729348893cb9f0b645cb029c21d32d510d3b2b3f",
+      "data_sha256": "b93c44c05de077217479b177ceb4611c422eb07370c1d88fc1d0450982dc57e9",
+      "pair": "AUDCAD",
+      "base_tf": "M5",
+      "rows": 10325,
+      "retrieved_at": "2026-10-24T08:31:23.103847+00:00",
+      "case_ids": [
+        "pdf-p40-audcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0d84e94c43c448943048e8b8.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_0d84e94c43c448943048e8b8.csv.manifest.json",
+      "manifest_sha256": "a0b81cea02ec281c5763ed2bf165320bb1c3b4a20b70a8998c2bc1735fd2b113",
+      "data_sha256": "74e41121ccda4924430f7b6ecdeb1cf96eb82418461ead3dac59e4832d23e826",
+      "pair": "EURGBP",
+      "base_tf": "M5",
+      "rows": 13819,
+      "retrieved_at": "2026-10-24T08:34:19.617499+00:00",
+      "case_ids": [
+        "pdf-p37-eurgbp-sell-1",
+        "pdf-p54-eurgbp-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_301365c74eab831b3e361482.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_301365c74eab831b3e361482.csv.manifest.json",
+      "manifest_sha256": "83b062c8b91d73211d99bc6a895f12987b75c1ca29fb192790191643306bc5da",
+      "data_sha256": "6d2f2c9a1560c3b559b6d3061fe4bdd32bfcadca96e1cb8df13e4ef844fe92da",
+      "pair": "GBPCAD",
+      "base_tf": "H1",
+      "rows": 7389,
+      "retrieved_at": "2026-10-24T08:36:26.475783+00:00",
+      "case_ids": [
+        "pdf-p33-gbpcad-buy-1",
+        "pdf-p47-gbpcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_313431c7fdf8ae369a1650d1.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_313431c7fdf8ae369a1650d1.csv.manifest.json",
+      "manifest_sha256": "350d1b9a32117ed3d1893fcb2e243391c1414d9f9f42eaa1321e8194de784e3a",
+      "data_sha256": "6be37ce5f1a3e45a52b08089d916bf80db931492746587b802cd30bd440fc7ab",
+      "pair": "JP225",
+      "base_tf": "H1",
+      "rows": 6608,
+      "retrieved_at": "2026-10-24T08:38:35.010244+00:00",
+      "case_ids": [
+        "pdf-p58-jp225-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_4ff515a1b7f00468d56b2963.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_4ff515a1b7f00468d56b2963.csv.manifest.json",
+      "manifest_sha256": "dc0d296348c6bf516ca782a7036b3230519a3d8b7cd6e23a9497c79e82b069bf",
+      "data_sha256": "4bc7d5191a225626ead12bba932b7625a414f1d6e39430d0c83cbc147b28e68f",
+      "pair": "GBPAUD",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T08:35:58.045895+00:00",
+      "case_ids": [
+        "pdf-p60-gbpaud-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_5db5a84c86814f3f7d87d12f.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_5db5a84c86814f3f7d87d12f.csv.manifest.json",
+      "manifest_sha256": "57c6ad6f7df41909118fd76c6e1dcc5cf77568cd046de29ea315d49d481e194b",
+      "data_sha256": "89db28519c998b9938d7da361fec86cf989c5919c79ebedb9fe290b39b714862",
+      "pair": "AUDUSD",
+      "base_tf": "H1",
+      "rows": 7221,
+      "retrieved_at": "2026-10-24T08:31:38.783771+00:00",
+      "case_ids": [
+        "pdf-p17-audusd-buy-1",
+        "pdf-p25-audusd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_646809fda7b70a0d0762f115.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_646809fda7b70a0d0762f115.csv.manifest.json",
+      "manifest_sha256": "ce40315a64c26327c0d08178016bdd1a61a54ca47851f85473c882b513e4b9ba",
+      "data_sha256": "255e54cdc5a31450c11cc684d8227751bb668e52fd642742ab8b43bdeccfe55a",
+      "pair": "ETHUSDT",
+      "base_tf": "M5",
+      "rows": 14278,
+      "retrieved_at": "2026-10-24T08:32:49.179443+00:00",
+      "case_ids": [
+        "pdf-p44-ethusdt-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_6c9fa7ccc237c681eade1120.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_6c9fa7ccc237c681eade1120.csv.manifest.json",
+      "manifest_sha256": "6707796ac059bb34982f9b23bcf74b10bc02bc7de2f096ebcb0e09512b05ec75",
+      "data_sha256": "b4974a96cfaf845518d25c7c28dca7b65690955ed3e953ef0c43bf3a1dd7a2a5",
+      "pair": "GBPJPY",
+      "base_tf": "H1",
+      "rows": 7749,
+      "retrieved_at": "2026-10-24T08:37:00.839746+00:00",
+      "case_ids": [
+        "pdf-p19-gbpjpy-buy-1",
+        "pdf-p19-gbpjpy-buy-2",
+        "pdf-p35-gbpjpy-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_6d1bb9152a1c2864520ed884.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_6d1bb9152a1c2864520ed884.csv.manifest.json",
+      "manifest_sha256": "8e00d1afde30f9aa0cc8d6067d642d43721e123557e69083ff23eb06b9090461",
+      "data_sha256": "26aab4a610017467780f064a1419caccad8d3694c0f103670cb8c901368f4b32",
+      "pair": "CHFJPY",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T08:32:08.815908+00:00",
+      "case_ids": [
+        "pdf-p29-chfjpy-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_717e45f14cfe294f03823ffa.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_717e45f14cfe294f03823ffa.csv.manifest.json",
+      "manifest_sha256": "3f5198fcf4618358d96c5f9d047d74b09a8c2900dca5f9c75407ca0ce83b428e",
+      "data_sha256": "f3922f87443293b70f47b5ecbe0c912e928bac8d6c3b02cba1794cfd0561aeaa",
+      "pair": "GBPNZD",
+      "base_tf": "M5",
+      "rows": 10364,
+      "retrieved_at": "2026-10-24T08:37:51.685851+00:00",
+      "case_ids": [
+        "pdf-p31-gbpnzd-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_71818b78e18f72b15a32aceb.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_71818b78e18f72b15a32aceb.csv.manifest.json",
+      "manifest_sha256": "f526dd13c0eb7778a3885e894c7cc840f6bfbb01ae8dc3c8ff9655c9fc63c0d0",
+      "data_sha256": "d503649415b6ae9374474a43e3f7557f45f9ad65d58fda28d54af1594ff43f18",
+      "pair": "EURGBP",
+      "base_tf": "M5",
+      "rows": 10367,
+      "retrieved_at": "2026-10-24T08:34:32.145466+00:00",
+      "case_ids": [
+        "pdf-p08-eurgbp-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_75f2e6e54f800ec7673ac7ad.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_75f2e6e54f800ec7673ac7ad.csv.manifest.json",
+      "manifest_sha256": "82fcae080942a8946f77e560690ba7fd9e06d5c32e5bc5e4ad10ec45411f63cf",
+      "data_sha256": "df2467183cc8b41f2fc65a1cba271fba6dd6bcfb90b29ec9cdd3fd23d77a6172",
+      "pair": "AUDCAD",
+      "base_tf": "H1",
+      "rows": 7074,
+      "retrieved_at": "2026-10-24T08:31:10.550929+00:00",
+      "case_ids": [
+        "pdf-p40-audcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_765217f0559bd8e6f997181d.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_765217f0559bd8e6f997181d.csv.manifest.json",
+      "manifest_sha256": "769ec6930f6b791aff0f91391526518d1ff20522e0274bb1a4e76c18f166e48e",
+      "data_sha256": "937ec8888d033a496d7d5e71d403d3f5a93a82c36e77de76aeb15db77a45e480",
+      "pair": "GBPNZD",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T08:37:39.135720+00:00",
+      "case_ids": [
+        "pdf-p31-gbpnzd-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_77ac48e7deb9c0c4b224f1a2.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_77ac48e7deb9c0c4b224f1a2.csv.manifest.json",
+      "manifest_sha256": "9ef049734f1b120f8fdfc3c110dfd5838901235bebb39b09b570a80fc302cfdf",
+      "data_sha256": "7972c34b49c756ee74a3b7e85f22e13d49d010e42cf1d0970e88989f41be991e",
+      "pair": "GBPUSD",
+      "base_tf": "M5",
+      "rows": 10363,
+      "retrieved_at": "2026-10-24T08:38:19.610006+00:00",
+      "case_ids": [
+        "pdf-p27-gbpusd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_801e76e1d9582359dfbec298.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_801e76e1d9582359dfbec298.csv.manifest.json",
+      "manifest_sha256": "58a3c3be618205b3c7d060bddcd3e1e22038b50865d75ead3d90be70a7db7067",
+      "data_sha256": "383cc1bf3499098c8e437a812a7ba3310c0a2b3e2444561c978a450bcda2decf",
+      "pair": "EURCAD",
+      "base_tf": "H1",
+      "rows": 7027,
+      "retrieved_at": "2026-10-24T08:33:04.419437+00:00",
+      "case_ids": [
+        "pdf-p02-eurcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_82b8a9f6bfd5a4c36de79afb.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_82b8a9f6bfd5a4c36de79afb.csv.manifest.json",
+      "manifest_sha256": "0444291354c1f1d599969e823e9062327179f1d5d95305c940e147a801ffce5f",
+      "data_sha256": "1fda0239eda2e537853ee02de0a15806a8c2b7e5f6e1c30fed073efc3407faeb",
+      "pair": "EURJPY",
+      "base_tf": "H1",
+      "rows": 8157,
+      "retrieved_at": "2026-10-24T08:34:49.788945+00:00",
+      "case_ids": [
+        "pdf-p03-eurjpy-buy-1",
+        "pdf-p46-eurjpy-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_8a5370835b90d4e05ee6bcfb.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_8a5370835b90d4e05ee6bcfb.csv.manifest.json",
+      "manifest_sha256": "3fbaa86440de177dde3a98cef7f7c991c3ba165b7ce7bb83fffdaabf7dbe90c8",
+      "data_sha256": "be5cc9c63e9da15b7f01bcd3b4343ac161ed930341a838b0fa8e788a7c71f9c1",
+      "pair": "EURJPY",
+      "base_tf": "M5",
+      "rows": 10368,
+      "retrieved_at": "2026-10-24T08:35:02.325808+00:00",
+      "case_ids": [
+        "pdf-p46-eurjpy-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_924e61a3536f4afa6673aa0d.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_924e61a3536f4afa6673aa0d.csv.manifest.json",
+      "manifest_sha256": "15ece5506cd37a58bdbe52a94017652f8d364b41ff11b34a528fb036a30793cd",
+      "data_sha256": "b798bd3018ec64adefde4206c65044b8ee1d4f37014eecf0265a422c8b0edf21",
+      "pair": "EURNZD",
+      "base_tf": "M5",
+      "rows": 10328,
+      "retrieved_at": "2026-10-24T08:35:42.763344+00:00",
+      "case_ids": [
+        "pdf-p13-eurnzd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_989f90e22a9e31c5c52ab9fe.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_989f90e22a9e31c5c52ab9fe.csv.manifest.json",
+      "manifest_sha256": "b51aa8106c35715db112700883ccba1e544e6ce9ed98dff8d59b20fb69a4ce4d",
+      "data_sha256": "b4a5f541e0d2b5aeea11d3cdcba26076e0f102607ccba8062169c2c0dfe1a242",
+      "pair": "NAS100",
+      "base_tf": "M5",
+      "rows": 10440,
+      "retrieved_at": "2026-10-24T08:39:15.955488+00:00",
+      "case_ids": [
+        "pdf-p50-nas100-buy-1",
+        "pdf-p52-nas100-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b0b55cb851bbbfbdd10871d4.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b0b55cb851bbbfbdd10871d4.csv.manifest.json",
+      "manifest_sha256": "1bb659f6852075f3583a06261594ffd791ded6a9828ac748d9f536c5efdef182",
+      "data_sha256": "09dddbe3411310bad1aeb90071fa1996c47897f3246308ea562f1fbee2663cff",
+      "pair": "ETHUSDT",
+      "base_tf": "H1",
+      "rows": 9897,
+      "retrieved_at": "2026-10-24T08:32:36.607102+00:00",
+      "case_ids": [
+        "pdf-p44-ethusdt-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b2b0881d28a8e174b296fc8d.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b2b0881d28a8e174b296fc8d.csv.manifest.json",
+      "manifest_sha256": "49c9ef3d12614eeca9231212865803ce755abac9969198e76c3e5bb2f9cba88d",
+      "data_sha256": "3e64fd6a9fbcef7ec01fcb389c02083a90396dc6ef2ea781601e3a2c292861b7",
+      "pair": "EURJPY",
+      "base_tf": "M5",
+      "rows": 10368,
+      "retrieved_at": "2026-10-24T08:35:14.849693+00:00",
+      "case_ids": [
+        "pdf-p03-eurjpy-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b343d679c36633b430c292d4.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b343d679c36633b430c292d4.csv.manifest.json",
+      "manifest_sha256": "b5aafc62897841f69c641e062ab26840063dc0de156e4eea3e385764781cd940",
+      "data_sha256": "13148533a5abe8def7ac43ab95541dfb30780556e8e0ad370cdc9e3789ee7b19",
+      "pair": "JP225",
+      "base_tf": "M5",
+      "rows": 9883,
+      "retrieved_at": "2026-10-24T08:38:47.549788+00:00",
+      "case_ids": [
+        "pdf-p58-jp225-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b8592120e5171d27303ff3b4.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_b8592120e5171d27303ff3b4.csv.manifest.json",
+      "manifest_sha256": "c42fd387d1ba49bcf1948d88f0e49524d1a8c197297410a04936c6387d82fc01",
+      "data_sha256": "40bf6caede26743867926feac681575135264adceb4c1f4c45fb23d571f5b1fd",
+      "pair": "EURCHF",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T08:33:32.211190+00:00",
+      "case_ids": [
+        "pdf-p05-eurchf-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_c0c693cd82d620868ebedbad.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_c0c693cd82d620868ebedbad.csv.manifest.json",
+      "manifest_sha256": "addcc370c159cd01085e48c802fda127afa9cc3a0a7bc7db2c443a052591c72c",
+      "data_sha256": "343a1165975932f365b76aaa8215de59d30d163cf08bd8c3aabb0ab14092f144",
+      "pair": "NAS100",
+      "base_tf": "H1",
+      "rows": 6751,
+      "retrieved_at": "2026-10-24T08:39:02.901048+00:00",
+      "case_ids": [
+        "pdf-p50-nas100-buy-1",
+        "pdf-p52-nas100-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_d4c44fb0ef3d2811737e1571.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_d4c44fb0ef3d2811737e1571.csv.manifest.json",
+      "manifest_sha256": "687e18bb96e994874c450e172744133c52bb5647cf2b5be6c2e0457bca6e3760",
+      "data_sha256": "acc586861c5e9bb2846097fadbd2d5d3368fd83b082845d0ca87cf9a47c43195",
+      "pair": "EURGBP",
+      "base_tf": "H1",
+      "rows": 8277,
+      "retrieved_at": "2026-10-24T08:34:02.549902+00:00",
+      "case_ids": [
+        "pdf-p08-eurgbp-buy-1",
+        "pdf-p37-eurgbp-sell-1",
+        "pdf-p54-eurgbp-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_d76313fd452f1f28c43d2884.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_d76313fd452f1f28c43d2884.csv.manifest.json",
+      "manifest_sha256": "4eebce6a81ee426b699123f310dd45994d500a8a07da26c46e770df2a6a3eae5",
+      "data_sha256": "088272c35fd6a91d9ffb5cc861757ee7a1bfdfbdf29da269648d3a96b9e0389b",
+      "pair": "GBPJPY",
+      "base_tf": "M5",
+      "rows": 18428,
+      "retrieved_at": "2026-10-24T08:37:23.549637+00:00",
+      "case_ids": [
+        "pdf-p19-gbpjpy-buy-1",
+        "pdf-p19-gbpjpy-buy-2",
+        "pdf-p35-gbpjpy-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_e05b030b924cfa6702184f6f.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_e05b030b924cfa6702184f6f.csv.manifest.json",
+      "manifest_sha256": "d2ce7d068bb8dd7e27a078ccee4a1919d5270818232237355a113d81fabaeb47",
+      "data_sha256": "ab3a64ea52bfba187ec58a6afc084ce57d4e2ad988b39dd882366ea0cd210efb",
+      "pair": "EURCHF",
+      "base_tf": "M5",
+      "rows": 10366,
+      "retrieved_at": "2026-10-24T08:33:44.757514+00:00",
+      "case_ids": [
+        "pdf-p05-eurchf-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_e73ce81f932a6e7107109aeb.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_e73ce81f932a6e7107109aeb.csv.manifest.json",
+      "manifest_sha256": "133f60d700f1f7db82dbee0dc5f3c78a950c1cc333b7a6ec5f635a4bdc20767f",
+      "data_sha256": "5bc0038c8d5fe763171ea02f5f9d2317b92671fb9c5925dca98c7ca4dd99ae15",
+      "pair": "GBPCAD",
+      "base_tf": "M5",
+      "rows": 14108,
+      "retrieved_at": "2026-10-24T08:36:43.873388+00:00",
+      "case_ids": [
+        "pdf-p33-gbpcad-buy-1",
+        "pdf-p47-gbpcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_ea5becbfc616439521d635a5.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_ea5becbfc616439521d635a5.csv.manifest.json",
+      "manifest_sha256": "ec151e6532673dc2d4a84fc0d516b6fd150ea5adede94d0d4427d3d0aa921971",
+      "data_sha256": "25262b785b251db57e459fdea428269a1fcbe10b7aed343d6d1d7787a02d6987",
+      "pair": "EURCAD",
+      "base_tf": "M5",
+      "rows": 10332,
+      "retrieved_at": "2026-10-24T08:33:16.972508+00:00",
+      "case_ids": [
+        "pdf-p02-eurcad-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_ec195349d0b75960be90f62b.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_ec195349d0b75960be90f62b.csv.manifest.json",
+      "manifest_sha256": "b5f24dfbd8b7beac77565fa205a73d5ba46827ba91c093a6fdee6e068760b68c",
+      "data_sha256": "b64c540ca1732bbec0dce293f525842f1a03deac0f774cf4ef320248fbaab63d",
+      "pair": "AUDUSD",
+      "base_tf": "M5",
+      "rows": 12078,
+      "retrieved_at": "2026-10-24T08:31:53.454768+00:00",
+      "case_ids": [
+        "pdf-p17-audusd-buy-1",
+        "pdf-p25-audusd-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_f104ca1b99a93f3d7247de6b.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_f104ca1b99a93f3d7247de6b.csv.manifest.json",
+      "manifest_sha256": "b53ec1e358dcfc69867e528a93f1beacb8072a2607b15f29e4263dbbc562d4e6",
+      "data_sha256": "dd57cd5f1f6a832aba721735f0e98c95615d34846c25db88dd8962d8f6217eda",
+      "pair": "CHFJPY",
+      "base_tf": "M5",
+      "rows": 10364,
+      "retrieved_at": "2026-10-24T08:32:21.368399+00:00",
+      "case_ids": [
+        "pdf-p29-chfjpy-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_fe5ee098bf738f55d4656f16.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078316839/data/teacher_icmarkets/collect_fe5ee098bf738f55d4656f16.csv.manifest.json",
+      "manifest_sha256": "2b355b0a423bfccdd7039848e0caf21560aecec82e8c8966d0794a3fdb55b2cc",
+      "data_sha256": "c6db6f910b8f91d2d53049a17628ffd7bd8e7d3902c3ff928c344b4d506745a1",
+      "pair": "GBPAUD",
+      "base_tf": "M5",
+      "rows": 10368,
+      "retrieved_at": "2026-10-24T08:36:10.607169+00:00",
+      "case_ids": [
+        "pdf-p60-gbpaud-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_006e2a508f0183f2b03ca473.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_006e2a508f0183f2b03ca473.csv.manifest.json",
+      "manifest_sha256": "40fffc4c67753cc412679567023117b7c8bd3844c93eb2c872f124c2639febc3",
+      "data_sha256": "ced008d40ba72c5ac55e4b797b8584b96b0f8b13376b58c350abce77d3a5ff31",
+      "pair": "EURCHF",
+      "base_tf": "H1",
+      "rows": 7128,
+      "retrieved_at": "2026-10-24T08:41:54.043335+00:00",
+      "case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_29a67de327bf0a65b10a1e24.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_29a67de327bf0a65b10a1e24.csv.manifest.json",
+      "manifest_sha256": "7e4d452f24d756b8df3672c356fbb3998f267f19f8733819ed543721585bed3d",
+      "data_sha256": "46e89b0223ee470b9d041cc9909b61ef48f797aa56fd2cd16546765ed80473c6",
+      "pair": "EURUSD",
+      "base_tf": "M5",
+      "rows": 17231,
+      "retrieved_at": "2026-10-24T08:42:48.770879+00:00",
+      "case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_306e6b0b008cb8ffaa366175.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_306e6b0b008cb8ffaa366175.csv.manifest.json",
+      "manifest_sha256": "faf66a59ff275853eba6ad9902dac4b6b407e11666df4902695f68706ec982d2",
+      "data_sha256": "271ae1977187a37476588a3c5bca77292a96c4f4e04074fe8d04b4f30a113c9b",
+      "pair": "EURCHF",
+      "base_tf": "M5",
+      "rows": 15545,
+      "retrieved_at": "2026-10-24T08:42:12.717419+00:00",
+      "case_ids": [
+        "pdf-p06-eurchf-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_48e4c6ec69834554621d98e3.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_48e4c6ec69834554621d98e3.csv.manifest.json",
+      "manifest_sha256": "cb6a7716aebcb88a8ef8ae29243599075e417629523504a6c6a3a245b6612e73",
+      "data_sha256": "1c78295e2d1843197b051d9d1037d303fd38fad69facfab7f07118b58f3203b1",
+      "pair": "XAUUSD",
+      "base_tf": "H1",
+      "rows": 6800,
+      "retrieved_at": "2026-10-24T08:43:33.186072+00:00",
+      "case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_4c8faea748e531e3871d5955.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_4c8faea748e531e3871d5955.csv.manifest.json",
+      "manifest_sha256": "f5351cc662918cef3fc972a45a76d5092bca394427d638f3e6f2100dfba5f868",
+      "data_sha256": "4d824829bdc96445672df0427dc94fab6a9e72c0f44d1fcdb7a4e3afaee65a54",
+      "pair": "XAGUSD",
+      "base_tf": "H1",
+      "rows": 6775,
+      "retrieved_at": "2026-10-24T08:43:04.068707+00:00",
+      "case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_9d564f607c262fff0a3e20b2.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_9d564f607c262fff0a3e20b2.csv.manifest.json",
+      "manifest_sha256": "d56f2826b0eb9d80bd20d6484cbd54ee5c6b9fb13126b1fc02de0144cca16552",
+      "data_sha256": "bfea8d4487fbbb3154e49443703c3c9f4383f37464311b2b2fbeb6916de1f0b0",
+      "pair": "EURUSD",
+      "base_tf": "H1",
+      "rows": 7149,
+      "retrieved_at": "2026-10-24T08:42:28.064618+00:00",
+      "case_ids": [
+        "video-entries5-native-t1410-eurusd"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_a26d9d3b077e42e6d2d69954.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_a26d9d3b077e42e6d2d69954.csv.manifest.json",
+      "manifest_sha256": "d205b4922a9ec31d5414b947ba3ba522620a965f31493344589e0622aeead14c",
+      "data_sha256": "cfec206a589b0ab959f6505e37aebd29c70505bb4b030f96c17ffba56a401e3d",
+      "pair": "XAGUSD",
+      "base_tf": "M5",
+      "rows": 10916,
+      "retrieved_at": "2026-10-24T08:43:17.890676+00:00",
+      "case_ids": [
+        "pdf-p22-xagusd-sell-2"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_ce795438d5eecc3590c1491b.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40078970602/data/teacher_icmarkets_supplement/candles/collect_ce795438d5eecc3590c1491b.csv.manifest.json",
+      "manifest_sha256": "b5ab3e0d619bd365c85b2fe7c59d9716180e3517a88b7ce389d05d6b78e74b01",
+      "data_sha256": "00d3da6e0cc7a3b595d9f9e43ed296cf9c2d7e374e0287d32e4f5cd81a8ba6a4",
+      "pair": "XAUUSD",
+      "base_tf": "M5",
+      "rows": 16436,
+      "retrieved_at": "2026-10-24T08:43:53.865943+00:00",
+      "case_ids": [
+        "video-entries5-native-t1065-xauusd"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_11a94b236d0d2433e550e338.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_11a94b236d0d2433e550e338.csv.manifest.json",
+      "manifest_sha256": "5c0c4a8336990fa731319e0d69df0ed9596f1ac538571adb9aade060230ca032",
+      "data_sha256": "103ebb00cdd7c027d9a8eb775b5301c96ce3e45c256dfffb2fab4295c7d8c67b",
+      "pair": "USDCHF",
+      "base_tf": "M5",
+      "rows": 10597,
+      "retrieved_at": "2026-10-24T13:35:23.033137+00:00",
+      "case_ids": [
+        "pdf-p23-usdchf-sell-1",
+        "pdf-p23-usdchf-sell-2"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_4ca4a2fc74c8351fb52ac7c9.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_4ca4a2fc74c8351fb52ac7c9.csv.manifest.json",
+      "manifest_sha256": "b471dd796a66fb3ca9f125591a3447db8b4616bf50d7a85d5204607ebbaa1b35",
+      "data_sha256": "36cd123909d70f4747ef96eeb3373b6e9f80e102978b68256f1177e96274e973",
+      "pair": "US30",
+      "base_tf": "H1",
+      "rows": 6954,
+      "retrieved_at": "2026-10-24T13:34:10.700707+00:00",
+      "case_ids": [
+        "pdf-p38-us30-buy-1",
+        "pdf-p55-us30-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_86592815ab15bd7c08cb675a.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_86592815ab15bd7c08cb675a.csv.manifest.json",
+      "manifest_sha256": "6ef83fcc40cc35d83a8fed646d820b11d909f84d0589360203ea5d13f28377c0",
+      "data_sha256": "b4e95bc6c19f377786ea0cf07edd331e09883247b58f2f7051a413a05916bcfd",
+      "pair": "USDCAD",
+      "base_tf": "M5",
+      "rows": 10339,
+      "retrieved_at": "2026-10-24T13:34:54.916409+00:00",
+      "case_ids": [
+        "pdf-p15-usdcad-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_8b1ec0d62c1725b72becb3ba.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_8b1ec0d62c1725b72becb3ba.csv.manifest.json",
+      "manifest_sha256": "a757069dc2fec6eb0ebbb0edb08ce7bb0de3543185d26cc35189bac4b23cb63a",
+      "data_sha256": "98a9aa7e4baaf9e3cf581db1be7d76bcd1dfd51b5faef2a6222de8c72f4abfb1",
+      "pair": "USOIL",
+      "base_tf": "M5",
+      "rows": 20291,
+      "retrieved_at": "2026-10-24T13:36:06.334466+00:00",
+      "case_ids": [
+        "pdf-p10-usoil-buy-1",
+        "pdf-p10-usoil-buy-2",
+        "pdf-p20-usoil-buy-2",
+        "pdf-p42-usoil-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_b557de1ab864bd76dfe818f9.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_b557de1ab864bd76dfe818f9.csv.manifest.json",
+      "manifest_sha256": "6e1e657f56adab02bbc8014097c786873a4f4f0facea664c794a97edf6369c24",
+      "data_sha256": "c640447625a7a975ccd26ae21965819d3486a16990f41cee56ae26c62cc0ca57",
+      "pair": "USOIL",
+      "base_tf": "H1",
+      "rows": 7596,
+      "retrieved_at": "2026-10-24T13:35:40.149509+00:00",
+      "case_ids": [
+        "pdf-p10-usoil-buy-1",
+        "pdf-p10-usoil-buy-2",
+        "pdf-p20-usoil-buy-2",
+        "pdf-p42-usoil-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_c058fc002a50237cd6d2dbb0.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_c058fc002a50237cd6d2dbb0.csv.manifest.json",
+      "manifest_sha256": "d87f06a1bea412d82705359e718f740f5a53c045bdc3ee964dc8c65c500b5e13",
+      "data_sha256": "22eb316ec794d2f509f520e501218ce14b1870735d545e457c0df61eab874d46",
+      "pair": "USDCAD",
+      "base_tf": "H1",
+      "rows": 7077,
+      "retrieved_at": "2026-10-24T13:34:42.335312+00:00",
+      "case_ids": [
+        "pdf-p15-usdcad-sell-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_ddea096a7ca6e345de66c392.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_ddea096a7ca6e345de66c392.csv.manifest.json",
+      "manifest_sha256": "3f72e3f99aab604f6b7b9ad81bbddc7908d043c777414b34101dfd2479c78645",
+      "data_sha256": "7026e309595cba5efee20e7c40806ea765d4b9aeff1146f7ac1a6cf457608c84",
+      "pair": "US30",
+      "base_tf": "M5",
+      "rows": 12900,
+      "retrieved_at": "2026-10-24T13:34:27.054253+00:00",
+      "case_ids": [
+        "pdf-p38-us30-buy-1",
+        "pdf-p55-us30-buy-1"
+      ]
+    },
+    {
+      "path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_f96b706592fd20ebcac40e90.csv.gz",
+      "manifest_path": "data/teacher_icmarkets_runs/40098655754/data/teacher_icmarkets/collect_f96b706592fd20ebcac40e90.csv.manifest.json",
+      "manifest_sha256": "0ce6374385f4810552f561516d27033baa5b672d8a12e99a94b413dc0564d505",
+      "data_sha256": "08bcbde3bb134c43517a1391f66cbfaf566c4c66a39824259a5e20461a85c60d",
+      "pair": "USDCHF",
+      "base_tf": "H1",
+      "rows": 7098,
+      "retrieved_at": "2026-10-24T13:35:10.195176+00:00",
+      "case_ids": [
+        "pdf-p23-usdchf-sell-1",
+        "pdf-p23-usdchf-sell-2"
+      ]
+    }
+  ]
+}

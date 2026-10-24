@@ -1,0 +1,99 @@
+{
+  "schema_version": "teacher_acquisition_status_v1",
+  "status": "RAW_COLLECTED_UNVALIDATED",
+  "plan_sha256": "8e449763e587c8e824f2356cfa6dbace15b68ada2593552cf0d669c22b926594",
+  "requested_jobs": 8,
+  "expected_jobs": 8,
+  "jobs": [
+    {
+      "id": "collect_4ca4a2fc74c8351fb52ac7c9",
+      "pair": "US30",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_4ca4a2fc74c8351fb52ac7c9.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_4ca4a2fc74c8351fb52ac7c9.csv.manifest.json",
+      "sha256": "36cd123909d70f4747ef96eeb3373b6e9f80e102978b68256f1177e96274e973",
+      "rows": 6954
+    },
+    {
+      "id": "collect_ddea096a7ca6e345de66c392",
+      "pair": "US30",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_ddea096a7ca6e345de66c392.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_ddea096a7ca6e345de66c392.csv.manifest.json",
+      "sha256": "7026e309595cba5efee20e7c40806ea765d4b9aeff1146f7ac1a6cf457608c84",
+      "rows": 12900
+    },
+    {
+      "id": "collect_c058fc002a50237cd6d2dbb0",
+      "pair": "USDCAD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_c058fc002a50237cd6d2dbb0.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_c058fc002a50237cd6d2dbb0.csv.manifest.json",
+      "sha256": "22eb316ec794d2f509f520e501218ce14b1870735d545e457c0df61eab874d46",
+      "rows": 7077
+    },
+    {
+      "id": "collect_86592815ab15bd7c08cb675a",
+      "pair": "USDCAD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_86592815ab15bd7c08cb675a.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_86592815ab15bd7c08cb675a.csv.manifest.json",
+      "sha256": "b4e95bc6c19f377786ea0cf07edd331e09883247b58f2f7051a413a05916bcfd",
+      "rows": 10339
+    },
+    {
+      "id": "collect_f96b706592fd20ebcac40e90",
+      "pair": "USDCHF",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_f96b706592fd20ebcac40e90.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_f96b706592fd20ebcac40e90.csv.manifest.json",
+      "sha256": "08bcbde3bb134c43517a1391f66cbfaf566c4c66a39824259a5e20461a85c60d",
+      "rows": 7098
+    },
+    {
+      "id": "collect_11a94b236d0d2433e550e338",
+      "pair": "USDCHF",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_11a94b236d0d2433e550e338.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_11a94b236d0d2433e550e338.csv.manifest.json",
+      "sha256": "103ebb00cdd7c027d9a8eb775b5301c96ce3e45c256dfffb2fab4295c7d8c67b",
+      "rows": 10597
+    },
+    {
+      "id": "collect_b557de1ab864bd76dfe818f9",
+      "pair": "USOIL",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_b557de1ab864bd76dfe818f9.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_b557de1ab864bd76dfe818f9.csv.manifest.json",
+      "sha256": "c640447625a7a975ccd26ae21965819d3486a16990f41cee56ae26c62cc0ca57",
+      "rows": 7596
+    },
+    {
+      "id": "collect_8b1ec0d62c1725b72becb3ba",
+      "pair": "USOIL",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "reconnect_failures": [],
+      "path": "data/teacher_icmarkets/collect_8b1ec0d62c1725b72becb3ba.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_8b1ec0d62c1725b72becb3ba.csv.manifest.json",
+      "sha256": "98a9aa7e4baaf9e3cf581db1be7d76bcd1dfd51b5faef2a6222de8c72f4abfb1",
+      "rows": 20291
+    }
+  ],
+  "collected_jobs": 8,
+  "failed_jobs": 0
+}

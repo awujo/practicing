@@ -1,0 +1,564 @@
+{
+  "broker_symbol": "GBPAUD",
+  "calendar_id": "fx_ny_v1",
+  "anchor_id": "ny17_wall_v2",
+  "calendar_version": "fx_ny_v1_declared_hypothesis",
+  "asset_class": "FX",
+  "symbol_mapping_status": "EXACT_BROKER_NAME_ALTERNATE_SOURCE_FEED",
+  "catalogue_source": "origin/claude-kevin-king:data/broker_symbols.json",
+  "catalogue_commit": "a4adf5206577b174590aeb70f85581a617fe3c1c",
+  "catalogue_updated_at": "2026-10-22T08:13:42.528075+00:00",
+  "replay_calendar_status": "DECLARED_FX_HYPOTHESIS",
+  "symbol": "GBPAUD",
+  "tick_size": "0.00001",
+  "distance_unit": "0.0001",
+  "price_basis": "BID",
+  "venue": "ICMARKETS",
+  "provider": "IC Markets cTrader Open API",
+  "base_tf": "M5",
+  "source_id": "source_e241839b595aa7a85d0b659f",
+  "sha256": "c6db6f910b8f91d2d53049a17628ffd7bd8e7d3902c3ff928c344b4d506745a1",
+  "retrieved_at": "2026-10-24T08:36:10.607169+00:00",
+  "historical_availability_assumption": "bar close; actual historical receipt timestamps unavailable",
+  "requested_start": "2026-04-07T00:00:00+00:00",
+  "requested_end": "2026-05-27T00:00:00+00:00",
+  "first_bar": "2026-04-07T00:00:00+00:00",
+  "last_bar": "2026-05-26T23:55:00+00:00",
+  "rows": 10368,
+  "symbol_metadata": {
+    "symbol_id": 16,
+    "name": "GBPAUD",
+    "digits": 5,
+    "pip_position": 4,
+    "lot_size": 10000000,
+    "min_volume": 100000,
+    "max_volume": 500000000,
+    "step_volume": 100000,
+    "candidates": [
+      16
+    ]
+  },
+  "request_count": 50,
+  "chunks": [
+    {
+      "requested_start": "2026-04-07T00:00:00+00:00",
+      "requested_end": "2026-04-08T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-07T00:00:00+00:00",
+      "last_bar": "2026-04-07T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-08T00:00:00+00:00",
+      "requested_end": "2026-04-09T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-08T00:00:00+00:00",
+      "last_bar": "2026-04-08T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-09T00:00:00+00:00",
+      "requested_end": "2026-04-10T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-09T00:00:00+00:00",
+      "last_bar": "2026-04-09T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-10T00:00:00+00:00",
+      "requested_end": "2026-04-11T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-04-10T00:00:00+00:00",
+      "last_bar": "2026-04-10T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-11T00:00:00+00:00",
+      "requested_end": "2026-04-12T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-12T00:00:00+00:00",
+      "requested_end": "2026-04-13T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-04-12T21:00:00+00:00",
+      "last_bar": "2026-04-12T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-13T00:00:00+00:00",
+      "requested_end": "2026-04-14T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-13T00:00:00+00:00",
+      "last_bar": "2026-04-13T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-14T00:00:00+00:00",
+      "requested_end": "2026-04-15T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-14T00:00:00+00:00",
+      "last_bar": "2026-04-14T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-15T00:00:00+00:00",
+      "requested_end": "2026-04-16T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-15T00:00:00+00:00",
+      "last_bar": "2026-04-15T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-16T00:00:00+00:00",
+      "requested_end": "2026-04-17T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-16T00:00:00+00:00",
+      "last_bar": "2026-04-16T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-17T00:00:00+00:00",
+      "requested_end": "2026-04-18T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-04-17T00:00:00+00:00",
+      "last_bar": "2026-04-17T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-18T00:00:00+00:00",
+      "requested_end": "2026-04-19T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-19T00:00:00+00:00",
+      "requested_end": "2026-04-20T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-04-19T21:00:00+00:00",
+      "last_bar": "2026-04-19T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-20T00:00:00+00:00",
+      "requested_end": "2026-04-21T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-20T00:00:00+00:00",
+      "last_bar": "2026-04-20T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-21T00:00:00+00:00",
+      "requested_end": "2026-04-22T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-21T00:00:00+00:00",
+      "last_bar": "2026-04-21T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-22T00:00:00+00:00",
+      "requested_end": "2026-04-23T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-22T00:00:00+00:00",
+      "last_bar": "2026-04-22T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-23T00:00:00+00:00",
+      "requested_end": "2026-04-24T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-23T00:00:00+00:00",
+      "last_bar": "2026-04-23T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-24T00:00:00+00:00",
+      "requested_end": "2026-04-25T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-04-24T00:00:00+00:00",
+      "last_bar": "2026-04-24T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-25T00:00:00+00:00",
+      "requested_end": "2026-04-26T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-26T00:00:00+00:00",
+      "requested_end": "2026-04-27T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-04-26T21:00:00+00:00",
+      "last_bar": "2026-04-26T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-27T00:00:00+00:00",
+      "requested_end": "2026-04-28T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-27T00:00:00+00:00",
+      "last_bar": "2026-04-27T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-28T00:00:00+00:00",
+      "requested_end": "2026-04-29T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-28T00:00:00+00:00",
+      "last_bar": "2026-04-28T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-29T00:00:00+00:00",
+      "requested_end": "2026-04-30T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-29T00:00:00+00:00",
+      "last_bar": "2026-04-29T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-04-30T00:00:00+00:00",
+      "requested_end": "2026-05-01T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-04-30T00:00:00+00:00",
+      "last_bar": "2026-04-30T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-01T00:00:00+00:00",
+      "requested_end": "2026-05-02T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-05-01T00:00:00+00:00",
+      "last_bar": "2026-05-01T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-02T00:00:00+00:00",
+      "requested_end": "2026-05-03T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-03T00:00:00+00:00",
+      "requested_end": "2026-05-04T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-05-03T21:00:00+00:00",
+      "last_bar": "2026-05-03T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-04T00:00:00+00:00",
+      "requested_end": "2026-05-05T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-04T00:00:00+00:00",
+      "last_bar": "2026-05-04T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-05T00:00:00+00:00",
+      "requested_end": "2026-05-06T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-05T00:00:00+00:00",
+      "last_bar": "2026-05-05T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-06T00:00:00+00:00",
+      "requested_end": "2026-05-07T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-06T00:00:00+00:00",
+      "last_bar": "2026-05-06T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-07T00:00:00+00:00",
+      "requested_end": "2026-05-08T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-07T00:00:00+00:00",
+      "last_bar": "2026-05-07T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-08T00:00:00+00:00",
+      "requested_end": "2026-05-09T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-05-08T00:00:00+00:00",
+      "last_bar": "2026-05-08T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-09T00:00:00+00:00",
+      "requested_end": "2026-05-10T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-10T00:00:00+00:00",
+      "requested_end": "2026-05-11T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-05-10T21:00:00+00:00",
+      "last_bar": "2026-05-10T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-11T00:00:00+00:00",
+      "requested_end": "2026-05-12T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-11T00:00:00+00:00",
+      "last_bar": "2026-05-11T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-12T00:00:00+00:00",
+      "requested_end": "2026-05-13T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-12T00:00:00+00:00",
+      "last_bar": "2026-05-12T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-13T00:00:00+00:00",
+      "requested_end": "2026-05-14T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-13T00:00:00+00:00",
+      "last_bar": "2026-05-13T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-14T00:00:00+00:00",
+      "requested_end": "2026-05-15T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-14T00:00:00+00:00",
+      "last_bar": "2026-05-14T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-15T00:00:00+00:00",
+      "requested_end": "2026-05-16T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-05-15T00:00:00+00:00",
+      "last_bar": "2026-05-15T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-16T00:00:00+00:00",
+      "requested_end": "2026-05-17T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-17T00:00:00+00:00",
+      "requested_end": "2026-05-18T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-05-17T21:00:00+00:00",
+      "last_bar": "2026-05-17T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-18T00:00:00+00:00",
+      "requested_end": "2026-05-19T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-18T00:00:00+00:00",
+      "last_bar": "2026-05-18T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-19T00:00:00+00:00",
+      "requested_end": "2026-05-20T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-19T00:00:00+00:00",
+      "last_bar": "2026-05-19T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-20T00:00:00+00:00",
+      "requested_end": "2026-05-21T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-20T00:00:00+00:00",
+      "last_bar": "2026-05-20T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-21T00:00:00+00:00",
+      "requested_end": "2026-05-22T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-21T00:00:00+00:00",
+      "last_bar": "2026-05-21T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-22T00:00:00+00:00",
+      "requested_end": "2026-05-23T00:00:00+00:00",
+      "returned_rows": 252,
+      "retained_rows": 252,
+      "first_bar": "2026-05-22T00:00:00+00:00",
+      "last_bar": "2026-05-22T20:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-23T00:00:00+00:00",
+      "requested_end": "2026-05-24T00:00:00+00:00",
+      "returned_rows": 0,
+      "retained_rows": 0,
+      "first_bar": null,
+      "last_bar": null,
+      "empty": true,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-24T00:00:00+00:00",
+      "requested_end": "2026-05-25T00:00:00+00:00",
+      "returned_rows": 37,
+      "retained_rows": 36,
+      "first_bar": "2026-05-24T21:00:00+00:00",
+      "last_bar": "2026-05-24T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-25T00:00:00+00:00",
+      "requested_end": "2026-05-26T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-25T00:00:00+00:00",
+      "last_bar": "2026-05-25T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    },
+    {
+      "requested_start": "2026-05-26T00:00:00+00:00",
+      "requested_end": "2026-05-27T00:00:00+00:00",
+      "returned_rows": 289,
+      "retained_rows": 288,
+      "first_bar": "2026-05-26T00:00:00+00:00",
+      "last_bar": "2026-05-26T23:55:00+00:00",
+      "empty": false,
+      "completeness": "UNVALIDATED_NO_PAGINATION_FLAG"
+    }
+  ],
+  "empty_chunks": 7,
+  "zero_volume_rows": 0,
+  "observed_outside_fx_weekend_hours": 0,
+  "calendar_observation_note": "FX weekend diagnostic only; not an assumed calendar for non-FX; observed bars retained",
+  "raw_collection_status": "RAW_COLLECTED_UNVALIDATED",
+  "case_ids": [
+    "pdf-p60-gbpaud-sell-1"
+  ],
+  "collection_job": {
+    "id": "collect_fe5ee098bf738f55d4656f16",
+    "pair": "GBPAUD",
+    "base_tf": "M5",
+    "start": "2026-04-07T00:00:00+00:00",
+    "end": "2026-05-27T00:00:00+00:00",
+    "case_ids": [
+      "pdf-p60-gbpaud-sell-1"
+    ]
+  },
+  "coverage_status": "NOT_CALENDAR_VALIDATED",
+  "source_equivalence": "ALTERNATE_FEED; teacher feed/alignment may differ"
+}

@@ -1,0 +1,435 @@
+{
+  "schema_version": "teacher_acquisition_status_v1",
+  "status": "PARTIAL",
+  "plan_sha256": "516aa63c30971c717ed2bc0e74c6405550256f99a5751f3b9ae55d80a1c873d4",
+  "requested_jobs": 46,
+  "expected_jobs": 46,
+  "jobs": [
+    {
+      "id": "collect_75f2e6e54f800ec7673ac7ad",
+      "pair": "AUDCAD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_75f2e6e54f800ec7673ac7ad.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_75f2e6e54f800ec7673ac7ad.csv.manifest.json",
+      "sha256": "df2467183cc8b41f2fc65a1cba271fba6dd6bcfb90b29ec9cdd3fd23d77a6172",
+      "rows": 7074
+    },
+    {
+      "id": "collect_0cc3f98fa55f9155e6bd3a76",
+      "pair": "AUDCAD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_0cc3f98fa55f9155e6bd3a76.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_0cc3f98fa55f9155e6bd3a76.csv.manifest.json",
+      "sha256": "b93c44c05de077217479b177ceb4611c422eb07370c1d88fc1d0450982dc57e9",
+      "rows": 10325
+    },
+    {
+      "id": "collect_5db5a84c86814f3f7d87d12f",
+      "pair": "AUDUSD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_5db5a84c86814f3f7d87d12f.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_5db5a84c86814f3f7d87d12f.csv.manifest.json",
+      "sha256": "89db28519c998b9938d7da361fec86cf989c5919c79ebedb9fe290b39b714862",
+      "rows": 7221
+    },
+    {
+      "id": "collect_ec195349d0b75960be90f62b",
+      "pair": "AUDUSD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_ec195349d0b75960be90f62b.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_ec195349d0b75960be90f62b.csv.manifest.json",
+      "sha256": "b64c540ca1732bbec0dce293f525842f1a03deac0f774cf4ef320248fbaab63d",
+      "rows": 12078
+    },
+    {
+      "id": "collect_6d1bb9152a1c2864520ed884",
+      "pair": "CHFJPY",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_6d1bb9152a1c2864520ed884.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_6d1bb9152a1c2864520ed884.csv.manifest.json",
+      "sha256": "26aab4a610017467780f064a1419caccad8d3694c0f103670cb8c901368f4b32",
+      "rows": 7077
+    },
+    {
+      "id": "collect_f104ca1b99a93f3d7247de6b",
+      "pair": "CHFJPY",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_f104ca1b99a93f3d7247de6b.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_f104ca1b99a93f3d7247de6b.csv.manifest.json",
+      "sha256": "dd57cd5f1f6a832aba721735f0e98c95615d34846c25db88dd8962d8f6217eda",
+      "rows": 10364
+    },
+    {
+      "id": "collect_b0b55cb851bbbfbdd10871d4",
+      "pair": "ETHUSDT",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_b0b55cb851bbbfbdd10871d4.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_b0b55cb851bbbfbdd10871d4.csv.manifest.json",
+      "sha256": "09dddbe3411310bad1aeb90071fa1996c47897f3246308ea562f1fbee2663cff",
+      "rows": 9897
+    },
+    {
+      "id": "collect_646809fda7b70a0d0762f115",
+      "pair": "ETHUSDT",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_646809fda7b70a0d0762f115.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_646809fda7b70a0d0762f115.csv.manifest.json",
+      "sha256": "255e54cdc5a31450c11cc684d8227751bb668e52fd642742ab8b43bdeccfe55a",
+      "rows": 14278
+    },
+    {
+      "id": "collect_801e76e1d9582359dfbec298",
+      "pair": "EURCAD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_801e76e1d9582359dfbec298.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_801e76e1d9582359dfbec298.csv.manifest.json",
+      "sha256": "383cc1bf3499098c8e437a812a7ba3310c0a2b3e2444561c978a450bcda2decf",
+      "rows": 7027
+    },
+    {
+      "id": "collect_ea5becbfc616439521d635a5",
+      "pair": "EURCAD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_ea5becbfc616439521d635a5.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_ea5becbfc616439521d635a5.csv.manifest.json",
+      "sha256": "25262b785b251db57e459fdea428269a1fcbe10b7aed343d6d1d7787a02d6987",
+      "rows": 10332
+    },
+    {
+      "id": "collect_b8592120e5171d27303ff3b4",
+      "pair": "EURCHF",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_b8592120e5171d27303ff3b4.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_b8592120e5171d27303ff3b4.csv.manifest.json",
+      "sha256": "40bf6caede26743867926feac681575135264adceb4c1f4c45fb23d571f5b1fd",
+      "rows": 7077
+    },
+    {
+      "id": "collect_e05b030b924cfa6702184f6f",
+      "pair": "EURCHF",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_e05b030b924cfa6702184f6f.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_e05b030b924cfa6702184f6f.csv.manifest.json",
+      "sha256": "ab3a64ea52bfba187ec58a6afc084ce57d4e2ad988b39dd882366ea0cd210efb",
+      "rows": 10366
+    },
+    {
+      "id": "collect_d4c44fb0ef3d2811737e1571",
+      "pair": "EURGBP",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_d4c44fb0ef3d2811737e1571.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_d4c44fb0ef3d2811737e1571.csv.manifest.json",
+      "sha256": "acc586861c5e9bb2846097fadbd2d5d3368fd83b082845d0ca87cf9a47c43195",
+      "rows": 8277
+    },
+    {
+      "id": "collect_0d84e94c43c448943048e8b8",
+      "pair": "EURGBP",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_0d84e94c43c448943048e8b8.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_0d84e94c43c448943048e8b8.csv.manifest.json",
+      "sha256": "74e41121ccda4924430f7b6ecdeb1cf96eb82418461ead3dac59e4832d23e826",
+      "rows": 13819
+    },
+    {
+      "id": "collect_71818b78e18f72b15a32aceb",
+      "pair": "EURGBP",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_71818b78e18f72b15a32aceb.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_71818b78e18f72b15a32aceb.csv.manifest.json",
+      "sha256": "d503649415b6ae9374474a43e3f7557f45f9ad65d58fda28d54af1594ff43f18",
+      "rows": 10367
+    },
+    {
+      "id": "collect_82b8a9f6bfd5a4c36de79afb",
+      "pair": "EURJPY",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_82b8a9f6bfd5a4c36de79afb.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_82b8a9f6bfd5a4c36de79afb.csv.manifest.json",
+      "sha256": "1fda0239eda2e537853ee02de0a15806a8c2b7e5f6e1c30fed073efc3407faeb",
+      "rows": 8157
+    },
+    {
+      "id": "collect_8a5370835b90d4e05ee6bcfb",
+      "pair": "EURJPY",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_8a5370835b90d4e05ee6bcfb.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_8a5370835b90d4e05ee6bcfb.csv.manifest.json",
+      "sha256": "be5cc9c63e9da15b7f01bcd3b4343ac161ed930341a838b0fa8e788a7c71f9c1",
+      "rows": 10368
+    },
+    {
+      "id": "collect_b2b0881d28a8e174b296fc8d",
+      "pair": "EURJPY",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_b2b0881d28a8e174b296fc8d.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_b2b0881d28a8e174b296fc8d.csv.manifest.json",
+      "sha256": "3e64fd6a9fbcef7ec01fcb389c02083a90396dc6ef2ea781601e3a2c292861b7",
+      "rows": 10368
+    },
+    {
+      "id": "collect_0a3ff8aa72c9638bbd097615",
+      "pair": "EURNZD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_0a3ff8aa72c9638bbd097615.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_0a3ff8aa72c9638bbd097615.csv.manifest.json",
+      "sha256": "afe3642cb447c5a48587582859ad2b9f6cab1c1292a42b85021bdc14a34066b3",
+      "rows": 7074
+    },
+    {
+      "id": "collect_924e61a3536f4afa6673aa0d",
+      "pair": "EURNZD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_924e61a3536f4afa6673aa0d.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_924e61a3536f4afa6673aa0d.csv.manifest.json",
+      "sha256": "b798bd3018ec64adefde4206c65044b8ee1d4f37014eecf0265a422c8b0edf21",
+      "rows": 10328
+    },
+    {
+      "id": "collect_4ff515a1b7f00468d56b2963",
+      "pair": "GBPAUD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_4ff515a1b7f00468d56b2963.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_4ff515a1b7f00468d56b2963.csv.manifest.json",
+      "sha256": "4bc7d5191a225626ead12bba932b7625a414f1d6e39430d0c83cbc147b28e68f",
+      "rows": 7077
+    },
+    {
+      "id": "collect_fe5ee098bf738f55d4656f16",
+      "pair": "GBPAUD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_fe5ee098bf738f55d4656f16.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_fe5ee098bf738f55d4656f16.csv.manifest.json",
+      "sha256": "c6db6f910b8f91d2d53049a17628ffd7bd8e7d3902c3ff928c344b4d506745a1",
+      "rows": 10368
+    },
+    {
+      "id": "collect_301365c74eab831b3e361482",
+      "pair": "GBPCAD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_301365c74eab831b3e361482.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_301365c74eab831b3e361482.csv.manifest.json",
+      "sha256": "6d2f2c9a1560c3b559b6d3061fe4bdd32bfcadca96e1cb8df13e4ef844fe92da",
+      "rows": 7389
+    },
+    {
+      "id": "collect_e73ce81f932a6e7107109aeb",
+      "pair": "GBPCAD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_e73ce81f932a6e7107109aeb.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_e73ce81f932a6e7107109aeb.csv.manifest.json",
+      "sha256": "5bc0038c8d5fe763171ea02f5f9d2317b92671fb9c5925dca98c7ca4dd99ae15",
+      "rows": 14108
+    },
+    {
+      "id": "collect_6c9fa7ccc237c681eade1120",
+      "pair": "GBPJPY",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_6c9fa7ccc237c681eade1120.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_6c9fa7ccc237c681eade1120.csv.manifest.json",
+      "sha256": "b4974a96cfaf845518d25c7c28dca7b65690955ed3e953ef0c43bf3a1dd7a2a5",
+      "rows": 7749
+    },
+    {
+      "id": "collect_d76313fd452f1f28c43d2884",
+      "pair": "GBPJPY",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_d76313fd452f1f28c43d2884.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_d76313fd452f1f28c43d2884.csv.manifest.json",
+      "sha256": "088272c35fd6a91d9ffb5cc861757ee7a1bfdfbdf29da269648d3a96b9e0389b",
+      "rows": 18428
+    },
+    {
+      "id": "collect_765217f0559bd8e6f997181d",
+      "pair": "GBPNZD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_765217f0559bd8e6f997181d.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_765217f0559bd8e6f997181d.csv.manifest.json",
+      "sha256": "937ec8888d033a496d7d5e71d403d3f5a93a82c36e77de76aeb15db77a45e480",
+      "rows": 7077
+    },
+    {
+      "id": "collect_717e45f14cfe294f03823ffa",
+      "pair": "GBPNZD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_717e45f14cfe294f03823ffa.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_717e45f14cfe294f03823ffa.csv.manifest.json",
+      "sha256": "f3922f87443293b70f47b5ecbe0c912e928bac8d6c3b02cba1794cfd0561aeaa",
+      "rows": 10364
+    },
+    {
+      "id": "collect_0401ebc6fede452bfc611a77",
+      "pair": "GBPUSD",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_0401ebc6fede452bfc611a77.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_0401ebc6fede452bfc611a77.csv.manifest.json",
+      "sha256": "77be54ba59ee3819432a5d0af287da173baa2341503f51858f55901095a3d9b5",
+      "rows": 7077
+    },
+    {
+      "id": "collect_77ac48e7deb9c0c4b224f1a2",
+      "pair": "GBPUSD",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_77ac48e7deb9c0c4b224f1a2.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_77ac48e7deb9c0c4b224f1a2.csv.manifest.json",
+      "sha256": "7972c34b49c756ee74a3b7e85f22e13d49d010e42cf1d0970e88989f41be991e",
+      "rows": 10363
+    },
+    {
+      "id": "collect_313431c7fdf8ae369a1650d1",
+      "pair": "JP225",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_313431c7fdf8ae369a1650d1.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_313431c7fdf8ae369a1650d1.csv.manifest.json",
+      "sha256": "6be37ce5f1a3e45a52b08089d916bf80db931492746587b802cd30bd440fc7ab",
+      "rows": 6608
+    },
+    {
+      "id": "collect_b343d679c36633b430c292d4",
+      "pair": "JP225",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_b343d679c36633b430c292d4.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_b343d679c36633b430c292d4.csv.manifest.json",
+      "sha256": "13148533a5abe8def7ac43ab95541dfb30780556e8e0ad370cdc9e3789ee7b19",
+      "rows": 9883
+    },
+    {
+      "id": "collect_c0c693cd82d620868ebedbad",
+      "pair": "NAS100",
+      "base_tf": "H1",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_c0c693cd82d620868ebedbad.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_c0c693cd82d620868ebedbad.csv.manifest.json",
+      "sha256": "343a1165975932f365b76aaa8215de59d30d163cf08bd8c3aabb0ab14092f144",
+      "rows": 6751
+    },
+    {
+      "id": "collect_989f90e22a9e31c5c52ab9fe",
+      "pair": "NAS100",
+      "base_tf": "M5",
+      "status": "RAW_COLLECTED_UNVALIDATED",
+      "path": "data/teacher_icmarkets/collect_989f90e22a9e31c5c52ab9fe.csv.gz",
+      "manifest": "data/teacher_icmarkets/collect_989f90e22a9e31c5c52ab9fe.csv.manifest.json",
+      "sha256": "b4a5f541e0d2b5aeea11d3cdcba26076e0f102607ccba8062169c2c0dfe1a242",
+      "rows": 10440
+    },
+    {
+      "id": "collect_4ca4a2fc74c8351fb52ac7c9",
+      "pair": "US30",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_ddea096a7ca6e345de66c392",
+      "pair": "US30",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_c058fc002a50237cd6d2dbb0",
+      "pair": "USDCAD",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_86592815ab15bd7c08cb675a",
+      "pair": "USDCAD",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_f96b706592fd20ebcac40e90",
+      "pair": "USDCHF",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_11a94b236d0d2433e550e338",
+      "pair": "USDCHF",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_b557de1ab864bd76dfe818f9",
+      "pair": "USOIL",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_8b1ec0d62c1725b72becb3ba",
+      "pair": "USOIL",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_cd52c97af4747192c0bca883",
+      "pair": "XAGUSD",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_c906ad60e991b28b14043474",
+      "pair": "XAGUSD",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_65a0765b7010c13e9fe7097b",
+      "pair": "XAUUSD",
+      "base_tf": "H1",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    },
+    {
+      "id": "collect_c4bf27ebbe36dda5b0102d5d",
+      "pair": "XAUUSD",
+      "base_tf": "M5",
+      "status": "FAILED",
+      "error_type": "CTraderError"
+    }
+  ],
+  "collected_jobs": 34,
+  "failed_jobs": 12
+}
