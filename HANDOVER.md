@@ -204,3 +204,36 @@ Files worth porting from `claude-kevin-king` (adapt, don't copy blindly): `slk/c
   require case-level source verification/replay. No PR, deployment, acquisition,
   real messaging or broker activation occurred. Next is source-case chronology,
   feed and geometry verification, then strict mismatch-driven replay.
+
+## Teacher replay first pass (2026-10-24)
+
+- Started actual v2 replay diagnostics after the offline build. Independent
+  agents reread source PDF contexts/plans and added six replay source/readiness/
+  mismatch reviews. Found additional existing local Kevin H1 files; no download
+  or acquisition. Ten source records have matching-pair inputs (five pairs),
+  nine compatible entry resolutions; GBPAUD M45 is context-only from H1.
+- Completed ten source-confirmation runs and two separate owner-fixed11 runs.
+  Eight records have numeric source plans + entry resolution; no generated
+  single plan has all three printed prices equal on the alternate feed. p35
+  lacks a numerical source plan. Strict original fixture still40unresolved,
+  including30records with no matching pair locally. No fixture was changed.
+- Replay exposed duplicate economic signals under different stories consuming
+  exposure cap slots. Preserved p08 pre-fix baseline; fixed prospective same-
+  pattern/level/clock/risk dedup with provenance aliases and unchanged canonical
+  context cancellation. Later confirmations remain separate; source_all remains
+  independent alternatives. Early eligibility filter equivalence verified.
+- Substantive remaining discrepancies: stale/remote reaction or protected-range
+  objects dominate source-mode stops; source KL/CE reference mapping differs;
+  valid entry ERL often absent or differs from source target. p08 high-swept/
+  low-standing referent remains unresolved. Exact/near entry alone is not match.
+- Reproducer `reports/replay_teacher_examples_v2.py`; human findings, gzipped
+  per-case traces and hash index in `reports/teacher_replay_v2/`. Profiles/cases
+  never share acceptance candidates. Runtime-aborted optional all-routes/p54
+  owner experiments are explicit; default per-run diagnostic budget180s.
+- No broker/messages/PR/deployment. Next is source candle/reference identity and
+  protection/range scope correction, followed by frozen mismatch reruns. Do not
+  force tolerances, source prices, missing ERL targets or example outcomes.
+- Final validation:234tests passed in5.85s (30independent v2/report checks plus
+  prior suite). All12compressed report byte hashes and unchanged source fixture
+  hash verified. Normal compressed-report CLI, index-only rebuild and explicit
+  runtime-budget abort paths exercised. No active replay process left running.

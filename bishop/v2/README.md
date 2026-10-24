@@ -113,3 +113,10 @@ Discretionary source exceptions and the uncertain PDF p8 standing-extreme
 referent remain explicit support gaps. Uncertain source labels, missing exact
 fill times and unavailable historical feeds cannot be converted into matches
 by changing expectations or copying teacher prices into this engine.
+
+The first teacher-plan diagnostic pass is saved in
+`reports/teacher_replay_v2/README.md`. Operating selection now collapses identical
+same-model/level/clock/risk signals from multiple contexts and records their
+aliases. Later confirmations remain distinct; `source_all` keeps alternatives.
+The canonical first context governs cancellation. This fixes exposure crowding,
+not the outstanding source stop/target/reference discrepancies.

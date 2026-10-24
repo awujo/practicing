@@ -1,0 +1,19 @@
+{
+  "scope": "Aborted optional diagnostic experiments; not source matches or zero-signal results",
+  "runs": [
+    {
+      "example_id": "pdf-p08-eurgbp-buy-1",
+      "profile": "source_alternatives",
+      "status": "ABORTED_RUNTIME",
+      "observed_seconds_lower_bound": 120,
+      "reason": "source_all diagnostic alternative enumeration exceeded practical runtime; no result certified"
+    },
+    {
+      "example_id": "pdf-p54-eurgbp-buy-1",
+      "profile": "owner_fixed11",
+      "status": "ABORTED_RUNTIME",
+      "observed_seconds_lower_bound": 180,
+      "reason": "Optional owner experiment exceeded practical runtime; source-confirmation run for this case completed separately"
+    }
+  ]
+}

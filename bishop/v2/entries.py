@@ -6,7 +6,7 @@ no fixture, later performance or expected future sweep controls eligibility.
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
-from .types import Clock, Event, Setup, Liquidity, stable_id
+from .types import Clock, Event, Setup, Liquidity, stable_id, utc
 from .risk import plan
 
 BREAKS = frozenset(('BREAKOUT', 'BOS', 'SWEEP_BOS', 'EXTERNAL_BREAK'))
@@ -93,7 +93,9 @@ def _is_active(story, at, story_events):
     return True
 
 
-def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_events=()):
+def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_events=(), eligibility_start=None):
+    if eligibility_start is not None:
+        eligibility_start=utc(eligibility_start)
     from .structure import RoleIndex
     role_indices={tf:RoleIndex(result.events) for tf,result in structures.items()}
     role_cache={}
@@ -152,6 +154,8 @@ def detect_setups(bars_by_tf, structures, stories, instrument, policy, *, story_
                         reason='high_swept_low_standing_LONG_reference_pair_unresolved'))
 
     def emit(model,story,tf,level,at,causes,protection,liq=(),phase='origin',extra=None,zone_bounds=None):
+        if eligibility_start is not None and at < eligibility_start:
+            return
         if model not in enabled or story.available_at>at or not _is_active(story,at,story_events):
             return
         result=structures[tf]

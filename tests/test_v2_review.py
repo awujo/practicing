@@ -261,3 +261,68 @@ def test_zone_edge_experiment_uses_declared_far_boundary_and_requires_geometry(s
     absent=plan(*args)
     assert absent.stop_ticks is None and absent.status=='UNRESOLVED'
     assert 'zone_geometry_unresolved' in absent.details['unresolved_reasons']
+
+
+def test_eligibility_start_equals_filtering_full_nonempty_entry_history():
+    import random
+    from bishop.v2.aggregation import aggregate
+    from bishop.v2.structure import analyze
+    from bishop.v2.stories import find_stories
+    from bishop.v2.entries import detect_setups
+    randomizer=random.Random(41);price=1000;bars=[]
+    for i in range(72):
+        close=price+randomizer.choice((-12,-8,-4,4,8,12))
+        bars.append(Bar('X','H1',T+timedelta(hours=i),T+timedelta(hours=i+1),
+                        price,max(price,close)+3,min(price,close)-3,close));price=close
+    instrument=Instrument('X','1','1',calendar_id='24x7_utc_v1',anchor_id='utc_epoch_v1')
+    policy=StrategyPolicy(origin_tfs=('H4',),entry_tfs=('H1',),risk_profile='fixed11',
+                          target_profile='fixed3r',source_profile='source_all')
+    by_tf={tf:aggregate(bars,tf,instrument,bars[-1].end)['bars'] for tf in ('H1','H2','H4','D','W')}
+    structures={tf:analyze(bs,policy) for tf,bs in by_tf.items()}
+    stories=find_stories(by_tf,structures,policy)
+    args=(by_tf,structures,stories,instrument,policy)
+    full=detect_setups(*args,story_events=stories.events)
+    cutoff=T+timedelta(hours=48)
+    tail=detect_setups(*args,story_events=stories.events,eligibility_start=cutoff)
+    expected=tuple(s for s in full.setups if s.available_at>=cutoff)
+    assert expected and len(expected)<len(full.setups)
+    assert tail.setups==expected
+    assert tail.events==tuple(e for e in full.events if e.available_at>=cutoff)
+    assert tail.support==full.support and tail.imbalances==full.imbalances
+
+
+@pytest.mark.parametrize('profile,orders,aliases',[('bishop_confirmation',2,1),('source_all',3,0)])
+def test_economic_aliases_do_not_consume_slots_and_later_confirmation_is_distinct(monkeypatch,profile,orders,aliases):
+    from types import SimpleNamespace
+    import bishop.v2.engine as engine
+    from bishop.v2.types import Setup
+    from bishop.v2.simulation import Costs
+    instrument=Instrument('X','1','1',calendar_id='24x7_utc_v1',anchor_id='utc_epoch_v1')
+    bars=tuple(Bar('X','M1',T+timedelta(minutes=i),T+timedelta(minutes=i+1),10,11,9,10) for i in range(3))
+    stories=tuple(SimpleNamespace(id=ident,details={}) for ident in ('story_a','story_b'))
+    setups=tuple(Setup(id=ident,instrument='X',tf='M1',model='confirmation_standing_extreme',
+                       side='BUY',story_id=story,clock=Clock(at,at,at),entry_ticks=8,
+                       stop_ticks=5,target_ticks=12,risk_profile='context_liquidity',level_id='same_level')
+                 for ident,story,at in (('a','story_a',T),('b','story_b',T),
+                                        ('c','story_a',T+timedelta(minutes=1))))
+    alias_end=Event(id='alias_end',kind='STORY_INVALIDATED',instrument='X',tf='M1',
+                    clock=Clock(T+timedelta(minutes=1),T+timedelta(minutes=1),T+timedelta(minutes=1)),
+                    reference_id='story_b')
+    monkeypatch.setattr(engine,'find_stories',lambda *a:SimpleNamespace(stories=stories,events=(alias_end,),support=()))
+    monkeypatch.setattr(engine,'detect_setups',lambda *a,**k:SimpleNamespace(setups=setups,support=()))
+    monkeypatch.setattr(engine,'jsonable',lambda x:x)
+    result=engine.run({'instrument':instrument,'bars':bars},as_of=bars[-1].end,costs=Costs(),
+                      policy=StrategyPolicy(source_profile=profile,entry_tfs=('M1',),origin_tfs=('D',)),
+                      max_open_orders=2)
+    assert len(result['orders'])==orders
+    assert len(result['selection']['aliases'])==aliases
+    assert len(result['setups'])==3
+    assert any(o.setup_id=='c' for o in result['orders'])
+    if aliases:
+        alias=result['selection']['aliases'][0]
+        assert alias['setup_id']=='b' and alias['story_id']=='story_b'
+        assert alias['canonical_setup_id']=='a'
+        assert result['orders'][0].details['context_policy']=='first_causal_context_canonical'
+        assert not result['actions']  # Alias invalidation does not invent an OR-context cancellation rule.
+    else:
+        assert result['selection']['mode']=='INDEPENDENT_ALTERNATIVES'

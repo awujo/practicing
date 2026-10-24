@@ -1,0 +1,98 @@
+{
+  "GBPAUD": {
+    "path": "data/examples/GBPAUD_teacher_alternate_H1.csv.gz",
+    "sha256": "c18d2aeba6cfdd148c440192bbef3bf933090077a1defea979f7e38278d44b93",
+    "original_path": "data/examples/GBPAUD_H1.csv.gz",
+    "repository": "https://github.com/awujo/practicing",
+    "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+    "source": "Existing Kevin IC Markets cTrader BID H1 export, alternate to source charts",
+    "first": {
+      "t": "2022-01-02 23:00:00+00:00",
+      "open": "1.86139",
+      "high": "1.8618",
+      "low": "1.85891",
+      "close": "1.86046"
+    },
+    "last": {
+      "t": "2026-10-20 10:00:00+00:00",
+      "open": "1.90973",
+      "high": "1.91003",
+      "low": "1.90786",
+      "close": "1.90943"
+    },
+    "rows": 29864,
+    "source_precision": "Existing export %.6g; no recovered source precision asserted"
+  },
+  "GBPJPY": {
+    "path": "data/examples/GBPJPY_teacher_alternate_H1.csv.gz",
+    "sha256": "2a887f2e9efedad07aca002876fbd6408dbdbe7ae0b0006c19cd6d9777d303a6",
+    "original_path": "data/examples/GBPJPY_H1.csv.gz",
+    "repository": "https://github.com/awujo/practicing",
+    "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+    "source": "Existing Kevin IC Markets cTrader BID H1 export, alternate to source charts",
+    "first": {
+      "t": "2022-01-02 23:00:00+00:00",
+      "open": "155.736",
+      "high": "155.78",
+      "low": "155.672",
+      "close": "155.691"
+    },
+    "last": {
+      "t": "2026-10-20 10:00:00+00:00",
+      "open": "211.086",
+      "high": "211.148",
+      "low": "210.888",
+      "close": "210.972"
+    },
+    "rows": 29864,
+    "source_precision": "Existing export %.6g; no recovered source precision asserted"
+  },
+  "USDCAD": {
+    "path": "data/examples/USDCAD_teacher_alternate_H1.csv.gz",
+    "sha256": "cf63446d2b5c53bf7159ff3878ae1fbbe59f5e33fc2d93146ee9ffb564bf72ca",
+    "original_path": "data/examples/USDCAD_H1.csv.gz",
+    "repository": "https://github.com/awujo/practicing",
+    "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+    "source": "Existing Kevin IC Markets cTrader BID H1 export, alternate to source charts",
+    "first": {
+      "t": "2022-01-02 23:00:00+00:00",
+      "open": "1.26348",
+      "high": "1.26598",
+      "low": "1.263",
+      "close": "1.26594"
+    },
+    "last": {
+      "t": "2026-10-20 10:00:00+00:00",
+      "open": "1.40581",
+      "high": "1.40582",
+      "low": "1.40468",
+      "close": "1.40542"
+    },
+    "rows": 29864,
+    "source_precision": "Existing export %.6g; no recovered source precision asserted"
+  },
+  "USDCHF": {
+    "path": "data/examples/USDCHF_teacher_alternate_H1.csv.gz",
+    "sha256": "2ee48edf15bde5a6c65387c56e84081c2f671b2131398beacf9827843024bf01",
+    "original_path": "data/examples/USDCHF_H1.csv.gz",
+    "repository": "https://github.com/awujo/practicing",
+    "commit": "7bccddd65f7e22a0c31430ff668b36cb7c512f2e",
+    "source": "Existing Kevin IC Markets cTrader BID H1 export, alternate to source charts",
+    "first": {
+      "t": "2022-01-02 23:00:00+00:00",
+      "open": "0.9107",
+      "high": "0.91246",
+      "low": "0.9107",
+      "close": "0.91207"
+    },
+    "last": {
+      "t": "2026-10-20 10:00:00+00:00",
+      "open": "0.8247",
+      "high": "0.82512",
+      "low": "0.82428",
+      "close": "0.82444"
+    },
+    "rows": 29864,
+    "source_precision": "Existing export %.6g; no recovered source precision asserted"
+  }
+}

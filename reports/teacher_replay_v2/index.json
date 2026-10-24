@@ -1,0 +1,1107 @@
+{
+  "schema_version": 2,
+  "scope": "Teacher replay first pass; unresolved inputs are counted",
+  "fixture_sha256": "0f2bae1c49705431f0d3b6e926ec5d9dda80ccadabb2ee9dfa475542de75b8a4",
+  "implementation_sha256": "3a69a2f5f6f1b2b468daea0b3175a8f586ea2703ea77a9013432c68d9cd506bd",
+  "runs": [
+    {
+      "example_id": "pdf-p08-eurgbp-buy-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p08-eurgbp-buy-1_source_confirmation.json.gz",
+      "sha256": "a454c24d66590f10330792f1b42fe696d01a4e645ab30de3b68ac7dd8f86c07c",
+      "seconds": 26.983,
+      "summary": {
+        "stories": 120,
+        "setups": 796,
+        "orders": 26,
+        "outcomes": {
+          "LOSS": 7,
+          "WIN": 14,
+          "EXPIRED": 1,
+          "CENSORED": 2,
+          "OPEN": 2
+        }
+      },
+      "plan_group_count": 18,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p08-eurgbp-buy-1",
+      "profile": "owner_fixed11",
+      "report": "reports/teacher_replay_v2/pdf-p08-eurgbp-buy-1_owner_fixed11.json.gz",
+      "sha256": "9b8fcdc00d3a3a47c4a5a3f1fa7f2b630ae12fa5e7a6def84b8b98a66799f81f",
+      "seconds": 41.145,
+      "summary": {
+        "stories": 120,
+        "setups": 8954,
+        "orders": 45,
+        "outcomes": {
+          "LOSS": 17,
+          "CANCELLED": 8,
+          "WIN": 10,
+          "OPEN": 8,
+          "CENSORED": 2
+        }
+      },
+      "plan_group_count": 168,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p37-eurgbp-sell-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p37-eurgbp-sell-1_source_confirmation.json.gz",
+      "sha256": "2f4e88a95c32d0ad7f3b9b3e32c97a2a741b25e56cf68a04650c104434ffe859",
+      "seconds": 72.768,
+      "summary": {
+        "stories": 220,
+        "setups": 860,
+        "orders": 13,
+        "outcomes": {
+          "WIN": 1,
+          "CENSORED": 4,
+          "LOSS": 1,
+          "OPEN": 6,
+          "EXPIRED": 1
+        }
+      },
+      "plan_group_count": 44,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p37-eurgbp-sell-1",
+      "profile": "owner_fixed11",
+      "report": "reports/teacher_replay_v2/pdf-p37-eurgbp-sell-1_owner_fixed11.json.gz",
+      "sha256": "54e6ab484803df20e274a4c7e86e4d2a05d53a216a403f5d95af015c11fd38c9",
+      "seconds": 129.626,
+      "summary": {
+        "stories": 220,
+        "setups": 11596,
+        "orders": 55,
+        "outcomes": {
+          "CANCELLED": 34,
+          "CENSORED": 3,
+          "LOSS": 4,
+          "EXPIRED": 8,
+          "OPEN": 6
+        }
+      },
+      "plan_group_count": 183,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p54-eurgbp-buy-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p54-eurgbp-buy-1_source_confirmation.json.gz",
+      "sha256": "1b6d18a5cc589742fc34a5c6c05b265ee9c4d46f7e8d2c6fad769f091a39369f",
+      "seconds": 81.231,
+      "summary": {
+        "stories": 212,
+        "setups": 1255,
+        "orders": 14,
+        "outcomes": {
+          "LOSS": 2,
+          "WIN": 10,
+          "CENSORED": 1,
+          "CANCELLED": 1
+        }
+      },
+      "plan_group_count": 25,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p15-usdcad-sell-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p15-usdcad-sell-1_source_confirmation.json.gz",
+      "sha256": "4e8c2565d5cd759f39cee517074395167d4bbac4819a5c947dad198e5f4f8fb5",
+      "seconds": 51.147,
+      "summary": {
+        "stories": 167,
+        "setups": 1508,
+        "orders": 27,
+        "outcomes": {
+          "WIN": 19,
+          "EXPIRED": 2,
+          "LOSS": 4,
+          "OPEN": 2
+        }
+      },
+      "plan_group_count": 32,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p19-gbpjpy-buy-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p19-gbpjpy-buy-1_source_confirmation.json.gz",
+      "sha256": "3bb896fadf69a5da46257b3607c0bb4bb97f47e494e310777fdc263b8e7ced34",
+      "seconds": 34.93,
+      "summary": {
+        "stories": 139,
+        "setups": 1352,
+        "orders": 17,
+        "outcomes": {
+          "LOSS": 10,
+          "WIN": 4,
+          "OPEN": 2,
+          "CENSORED": 1
+        }
+      },
+      "plan_group_count": 53,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p19-gbpjpy-buy-2",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p19-gbpjpy-buy-2_source_confirmation.json.gz",
+      "sha256": "005ee329b1b944ea720c25e828b83f0e4ad6c07da208b4972dce36315b885382",
+      "seconds": 45.342,
+      "summary": {
+        "stories": 139,
+        "setups": 1352,
+        "orders": 17,
+        "outcomes": {
+          "LOSS": 10,
+          "WIN": 4,
+          "OPEN": 2,
+          "CENSORED": 1
+        }
+      },
+      "plan_group_count": 53,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p23-usdchf-sell-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p23-usdchf-sell-1_source_confirmation.json.gz",
+      "sha256": "51e35cba8d6a6ddb54f8c6a9e5d1e9a44ae20492d78217f67307f9223ef2f497",
+      "seconds": 48.043,
+      "summary": {
+        "stories": 162,
+        "setups": 1291,
+        "orders": 22,
+        "outcomes": {
+          "OPEN": 10,
+          "LOSS": 5,
+          "WIN": 3,
+          "EXPIRED": 4
+        }
+      },
+      "plan_group_count": 21,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p23-usdchf-sell-2",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p23-usdchf-sell-2_source_confirmation.json.gz",
+      "sha256": "77d6fcad788200d527646d3bb3ee9f75eee5b89552e93d4f55d14f7ed7ebe0d6",
+      "seconds": 50.724,
+      "summary": {
+        "stories": 151,
+        "setups": 845,
+        "orders": 16,
+        "outcomes": {
+          "OPEN": 10,
+          "LOSS": 3,
+          "WIN": 3
+        }
+      },
+      "plan_group_count": 15,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p35-gbpjpy-buy-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p35-gbpjpy-buy-1_source_confirmation.json.gz",
+      "sha256": "b1fb3a38244229344915de026016e20fe51194dd784328f8802ab9a6276236d1",
+      "seconds": 63.565,
+      "summary": {
+        "stories": 178,
+        "setups": 1503,
+        "orders": 13,
+        "outcomes": {
+          "WIN": 12,
+          "CENSORED": 1
+        }
+      },
+      "plan_group_count": 24,
+      "strict_status": "UNRESOLVED"
+    },
+    {
+      "example_id": "pdf-p60-gbpaud-sell-1",
+      "profile": "source_confirmation",
+      "report": "reports/teacher_replay_v2/pdf-p60-gbpaud-sell-1_source_confirmation.json.gz",
+      "sha256": "f538c154ae9d2521ae067dbac02b153dd24d01413e313936856cd7d8e303fa99",
+      "seconds": 2.657,
+      "summary": {
+        "stories": 12,
+        "setups": 0,
+        "orders": 0,
+        "outcomes": {}
+      },
+      "plan_group_count": 0,
+      "strict_status": "UNRESOLVED"
+    }
+  ],
+  "attempted_cases": [
+    "pdf-p08-eurgbp-buy-1",
+    "pdf-p15-usdcad-sell-1",
+    "pdf-p19-gbpjpy-buy-1",
+    "pdf-p19-gbpjpy-buy-2",
+    "pdf-p23-usdchf-sell-1",
+    "pdf-p23-usdchf-sell-2",
+    "pdf-p35-gbpjpy-buy-1",
+    "pdf-p37-eurgbp-sell-1",
+    "pdf-p54-eurgbp-buy-1",
+    "pdf-p60-gbpaud-sell-1"
+  ],
+  "unattempted": [
+    {
+      "example_id": "pdf-p02-eurcad-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p03-eurjpy-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p05-eurchf-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p06-eurchf-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p10-usoil-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p10-usoil-buy-2",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p11-xauusd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p13-eurnzd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p17-audusd-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p20-xagusd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p20-usoil-buy-2",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p22-xagusd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p22-xagusd-sell-2",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p25-audusd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p27-gbpusd-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p29-chfjpy-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p31-gbpnzd-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p33-gbpcad-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p38-us30-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p40-audcad-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p42-usoil-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p44-ethusdt-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p46-eurjpy-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p47-gbpcad-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p50-nas100-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p52-nas100-sell-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p55-us30-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "pdf-p58-jp225-buy-1",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "video-entries5-native-t1065-xauusd",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    },
+    {
+      "example_id": "video-entries5-native-t1410-eurusd",
+      "reason": "NO_LOCAL_FROZEN_PAIR_INPUT"
+    }
+  ],
+  "strict_replay_by_profile": {
+    "source_confirmation": {
+      "status": "UNRESOLVED",
+      "scope": "SOURCE_POLICY_DIAGNOSTIC",
+      "counts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "UNRESOLVED": 40
+      },
+      "results": [
+        {
+          "id": "pdf-p02-eurcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p03-eurjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p05-eurchf-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p06-eurchf-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p08-eurgbp-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p10-usoil-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p10-usoil-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p11-xauusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p13-eurnzd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p15-usdcad-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p17-audusd-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p19-gbpjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "Stacked-box target-to-entry association requires a second visual review.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p19-gbpjpy-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "Stacked-box target-to-entry association requires a second visual review.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p20-xagusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p20-usoil-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p22-xagusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p22-xagusd-sell-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p23-usdchf-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p23-usdchf-sell-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p25-audusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p27-gbpusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p29-chfjpy-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p31-gbpnzd-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p33-gbpcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p35-gbpjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "One or more numeric entry/initial-stop/target values are not explicitly readable.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop",
+            "missing or invalid stop tolerance",
+            "missing or invalid target",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p37-eurgbp-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p38-us30-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p40-audcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p42-usoil-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p44-ethusdt-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p46-eurjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p47-gbpcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p50-nas100-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p52-nas100-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p54-eurgbp-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p55-us30-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p58-jp225-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p60-gbpaud-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "video-entries5-native-t1065-xauusd",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "video-entries5-native-t1410-eurusd",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        }
+      ]
+    },
+    "owner_fixed11": {
+      "status": "UNRESOLVED",
+      "scope": "OWNER_EXPERIMENT_SEPARATE_FROM_SOURCE_ACCEPTANCE",
+      "counts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "UNRESOLVED": 40
+      },
+      "results": [
+        {
+          "id": "pdf-p02-eurcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p03-eurjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p05-eurchf-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p06-eurchf-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p08-eurgbp-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p10-usoil-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p10-usoil-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p11-xauusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p13-eurnzd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p15-usdcad-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p17-audusd-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p19-gbpjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p19-gbpjpy-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p20-xagusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p20-usoil-buy-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p22-xagusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p22-xagusd-sell-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p23-usdchf-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p23-usdchf-sell-2",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p25-audusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p27-gbpusd-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p29-chfjpy-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p31-gbpnzd-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p33-gbpcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p35-gbpjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p37-eurgbp-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "Exact UTC setup/fill window is not independently established; chart creation date is not an entry timestamp.",
+            "Source-feed candle alignment and matching tolerances are not yet established.",
+            "Independent second source reviewer has not yet signed off this extraction.",
+            "A drawn price plan or pending-order screenshot does not independently establish actual fill status or order type.",
+            "Bias timeframe and setup-availability UTC window have not been independently established.",
+            "missing or invalid time window",
+            "missing or invalid bias context",
+            "missing or invalid setup time window",
+            "missing or invalid entry tolerance",
+            "missing or invalid stop tolerance",
+            "missing or invalid target tolerance"
+          ]
+        },
+        {
+          "id": "pdf-p38-us30-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p40-audcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p42-usoil-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p44-ethusdt-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p46-eurjpy-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p47-gbpcad-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p50-nas100-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p52-nas100-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p54-eurgbp-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "pdf-p55-us30-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p58-jp225-buy-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "pdf-p60-gbpaud-sell-1",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN in this implementation/profile"
+          ]
+        },
+        {
+          "id": "video-entries5-native-t1065-xauusd",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        },
+        {
+          "id": "video-entries5-native-t1410-eurusd",
+          "status": "UNRESOLVED",
+          "reasons": [
+            "NOT_RUN: no local frozen pair input"
+          ]
+        }
+      ]
+    }
+  },
+  "run_limits": {
+    "scope": "Aborted optional diagnostic experiments; not source matches or zero-signal results",
+    "runs": [
+      {
+        "example_id": "pdf-p08-eurgbp-buy-1",
+        "profile": "source_alternatives",
+        "status": "ABORTED_RUNTIME",
+        "observed_seconds_lower_bound": 120,
+        "reason": "source_all diagnostic alternative enumeration exceeded practical runtime; no result certified"
+      },
+      {
+        "example_id": "pdf-p54-eurgbp-buy-1",
+        "profile": "owner_fixed11",
+        "status": "ABORTED_RUNTIME",
+        "observed_seconds_lower_bound": 180,
+        "reason": "Optional owner experiment exceeded practical runtime; source-confirmation run for this case completed separately"
+      }
+    ]
+  }
+}

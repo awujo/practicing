@@ -76,16 +76,25 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
         bars_by_tf[tf]=result['bars']; coverage[tf]=result['coverage']
     structures={tf:assess(analyze(bs,policy,supplemental_liquidity=tuple(p for p in session_result.liquidity if p.tf==tf)),bs,policy) for tf,bs in bars_by_tf.items()}
     story_result=find_stories(bars_by_tf,structures,policy)
-    entry_result=detect_setups(bars_by_tf,structures,story_result,inst,policy,story_events=story_result.events)
+    entry_result=detect_setups(bars_by_tf,structures,story_result,inst,policy,story_events=story_result.events,eligibility_start=lower)
     candidates=sorted((s for s in entry_result.setups if (lower is None or s.available_at>=lower) and s.available_at<=clock),key=lambda s:(s.available_at,policy.entry_tfs.index(s.tf) if s.tf in policy.entry_tfs else len(policy.entry_tfs),s.id))
     stories={s.id:s for s in story_result.stories}
     orders=[]; rejected=[]; actions=[dict(a) for a in management_actions]; execution_cache={}
+    economic_signals={}
+    aliases=[]
     alternatives=policy.source_profile in ('source_all','all_routes')
     for setup in candidates:
         if setup.status!='ELIGIBLE': continue
         story=stories[setup.story_id]
         if story.details.get('owner_selection')=='BLOCKED_COUNTERWEEKLY':
             rejected.append({'setup_id':setup.id,'reason':'BLOCKED_COUNTERWEEKLY'}); continue
+        # Same pattern/level/clock/risk from another context is one signal.
+        # Later confirmations remain distinct; source_all retains alternatives.
+        economic_key=stable_id('economic_signal',setup.instrument,setup.tf,setup.side,setup.model,setup.level_id,setup.available_at,setup.entry_ticks,setup.stop_ticks,setup.target_ticks,setup.order_type,setup.expires_at)
+        if not alternatives and economic_key in economic_signals:
+            canonical=economic_signals[economic_key]
+            aliases.append({'setup_id':setup.id,'story_id':setup.story_id,'canonical_setup_id':canonical.setup_id,'order_id':canonical.id,'economic_signal_id':economic_key})
+            continue
         # Prospective cap uses only execution information available at submission.
         # Censored exposure remains reserved: unknown execution is not a free slot.
         active=0
@@ -99,8 +108,9 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
                     active+=1
             if active>=max_open_orders:
                 rejected.append({'setup_id':setup.id,'reason':'EXPOSURE_CAP'}); continue
-        order=Order(id=stable_id('order',setup.id,policy.id),setup_id=setup.id,instrument=setup.instrument,tf=setup.tf,model=setup.model,side=setup.side,kind=setup.order_type,clock=setup.clock,entry_ticks=setup.entry_ticks,stop_ticks=setup.stop_ticks,target_ticks=setup.target_ticks,expires_at=setup.expires_at,details={'story_id':setup.story_id,'policy_id':policy.id})
+        order=Order(id=stable_id('order',setup.id,policy.id),setup_id=setup.id,instrument=setup.instrument,tf=setup.tf,model=setup.model,side=setup.side,kind=setup.order_type,clock=setup.clock,entry_ticks=setup.entry_ticks,stop_ticks=setup.stop_ticks,target_ticks=setup.target_ticks,expires_at=setup.expires_at,details={'story_id':setup.story_id,'policy_id':policy.id,'economic_signal_id':economic_key,'context_policy':'first_causal_context_canonical'})
         orders.append(order)
+        economic_signals[economic_key]=order
         for event in story_result.events:
             if event.reference_id==setup.story_id and (event.kind in ('STORY_INVALIDATED','STORY_DESTINATION_REACHED','STORY_CANCELLED','STORY_FLIPPED') or event.details.get('pending_action')=='CANCEL_DEPENDENT') and event.available_at>=setup.available_at:
                 actions.append({'order_id':order.id,'kind':'CANCEL','available_at':event.available_at,'reason':event.kind})
@@ -112,9 +122,9 @@ def run(feed_or_path, manifest=None, *, as_of, history_start=None,
     unavailable=[tf for tf in (*policy.origin_tfs,*policy.entry_tfs) if not bars_by_tf.get(tf)]
     support.extend({'component':'required_history','tf':tf,'status':'INSUFFICIENT_COMPLETE_BARS'} for tf in dict.fromkeys(unavailable))
     degraded=not base or feed['coverage']['status']!='COMPLETE' or bool(unavailable) or any(v['status']=='UNRESOLVED_RESOLUTION' for v in coverage.values())
-    result={'schema_version':'bishop_offline_v2_1','run_id':stable_id('run',feed.get('hashes'),clock,lower,policy.id,costs,max_open_orders,management_actions),
+    result={'schema_version':'bishop_offline_v2_1','run_id':stable_id('run','selection_dedup_v1',feed.get('hashes'),clock,lower,policy.id,costs,max_open_orders,management_actions),
             'status':'PARTIAL_UNVALIDATED' if degraded else 'COMPUTED_UNVALIDATED','as_of':clock,'scan_start':lower,'instrument':inst,'input':feed.get('hashes',{}),'policy':policy,'costs':costs,
-            'selection':{'mode':'INDEPENDENT_ALTERNATIVES' if alternatives else 'PROSPECTIVE_CAPPED','max_open_orders':None if alternatives else max_open_orders,'rejected':rejected},
+            'selection':{'mode':'INDEPENDENT_ALTERNATIVES' if alternatives else 'PROSPECTIVE_CAPPED','max_open_orders':None if alternatives else max_open_orders,'rejected':rejected,'aliases':aliases,'dedup_policy':'same_model_level_clock_risk_v1_first_context'},
             'coverage':{'base':feed.get('coverage',{}),'timeframes':coverage},'support':support,
             'stories':story_result.stories,'story_events':story_result.events,'setups':candidates,'orders':orders,'actions':actions,
             'execution_events':execution['events'],'observations':execution['observations'],'positions':execution['positions'],
